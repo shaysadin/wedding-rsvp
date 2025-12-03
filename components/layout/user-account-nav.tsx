@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { LayoutDashboard, Lock, LogOut, Settings } from "lucide-react";
 import { signOut, useSession } from "next-auth/react";
 import { Drawer } from "vaul";
@@ -16,9 +18,23 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { UserAvatar } from "@/components/shared/user-avatar";
 
-export function UserAccountNav() {
+interface UserAccountNavProps {
+  user?: {
+    name?: string | null;
+    email?: string | null;
+    image?: string | null;
+    role?: string;
+  };
+}
+
+export function UserAccountNav({ user: propUser }: UserAccountNavProps = {}) {
   const { data: session } = useSession();
-  const user = session?.user;
+  const user = propUser || session?.user;
+  const pathname = usePathname();
+  const t = useTranslations();
+
+  // Extract locale from current path
+  const locale = pathname?.split("/")[1] || "he";
 
   const [open, setOpen] = useState(false);
   const closeDrawer = () => {
@@ -63,38 +79,38 @@ export function UserAccountNav() {
             </div>
 
             <ul role="list" className="mb-14 mt-1 w-full text-muted-foreground">
-              {user.role === "ADMIN" ? (
+              {user.role === "ROLE_PLATFORM_OWNER" ? (
                 <li className="rounded-lg text-foreground hover:bg-muted">
                   <Link
-                    href="/admin"
+                    href={`/${locale}/admin`}
                     onClick={closeDrawer}
                     className="flex w-full items-center gap-3 px-2.5 py-2"
                   >
                     <Lock className="size-4" />
-                    <p className="text-sm">Admin</p>
+                    <p className="text-sm">{t("common.admin")}</p>
                   </Link>
                 </li>
               ) : null}
 
               <li className="rounded-lg text-foreground hover:bg-muted">
                 <Link
-                  href="/dashboard"
+                  href={`/${locale}/dashboard`}
                   onClick={closeDrawer}
                   className="flex w-full items-center gap-3 px-2.5 py-2"
                 >
                   <LayoutDashboard className="size-4" />
-                  <p className="text-sm">Dashboard</p>
+                  <p className="text-sm">{t("common.dashboard")}</p>
                 </Link>
               </li>
 
               <li className="rounded-lg text-foreground hover:bg-muted">
                 <Link
-                  href="/dashboard/settings"
+                  href={`/${locale}/dashboard/settings`}
                   onClick={closeDrawer}
                   className="flex w-full items-center gap-3 px-2.5 py-2"
                 >
                   <Settings className="size-4" />
-                  <p className="text-sm">Settings</p>
+                  <p className="text-sm">{t("common.settings")}</p>
                 </Link>
               </li>
 
@@ -103,13 +119,13 @@ export function UserAccountNav() {
                 onClick={(event) => {
                   event.preventDefault();
                   signOut({
-                    callbackUrl: `${window.location.origin}/`,
+                    callbackUrl: `${window.location.origin}/${locale}`,
                   });
                 }}
               >
                 <div className="flex w-full items-center gap-3 px-2.5 py-2">
                   <LogOut className="size-4" />
-                  <p className="text-sm">Log out </p>
+                  <p className="text-sm">{t("common.logout")}</p>
                 </div>
               </li>
             </ul>
@@ -141,29 +157,29 @@ export function UserAccountNav() {
         </div>
         <DropdownMenuSeparator />
 
-        {user.role === "ADMIN" ? (
+        {user.role === "ROLE_PLATFORM_OWNER" ? (
           <DropdownMenuItem asChild>
-            <Link href="/admin" className="flex items-center space-x-2.5">
+            <Link href={`/${locale}/admin`} className="flex items-center space-x-2.5">
               <Lock className="size-4" />
-              <p className="text-sm">Admin</p>
+              <p className="text-sm">{t("common.admin")}</p>
             </Link>
           </DropdownMenuItem>
         ) : null}
 
         <DropdownMenuItem asChild>
-          <Link href="/dashboard" className="flex items-center space-x-2.5">
+          <Link href={`/${locale}/dashboard`} className="flex items-center space-x-2.5">
             <LayoutDashboard className="size-4" />
-            <p className="text-sm">Dashboard</p>
+            <p className="text-sm">{t("common.dashboard")}</p>
           </Link>
         </DropdownMenuItem>
 
         <DropdownMenuItem asChild>
           <Link
-            href="/dashboard/settings"
+            href={`/${locale}/dashboard/settings`}
             className="flex items-center space-x-2.5"
           >
             <Settings className="size-4" />
-            <p className="text-sm">Settings</p>
+            <p className="text-sm">{t("common.settings")}</p>
           </Link>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
@@ -172,13 +188,13 @@ export function UserAccountNav() {
           onSelect={(event) => {
             event.preventDefault();
             signOut({
-              callbackUrl: `${window.location.origin}/`,
+              callbackUrl: `${window.location.origin}/${locale}`,
             });
           }}
         >
           <div className="flex items-center space-x-2.5">
             <LogOut className="size-4" />
-            <p className="text-sm">Log out </p>
+            <p className="text-sm">{t("common.logout")}</p>
           </div>
         </DropdownMenuItem>
       </DropdownMenuContent>

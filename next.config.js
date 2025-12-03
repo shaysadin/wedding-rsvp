@@ -1,6 +1,9 @@
 const { withContentlayer } = require("next-contentlayer2");
+const createNextIntlPlugin = require("next-intl/plugin");
 
 import("./env.mjs");
+
+const withNextIntl = createNextIntlPlugin("./lib/i18n/request.ts");
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
@@ -20,6 +23,10 @@ const nextConfig = {
         protocol: "https",
         hostname: "randomuser.me",
       },
+      {
+        protocol: "https",
+        hostname: "images.unsplash.com",
+      },
     ],
   },
   experimental: {
@@ -27,4 +34,4 @@ const nextConfig = {
   },
 };
 
-module.exports = withContentlayer(nextConfig);
+module.exports = withNextIntl(withContentlayer(nextConfig));

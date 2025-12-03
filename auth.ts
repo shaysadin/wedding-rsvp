@@ -1,6 +1,6 @@
 import authConfig from "@/auth.config";
 import { PrismaAdapter } from "@auth/prisma-adapter";
-import { UserRole } from "@prisma/client";
+import { UserRole, UserStatus, PlanTier } from "@prisma/client";
 import NextAuth, { type DefaultSession } from "next-auth";
 
 import { prisma } from "@/lib/db";
@@ -11,6 +11,8 @@ declare module "next-auth" {
   interface Session {
     user: {
       role: UserRole;
+      status: UserStatus;
+      plan: PlanTier;
     } & DefaultSession["user"];
   }
 }
@@ -22,8 +24,8 @@ export const {
   adapter: PrismaAdapter(prisma),
   session: { strategy: "jwt" },
   pages: {
-    signIn: "/login",
-    // error: "/auth/error",
+    signIn: "/he/login",
+    error: "/he/login",
   },
   callbacks: {
     async session({ token, session }) {
@@ -38,6 +40,14 @@ export const {
 
         if (token.role) {
           session.user.role = token.role;
+        }
+
+        if (token.status) {
+          session.user.status = token.status;
+        }
+
+        if (token.plan) {
+          session.user.plan = token.plan;
         }
 
         session.user.name = token.name;
@@ -58,6 +68,8 @@ export const {
       token.email = dbUser.email;
       token.picture = dbUser.image;
       token.role = dbUser.role;
+      token.status = dbUser.status;
+      token.plan = dbUser.plan;
 
       return token;
     },

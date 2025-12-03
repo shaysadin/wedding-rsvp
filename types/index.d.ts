@@ -17,6 +17,7 @@ export type SiteConfig = {
 
 export type NavItem = {
   title: string;
+  titleKey?: string; // Translation key for i18n
   href: string;
   badge?: number;
   disabled?: boolean;
@@ -33,6 +34,7 @@ export type MarketingConfig = {
 
 export type SidebarNavItem = {
   title: string;
+  titleKey?: string; // Translation key for i18n
   items: NavItem[];
   authorizeOnly?: UserRole;
   icon?: keyof typeof Icons;

@@ -6,14 +6,68 @@ generator client {
 }
 
 datasource db {
-  provider     = "postgresql"
-  url          = env("DATABASE_URL")
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
+// ============ ENUMS ============
+
 enum UserRole {
-  ADMIN
-  USER
+  ROLE_PLATFORM_OWNER
+  ROLE_WEDDING_OWNER
 }
+
+enum UserStatus {
+  PENDING_APPROVAL
+  ACTIVE
+  SUSPENDED
+}
+
+enum PlanTier {
+  FREE
+  BASIC
+  PREMIUM
+}
+
+enum RsvpStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+}
+
+enum NotificationType {
+  INVITE
+  REMINDER
+  CONFIRMATION
+}
+
+enum NotificationChannel {
+  WHATSAPP
+  SMS
+  EMAIL
+}
+
+enum NotificationStatus {
+  PENDING
+  SENT
+  DELIVERED
+  FAILED
+}
+
+enum BackgroundType {
+  COLOR
+  IMAGE
+  GRADIENT
+}
+
+enum CardStyle {
+  FLAT
+  ELEVATED
+  BORDERED
+  GLASS
+}
+
+// ============ AUTH MODELS (NextAuth Required) ============
 
 model Account {
   id                String   @id @default(cuid())
@@ -28,14 +82,14 @@ model Account {
   scope             String?
   id_token          String?  @db.Text
   session_state     String?
-  createdAt         DateTime @default(now()) @map(name: "created_at")
-  updatedAt         DateTime @default(now()) @map(name: "updated_at")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @default(now()) @updatedAt @map("updated_at")
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
   @@index([userId])
-  @@map(name: "accounts")
+  @@map("accounts")
 }
 
 model Session {
@@ -46,28 +100,7 @@ model Session {
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
-  @@map(name: "sessions")
-}
-
-model User {
-  id            String    @id @default(cuid())
-  name          String?
-  email         String?   @unique
-  emailVerified DateTime?
-  image         String?
-  createdAt     DateTime  @default(now()) @map(name: "created_at")
-  updatedAt     DateTime  @default(now()) @map(name: "updated_at")
-  role          UserRole  @default(USER)
-
-  accounts Account[]
-  sessions Session[]
-
-  stripeCustomerId       String?   @unique @map(name: "stripe_customer_id")
-  stripeSubscriptionId   String?   @unique @map(name: "stripe_subscription_id")
-  stripePriceId          String?   @map(name: "stripe_price_id")
-  stripeCurrentPeriodEnd DateTime? @map(name: "stripe_current_period_end")
-
-  @@map(name: "users")
+  @@map("sessions")
 }
 
 model VerificationToken {
@@ -76,5 +109,238 @@ model VerificationToken {
   expires    DateTime
 
   @@unique([identifier, token])
-  @@map(name: "verification_tokens")
+  @@map("verification_tokens")
+}
+
+// ============ CORE DOMAIN MODELS ============
+
+model User {
+  id            String     @id @default(cuid())
+  name          String?
+  email         String     @unique
+  emailVerified DateTime?  @map("email_verified")
+  image         String?
+  role          UserRole   @default(ROLE_WEDDING_OWNER)
+  status        UserStatus @default(PENDING_APPROVAL)
+  plan          PlanTier   @default(FREE)
+  createdAt     DateTime   @default(now()) @map("created_at")
+  updatedAt     DateTime   @default(now()) @updatedAt @map("updated_at")
+
+  accounts      Account[]
+  sessions      Session[]
+  weddingEvents WeddingEvent[]
+  rsvpTemplates RsvpTemplate[]
+
+  @@map("users")
+}
+
+model WeddingEvent {
+  id          String   @id @default(cuid())
+  ownerId     String   @map("owner_id")
+  title       String
+  description String?  @db.Text
+  dateTime    DateTime @map("date_time")
+  location    String
+  venue       String?
+  notes       String?  @db.Text
+  imageUrl    String?  @map("image_url")
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at")
+
+  owner            User              @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  guests           Guest[]
+  rsvpPageSettings RsvpPageSettings?
+
+  @@index([ownerId])
+  @@map("wedding_events")
+}
+
+model Guest {
+  id             String   @id @default(cuid())
+  weddingEventId String   @map("wedding_event_id")
+  name           String
+  phoneNumber    String?  @map("phone_number")
+  email          String?
+  slug           String   @unique
+  side           String?
+  groupName      String?  @map("group_name")
+  notes          String?  @db.Text
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @default(now()) @updatedAt @map("updated_at")
+
+  weddingEvent     WeddingEvent      @relation(fields: [weddingEventId], references: [id], onDelete: Cascade)
+  rsvp             GuestRsvp?
+  notificationLogs NotificationLog[]
+
+  @@index([weddingEventId])
+  @@index([slug])
+  @@map("guests")
+}
+
+model GuestRsvp {
+  id          String     @id @default(cuid())
+  guestId     String     @unique @map("guest_id")
+  status      RsvpStatus @default(PENDING)
+  guestCount  Int        @default(1) @map("guest_count")
+  note        String?    @db.Text
+  respondedAt DateTime?  @map("responded_at")
+  createdAt   DateTime   @default(now()) @map("created_at")
+  updatedAt   DateTime   @default(now()) @updatedAt @map("updated_at")
+
+  guest Guest @relation(fields: [guestId], references: [id], onDelete: Cascade)
+
+  @@map("guest_rsvps")
+}
+
+model NotificationLog {
+  id               String              @id @default(cuid())
+  guestId          String              @map("guest_id")
+  type             NotificationType
+  channel          NotificationChannel
+  status           NotificationStatus  @default(PENDING)
+  providerResponse String?             @db.Text @map("provider_response")
+  sentAt           DateTime?           @map("sent_at")
+  deliveredAt      DateTime?           @map("delivered_at")
+  createdAt        DateTime            @default(now()) @map("created_at")
+
+  guest Guest @relation(fields: [guestId], references: [id], onDelete: Cascade)
+
+  @@index([guestId])
+  @@index([type, status])
+  @@map("notification_logs")
+}
+
+model RsvpPageSettings {
+  id             String   @id @default(cuid())
+  weddingEventId String   @unique @map("wedding_event_id")
+
+  // Background
+  backgroundType    BackgroundType @default(COLOR) @map("background_type")
+  backgroundColor   String?        @map("background_color")
+  backgroundImage   String?        @db.Text @map("background_image")
+  backgroundOverlay Float?         @map("background_overlay")
+  backgroundBlur    Int?           @map("background_blur") // pixels
+
+  // Colors
+  primaryColor   String? @map("primary_color")
+  secondaryColor String? @map("secondary_color")
+  textColor      String? @map("text_color")
+  accentColor    String? @map("accent_color")
+
+  // Typography
+  fontFamily      String? @map("font_family")
+  titleFontFamily String? @map("title_font_family")
+  fontSize        String? @map("font_size") // sm, base, lg, xl
+
+  // Card/Container
+  cardStyle        CardStyle @default(ELEVATED) @map("card_style")
+  cardBackground   String?   @map("card_background")
+  cardBorderRadius Int?      @map("card_border_radius")
+  cardPadding      Int?      @map("card_padding") // pixels
+  cardMaxWidth     Int?      @map("card_max_width") // pixels
+  cardOpacity      Float?    @map("card_opacity") // 0-1
+  cardBlur         Int?      @map("card_blur") // pixels - backdrop blur for glass effect
+
+  // Layout
+  contentAlignment String? @map("content_alignment") // left, center, right
+  showEventDetails Boolean @default(true) @map("show_event_details")
+  showGoogleMaps   Boolean @default(true) @map("show_google_maps")
+  showWaze         Boolean @default(true) @map("show_waze")
+  showCalendar     Boolean @default(true) @map("show_calendar")
+  pageLocale       String  @default("he") @map("page_locale") // he or en
+
+  // Map URLs
+  googleMapsUrl    String? @map("google_maps_url")
+  wazeUrl          String? @map("waze_url")
+
+  // Custom Content
+  welcomeTitle    String?  @map("welcome_title")
+  welcomeMessage  String?  @db.Text @map("welcome_message")
+  thankYouMessage String?  @db.Text @map("thank_you_message")
+  declineMessage  String?  @db.Text @map("decline_message")
+
+  // Logo/Image
+  logoUrl        String? @map("logo_url")
+  coupleImageUrl String? @map("couple_image_url")
+
+  // Button Styles
+  buttonStyle       String? @map("button_style") // solid, outline, ghost
+  buttonColor       String? @map("button_color")
+  buttonTextColor   String? @map("button_text_color")
+  buttonBorderRadius Int?   @map("button_border_radius")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
+
+  weddingEvent WeddingEvent @relation(fields: [weddingEventId], references: [id], onDelete: Cascade)
+
+  @@map("rsvp_page_settings")
+}
+
+// ============ RSVP TEMPLATES ============
+
+model RsvpTemplate {
+  id          String  @id @default(cuid())
+  name        String
+  description String? @db.Text
+  previewUrl  String? @map("preview_url")
+  isSystem    Boolean @default(false) @map("is_system") // System templates vs user-created
+  ownerId     String? @map("owner_id") // null for system templates
+
+  // Background
+  backgroundType    BackgroundType @default(COLOR) @map("background_type")
+  backgroundColor   String?        @map("background_color")
+  backgroundImage   String?        @db.Text @map("background_image")
+  backgroundOverlay Float?         @map("background_overlay")
+  backgroundBlur    Int?           @map("background_blur")
+
+  // Colors
+  primaryColor   String? @map("primary_color")
+  secondaryColor String? @map("secondary_color")
+  textColor      String? @map("text_color")
+  accentColor    String? @map("accent_color")
+
+  // Typography
+  fontFamily      String? @map("font_family")
+  titleFontFamily String? @map("title_font_family")
+  fontSize        String? @map("font_size")
+
+  // Card/Container
+  cardStyle        CardStyle @default(ELEVATED) @map("card_style")
+  cardBackground   String?   @map("card_background")
+  cardBorderRadius Int?      @map("card_border_radius")
+  cardPadding      Int?      @map("card_padding")
+  cardMaxWidth     Int?      @map("card_max_width")
+  cardOpacity      Float?    @map("card_opacity")
+  cardBlur         Int?      @map("card_blur")
+
+  // Layout
+  contentAlignment String? @map("content_alignment")
+  showEventDetails Boolean @default(true) @map("show_event_details")
+  showGoogleMaps   Boolean @default(true) @map("show_google_maps")
+  showWaze         Boolean @default(true) @map("show_waze")
+  showCalendar     Boolean @default(true) @map("show_calendar")
+  pageLocale       String  @default("he") @map("page_locale") // he or en
+
+  // Custom Content (templates can have default content)
+  welcomeTitle    String?  @map("welcome_title")
+  welcomeMessage  String?  @db.Text @map("welcome_message")
+  thankYouMessage String?  @db.Text @map("thank_you_message")
+  declineMessage  String?  @db.Text @map("decline_message")
+
+  // Button Styles
+  buttonStyle       String? @map("button_style")
+  buttonColor       String? @map("button_color")
+  buttonTextColor   String? @map("button_text_color")
+  buttonBorderRadius Int?   @map("button_border_radius")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
+
+  owner User? @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  @@index([ownerId])
+  @@index([isSystem])
+  @@map("rsvp_templates")
 }

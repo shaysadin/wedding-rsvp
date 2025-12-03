@@ -2,53 +2,54 @@ import { UserRole } from "@prisma/client";
 
 import { SidebarNavItem } from "types";
 
+// Translation keys for sidebar - will be translated in the component
 export const sidebarLinks: SidebarNavItem[] = [
   {
-    title: "MENU",
+    titleKey: "common.menu",
+    title: "MENU", // Fallback
     items: [
       {
         href: "/admin",
         icon: "laptop",
+        titleKey: "navigation.admin",
         title: "Admin Panel",
-        authorizeOnly: UserRole.ADMIN,
-      },
-      { href: "/dashboard", icon: "dashboard", title: "Dashboard" },
-      {
-        href: "/dashboard/billing",
-        icon: "billing",
-        title: "Billing",
-        authorizeOnly: UserRole.USER,
-      },
-      { href: "/dashboard/charts", icon: "lineChart", title: "Charts" },
-      {
-        href: "/admin/orders",
-        icon: "package",
-        title: "Orders",
-        badge: 2,
-        authorizeOnly: UserRole.ADMIN,
+        authorizeOnly: UserRole.ROLE_PLATFORM_OWNER,
       },
       {
-        href: "#/dashboard/posts",
-        icon: "post",
-        title: "User Posts",
-        authorizeOnly: UserRole.USER,
-        disabled: true,
+        href: "/admin/users",
+        icon: "users",
+        titleKey: "navigation.users",
+        title: "Users",
+        authorizeOnly: UserRole.ROLE_PLATFORM_OWNER,
+      },
+      {
+        href: "/dashboard",
+        icon: "dashboard",
+        titleKey: "navigation.dashboard",
+        title: "Dashboard"
+      },
+      {
+        href: "/dashboard/events",
+        icon: "calendar",
+        titleKey: "navigation.events",
+        title: "Events",
+        authorizeOnly: UserRole.ROLE_WEDDING_OWNER,
+      },
+      {
+        href: "/dashboard/charts",
+        icon: "lineChart",
+        titleKey: "common.analytics",
+        title: "Analytics",
+        authorizeOnly: UserRole.ROLE_WEDDING_OWNER,
       },
     ],
   },
   {
+    titleKey: "common.options",
     title: "OPTIONS",
     items: [
-      { href: "/dashboard/settings", icon: "settings", title: "Settings" },
-      { href: "/", icon: "home", title: "Homepage" },
-      { href: "/docs", icon: "bookOpen", title: "Documentation" },
-      {
-        href: "#",
-        icon: "messages",
-        title: "Support",
-        authorizeOnly: UserRole.USER,
-        disabled: true,
-      },
+      { href: "/dashboard/settings", icon: "settings", titleKey: "navigation.settings", title: "Settings" },
+      { href: "/", icon: "home", titleKey: "common.homepage", title: "Homepage" },
     ],
   },
 ];

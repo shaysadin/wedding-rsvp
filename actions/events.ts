@@ -1,0 +1,230 @@
+"use server";
+
+import { revalidatePath } from "next/cache";
+import { UserRole, PlanTier } from "@prisma/client";
+
+import { prisma } from "@/lib/db";
+import { getCurrentUser } from "@/lib/session";
+import {
+  createEventSchema,
+  updateEventSchema,
+  type CreateEventInput,
+  type UpdateEventInput,
+} from "@/lib/validations/event";
+
+const PLAN_LIMITS: Record<PlanTier, number> = {
+  FREE: 1,
+  BASIC: 3,
+  PREMIUM: Infinity,
+};
+
+export async function createEvent(input: CreateEventInput) {
+  try {
+    const user = await getCurrentUser();
+
+    if (!user || user.role !== UserRole.ROLE_WEDDING_OWNER) {
+      return { error: "Unauthorized" };
+    }
+
+    const validatedData = createEventSchema.parse(input);
+
+    // Check plan limits
+    const eventCount = await prisma.weddingEvent.count({
+      where: { ownerId: user.id },
+    });
+
+    const limit = PLAN_LIMITS[user.plan];
+    if (eventCount >= limit) {
+      return {
+        error: `You have reached the limit of ${limit} event(s) for your plan. Please upgrade to create more events.`,
+      };
+    }
+
+    const event = await prisma.weddingEvent.create({
+      data: {
+        ...validatedData,
+        dateTime: new Date(validatedData.dateTime),
+        ownerId: user.id,
+      },
+    });
+
+    // Create default RSVP page settings
+    await prisma.rsvpPageSettings.create({
+      data: {
+        weddingEventId: event.id,
+      },
+    });
+
+    revalidatePath("/dashboard/events");
+
+    return { success: true, event };
+  } catch (error) {
+    console.error("Error creating event:", error);
+    return { error: "Failed to create event" };
+  }
+}
+
+export async function updateEvent(input: UpdateEventInput) {
+  try {
+    const user = await getCurrentUser();
+
+    if (!user || user.role !== UserRole.ROLE_WEDDING_OWNER) {
+      return { error: "Unauthorized" };
+    }
+
+    const validatedData = updateEventSchema.parse(input);
+    const { id, ...updateData } = validatedData;
+
+    // Verify ownership
+    const existingEvent = await prisma.weddingEvent.findFirst({
+      where: { id, ownerId: user.id },
+    });
+
+    if (!existingEvent) {
+      return { error: "Event not found" };
+    }
+
+    const event = await prisma.weddingEvent.update({
+      where: { id },
+      data: {
+        ...updateData,
+        dateTime: updateData.dateTime
+          ? new Date(updateData.dateTime)
+          : undefined,
+      },
+    });
+
+    revalidatePath("/dashboard/events");
+    revalidatePath(`/dashboard/events/${id}`);
+
+    return { success: true, event };
+  } catch (error) {
+    console.error("Error updating event:", error);
+    return { error: "Failed to update event" };
+  }
+}
+
+export async function deleteEvent(eventId: string) {
+  try {
+    const user = await getCurrentUser();
+
+    if (!user || user.role !== UserRole.ROLE_WEDDING_OWNER) {
+      return { error: "Unauthorized" };
+    }
+
+    // Verify ownership
+    const existingEvent = await prisma.weddingEvent.findFirst({
+      where: { id: eventId, ownerId: user.id },
+    });
+
+    if (!existingEvent) {
+      return { error: "Event not found" };
+    }
+
+    await prisma.weddingEvent.delete({
+      where: { id: eventId },
+    });
+
+    revalidatePath("/dashboard/events");
+
+    return { success: true };
+  } catch (error) {
+    console.error("Error deleting event:", error);
+    return { error: "Failed to delete event" };
+  }
+}
+
+export async function getEventById(eventId: string) {
+  try {
+    const user = await getCurrentUser();
+
+    if (!user || user.role !== UserRole.ROLE_WEDDING_OWNER) {
+      return { error: "Unauthorized" };
+    }
+
+    const event = await prisma.weddingEvent.findFirst({
+      where: { id: eventId, ownerId: user.id },
+      include: {
+        rsvpPageSettings: true,
+        guests: {
+          include: {
+            rsvp: true,
+            notificationLogs: {
+              orderBy: { createdAt: "desc" },
+              take: 1,
+            },
+          },
+        },
+        _count: {
+          select: { guests: true },
+        },
+      },
+    });
+
+    if (!event) {
+      return { error: "Event not found" };
+    }
+
+    return { success: true, event };
+  } catch (error) {
+    console.error("Error fetching event:", error);
+    return { error: "Failed to fetch event" };
+  }
+}
+
+export async function getUserEvents() {
+  try {
+    const user = await getCurrentUser();
+
+    if (!user || user.role !== UserRole.ROLE_WEDDING_OWNER) {
+      return { error: "Unauthorized" };
+    }
+
+    const events = await prisma.weddingEvent.findMany({
+      where: { ownerId: user.id },
+      include: {
+        _count: {
+          select: { guests: true },
+        },
+        guests: {
+          include: {
+            rsvp: true,
+          },
+        },
+      },
+      orderBy: { dateTime: "asc" },
+    });
+
+    // Calculate RSVP stats for each event
+    const eventsWithStats = events.map((event) => {
+      const stats = {
+        total: event.guests.length,
+        pending: 0,
+        accepted: 0,
+        declined: 0,
+        totalGuestCount: 0,
+      };
+
+      event.guests.forEach((guest) => {
+        if (!guest.rsvp || guest.rsvp.status === "PENDING") {
+          stats.pending++;
+        } else if (guest.rsvp.status === "ACCEPTED") {
+          stats.accepted++;
+          stats.totalGuestCount += guest.rsvp.guestCount;
+        } else {
+          stats.declined++;
+        }
+      });
+
+      return {
+        ...event,
+        stats,
+      };
+    });
+
+    return { success: true, events: eventsWithStats };
+  } catch (error) {
+    console.error("Error fetching events:", error);
+    return { error: "Failed to fetch events" };
+  }
+}

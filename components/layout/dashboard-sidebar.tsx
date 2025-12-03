@@ -3,6 +3,7 @@
 import { Fragment, useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { NavItem, SidebarNavItem } from "@/types";
 import { Menu, PanelLeftClose, PanelRightClose } from "lucide-react";
 
@@ -27,27 +28,43 @@ interface DashboardSidebarProps {
   links: SidebarNavItem[];
 }
 
+// Helper to get translated title
+function useTranslatedTitle(titleKey?: string, fallback?: string) {
+  const t = useTranslations();
+  if (!titleKey) return fallback || "";
+  try {
+    // Split the key by '.' for nested translations
+    const parts = titleKey.split(".");
+    if (parts.length === 2) {
+      return t(`${parts[0]}.${parts[1]}` as any) || fallback;
+    }
+    return fallback || "";
+  } catch {
+    return fallback || "";
+  }
+}
+
 export function DashboardSidebar({ links }: DashboardSidebarProps) {
   const path = usePathname();
+  const t = useTranslations();
 
-  // NOTE: Use this if you want save in local storage -- Credits: Hosna Qasmei
-  //
-  // const [isSidebarExpanded, setIsSidebarExpanded] = useState(() => {
-  //   if (typeof window !== "undefined") {
-  //     const saved = window.localStorage.getItem("sidebarExpanded");
-  //     return saved !== null ? JSON.parse(saved) : true;
-  //   }
-  //   return true;
-  // });
+  // Extract locale from path
+  const locale = path?.split("/")[1] || "he";
+  const isRTL = locale === "he";
 
-  // useEffect(() => {
-  //   if (typeof window !== "undefined") {
-  //     window.localStorage.setItem(
-  //       "sidebarExpanded",
-  //       JSON.stringify(isSidebarExpanded),
-  //     );
-  //   }
-  // }, [isSidebarExpanded]);
+  // Helper function for translations
+  const getTitle = (titleKey?: string, fallback?: string) => {
+    if (!titleKey) return fallback || "";
+    try {
+      const parts = titleKey.split(".");
+      if (parts.length === 2) {
+        return t(`${parts[0]}.${parts[1]}` as any) || fallback;
+      }
+      return fallback || "";
+    } catch {
+      return fallback || "";
+    }
+  };
 
   const { isTablet } = useMediaQuery();
   const [isSidebarExpanded, setIsSidebarExpanded] = useState(!isTablet);
@@ -63,7 +80,7 @@ export function DashboardSidebar({ links }: DashboardSidebarProps) {
   return (
     <TooltipProvider delayDuration={0}>
       <div className="sticky top-0 h-full">
-        <ScrollArea className="h-full overflow-y-auto border-r">
+        <ScrollArea className="h-full overflow-y-auto border-s">
           <aside
             className={cn(
               isSidebarExpanded ? "w-[220px] xl:w-[260px]" : "w-[68px]",
@@ -71,24 +88,27 @@ export function DashboardSidebar({ links }: DashboardSidebarProps) {
             )}
           >
             <div className="flex h-full max-h-screen flex-1 flex-col gap-2">
-              <div className="flex h-14 items-center p-4 lg:h-[60px]">
+              <div className={cn(
+                "flex h-14 items-center p-4 lg:h-[60px]",
+                isRTL && "flex-row-reverse"
+              )}>
                 {isSidebarExpanded ? <ProjectSwitcher /> : null}
 
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="ml-auto size-9 lg:size-8"
+                  className={cn("size-9 lg:size-8", isRTL ? "me-auto" : "ms-auto")}
                   onClick={toggleSidebar}
                 >
                   {isSidebarExpanded ? (
                     <PanelLeftClose
                       size={18}
-                      className="stroke-muted-foreground"
+                      className="stroke-muted-foreground rtl:rotate-180"
                     />
                   ) : (
                     <PanelRightClose
                       size={18}
-                      className="stroke-muted-foreground"
+                      className="stroke-muted-foreground rtl:rotate-180"
                     />
                   )}
                   <span className="sr-only">Toggle Sidebar</span>
@@ -102,14 +122,15 @@ export function DashboardSidebar({ links }: DashboardSidebarProps) {
                     className="flex flex-col gap-0.5"
                   >
                     {isSidebarExpanded ? (
-                      <p className="text-xs text-muted-foreground">
-                        {section.title}
+                      <p className={cn("text-xs text-muted-foreground", isRTL && "text-right")}>
+                        {getTitle(section.titleKey, section.title)}
                       </p>
                     ) : (
                       <div className="h-4" />
                     )}
                     {section.items.map((item) => {
                       const Icon = Icons[item.icon || "arrowRight"];
+                      const itemTitle = getTitle(item.titleKey, item.title);
                       return (
                         item.href && (
                           <Fragment key={`link-fragment-${item.title}`}>
@@ -119,6 +140,7 @@ export function DashboardSidebar({ links }: DashboardSidebarProps) {
                                 href={item.disabled ? "#" : item.href}
                                 className={cn(
                                   "flex items-center gap-3 rounded-md p-2 text-sm font-medium hover:bg-muted",
+                                  isRTL && "flex-row-reverse text-right",
                                   path === item.href
                                     ? "bg-muted"
                                     : "text-muted-foreground hover:text-accent-foreground",
@@ -126,10 +148,10 @@ export function DashboardSidebar({ links }: DashboardSidebarProps) {
                                     "cursor-not-allowed opacity-80 hover:bg-transparent hover:text-muted-foreground",
                                 )}
                               >
-                                <Icon className="size-5" />
-                                {item.title}
+                                <Icon className="size-5 shrink-0" />
+                                {itemTitle}
                                 {item.badge && (
-                                  <Badge className="ml-auto flex size-5 shrink-0 items-center justify-center rounded-full">
+                                  <Badge className="me-auto flex size-5 shrink-0 items-center justify-center rounded-full">
                                     {item.badge}
                                   </Badge>
                                 )}
@@ -154,8 +176,8 @@ export function DashboardSidebar({ links }: DashboardSidebarProps) {
                                     </span>
                                   </Link>
                                 </TooltipTrigger>
-                                <TooltipContent side="right">
-                                  {item.title}
+                                <TooltipContent side={isRTL ? "left" : "right"}>
+                                  {itemTitle}
                                 </TooltipContent>
                               </Tooltip>
                             )}
@@ -182,6 +204,25 @@ export function MobileSheetSidebar({ links }: DashboardSidebarProps) {
   const path = usePathname();
   const [open, setOpen] = useState(false);
   const { isSm, isMobile } = useMediaQuery();
+  const t = useTranslations();
+
+  // Extract locale from path
+  const locale = path?.split("/")[1] || "he";
+  const isRTL = locale === "he";
+
+  // Helper function for translations
+  const getTitle = (titleKey?: string, fallback?: string) => {
+    if (!titleKey) return fallback || "";
+    try {
+      const parts = titleKey.split(".");
+      if (parts.length === 2) {
+        return t(`${parts[0]}.${parts[1]}` as any) || fallback;
+      }
+      return fallback || "";
+    } catch {
+      return fallback || "";
+    }
+  };
 
   if (isSm || isMobile) {
     return (
@@ -193,20 +234,23 @@ export function MobileSheetSidebar({ links }: DashboardSidebarProps) {
             className="size-9 shrink-0 md:hidden"
           >
             <Menu className="size-5" />
-            <span className="sr-only">Toggle navigation menu</span>
+            <span className="sr-only">{t("common.menu")}</span>
           </Button>
         </SheetTrigger>
-        <SheetContent side="left" className="flex flex-col p-0">
+        <SheetContent side={isRTL ? "right" : "left"} className="flex flex-col p-0">
           <ScrollArea className="h-full overflow-y-auto">
             <div className="flex h-screen flex-col">
               <nav className="flex flex-1 flex-col gap-y-8 p-6 text-lg font-medium">
                 <Link
                   href="#"
-                  className="flex items-center gap-2 text-lg font-semibold"
+                  className={cn(
+                    "flex items-center gap-2 text-lg font-semibold",
+                    isRTL && "flex-row-reverse"
+                  )}
                 >
                   <Icons.logo className="size-6" />
                   <span className="font-urban text-xl font-bold">
-                    {siteConfig.name}
+                    {t("common.appName")}
                   </span>
                 </Link>
 
@@ -217,12 +261,13 @@ export function MobileSheetSidebar({ links }: DashboardSidebarProps) {
                     key={section.title}
                     className="flex flex-col gap-0.5"
                   >
-                    <p className="text-xs text-muted-foreground">
-                      {section.title}
+                    <p className={cn("text-xs text-muted-foreground", isRTL && "text-right")}>
+                      {getTitle(section.titleKey, section.title)}
                     </p>
 
                     {section.items.map((item) => {
                       const Icon = Icons[item.icon || "arrowRight"];
+                      const itemTitle = getTitle(item.titleKey, item.title);
                       return (
                         item.href && (
                           <Fragment key={`link-fragment-${item.title}`}>
@@ -234,6 +279,7 @@ export function MobileSheetSidebar({ links }: DashboardSidebarProps) {
                               href={item.disabled ? "#" : item.href}
                               className={cn(
                                 "flex items-center gap-3 rounded-md p-2 text-sm font-medium hover:bg-muted",
+                                isRTL && "flex-row-reverse text-right",
                                 path === item.href
                                   ? "bg-muted"
                                   : "text-muted-foreground hover:text-accent-foreground",
@@ -241,10 +287,10 @@ export function MobileSheetSidebar({ links }: DashboardSidebarProps) {
                                   "cursor-not-allowed opacity-80 hover:bg-transparent hover:text-muted-foreground",
                               )}
                             >
-                              <Icon className="size-5" />
-                              {item.title}
+                              <Icon className="size-5 shrink-0" />
+                              {itemTitle}
                               {item.badge && (
-                                <Badge className="ml-auto flex size-5 shrink-0 items-center justify-center rounded-full">
+                                <Badge className="me-auto flex size-5 shrink-0 items-center justify-center rounded-full">
                                   {item.badge}
                                 </Badge>
                               )}

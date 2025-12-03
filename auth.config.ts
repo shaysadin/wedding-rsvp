@@ -11,10 +11,12 @@ export default {
       clientId: env.GOOGLE_CLIENT_ID,
       clientSecret: env.GOOGLE_CLIENT_SECRET,
     }),
+    // Always use Resend provider - it handles token storage via the adapter
+    // Our custom sendVerificationRequest logs the link AND sends email if configured
     Resend({
-      apiKey: env.RESEND_API_KEY,
-      from: env.EMAIL_FROM,
-      // sendVerificationRequest,
+      apiKey: env.RESEND_API_KEY || "re_dummy_key_for_development",
+      from: env.EMAIL_FROM || "onboarding@resend.dev",
+      sendVerificationRequest,
     }),
   ],
 } satisfies NextAuthConfig;

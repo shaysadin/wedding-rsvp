@@ -1,7 +1,8 @@
 "use client";
 
 import * as React from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, usePathname } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { signIn } from "next-auth/react";
 import { useForm } from "react-hook-form";
@@ -22,6 +23,7 @@ interface UserAuthFormProps extends React.HTMLAttributes<HTMLDivElement> {
 type FormData = z.infer<typeof userAuthSchema>;
 
 export function UserAuthForm({ className, type, ...props }: UserAuthFormProps) {
+  const t = useTranslations();
   const {
     register,
     handleSubmit,
@@ -32,26 +34,33 @@ export function UserAuthForm({ className, type, ...props }: UserAuthFormProps) {
   const [isLoading, setIsLoading] = React.useState<boolean>(false);
   const [isGoogleLoading, setIsGoogleLoading] = React.useState<boolean>(false);
   const searchParams = useSearchParams();
+  const pathname = usePathname();
+
+  // Extract locale from current path (e.g., /en/login -> en)
+  const locale = pathname?.split("/")[1] || "he";
+  const defaultCallbackUrl = `/${locale}/dashboard`;
 
   async function onSubmit(data: FormData) {
     setIsLoading(true);
 
+    const callbackUrl = searchParams?.get("from") || defaultCallbackUrl;
+
     const signInResult = await signIn("resend", {
       email: data.email.toLowerCase(),
       redirect: false,
-      callbackUrl: searchParams?.get("from") || "/dashboard",
+      callbackUrl,
     });
 
     setIsLoading(false);
 
     if (!signInResult?.ok) {
-      return toast.error("Something went wrong.", {
-        description: "Your sign in request failed. Please try again."
+      return toast.error(t("auth.errorTitle"), {
+        description: t("auth.errorDescription")
       });
     }
 
-    return toast.success("Check your email", {
-      description: "We sent you a login link. Be sure to check your spam too.",
+    return toast.success(t("auth.checkEmail"), {
+      description: t("auth.checkEmailDescription"),
     });
   }
 
@@ -61,11 +70,11 @@ export function UserAuthForm({ className, type, ...props }: UserAuthFormProps) {
         <div className="grid gap-2">
           <div className="grid gap-1">
             <Label className="sr-only" htmlFor="email">
-              Email
+              {t("auth.email")}
             </Label>
             <Input
               id="email"
-              placeholder="name@example.com"
+              placeholder={t("auth.emailPlaceholder")}
               type="email"
               autoCapitalize="none"
               autoComplete="email"
@@ -81,9 +90,9 @@ export function UserAuthForm({ className, type, ...props }: UserAuthFormProps) {
           </div>
           <button className={cn(buttonVariants())} disabled={isLoading}>
             {isLoading && (
-              <Icons.spinner className="mr-2 size-4 animate-spin" />
+              <Icons.spinner className="me-2 size-4 animate-spin" />
             )}
-            {type === "register" ? "Sign Up with Email" : "Sign In with Email"}
+            {type === "register" ? t("auth.signUpWithEmail") : t("auth.signInWithEmail")}
           </button>
         </div>
       </form>
@@ -93,7 +102,7 @@ export function UserAuthForm({ className, type, ...props }: UserAuthFormProps) {
         </div>
         <div className="relative flex justify-center text-xs uppercase">
           <span className="bg-background px-2 text-muted-foreground">
-            Or continue with
+            {t("common.orContinueWith")}
           </span>
         </div>
       </div>
@@ -102,14 +111,15 @@ export function UserAuthForm({ className, type, ...props }: UserAuthFormProps) {
         className={cn(buttonVariants({ variant: "outline" }))}
         onClick={() => {
           setIsGoogleLoading(true);
-          signIn("google");
+          const callbackUrl = searchParams?.get("from") || defaultCallbackUrl;
+          signIn("google", { callbackUrl });
         }}
         disabled={isLoading || isGoogleLoading}
       >
         {isGoogleLoading ? (
-          <Icons.spinner className="mr-2 size-4 animate-spin" />
+          <Icons.spinner className="me-2 size-4 animate-spin" />
         ) : (
-          <Icons.google className="mr-2 size-4" />
+          <Icons.google className="me-2 size-4" />
         )}{" "}
         Google
       </button>
