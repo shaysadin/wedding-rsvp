@@ -1,53 +1,120 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { UserRole, BackgroundType, CardStyle } from "@prisma/client";
+import { UserRole, BackgroundType, CardStyle, DateDisplayStyle, Prisma } from "@prisma/client";
 
 import { prisma } from "@/lib/db";
 import { getCurrentUser } from "@/lib/session";
 
 export interface RsvpPageSettingsInput {
   eventId: string;
+  // Mode
+  advancedMode?: boolean | null;
   // Background
-  backgroundType?: BackgroundType;
-  backgroundColor?: string;
-  backgroundImage?: string;
-  backgroundOverlay?: number;
-  backgroundBlur?: number;
-  // Colors
-  primaryColor?: string;
-  secondaryColor?: string;
-  textColor?: string;
-  accentColor?: string;
-  // Typography
-  fontFamily?: string;
-  titleFontFamily?: string;
-  fontSize?: string;
-  // Card
-  cardStyle?: CardStyle;
-  cardBackground?: string;
-  cardBorderRadius?: number;
-  cardPadding?: number;
-  cardMaxWidth?: number;
-  cardOpacity?: number;
-  // Layout
-  contentAlignment?: string;
-  showEventDetails?: boolean;
-  showGoogleMaps?: boolean;
-  showCalendar?: boolean;
+  backgroundType?: BackgroundType | null;
+  backgroundColor?: string | null;
+  backgroundImage?: string | null;
+  backgroundOverlay?: number | null;
+  backgroundBlur?: number | null;
+  // Colors (Simple)
+  primaryColor?: string | null;
+  secondaryColor?: string | null;
+  accentColor?: string | null;
+  // Card (Simple)
+  cardStyle?: CardStyle | null;
+  cardOpacity?: number | null;
+  cardBlur?: number | null;
+  // Typography (Simple)
+  fontFamily?: string | null;
+  // Date Display (Simple)
+  dateDisplayStyle?: DateDisplayStyle | null;
+  showCountdown?: boolean | null;
+  // Visibility (Simple)
+  showGoogleMaps?: boolean | null;
+  showWaze?: boolean | null;
+  // URLs
+  googleMapsUrl?: string | null;
+  wazeUrl?: string | null;
   // Content
-  welcomeTitle?: string;
-  welcomeMessage?: string;
-  thankYouMessage?: string;
-  declineMessage?: string;
-  // Images
-  logoUrl?: string;
-  coupleImageUrl?: string;
-  // Button
-  buttonStyle?: string;
-  buttonColor?: string;
-  buttonTextColor?: string;
-  buttonBorderRadius?: number;
+  welcomeTitle?: string | null;
+  welcomeMessage?: string | null;
+  thankYouMessage?: string | null;
+  declineMessage?: string | null;
+  // Locale
+  pageLocale?: string | null;
+  // ============ ADVANCED MODE FIELDS ============
+  // Card (Advanced)
+  cardBackground?: string | null;
+  cardBorderRadius?: number | null;
+  cardPadding?: number | null;
+  cardMaxWidth?: number | null;
+  textColor?: string | null;
+  // Button (Advanced)
+  buttonStyle?: string | null;
+  buttonColor?: string | null;
+  buttonTextColor?: string | null;
+  buttonBorderRadius?: number | null;
+  buttonBorderColor?: string | null;
+  buttonShadow?: boolean | null;
+  buttonSize?: string | null;
+  // Input (Advanced)
+  inputBackgroundColor?: string | null;
+  inputTextColor?: string | null;
+  inputBorderColor?: string | null;
+  // Text Colors (Advanced)
+  subtitleTextColor?: string | null;
+  labelTextColor?: string | null;
+  // Guest Counter (Advanced)
+  guestCounterBackground?: string | null;
+  guestCounterTextColor?: string | null;
+  guestCounterAccent?: string | null;
+  // Font Sizes (Advanced)
+  titleFontSize?: number | null;
+  subtitleFontSize?: number | null;
+  labelFontSize?: number | null;
+  buttonFontSize?: number | null;
+  // Date Card (Advanced)
+  dateCardBackground?: string | null;
+  dateCardTextColor?: string | null;
+  dateCardAccentColor?: string | null;
+  dateCardBorderRadius?: number | null;
+  dateCardBackgroundImage?: string | null;
+  dateCardOverlay?: number | null;
+  dateCardBlur?: number | null;
+  dateCardPadding?: number | null;
+  dateCardShadow?: boolean | null;
+  dateDayFontSize?: number | null;
+  dateMonthFontSize?: number | null;
+  dateYearFontSize?: number | null;
+  // Time Section (Advanced)
+  showTimeSection?: boolean | null;
+  timeSectionBackground?: string | null;
+  timeSectionTextColor?: string | null;
+  timeSectionBorderRadius?: number | null;
+  timeFontSize?: number | null;
+  // Address Section (Advanced)
+  showAddressSection?: boolean | null;
+  addressSectionBackground?: string | null;
+  addressSectionTextColor?: string | null;
+  addressSectionBorderRadius?: number | null;
+  addressFontSize?: number | null;
+  // Countdown Section (Advanced)
+  countdownSectionBackground?: string | null;
+  countdownSectionTextColor?: string | null;
+  countdownSectionBorderRadius?: number | null;
+  countdownBoxBackground?: string | null;
+  countdownBoxTextColor?: string | null;
+  countdownLabelColor?: string | null;
+  countdownNumberFontSize?: number | null;
+  // Question Section (Advanced)
+  questionSectionBackground?: string | null;
+  questionSectionBorderRadius?: number | null;
+  questionTextColor?: string | null;
+  questionFontSize?: number | null;
+  acceptButtonColor?: string | null;
+  acceptButtonTextColor?: string | null;
+  declineButtonColor?: string | null;
+  declineButtonTextColor?: string | null;
 }
 
 export async function updateRsvpPageSettings(input: RsvpPageSettingsInput) {
@@ -70,18 +137,28 @@ export async function updateRsvpPageSettings(input: RsvpPageSettingsInput) {
       return { error: "Event not found" };
     }
 
+    // Fields that should never be updated directly
+    const excludedFields = ['id', 'weddingEventId', 'createdAt', 'updatedAt'];
+
+    // Convert null values to undefined and filter out excluded fields for Prisma compatibility
+    const cleanedData = Object.fromEntries(
+      Object.entries(settingsData).filter(
+        ([key, v]) => v !== null && !excludedFields.includes(key)
+      )
+    ) as Prisma.RsvpPageSettingsUpdateInput;
+
     let settings;
     if (event.rsvpPageSettings) {
       settings = await prisma.rsvpPageSettings.update({
         where: { id: event.rsvpPageSettings.id },
-        data: settingsData,
+        data: cleanedData,
       });
     } else {
       settings = await prisma.rsvpPageSettings.create({
         data: {
           weddingEventId: eventId,
-          ...settingsData,
-        },
+          ...cleanedData,
+        } as Prisma.RsvpPageSettingsCreateInput,
       });
     }
 
@@ -126,39 +203,43 @@ export interface RsvpTemplateInput {
   name: string;
   description?: string;
   previewUrl?: string;
+  // Mode
+  advancedMode?: boolean;
   // Background
   backgroundType?: BackgroundType;
   backgroundColor?: string;
   backgroundImage?: string;
   backgroundOverlay?: number;
   backgroundBlur?: number;
-  // Colors
+  // Colors (Simple)
   primaryColor?: string;
   secondaryColor?: string;
-  textColor?: string;
   accentColor?: string;
-  // Typography
-  fontFamily?: string;
-  titleFontFamily?: string;
-  fontSize?: string;
-  // Card
+  // Card (Simple)
   cardStyle?: CardStyle;
-  cardBackground?: string;
-  cardBorderRadius?: number;
-  cardPadding?: number;
-  cardMaxWidth?: number;
   cardOpacity?: number;
-  // Layout
-  contentAlignment?: string;
-  showEventDetails?: boolean;
+  cardBlur?: number;
+  // Typography (Simple)
+  fontFamily?: string;
+  // Date Display (Simple)
+  dateDisplayStyle?: DateDisplayStyle;
+  showCountdown?: boolean;
+  // Visibility (Simple)
   showGoogleMaps?: boolean;
-  showCalendar?: boolean;
+  showWaze?: boolean;
   // Content
   welcomeTitle?: string;
   welcomeMessage?: string;
   thankYouMessage?: string;
   declineMessage?: string;
-  // Button
+  // Locale
+  pageLocale?: string;
+  // Advanced Fields
+  cardBackground?: string;
+  cardBorderRadius?: number;
+  cardPadding?: number;
+  cardMaxWidth?: number;
+  textColor?: string;
   buttonStyle?: string;
   buttonColor?: string;
   buttonTextColor?: string;
@@ -388,7 +469,8 @@ export async function applyTemplateToEvent(eventId: string, templateId: string) 
 export async function saveSettingsAsTemplate(
   eventId: string,
   templateName: string,
-  templateDescription?: string
+  templateDescription?: string,
+  isGlobal: boolean = false
 ) {
   try {
     const user = await getCurrentUser();
@@ -407,12 +489,15 @@ export async function saveSettingsAsTemplate(
       return { error: "Event settings not found" };
     }
 
-    // Extract settings (exclude id, weddingEventId, timestamps)
+    // Extract settings (exclude id, weddingEventId, timestamps, and fields not in template model)
     const {
       id: _id,
       weddingEventId: _eventId,
       createdAt: _createdAt,
       updatedAt: _updatedAt,
+      // These fields exist in RsvpPageSettings but NOT in RsvpTemplate
+      googleMapsUrl: _googleMapsUrl,
+      wazeUrl: _wazeUrl,
       ...settingsData
     } = event.rsvpPageSettings;
 
@@ -421,8 +506,8 @@ export async function saveSettingsAsTemplate(
       data: {
         name: templateName,
         description: templateDescription,
-        ownerId: user.id,
-        isSystem: false,
+        ownerId: isGlobal ? null : user.id,
+        isSystem: isGlobal,
         ...settingsData,
       },
     });

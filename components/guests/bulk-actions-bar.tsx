@@ -30,7 +30,7 @@ export function BulkActionsBar({ eventId, pendingCount }: BulkActionsBarProps) {
         return;
       }
 
-      if (result.sent === 0) {
+      if (!result.sent || result.sent === 0) {
         toast.info(t("noInvitesToSend"));
       } else {
         toast.success(t("sentInvites", { count: result.sent }));
@@ -58,7 +58,7 @@ export function BulkActionsBar({ eventId, pendingCount }: BulkActionsBarProps) {
         return;
       }
 
-      if (result.sent === 0) {
+      if (!result.sent || result.sent === 0) {
         toast.info(t("noPendingToRemind"));
       } else {
         toast.success(t("sentReminders", { count: result.sent }));

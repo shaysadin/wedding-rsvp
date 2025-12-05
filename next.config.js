@@ -8,7 +8,6 @@ const withNextIntl = createNextIntlPlugin("./lib/i18n/request.ts");
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  swcMinify: true,
   images: {
     remotePatterns: [
       {
@@ -27,10 +26,18 @@ const nextConfig = {
         protocol: "https",
         hostname: "images.unsplash.com",
       },
+      {
+        protocol: "https",
+        hostname: "res.cloudinary.com",
+      },
     ],
   },
+  serverExternalPackages: ["@prisma/client"],
+  // Increase server action body size limit to 8MB for image uploads (base64 encoding adds ~33% overhead)
   experimental: {
-    serverComponentsExternalPackages: ["@prisma/client"],
+    serverActions: {
+      bodySizeLimit: "8mb",
+    },
   },
 };
 

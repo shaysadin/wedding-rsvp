@@ -7,10 +7,11 @@ import { DashboardHeader } from "@/components/dashboard/header";
 import { RsvpCustomizer } from "@/components/rsvp/rsvp-customizer";
 
 interface CustomizePageProps {
-  params: { eventId: string };
+  params: Promise<{ eventId: string }>;
 }
 
 export default async function CustomizePage({ params }: CustomizePageProps) {
+  const { eventId } = await params;
   const user = await getCurrentUser();
   const locale = await getLocale();
   const t = await getTranslations("rsvpSettings");
@@ -19,7 +20,7 @@ export default async function CustomizePage({ params }: CustomizePageProps) {
     redirect(`/${locale}/login`);
   }
 
-  const settingsResult = await getRsvpPageSettings(params.eventId);
+  const settingsResult = await getRsvpPageSettings(eventId);
   const templatesResult = await getTemplates();
 
   if (settingsResult.error || !settingsResult.event) {
@@ -31,12 +32,12 @@ export default async function CustomizePage({ params }: CustomizePageProps) {
 
   return (
     <>
-      <DashboardHeader
+      {/* <DashboardHeader
         heading={t("title")}
         text={event.title}
-      />
+      /> */}
       <RsvpCustomizer
-        eventId={params.eventId}
+        eventId={eventId}
         event={event}
         initialSettings={settings}
         templates={templates}

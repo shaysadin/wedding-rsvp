@@ -23,6 +23,13 @@ export const sidebarLinks: SidebarNavItem[] = [
         authorizeOnly: UserRole.ROLE_PLATFORM_OWNER,
       },
       {
+        href: "/admin/messaging",
+        icon: "messageSquare",
+        titleKey: "navigation.messaging",
+        title: "Messaging",
+        authorizeOnly: UserRole.ROLE_PLATFORM_OWNER,
+      },
+      {
         href: "/dashboard",
         icon: "dashboard",
         titleKey: "navigation.dashboard",

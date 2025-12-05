@@ -113,7 +113,7 @@ export function ImportGuestsDialog({ eventId }: ImportGuestsDialogProps) {
         return;
       }
 
-      toast.success(t("importedSuccess", { count: result.imported }));
+      toast.success(t("importedSuccess", { count: result.imported ?? 0 }));
       setParsedGuests([]);
       setFileName("");
       setOpen(false);

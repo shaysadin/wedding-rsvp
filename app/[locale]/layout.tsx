@@ -16,7 +16,7 @@ import { TailwindIndicator } from "@/components/tailwind-indicator";
 
 interface LocaleLayoutProps {
   children: React.ReactNode;
-  params: { locale: string };
+  params: Promise<{ locale: string }>;
 }
 
 export const metadata = constructMetadata();
@@ -27,8 +27,10 @@ export function generateStaticParams() {
 
 export default async function LocaleLayout({
   children,
-  params: { locale },
+  params,
 }: LocaleLayoutProps) {
+  const { locale } = await params;
+
   // Validate the locale
   if (!locales.includes(locale as Locale)) {
     notFound();

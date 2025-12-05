@@ -28,6 +28,50 @@ export const {
     error: "/he/login",
   },
   callbacks: {
+    async signIn({ user, account }) {
+      // Allow OAuth sign-in and link to existing accounts with same email
+      if (account?.provider === "google" && user.email) {
+        const existingUser = await prisma.user.findUnique({
+          where: { email: user.email },
+          include: { accounts: true },
+        });
+
+        if (existingUser) {
+          // Check if this OAuth account is already linked
+          const existingAccount = existingUser.accounts.find(
+            (acc) => acc.provider === account.provider && acc.providerAccountId === account.providerAccountId
+          );
+
+          if (!existingAccount) {
+            // Link the OAuth account to the existing user
+            await prisma.account.create({
+              data: {
+                userId: existingUser.id,
+                type: account.type,
+                provider: account.provider,
+                providerAccountId: account.providerAccountId,
+                access_token: account.access_token,
+                expires_at: account.expires_at,
+                token_type: account.token_type,
+                scope: account.scope,
+                id_token: account.id_token,
+              },
+            });
+          }
+
+          // Update user image from Google if not set
+          if (!existingUser.image && user.image) {
+            await prisma.user.update({
+              where: { id: existingUser.id },
+              data: { image: user.image },
+            });
+          }
+        }
+      }
+
+      return true;
+    },
+
     async session({ token, session }) {
       if (session.user) {
         if (token.sub) {
