@@ -33,10 +33,12 @@ export function RsvpPageWrapper({ settings, children }: RsvpPageWrapperProps) {
     if (settings.backgroundType === "COLOR" && settings.backgroundColor) {
       backgroundStyle.backgroundColor = settings.backgroundColor;
     } else if (settings.backgroundType === "IMAGE" && settings.backgroundImage) {
+      // Note: backgroundAttachment: "fixed" is buggy on mobile (iOS Safari)
+      // We use a fixed positioned div instead for consistent behavior
       backgroundStyle.backgroundImage = `url(${settings.backgroundImage})`;
       backgroundStyle.backgroundSize = "cover";
       backgroundStyle.backgroundPosition = "center";
-      backgroundStyle.backgroundAttachment = "fixed";
+      backgroundStyle.backgroundRepeat = "no-repeat";
     } else if (settings.backgroundType === "GRADIENT") {
       const primary = settings.primaryColor || "#f0f0f0";
       const secondary = settings.secondaryColor || "#ffffff";
@@ -85,43 +87,55 @@ export function RsvpPageWrapper({ settings, children }: RsvpPageWrapperProps) {
     if (settings.fontFamily) {
       cardStyle.fontFamily = settings.fontFamily;
     }
+
+    // Border settings
+    if (settings.cardBorderWidth && settings.cardBorderWidth > 0) {
+      cardStyle.borderWidth = `${settings.cardBorderWidth}px`;
+      cardStyle.borderStyle = "solid";
+      cardStyle.borderColor = settings.cardBorderColor || "#e5e7eb";
+    }
   }
 
-  const maxWidth = settings?.cardMaxWidth ? `${settings.cardMaxWidth}px` : "28rem"; // Default max-w-md is 28rem
+  const maxWidth = settings?.cardMaxWidth ? `${settings.cardMaxWidth}px` : "600px";
+  const showShadow = settings?.cardShadow !== false;
 
   return (
-    <div className="relative min-h-screen w-full overflow-hidden">
-      {/* Background Layer */}
+    <div className="relative min-h-screen min-h-[100dvh] w-full">
+      {/* Background Layer - fixed position for mobile compatibility */}
       <div
-        className="fixed inset-0 -z-20"
-        style={backgroundStyle}
+        className="fixed inset-0 -z-20 h-screen h-[100dvh] w-screen"
+        style={{
+          ...backgroundStyle,
+          // Ensure image fills viewport on all devices
+          minHeight: '100vh',
+          minWidth: '100vw',
+        }}
+        aria-hidden="true"
       />
 
       {/* Overlay for background images */}
       {settings?.backgroundType === "IMAGE" && settings.backgroundOverlay && settings.backgroundOverlay > 0 && (
         <div
-          className="fixed inset-0 -z-10"
+          className="fixed inset-0 -z-10 h-screen h-[100dvh] w-screen"
           style={overlayStyle}
+          aria-hidden="true"
         />
       )}
 
       {/* Content */}
       <div
-        className={cn(
-          "relative flex min-h-screen items-center justify-center p-4",
-          settings?.contentAlignment === "left" && "justify-start",
-          settings?.contentAlignment === "right" && "justify-end"
-        )}
+        className="relative flex min-h-screen min-h-[100dvh] items-center justify-center p-4 py-8"
       >
         <div
           className={cn(
             "w-full rounded-xl bg-white p-6 dark:bg-gray-900",
-            settings?.cardStyle ? cardStyles[settings.cardStyle] : cardStyles.ELEVATED,
-            settings?.fontSize ? fontSizeClasses[settings.fontSize] : ""
+            settings?.cardStyle ? cardStyles[settings.cardStyle] : cardStyles.GLASS,
+            showShadow && "shadow-xl"
           )}
           style={{
             ...cardStyle,
             maxWidth,
+            boxShadow: showShadow ? undefined : "none",
           }}
         >
           {children}
@@ -177,9 +191,16 @@ export function RsvpPagePreview({
     if (settings.fontFamily) {
       cardStyle.fontFamily = settings.fontFamily;
     }
+    // Border settings
+    if (settings.cardBorderWidth && settings.cardBorderWidth > 0) {
+      cardStyle.borderWidth = `${settings.cardBorderWidth}px`;
+      cardStyle.borderStyle = "solid";
+      cardStyle.borderColor = settings.cardBorderColor || "#e5e7eb";
+    }
   }
 
-  const maxWidth = settings?.cardMaxWidth ? `${settings.cardMaxWidth}px` : "28rem";
+  const maxWidth = settings?.cardMaxWidth ? `${settings.cardMaxWidth}px` : "600px";
+  const showShadow = settings?.cardShadow !== false;
 
   return (
     <div
@@ -196,21 +217,18 @@ export function RsvpPagePreview({
           <div className="absolute inset-0" style={overlayStyle} />
         )}
         <div
-          className={cn(
-            "relative flex min-h-[600px] items-center justify-center p-4",
-            settings?.contentAlignment === "left" && "justify-start",
-            settings?.contentAlignment === "right" && "justify-end"
-          )}
+          className="relative flex min-h-[600px] items-center justify-center p-4"
         >
           <div
             className={cn(
               "w-full rounded-xl bg-white p-6 dark:bg-gray-900",
-              settings?.cardStyle ? cardStyles[settings.cardStyle] : cardStyles.ELEVATED,
-              settings?.fontSize ? fontSizeClasses[settings.fontSize] : ""
+              settings?.cardStyle ? cardStyles[settings.cardStyle] : cardStyles.GLASS,
+              showShadow && "shadow-xl"
             )}
             style={{
               ...cardStyle,
               maxWidth,
+              boxShadow: showShadow ? undefined : "none",
             }}
           >
             {children}

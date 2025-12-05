@@ -17,18 +17,21 @@ export interface NotificationResult {
 export interface NotificationService {
   sendInvite(
     guest: Guest,
-    event: WeddingEvent
+    event: WeddingEvent,
+    preferredChannel?: NotificationChannel
   ): Promise<NotificationResult>;
 
   sendReminder(
     guest: Guest,
-    event: WeddingEvent
+    event: WeddingEvent,
+    preferredChannel?: NotificationChannel
   ): Promise<NotificationResult>;
 
   sendConfirmation(
     guest: Guest,
     event: WeddingEvent,
-    status: "ACCEPTED" | "DECLINED"
+    status: "ACCEPTED" | "DECLINED",
+    preferredChannel?: NotificationChannel
   ): Promise<NotificationResult>;
 }
 

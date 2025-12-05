@@ -7,12 +7,13 @@ import { RsvpForm } from "@/components/rsvp/rsvp-form";
 import { RsvpPageWrapper } from "@/components/rsvp/rsvp-page-wrapper";
 
 interface RsvpPageProps {
-  params: { slug: string };
-  searchParams: { lang?: string };
+  params: Promise<{ slug: string }>;
+  searchParams: Promise<{ lang?: string }>;
 }
 
 export async function generateMetadata({ params }: RsvpPageProps): Promise<Metadata> {
-  const result = await getGuestBySlug(params.slug);
+  const { slug } = await params;
+  const result = await getGuestBySlug(slug);
 
   if (result.error || !result.guest) {
     return {
@@ -27,7 +28,9 @@ export async function generateMetadata({ params }: RsvpPageProps): Promise<Metad
 }
 
 export default async function RsvpPage({ params, searchParams }: RsvpPageProps) {
-  const result = await getGuestBySlug(params.slug);
+  const { slug } = await params;
+  const resolvedSearchParams = await searchParams;
+  const result = await getGuestBySlug(slug);
 
   if (result.error || !result.guest) {
     notFound();
@@ -39,7 +42,7 @@ export default async function RsvpPage({ params, searchParams }: RsvpPageProps) 
 
   // Determine locale - use pageLocale from settings, fallback to Hebrew
   // Can be overridden with ?lang=en query param
-  const locale = searchParams.lang || settings?.pageLocale || "he";
+  const locale = resolvedSearchParams.lang || settings?.pageLocale || "he";
 
   return (
     <RsvpPageWrapper settings={settings}>

@@ -27,8 +27,8 @@ export class MockNotificationService implements NotificationService {
     return `${env.NEXT_PUBLIC_APP_URL}/rsvp/${guestSlug}`;
   }
 
-  async sendInvite(guest: Guest, event: WeddingEvent): Promise<NotificationResult> {
-    const channel = this.getChannel(guest);
+  async sendInvite(guest: Guest, event: WeddingEvent, preferredChannel?: NotificationChannel): Promise<NotificationResult> {
+    const channel = preferredChannel || this.getChannel(guest);
     const rsvpLink = this.getRsvpLink(guest.slug);
     const message = hebrewTemplates.invite.message(
       guest.name,
@@ -62,8 +62,8 @@ export class MockNotificationService implements NotificationService {
     };
   }
 
-  async sendReminder(guest: Guest, event: WeddingEvent): Promise<NotificationResult> {
-    const channel = this.getChannel(guest);
+  async sendReminder(guest: Guest, event: WeddingEvent, preferredChannel?: NotificationChannel): Promise<NotificationResult> {
+    const channel = preferredChannel || this.getChannel(guest);
     const rsvpLink = this.getRsvpLink(guest.slug);
     const message = hebrewTemplates.reminder.message(
       guest.name,
@@ -100,9 +100,10 @@ export class MockNotificationService implements NotificationService {
   async sendConfirmation(
     guest: Guest,
     event: WeddingEvent,
-    status: "ACCEPTED" | "DECLINED"
+    status: "ACCEPTED" | "DECLINED",
+    preferredChannel?: NotificationChannel
   ): Promise<NotificationResult> {
-    const channel = this.getChannel(guest);
+    const channel = preferredChannel || this.getChannel(guest);
 
     const message =
       status === "ACCEPTED"

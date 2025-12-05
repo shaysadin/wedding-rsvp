@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useSelectedLayoutSegment } from "next/navigation";
 import { Menu, X } from "lucide-react";
 import { useSession } from "next-auth/react";
+import { UserRole } from "@prisma/client";
 
 import { docsConfig } from "@/config/docs";
 import { marketingConfig } from "@/config/marketing";
@@ -74,7 +75,7 @@ export function NavMobile() {
 
           {session ? (
             <>
-              {session.user.role === "ADMIN" ? (
+              {session.user.role === UserRole.ROLE_PLATFORM_OWNER ? (
                 <li className="py-3">
                   <Link
                     href="/admin"

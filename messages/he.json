@@ -65,7 +65,8 @@
     "settings": "הגדרות",
     "admin": "ניהול מערכת",
     "users": "משתמשים",
-    "home": "דף הבית"
+    "home": "דף הבית",
+    "messaging": "הגדרות הודעות"
   },
   "auth": {
     "signIn": "כניסה",
@@ -131,7 +132,11 @@
     "customizeRsvp": "עיצוב דף אישור הגעה",
     "viewRsvpPage": "צפה בדף האישור",
     "copyRsvpLink": "העתק קישור",
-    "totalAttending": "סה\"כ מגיעים"
+    "totalAttending": "סה\"כ מגיעים",
+    "messages": "הודעות",
+    "messageTemplates": "תבניות הודעות",
+    "sendInvitations": "שלח הזמנות",
+    "sendReminders": "שלח תזכורות"
   },
   "guests": {
     "title": "רשימת אורחים",
@@ -204,7 +209,41 @@
     "bulkSendSuccess": "נשלחו בהצלחה {count} הזמנות",
     "bulkSendErrors": "{count} הזמנות לא נשלחו עקב שגיאות",
     "bulkCopySuccess": "הועתקו {count} קישורים ללוח",
-    "copyFailed": "לא ניתן להעתיק ללוח"
+    "copyFailed": "לא ניתן להעתיק ללוח",
+    "sendMessage": "שלח הודעה",
+    "sendBulkMessage": "שלח הודעה לנבחרים",
+    "sendMessageTo": "שלח הודעה אל {name}",
+    "sendMessageToSelected": "שלח הודעה ל-{count} אורחים נבחרים",
+    "messageType": "סוג הודעה",
+    "invitation": "הזמנה",
+    "reminder": "תזכורת",
+    "invitationDescription": "שלח הזמנה לאשר הגעה",
+    "reminderDescription": "הזכר לאורחים שעדיין לא הגיבו",
+    "recipients": "נמענים",
+    "sending": "שולח...",
+    "send": "שלח",
+    "sent": "נשלח",
+    "failed": "נכשל",
+    "sendVia": "שלח באמצעות",
+    "offline": "לא זמין",
+    "noChannelsAvailable": "אין ערוצי הודעות זמינים",
+    "contactAdminForChannels": "פנה למנהל המערכת להפעלת SMS או WhatsApp.",
+    "errorDetails": "פרטי השגיאה",
+    "andMoreErrors": "...ועוד {count} שגיאות",
+    "messageSentSuccess": "נשלחו בהצלחה {count} הודעות",
+    "messageSentPartial": "נשלחו {success} הודעות, {failed} נכשלו",
+    "messageSentFailed": "שליחת ההודעות נכשלה",
+    "allMessagesSent": "כל ההודעות נשלחו בהצלחה!",
+    "sendingFailed": "השליחה נכשלה",
+    "partiallySent": "חלק מההודעות נשלחו",
+    "messageSent": "סטטוס הודעה",
+    "noPhone": "אין מספר טלפון"
+  },
+  "messageStatus": {
+    "notSent": "לא נשלח",
+    "inviteSent": "הזמנה נשלחה",
+    "reminder1": "תזכורת 1",
+    "reminder2Plus": "2+ תזכורות"
   },
   "rsvp": {
     "title": "אישור הגעה",
@@ -344,5 +383,98 @@
     "sent": "נשלח בהצלחה",
     "imported": "יובא בהצלחה",
     "exported": "יוצא בהצלחה"
+  },
+  "messageTemplates": {
+    "title": "תבניות הודעות",
+    "description": "התאם אישית את ההודעות שנשלחות לאורחים שלך בוואטסאפ/SMS",
+    "templatesFor": "תבניות עבור {eventTitle}",
+    "resetToDefaults": "אפס לברירת מחדל",
+    "resetConfirm": "האם אתה בטוח שברצונך לאפס את כל התבניות לברירת המחדל? פעולה זו תדרוס את ההתאמות שלך.",
+    "templateReset": "התבניות אופסו בהצלחה",
+    "templateStatusUpdated": "סטטוס התבנית עודכן",
+    "bulkSendTitle": "שליחת הודעות מרובות",
+    "bulkSendDescription": "שלח הודעות לכל האורחים המתאימים בבת אחת",
+    "sendInvitationsToAll": "שלח הזמנות לכולם",
+    "sendRemindersTosPending": "שלח תזכורות לממתינים",
+    "availablePlaceholders": "מציינים זמינים",
+    "placeholdersDescription": "השתמש במציינים אלו בהודעות שלך - הם יוחלפו בערכים האמיתיים",
+    "inviteMessage": "הודעת הזמנה",
+    "inviteDescription": "ההודעה הראשונה שנשלחת להזמין אורחים",
+    "reminderMessage": "הודעת תזכורת",
+    "reminderDescription": "הודעת מעקב לאורחים שטרם אישרו הגעה",
+    "titleLabel": "כותרת",
+    "messagePreview": "תצוגה מקדימה של ההודעה",
+    "editTemplate": "ערוך תבנית",
+    "createTemplate": "צור תבנית",
+    "noTemplateConfigured": "לא הוגדרה תבנית",
+    "editTemplateTitle": "עריכת תבנית",
+    "createTemplateTitle": "יצירת תבנית",
+    "editorDescription": "התאם אישית את תבנית ההודעה. השתמש במציינים לתוכן דינמי.",
+    "messageLabel": "תוכן ההודעה",
+    "insertPlaceholder": "הכנס מציין",
+    "preview": "תצוגה מקדימה",
+    "characterCount": "{count} תווים",
+    "saving": "שומר...",
+    "templateSaved": "התבנית נשמרה בהצלחה",
+    "placeholders": {
+      "guestName": "שם האורח",
+      "eventTitle": "שם האירוע",
+      "rsvpLink": "קישור אישור הגעה אישי",
+      "eventDate": "תאריך האירוע",
+      "eventTime": "שעת האירוע",
+      "eventLocation": "כתובת האירוע",
+      "eventVenue": "שם האולם"
+    },
+    "smsSenderId": {
+      "title": "מזהה שולח SMS (אלפא)",
+      "description": "שם שולח מותאם אישית שיוצג לנמענים במקום מספר טלפון",
+      "label": "מזהה שולח",
+      "placeholder": "לדוגמה: WeddingRSVP",
+      "hint": "עד 11 תווים, אותיות ומספרים בלבד (A-Z, 0-9). יוצג כשם השולח בהודעות SMS.",
+      "preview": "ההודעות יופיעו מ-",
+      "saved": "מזהה שולח SMS נשמר",
+      "saveFailed": "שמירת מזהה שולח SMS נכשלה"
+    },
+    "pageTitle": "תבניות הודעות",
+    "pageDescription": "התאמה אישית של הודעות עבור {eventTitle}",
+    "backToEvent": "חזרה לאירוע"
+  },
+  "settings": {
+    "title": "הגדרות",
+    "description": "ניהול הגדרות החשבון והעדפות",
+    "saved": "ההגדרות נשמרו בהצלחה",
+    "saving": "שומר...",
+    "profile": {
+      "title": "הגדרות פרופיל",
+      "description": "עדכון פרטים אישיים",
+      "name": "שם תצוגה",
+      "namePlaceholder": "הכנס את שמך",
+      "email": "כתובת אימייל",
+      "emailNote": "לא ניתן לשנות את כתובת האימייל"
+    },
+    "preferences": {
+      "language": "שפה",
+      "languageNote": "בחר את השפה המועדפת עליך ללוח הבקרה"
+    },
+    "account": {
+      "title": "פרטי חשבון",
+      "description": "צפייה בפרטי החשבון שלך",
+      "plan": "מסלול נוכחי",
+      "status": "סטטוס חשבון",
+      "memberSince": "חבר מאז",
+      "role": "תפקיד",
+      "admin": "מנהל מערכת",
+      "user": "משתמש"
+    },
+    "plans": {
+      "free": "חינם",
+      "basic": "בסיסי",
+      "premium": "פרימיום"
+    },
+    "status": {
+      "active": "פעיל",
+      "pending": "ממתין לאישור",
+      "suspended": "מושעה"
+    }
   }
 }

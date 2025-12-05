@@ -54,6 +54,14 @@ enum NotificationStatus {
   FAILED
 }
 
+enum BulkJobStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
 enum BackgroundType {
   COLOR
   IMAGE
@@ -65,6 +73,12 @@ enum CardStyle {
   ELEVATED
   BORDERED
   GLASS
+}
+
+enum DateDisplayStyle {
+  CARD
+  CALENDAR
+  MINIMAL
 }
 
 // ============ AUTH MODELS (NextAuth Required) ============
@@ -123,13 +137,15 @@ model User {
   role          UserRole   @default(ROLE_WEDDING_OWNER)
   status        UserStatus @default(PENDING_APPROVAL)
   plan          PlanTier   @default(FREE)
+  locale        String     @default("he")
   createdAt     DateTime   @default(now()) @map("created_at")
   updatedAt     DateTime   @default(now()) @updatedAt @map("updated_at")
 
-  accounts      Account[]
-  sessions      Session[]
-  weddingEvents WeddingEvent[]
-  rsvpTemplates RsvpTemplate[]
+  accounts        Account[]
+  sessions        Session[]
+  weddingEvents   WeddingEvent[]
+  rsvpTemplates   RsvpTemplate[]
+  bulkMessageJobs BulkMessageJob[]
 
   @@map("users")
 }
@@ -144,6 +160,7 @@ model WeddingEvent {
   venue       String?
   notes       String?  @db.Text
   imageUrl    String?  @map("image_url")
+  smsSenderId String?  @map("sms_sender_id") // Alpha Sender ID for SMS (max 11 chars, alphanumeric)
   isActive    Boolean  @default(true) @map("is_active")
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @default(now()) @updatedAt @map("updated_at")
@@ -151,6 +168,8 @@ model WeddingEvent {
   owner            User              @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   guests           Guest[]
   rsvpPageSettings RsvpPageSettings?
+  messageTemplates MessageTemplate[]
+  bulkMessageJobs  BulkMessageJob[]
 
   @@index([ownerId])
   @@map("wedding_events")
@@ -169,9 +188,10 @@ model Guest {
   createdAt      DateTime @default(now()) @map("created_at")
   updatedAt      DateTime @default(now()) @updatedAt @map("updated_at")
 
-  weddingEvent     WeddingEvent      @relation(fields: [weddingEventId], references: [id], onDelete: Cascade)
-  rsvp             GuestRsvp?
-  notificationLogs NotificationLog[]
+  weddingEvent        WeddingEvent         @relation(fields: [weddingEventId], references: [id], onDelete: Cascade)
+  rsvp                GuestRsvp?
+  notificationLogs    NotificationLog[]
+  bulkMessageJobItems BulkMessageJobItem[]
 
   @@index([weddingEventId])
   @@index([slug])
@@ -215,60 +235,141 @@ model RsvpPageSettings {
   id             String   @id @default(cuid())
   weddingEventId String   @unique @map("wedding_event_id")
 
-  // Background
-  backgroundType    BackgroundType @default(COLOR) @map("background_type")
+  // ============ MODE TOGGLE ============
+  advancedMode Boolean @default(false) @map("advanced_mode")
+
+  // ============ BACKGROUND (Simple + Advanced) ============
+  backgroundType    BackgroundType @default(IMAGE) @map("background_type")
   backgroundColor   String?        @map("background_color")
   backgroundImage   String?        @db.Text @map("background_image")
   backgroundOverlay Float?         @map("background_overlay")
-  backgroundBlur    Int?           @map("background_blur") // pixels
+  backgroundBlur    Int?           @map("background_blur")
 
-  // Colors
+  // ============ COLORS (Simple) ============
   primaryColor   String? @map("primary_color")
   secondaryColor String? @map("secondary_color")
-  textColor      String? @map("text_color")
   accentColor    String? @map("accent_color")
 
-  // Typography
-  fontFamily      String? @map("font_family")
-  titleFontFamily String? @map("title_font_family")
-  fontSize        String? @map("font_size") // sm, base, lg, xl
+  // ============ CARD STYLING (Simple) ============
+  cardStyle   CardStyle @default(GLASS) @map("card_style")
+  cardOpacity Float?    @map("card_opacity")
+  cardBlur    Int?      @map("card_blur")
 
-  // Card/Container
-  cardStyle        CardStyle @default(ELEVATED) @map("card_style")
-  cardBackground   String?   @map("card_background")
-  cardBorderRadius Int?      @map("card_border_radius")
-  cardPadding      Int?      @map("card_padding") // pixels
-  cardMaxWidth     Int?      @map("card_max_width") // pixels
-  cardOpacity      Float?    @map("card_opacity") // 0-1
-  cardBlur         Int?      @map("card_blur") // pixels - backdrop blur for glass effect
+  // ============ TYPOGRAPHY (Simple) ============
+  fontFamily String? @map("font_family")
 
-  // Layout
-  contentAlignment String? @map("content_alignment") // left, center, right
-  showEventDetails Boolean @default(true) @map("show_event_details")
-  showGoogleMaps   Boolean @default(true) @map("show_google_maps")
-  showWaze         Boolean @default(true) @map("show_waze")
-  showCalendar     Boolean @default(true) @map("show_calendar")
-  pageLocale       String  @default("he") @map("page_locale") // he or en
+  // ============ DATE DISPLAY (Simple) ============
+  dateDisplayStyle DateDisplayStyle @default(CALENDAR) @map("date_display_style")
+  showCountdown    Boolean          @default(true) @map("show_countdown")
 
-  // Map URLs
-  googleMapsUrl    String? @map("google_maps_url")
-  wazeUrl          String? @map("waze_url")
+  // ============ VISIBILITY TOGGLES (Simple) ============
+  showGoogleMaps Boolean @default(true) @map("show_google_maps")
+  showWaze       Boolean @default(true) @map("show_waze")
 
-  // Custom Content
-  welcomeTitle    String?  @map("welcome_title")
-  welcomeMessage  String?  @db.Text @map("welcome_message")
-  thankYouMessage String?  @db.Text @map("thank_you_message")
-  declineMessage  String?  @db.Text @map("decline_message")
+  // ============ NAVIGATION URLS ============
+  googleMapsUrl String? @map("google_maps_url")
+  wazeUrl       String? @map("waze_url")
 
-  // Logo/Image
-  logoUrl        String? @map("logo_url")
-  coupleImageUrl String? @map("couple_image_url")
+  // ============ CUSTOM CONTENT (Simple) ============
+  welcomeTitle    String? @map("welcome_title")
+  welcomeMessage  String? @db.Text @map("welcome_message")
+  thankYouMessage String? @db.Text @map("thank_you_message")
+  declineMessage  String? @db.Text @map("decline_message")
 
-  // Button Styles
-  buttonStyle       String? @map("button_style") // solid, outline, ghost
-  buttonColor       String? @map("button_color")
-  buttonTextColor   String? @map("button_text_color")
-  buttonBorderRadius Int?   @map("button_border_radius")
+  // ============ LOCALE ============
+  pageLocale String @default("he") @map("page_locale")
+
+  // =====================================================
+  // ============ ADVANCED MODE SETTINGS ================
+  // =====================================================
+
+  // Card/Container (Advanced)
+  cardBackground   String? @map("card_background")
+  cardBorderRadius Int?    @map("card_border_radius")
+  cardBorderWidth  Int?    @map("card_border_width")
+  cardBorderColor  String? @map("card_border_color")
+  cardShadow       Boolean @default(true) @map("card_shadow")
+  cardPadding      Int?    @map("card_padding")
+  cardMaxWidth     Int?    @map("card_max_width")
+  textColor        String? @map("text_color")
+
+  // Button Styles (Advanced)
+  buttonStyle        String? @map("button_style")
+  buttonColor        String? @map("button_color")
+  buttonTextColor    String? @map("button_text_color")
+  buttonBorderRadius Int?    @map("button_border_radius")
+  buttonBorderColor  String? @map("button_border_color")
+  buttonShadow       Boolean @default(true) @map("button_shadow")
+  buttonSize         String? @map("button_size")
+
+  // Input Styles (Advanced)
+  inputBackgroundColor String? @map("input_background_color")
+  inputTextColor       String? @map("input_text_color")
+  inputBorderColor     String? @map("input_border_color")
+
+  // Text Colors (Advanced)
+  subtitleTextColor String? @map("subtitle_text_color")
+  labelTextColor    String? @map("label_text_color")
+
+  // Guest Counter (Advanced)
+  guestCounterBackground String? @map("guest_counter_background")
+  guestCounterTextColor  String? @map("guest_counter_text_color")
+  guestCounterAccent     String? @map("guest_counter_accent")
+
+  // Font Sizes (Advanced)
+  titleFontSize    Int? @map("title_font_size")
+  subtitleFontSize Int? @map("subtitle_font_size")
+  labelFontSize    Int? @map("label_font_size")
+  buttonFontSize   Int? @map("button_font_size")
+
+  // Date Card Settings (Advanced)
+  dateCardBackground   String?  @map("date_card_background")
+  dateCardTextColor    String?  @map("date_card_text_color")
+  dateCardAccentColor  String?  @map("date_card_accent_color")
+  dateCardBorderRadius Int?     @map("date_card_border_radius")
+
+  // Enhanced Date Card (Advanced)
+  dateCardBackgroundImage String?  @db.Text @map("date_card_background_image")
+  dateCardOverlay         Float?   @map("date_card_overlay")
+  dateCardBlur            Int?     @map("date_card_blur")
+  dateCardPadding         Int?     @map("date_card_padding")
+  dateCardShadow          Boolean  @default(true) @map("date_card_shadow")
+  dateDayFontSize         Int?     @map("date_day_font_size")
+  dateMonthFontSize       Int?     @map("date_month_font_size")
+  dateYearFontSize        Int?     @map("date_year_font_size")
+
+  // Time Section (Advanced)
+  showTimeSection         Boolean @default(true) @map("show_time_section")
+  timeSectionBackground   String? @map("time_section_background")
+  timeSectionTextColor    String? @map("time_section_text_color")
+  timeSectionBorderRadius Int?    @map("time_section_border_radius")
+  timeFontSize            Int?    @map("time_font_size")
+
+  // Address Section (Advanced)
+  showAddressSection         Boolean @default(true) @map("show_address_section")
+  addressSectionBackground   String? @map("address_section_background")
+  addressSectionTextColor    String? @map("address_section_text_color")
+  addressSectionBorderRadius Int?    @map("address_section_border_radius")
+  addressFontSize            Int?    @map("address_font_size")
+
+  // Countdown Section (Advanced)
+  countdownSectionBackground   String? @map("countdown_section_background")
+  countdownSectionTextColor    String? @map("countdown_section_text_color")
+  countdownSectionBorderRadius Int?    @map("countdown_section_border_radius")
+  countdownBoxBackground       String? @map("countdown_box_background")
+  countdownBoxTextColor        String? @map("countdown_box_text_color")
+  countdownLabelColor          String? @map("countdown_label_color")
+  countdownNumberFontSize      Int?    @map("countdown_number_font_size")
+
+  // Question Section (Advanced)
+  questionSectionBackground   String? @map("question_section_background")
+  questionSectionBorderRadius Int?    @map("question_section_border_radius")
+  questionTextColor           String? @map("question_text_color")
+  questionFontSize            Int?    @map("question_font_size")
+  acceptButtonColor           String? @map("accept_button_color")
+  acceptButtonTextColor       String? @map("accept_button_text_color")
+  declineButtonColor          String? @map("decline_button_color")
+  declineButtonTextColor      String? @map("decline_button_text_color")
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
@@ -285,55 +386,124 @@ model RsvpTemplate {
   name        String
   description String? @db.Text
   previewUrl  String? @map("preview_url")
-  isSystem    Boolean @default(false) @map("is_system") // System templates vs user-created
-  ownerId     String? @map("owner_id") // null for system templates
+  isSystem    Boolean @default(false) @map("is_system")
+  ownerId     String? @map("owner_id")
 
-  // Background
-  backgroundType    BackgroundType @default(COLOR) @map("background_type")
+  // ============ MODE ============
+  advancedMode Boolean @default(false) @map("advanced_mode")
+
+  // ============ BACKGROUND ============
+  backgroundType    BackgroundType @default(IMAGE) @map("background_type")
   backgroundColor   String?        @map("background_color")
   backgroundImage   String?        @db.Text @map("background_image")
   backgroundOverlay Float?         @map("background_overlay")
   backgroundBlur    Int?           @map("background_blur")
 
-  // Colors
+  // ============ COLORS ============
   primaryColor   String? @map("primary_color")
   secondaryColor String? @map("secondary_color")
-  textColor      String? @map("text_color")
   accentColor    String? @map("accent_color")
 
-  // Typography
-  fontFamily      String? @map("font_family")
-  titleFontFamily String? @map("title_font_family")
-  fontSize        String? @map("font_size")
+  // ============ CARD STYLING ============
+  cardStyle   CardStyle @default(GLASS) @map("card_style")
+  cardOpacity Float?    @map("card_opacity")
+  cardBlur    Int?      @map("card_blur")
 
-  // Card/Container
-  cardStyle        CardStyle @default(ELEVATED) @map("card_style")
-  cardBackground   String?   @map("card_background")
-  cardBorderRadius Int?      @map("card_border_radius")
-  cardPadding      Int?      @map("card_padding")
-  cardMaxWidth     Int?      @map("card_max_width")
-  cardOpacity      Float?    @map("card_opacity")
-  cardBlur         Int?      @map("card_blur")
+  // ============ TYPOGRAPHY ============
+  fontFamily String? @map("font_family")
 
-  // Layout
-  contentAlignment String? @map("content_alignment")
-  showEventDetails Boolean @default(true) @map("show_event_details")
-  showGoogleMaps   Boolean @default(true) @map("show_google_maps")
-  showWaze         Boolean @default(true) @map("show_waze")
-  showCalendar     Boolean @default(true) @map("show_calendar")
-  pageLocale       String  @default("he") @map("page_locale") // he or en
+  // ============ DATE DISPLAY ============
+  dateDisplayStyle DateDisplayStyle @default(CALENDAR) @map("date_display_style")
+  showCountdown    Boolean          @default(true) @map("show_countdown")
 
-  // Custom Content (templates can have default content)
-  welcomeTitle    String?  @map("welcome_title")
-  welcomeMessage  String?  @db.Text @map("welcome_message")
-  thankYouMessage String?  @db.Text @map("thank_you_message")
-  declineMessage  String?  @db.Text @map("decline_message")
+  // ============ VISIBILITY TOGGLES ============
+  showGoogleMaps Boolean @default(true) @map("show_google_maps")
+  showWaze       Boolean @default(true) @map("show_waze")
 
-  // Button Styles
-  buttonStyle       String? @map("button_style")
-  buttonColor       String? @map("button_color")
-  buttonTextColor   String? @map("button_text_color")
-  buttonBorderRadius Int?   @map("button_border_radius")
+  // ============ CUSTOM CONTENT ============
+  welcomeTitle    String? @map("welcome_title")
+  welcomeMessage  String? @db.Text @map("welcome_message")
+  thankYouMessage String? @db.Text @map("thank_you_message")
+  declineMessage  String? @db.Text @map("decline_message")
+
+  // ============ LOCALE ============
+  pageLocale String @default("he") @map("page_locale")
+
+  // ============ ADVANCED SETTINGS ============
+  cardBackground   String? @map("card_background")
+  cardBorderRadius Int?    @map("card_border_radius")
+  cardBorderWidth  Int?    @map("card_border_width")
+  cardBorderColor  String? @map("card_border_color")
+  cardShadow       Boolean @default(true) @map("card_shadow")
+  cardPadding      Int?    @map("card_padding")
+  cardMaxWidth     Int?    @map("card_max_width")
+  textColor        String? @map("text_color")
+
+  buttonStyle        String? @map("button_style")
+  buttonColor        String? @map("button_color")
+  buttonTextColor    String? @map("button_text_color")
+  buttonBorderRadius Int?    @map("button_border_radius")
+  buttonBorderColor  String? @map("button_border_color")
+  buttonShadow       Boolean @default(true) @map("button_shadow")
+  buttonSize         String? @map("button_size")
+
+  inputBackgroundColor String? @map("input_background_color")
+  inputTextColor       String? @map("input_text_color")
+  inputBorderColor     String? @map("input_border_color")
+
+  subtitleTextColor String? @map("subtitle_text_color")
+  labelTextColor    String? @map("label_text_color")
+
+  guestCounterBackground String? @map("guest_counter_background")
+  guestCounterTextColor  String? @map("guest_counter_text_color")
+  guestCounterAccent     String? @map("guest_counter_accent")
+
+  titleFontSize    Int? @map("title_font_size")
+  subtitleFontSize Int? @map("subtitle_font_size")
+  labelFontSize    Int? @map("label_font_size")
+  buttonFontSize   Int? @map("button_font_size")
+
+  dateCardBackground      String?  @map("date_card_background")
+  dateCardTextColor       String?  @map("date_card_text_color")
+  dateCardAccentColor     String?  @map("date_card_accent_color")
+  dateCardBorderRadius    Int?     @map("date_card_border_radius")
+  dateCardBackgroundImage String?  @db.Text @map("date_card_background_image")
+  dateCardOverlay         Float?   @map("date_card_overlay")
+  dateCardBlur            Int?     @map("date_card_blur")
+  dateCardPadding         Int?     @map("date_card_padding")
+  dateCardShadow          Boolean  @default(true) @map("date_card_shadow")
+  dateDayFontSize         Int?     @map("date_day_font_size")
+  dateMonthFontSize       Int?     @map("date_month_font_size")
+  dateYearFontSize        Int?     @map("date_year_font_size")
+
+  showTimeSection         Boolean @default(true) @map("show_time_section")
+  timeSectionBackground   String? @map("time_section_background")
+  timeSectionTextColor    String? @map("time_section_text_color")
+  timeSectionBorderRadius Int?    @map("time_section_border_radius")
+  timeFontSize            Int?    @map("time_font_size")
+
+  showAddressSection         Boolean @default(true) @map("show_address_section")
+  addressSectionBackground   String? @map("address_section_background")
+  addressSectionTextColor    String? @map("address_section_text_color")
+  addressSectionBorderRadius Int?    @map("address_section_border_radius")
+  addressFontSize            Int?    @map("address_font_size")
+
+  countdownSectionBackground   String? @map("countdown_section_background")
+  countdownSectionTextColor    String? @map("countdown_section_text_color")
+  countdownSectionBorderRadius Int?    @map("countdown_section_border_radius")
+  countdownBoxBackground       String? @map("countdown_box_background")
+  countdownBoxTextColor        String? @map("countdown_box_text_color")
+  countdownLabelColor          String? @map("countdown_label_color")
+  countdownNumberFontSize      Int?    @map("countdown_number_font_size")
+
+  questionSectionBackground   String? @map("question_section_background")
+  questionSectionBorderRadius Int?    @map("question_section_border_radius")
+  questionTextColor           String? @map("question_text_color")
+  questionFontSize            Int?    @map("question_font_size")
+  acceptButtonColor           String? @map("accept_button_color")
+  acceptButtonTextColor       String? @map("accept_button_text_color")
+  declineButtonColor          String? @map("decline_button_color")
+  declineButtonTextColor      String? @map("decline_button_text_color")
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
@@ -343,4 +513,108 @@ model RsvpTemplate {
   @@index([ownerId])
   @@index([isSystem])
   @@map("rsvp_templates")
+}
+
+// ============ MESSAGING PROVIDER SETTINGS (Admin Only) ============
+
+model MessagingProviderSettings {
+  id String @id @default(cuid())
+
+  // WhatsApp Config (e.g., WhatsApp Business API / Twilio)
+  whatsappProvider    String?  @map("whatsapp_provider")
+  whatsappApiKey      String?  @map("whatsapp_api_key")
+  whatsappApiSecret   String?  @map("whatsapp_api_secret")
+  whatsappPhoneNumber String?  @map("whatsapp_phone_number")
+  whatsappEnabled     Boolean  @default(false) @map("whatsapp_enabled")
+
+  // SMS Config (Twilio)
+  smsProvider           String?  @map("sms_provider")
+  smsApiKey             String?  @map("sms_api_key")
+  smsApiSecret          String?  @map("sms_api_secret")
+  smsPhoneNumber        String?  @map("sms_phone_number")
+  smsMessagingServiceSid String? @map("sms_messaging_service_sid") // Twilio Messaging Service SID (optional, takes priority over phone number)
+  smsEnabled            Boolean  @default(false) @map("sms_enabled")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
+
+  @@map("messaging_provider_settings")
+}
+
+// ============ MESSAGE TEMPLATES (Per Event) ============
+
+model MessageTemplate {
+  id             String           @id @default(cuid())
+  weddingEventId String           @map("wedding_event_id")
+  type           NotificationType
+  locale         String           @default("he")
+  title          String
+  message        String           @db.Text
+
+  // For confirmation type - true = accepted, false = declined
+  isAcceptedVariant Boolean @default(false) @map("is_accepted_variant")
+
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
+
+  weddingEvent WeddingEvent @relation(fields: [weddingEventId], references: [id], onDelete: Cascade)
+
+  @@unique([weddingEventId, type, locale, isAcceptedVariant])
+  @@index([weddingEventId])
+  @@map("message_templates")
+}
+
+// ============ BULK MESSAGE JOBS ============
+
+model BulkMessageJob {
+  id             String              @id @default(cuid())
+  weddingEventId String              @map("wedding_event_id")
+  createdBy      String              @map("created_by")
+  messageType    NotificationType
+  channel        NotificationChannel?
+
+  // Progress tracking
+  status         BulkJobStatus @default(PENDING)
+  totalGuests    Int           @map("total_guests")
+  processedCount Int           @default(0) @map("processed_count")
+  successCount   Int           @default(0) @map("success_count")
+  failedCount    Int           @default(0) @map("failed_count")
+
+  // Timing
+  startedAt   DateTime? @map("started_at")
+  completedAt DateTime? @map("completed_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  // Error info
+  errorMessage String? @db.Text @map("error_message")
+
+  weddingEvent WeddingEvent         @relation(fields: [weddingEventId], references: [id], onDelete: Cascade)
+  creator      User                 @relation(fields: [createdBy], references: [id])
+  items        BulkMessageJobItem[]
+
+  @@index([weddingEventId])
+  @@index([createdBy])
+  @@index([status])
+  @@map("bulk_message_jobs")
+}
+
+model BulkMessageJobItem {
+  id       String             @id @default(cuid())
+  jobId    String             @map("job_id")
+  guestId  String             @map("guest_id")
+  status   NotificationStatus @default(PENDING)
+  attempts Int                @default(0)
+
+  // Result
+  sentAt       DateTime? @map("sent_at")
+  errorMessage String?   @db.Text @map("error_message")
+
+  job   BulkMessageJob @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  guest Guest          @relation(fields: [guestId], references: [id], onDelete: Cascade)
+
+  @@index([jobId])
+  @@index([guestId])
+  @@index([status])
+  @@map("bulk_message_job_items")
 }

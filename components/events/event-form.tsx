@@ -103,7 +103,15 @@ export function EventForm({ event }: EventFormProps) {
                   <FormItem>
                     <FormLabel>{t("eventDate")}</FormLabel>
                     <FormControl>
-                      <Input type="datetime-local" {...field} />
+                      <Input
+                        type="datetime-local"
+                        {...field}
+                        value={
+                          field.value instanceof Date
+                            ? field.value.toISOString().slice(0, 16)
+                            : field.value
+                        }
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
