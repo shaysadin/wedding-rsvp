@@ -11,7 +11,6 @@ import { updateGuest } from "@/actions/guests";
 import { updateGuestSchema, type UpdateGuestInput } from "@/lib/validations/guest";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
   DialogContent,
@@ -26,13 +25,6 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Icons } from "@/components/shared/icons";
 
 type GuestWithRsvp = Guest & {
@@ -60,8 +52,6 @@ export function EditGuestDialog({ guest, open, onOpenChange }: EditGuestDialogPr
       id: guest.id,
       name: guest.name,
       phoneNumber: guest.phoneNumber || "",
-      groupName: guest.groupName || "",
-      notes: guest.notes || "",
     },
   });
 
@@ -72,8 +62,6 @@ export function EditGuestDialog({ guest, open, onOpenChange }: EditGuestDialogPr
         id: guest.id,
         name: guest.name,
         phoneNumber: guest.phoneNumber || "",
-        groupName: guest.groupName || "",
-        notes: guest.notes || "",
       });
     }
   }, [guest, open, form]);
@@ -129,44 +117,6 @@ export function EditGuestDialog({ guest, open, onOpenChange }: EditGuestDialogPr
                   <FormLabel>{t("phone")}</FormLabel>
                   <FormControl>
                     <Input placeholder="+972..." dir="ltr" className="text-start" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="groupName"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t("group")}</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value || ""}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder={t("selectGroup")} />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="family">{t("groups.family")}</SelectItem>
-                      <SelectItem value="friends">{t("groups.friends")}</SelectItem>
-                      <SelectItem value="work">{t("groups.work")}</SelectItem>
-                      <SelectItem value="other">{t("groups.other")}</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="notes"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{tc("notes")}</FormLabel>
-                  <FormControl>
-                    <Textarea placeholder={tc("notes")} rows={2} {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

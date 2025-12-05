@@ -10,9 +10,12 @@ import { submitRsvp } from "@/actions/rsvp";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Calendar } from "@/components/ui/calendar";
 import { Icons } from "@/components/shared/icons";
+import { GuestCounter } from "@/components/rsvp/guest-counter";
+import { EventDateDisplay } from "@/components/rsvp/event-date-display";
 import { cn } from "@/lib/utils";
+
+type DateDisplayStyle = "CARD" | "CALENDAR" | "MINIMAL";
 
 interface RsvpFormProps {
   guest: Guest;
@@ -97,7 +100,7 @@ export function RsvpForm({ guest, event, existingRsvp, settings, locale = "he" }
             : (settings?.declineMessage || (isRTL ? "מקווים לראותכם בהזדמנות אחרת" : "Hope to see you another time"))}
         </p>
 
-        {status === "ACCEPTED" && (settings?.showEventDetails !== false) && (
+        {status === "ACCEPTED" && (
           <div className="mt-6 rounded-lg bg-muted/50 p-4 text-start">
             <h3 className="mb-2 font-semibold">{isRTL ? "פרטי האירוע:" : "Event Details:"}</h3>
             <div className="space-y-2 text-sm">
@@ -155,60 +158,69 @@ export function RsvpForm({ guest, event, existingRsvp, settings, locale = "he" }
     );
   }
 
+  // Theme color - used for button styling
+  const accentColor = settings?.accentColor || settings?.primaryColor || "#1a1a1a";
+
   return (
     <form onSubmit={handleSubmit} className="space-y-6" dir={isRTL ? "rtl" : "ltr"}>
       {/* Welcome Section */}
       <div className="text-center">
-        {settings?.coupleImageUrl && (
-          <img
-            src={settings.coupleImageUrl}
-            alt=""
-            className="mx-auto mb-4 h-24 w-24 rounded-full object-cover"
-          />
-        )}
         <h1 className="text-2xl font-bold">
           {settings?.welcomeTitle || event.title}
         </h1>
-        <p className="mt-2 text-muted-foreground">
+        <p
+          className="mt-2 text-muted-foreground"
+          style={{ color: settings?.subtitleTextColor || undefined }}
+        >
           {settings?.welcomeMessage || (isRTL
             ? `שלום ${guest.name}, נשמח לדעת אם תוכלו להגיע לאירוע שלנו`
             : `Hello ${guest.name}, we'd love to know if you can attend our event`)}
         </p>
       </div>
 
-      {/* Event Date Calendar */}
-      {settings?.showCalendar !== false && (
-        <div className="space-y-2">
-          <Label className="text-sm font-medium">
-            {isRTL ? "תאריך האירוע" : "Event Date"}
-          </Label>
-          <div className="flex justify-center rounded-lg border bg-card p-3">
-            <Calendar
-              mode="single"
-              selected={eventDate}
-              month={eventDate}
-              locale={dateLocale}
-              disabled
-              className="rounded-md"
-              classNames={{
-                day_selected: "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground",
-              }}
-            />
-          </div>
-        </div>
-      )}
+      {/* Event Date Display */}
+      <EventDateDisplay
+        eventDate={eventDate}
+        venue={event.venue}
+        location={event.location}
+        isRTL={isRTL}
+        displayStyle={(settings?.dateDisplayStyle as DateDisplayStyle) || "CALENDAR"}
+        showCountdown={settings?.showCountdown !== false}
+        showTimeSection={settings?.showTimeSection !== false}
+        showAddressSection={settings?.showAddressSection !== false}
+        internalGap={10}
+        backgroundColor={settings?.dateCardBackground || undefined}
+        textColor={settings?.dateCardTextColor || undefined}
+        accentColor={settings?.dateCardAccentColor || settings?.accentColor || "#1a1a1a"}
+        borderRadius={settings?.dateCardBorderRadius || 16}
+        padding={settings?.dateCardPadding || 20}
+        shadow={settings?.dateCardShadow !== false}
+        dateDayFontSize={settings?.dateDayFontSize || 56}
+        dateMonthFontSize={settings?.dateMonthFontSize || 16}
+        timeFontSize={settings?.timeFontSize || 14}
+        addressFontSize={settings?.addressFontSize || 13}
+        countdownBoxBackground={settings?.countdownBoxBackground || undefined}
+        countdownBoxTextColor={settings?.countdownBoxTextColor || settings?.accentColor || "#1a1a1a"}
+        countdownNumberFontSize={settings?.countdownNumberFontSize || 18}
+        countdownLabelFontSize={9}
+        countdownBoxSize={44}
+      />
 
       {/* Navigation Links */}
       {(settings?.showGoogleMaps !== false || settings?.showWaze !== false) && (
-        <div className="flex gap-2">
+        <div className="flex gap-3">
           {settings?.showGoogleMaps !== false && (
             <a
               href={getGoogleMapsUrl()}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex flex-1 items-center justify-center gap-2 rounded-lg border bg-card p-3 text-sm hover:bg-accent transition-colors"
+              className="flex flex-1 items-center justify-center gap-2 rounded-xl border bg-card px-4 py-3 text-sm font-medium hover:bg-accent transition-colors"
+              style={{
+                borderColor: settings?.inputBorderColor || "#e5e7eb",
+                backgroundColor: settings?.inputBackgroundColor || "#fafafa",
+              }}
             >
-              <Icons.mapPin className="h-4 w-4" />
+              <Icons.mapPin className="h-4 w-4" style={{ color: accentColor }} />
               Google Maps
             </a>
           )}
@@ -217,9 +229,13 @@ export function RsvpForm({ guest, event, existingRsvp, settings, locale = "he" }
               href={getWazeUrl()}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex flex-1 items-center justify-center gap-2 rounded-lg border bg-card p-3 text-sm hover:bg-accent transition-colors"
+              className="flex flex-1 items-center justify-center gap-2 rounded-xl border bg-card px-4 py-3 text-sm font-medium hover:bg-accent transition-colors"
+              style={{
+                borderColor: settings?.inputBorderColor || "#e5e7eb",
+                backgroundColor: settings?.inputBackgroundColor || "#fafafa",
+              }}
             >
-              <Icons.mapPin className="h-4 w-4" />
+              <Icons.mapPin className="h-4 w-4" style={{ color: accentColor }} />
               Waze
             </a>
           )}
@@ -228,7 +244,10 @@ export function RsvpForm({ guest, event, existingRsvp, settings, locale = "he" }
 
       {/* Full Name */}
       <div className="space-y-2">
-        <Label htmlFor="fullName">
+        <Label
+          htmlFor="fullName"
+          style={{ color: settings?.labelTextColor || undefined }}
+        >
           {isRTL ? "שם מלא" : "Full Name"}
         </Label>
         <Input
@@ -236,72 +255,122 @@ export function RsvpForm({ guest, event, existingRsvp, settings, locale = "he" }
           value={guestName}
           onChange={(e) => setGuestName(e.target.value)}
           placeholder={isRTL ? "הזן את שמך המלא" : "Enter your full name"}
-          className="text-start"
+          className="text-start h-12 rounded-xl text-base"
           dir={isRTL ? "rtl" : "ltr"}
+          style={{
+            backgroundColor: settings?.inputBackgroundColor || "#f9fafb",
+            color: settings?.inputTextColor || undefined,
+            borderColor: settings?.inputBorderColor || "#e5e7eb",
+          }}
         />
       </div>
 
       {/* Guest Count */}
-      <div className="space-y-2">
-        <Label htmlFor="guestCount">
-          {isRTL ? "מספר אורחים" : "Number of Guests"}
-        </Label>
-        <Input
-          id="guestCount"
-          type="number"
-          min={1}
-          max={20}
-          value={guestCount}
-          onChange={(e) => setGuestCount(parseInt(e.target.value) || 1)}
-          className="text-start"
-        />
-      </div>
+      <GuestCounter
+        value={guestCount}
+        onChange={setGuestCount}
+        min={1}
+        max={20}
+        label={isRTL ? "מספר אורחים" : "Number of Guests"}
+        isRTL={isRTL}
+        backgroundColor={settings?.guestCounterBackground || settings?.inputBackgroundColor || "#f9fafb"}
+        textColor={settings?.guestCounterTextColor || settings?.labelTextColor || undefined}
+        borderColor={settings?.inputBorderColor || "#e5e7eb"}
+        accentColor={settings?.guestCounterAccent || settings?.accentColor || "#1a1a1a"}
+      />
 
       {/* RSVP Question */}
       <div className="space-y-3">
-        <Label className="text-base font-medium">
+        <Label
+          className="text-base font-medium"
+          style={{ color: settings?.labelTextColor || undefined }}
+        >
           {isRTL ? "האם תגיעו?" : "Will you attend?"}
         </Label>
         <div className="grid grid-cols-2 gap-3" dir={isRTL ? "rtl" : "ltr"}>
+          {/* Accept Button */}
           <button
             type="button"
             onClick={() => setStatus("ACCEPTED")}
             className={cn(
-              "flex flex-col items-center justify-center gap-2 rounded-xl border-2 p-4 transition-all duration-200",
+              "group relative flex flex-col items-center justify-center gap-3 rounded-2xl p-5 transition-all duration-300 overflow-hidden",
               status === "ACCEPTED"
-                ? "border-green-500 bg-green-50 text-green-700 shadow-md ring-2 ring-green-200 dark:bg-green-950 dark:text-green-300"
-                : "border-gray-200 bg-white hover:border-green-300 hover:bg-green-50/50 dark:border-gray-700 dark:bg-gray-800 dark:hover:border-green-600"
+                ? "shadow-md"
+                : "border border-gray-200 bg-gray-50/50 hover:bg-gray-100/80 dark:border-gray-700 dark:bg-gray-800/50 dark:hover:bg-gray-700/80"
             )}
+            style={status === "ACCEPTED" ? {
+              backgroundColor: settings?.accentColor || "#1a1a1a",
+            } : undefined}
           >
-            <div className={cn(
-              "flex h-10 w-10 items-center justify-center rounded-full transition-colors",
-              status === "ACCEPTED" ? "bg-green-500 text-white" : "bg-green-100 text-green-600 dark:bg-green-900"
-            )}>
-              <Icons.check className="h-5 w-5" />
+            <div className="relative z-10 flex flex-col items-center gap-3">
+              <div
+                className={cn(
+                  "flex h-12 w-12 items-center justify-center rounded-full transition-all duration-300",
+                  status !== "ACCEPTED" && "bg-gray-200/80 text-gray-400 group-hover:bg-gray-300/80 group-hover:text-gray-500 dark:bg-gray-700 dark:text-gray-500"
+                )}
+                style={status === "ACCEPTED" ? {
+                  backgroundColor: "rgba(255, 255, 255, 0.2)",
+                } : undefined}
+              >
+                <Icons.heart
+                  className={cn(
+                    "h-6 w-6 transition-transform duration-300",
+                    status === "ACCEPTED" ? "text-white" : "",
+                    status !== "ACCEPTED" && "h-5 w-5 group-hover:scale-110"
+                  )}
+                />
+              </div>
+              <span
+                className={cn(
+                  "text-sm font-semibold transition-colors duration-300",
+                  status === "ACCEPTED"
+                    ? "text-white"
+                    : "text-gray-400 group-hover:text-gray-500 dark:text-gray-400"
+                )}
+              >
+                {isRTL ? "בשמחה!" : "Count me in!"}
+              </span>
             </div>
-            <span className="font-medium text-sm">
-              {isRTL ? "כן, אגיע בשמחה!" : "Yes, I'll be there!"}
-            </span>
           </button>
+
+          {/* Decline Button */}
           <button
             type="button"
             onClick={() => setStatus("DECLINED")}
             className={cn(
-              "flex flex-col items-center justify-center gap-2 rounded-xl border-2 p-4 transition-all duration-200",
+              "group relative flex flex-col items-center justify-center gap-3 rounded-2xl p-5 transition-all duration-300 overflow-hidden",
               status === "DECLINED"
-                ? "border-red-500 bg-red-50 text-red-700 shadow-md ring-2 ring-red-200 dark:bg-red-950 dark:text-red-300"
-                : "border-gray-200 bg-white hover:border-red-300 hover:bg-red-50/50 dark:border-gray-700 dark:bg-gray-800 dark:hover:border-red-600"
+                ? "bg-gray-500 shadow-md dark:bg-gray-600"
+                : "border border-gray-200 bg-gray-50/50 hover:bg-gray-100/80 dark:border-gray-700 dark:bg-gray-800/50 dark:hover:bg-gray-700/80"
             )}
           >
-            <div className={cn(
-              "flex h-10 w-10 items-center justify-center rounded-full transition-colors",
-              status === "DECLINED" ? "bg-red-500 text-white" : "bg-red-100 text-red-600 dark:bg-red-900"
-            )}>
-              <Icons.close className="h-5 w-5" />
+            <div className="relative z-10 flex flex-col items-center gap-3">
+              <div
+                className={cn(
+                  "flex h-12 w-12 items-center justify-center rounded-full transition-all duration-300",
+                  status === "DECLINED"
+                    ? "bg-white/20"
+                    : "bg-gray-200/80 text-gray-400 group-hover:bg-gray-300/80 group-hover:text-gray-500 dark:bg-gray-700 dark:text-gray-500"
+                )}
+              >
+                <Icons.calendarX
+                  className={cn(
+                    "transition-transform duration-300",
+                    status === "DECLINED" ? "h-6 w-6 text-white" : "h-5 w-5 group-hover:scale-110"
+                  )}
+                />
+              </div>
+              <span
+                className={cn(
+                  "text-sm font-semibold transition-colors duration-300",
+                  status === "DECLINED"
+                    ? "text-white"
+                    : "text-gray-400 group-hover:text-gray-500 dark:text-gray-400"
+                )}
+              >
+                {isRTL ? "לא הפעם" : "Not this time"}
+              </span>
             </div>
-            <span className="font-medium text-sm">
-              {isRTL ? "מצטער, לא אוכל" : "Sorry, can't make it"}
-            </span>
           </button>
         </div>
       </div>
@@ -310,21 +379,44 @@ export function RsvpForm({ guest, event, existingRsvp, settings, locale = "he" }
       <Button
         type="submit"
         className={cn(
-          "w-full",
-          settings?.buttonStyle === "outline" && "bg-transparent border-2 border-primary text-primary hover:bg-primary hover:text-primary-foreground",
-          settings?.buttonStyle === "ghost" && "bg-transparent hover:bg-accent"
+          "group relative w-full h-14 text-base font-semibold transition-all duration-300 overflow-hidden",
+          settings?.buttonStyle === "outline" && "bg-transparent border-2 hover:bg-black/5",
+          settings?.buttonStyle === "ghost" && "bg-transparent hover:bg-accent",
+          settings?.buttonShadow !== false && "shadow-lg hover:shadow-xl",
+          settings?.buttonSize === "sm" && "h-11 text-sm",
+          settings?.buttonSize === "lg" && "h-16 text-lg",
+          !status && "opacity-60 cursor-not-allowed"
         )}
         style={{
-          backgroundColor: settings?.buttonColor || undefined,
-          color: settings?.buttonTextColor || undefined,
-          borderRadius: settings?.buttonBorderRadius ? `${settings.buttonBorderRadius}px` : undefined,
+          backgroundColor: settings?.buttonStyle === "outline" || settings?.buttonStyle === "ghost"
+            ? "transparent"
+            : settings?.buttonColor || accentColor,
+          color: settings?.buttonStyle === "outline" || settings?.buttonStyle === "ghost"
+            ? settings?.buttonColor || accentColor
+            : settings?.buttonTextColor || "#ffffff",
+          borderRadius: settings?.buttonBorderRadius ? `${settings.buttonBorderRadius}px` : "16px",
+          borderColor: settings?.buttonBorderColor || settings?.buttonColor || accentColor,
         }}
         disabled={isLoading || !status}
       >
-        {isLoading ? (
-          <Icons.spinner className="me-2 h-4 w-4 animate-spin" />
-        ) : null}
-        {isRTL ? "שליחת אישור" : "Send RSVP"}
+        {/* Hover gradient effect */}
+        <span
+          className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"
+          style={{ display: settings?.buttonStyle === "outline" || settings?.buttonStyle === "ghost" ? "none" : undefined }}
+        />
+
+        {/* Button content */}
+        <span className="relative flex items-center justify-center gap-2">
+          {isLoading ? (
+            <Icons.spinner className="h-5 w-5 animate-spin" />
+          ) : (
+            <Icons.send className={cn(
+              "h-5 w-5 transition-transform duration-300 group-hover:scale-110",
+              isRTL && "rotate-180"
+            )} />
+          )}
+          <span>{isRTL ? "שליחת אישור" : "Send RSVP"}</span>
+        </span>
       </Button>
 
       {/* Already responded notice */}

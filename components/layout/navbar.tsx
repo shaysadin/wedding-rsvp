@@ -4,6 +4,7 @@ import { useContext } from "react";
 import Link from "next/link";
 import { useSelectedLayoutSegment } from "next/navigation";
 import { useSession } from "next-auth/react";
+import { UserRole } from "@prisma/client";
 
 import { docsConfig } from "@/config/docs";
 import { marketingConfig } from "@/config/marketing";
@@ -102,7 +103,7 @@ export function NavBar({ scroll = false }: NavBarProps) {
 
           {session ? (
             <Link
-              href={session.user.role === "ADMIN" ? "/admin" : "/dashboard"}
+              href={session.user.role === UserRole.ROLE_PLATFORM_OWNER ? "/admin" : "/dashboard"}
               className="hidden md:block"
             >
               <Button

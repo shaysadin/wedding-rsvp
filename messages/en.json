@@ -65,7 +65,8 @@
     "settings": "Settings",
     "admin": "Admin Panel",
     "users": "Users",
-    "home": "Home"
+    "home": "Home",
+    "messaging": "Messaging Settings"
   },
   "auth": {
     "signIn": "Sign In",
@@ -131,7 +132,11 @@
     "customizeRsvp": "Customize RSVP Page",
     "viewRsvpPage": "View RSVP Page",
     "copyRsvpLink": "Copy Link",
-    "totalAttending": "Total Attending"
+    "totalAttending": "Total Attending",
+    "messages": "Messages",
+    "messageTemplates": "Message Templates",
+    "sendInvitations": "Send Invitations",
+    "sendReminders": "Send Reminders"
   },
   "guests": {
     "title": "Guest List",
@@ -204,7 +209,41 @@
     "bulkSendSuccess": "Successfully sent {count} invites",
     "bulkSendErrors": "{count} invites failed to send",
     "bulkCopySuccess": "Copied {count} links to clipboard",
-    "copyFailed": "Failed to copy to clipboard"
+    "copyFailed": "Failed to copy to clipboard",
+    "sendMessage": "Send Message",
+    "sendBulkMessage": "Send Message to Selected",
+    "sendMessageTo": "Send message to {name}",
+    "sendMessageToSelected": "Send message to {count} selected guests",
+    "messageType": "Message Type",
+    "invitation": "Invitation",
+    "reminder": "Reminder",
+    "invitationDescription": "Send an invitation to RSVP",
+    "reminderDescription": "Remind guests who haven't responded",
+    "recipients": "Recipients",
+    "sending": "Sending...",
+    "send": "Send",
+    "sent": "Sent",
+    "failed": "Failed",
+    "sendVia": "Send via",
+    "offline": "Offline",
+    "noChannelsAvailable": "No messaging channels available",
+    "contactAdminForChannels": "Contact your administrator to enable SMS or WhatsApp messaging.",
+    "errorDetails": "Error details",
+    "andMoreErrors": "...and {count} more errors",
+    "messageSentSuccess": "Successfully sent {count} messages",
+    "messageSentPartial": "Sent {success} messages, {failed} failed",
+    "messageSentFailed": "Failed to send messages",
+    "allMessagesSent": "All messages sent successfully!",
+    "sendingFailed": "Sending failed",
+    "partiallySent": "Some messages sent",
+    "messageSent": "Message Status",
+    "noPhone": "No phone number"
+  },
+  "messageStatus": {
+    "notSent": "Not Sent",
+    "inviteSent": "Invite Sent",
+    "reminder1": "1 Reminder",
+    "reminder2Plus": "2+ Reminders"
   },
   "rsvp": {
     "title": "RSVP",
@@ -344,5 +383,98 @@
     "sent": "Sent successfully",
     "imported": "Imported successfully",
     "exported": "Exported successfully"
+  },
+  "messageTemplates": {
+    "title": "Message Templates",
+    "description": "Customize the messages sent to your guests via WhatsApp/SMS",
+    "templatesFor": "Templates for {eventTitle}",
+    "resetToDefaults": "Reset to Defaults",
+    "resetConfirm": "Are you sure you want to reset all templates to defaults? This will overwrite your customizations.",
+    "templateReset": "Templates reset successfully",
+    "templateStatusUpdated": "Template status updated",
+    "bulkSendTitle": "Bulk Send Messages",
+    "bulkSendDescription": "Send messages to all eligible guests at once",
+    "sendInvitationsToAll": "Send Invitations to All",
+    "sendRemindersTosPending": "Send Reminders to Pending",
+    "availablePlaceholders": "Available Placeholders",
+    "placeholdersDescription": "Use these placeholders in your messages - they will be replaced with actual values",
+    "inviteMessage": "Invitation Message",
+    "inviteDescription": "First message sent to invite guests",
+    "reminderMessage": "Reminder Message",
+    "reminderDescription": "Follow-up message for pending RSVPs",
+    "titleLabel": "Title",
+    "messagePreview": "Message Preview",
+    "editTemplate": "Edit Template",
+    "createTemplate": "Create Template",
+    "noTemplateConfigured": "No template configured",
+    "editTemplateTitle": "Edit Template",
+    "createTemplateTitle": "Create Template",
+    "editorDescription": "Customize this message template. Use placeholders for dynamic content.",
+    "messageLabel": "Message Content",
+    "insertPlaceholder": "Insert Placeholder",
+    "preview": "Preview",
+    "characterCount": "{count} characters",
+    "saving": "Saving...",
+    "templateSaved": "Template saved successfully",
+    "placeholders": {
+      "guestName": "Guest's full name",
+      "eventTitle": "Event title",
+      "rsvpLink": "Personal RSVP link",
+      "eventDate": "Event date",
+      "eventTime": "Event time",
+      "eventLocation": "Event location/address",
+      "eventVenue": "Venue name"
+    },
+    "smsSenderId": {
+      "title": "SMS Sender ID (Alpha)",
+      "description": "Custom sender name displayed to recipients instead of a phone number",
+      "label": "Sender ID",
+      "placeholder": "e.g., WeddingRSVP",
+      "hint": "Max 11 characters, alphanumeric only (A-Z, 0-9). This will be shown as the sender when sending SMS messages.",
+      "preview": "Messages will appear from",
+      "saved": "SMS Sender ID saved",
+      "saveFailed": "Failed to save SMS Sender ID"
+    },
+    "pageTitle": "Message Templates",
+    "pageDescription": "Customize messages for {eventTitle}",
+    "backToEvent": "Back to Event"
+  },
+  "settings": {
+    "title": "Settings",
+    "description": "Manage your account settings and preferences",
+    "saved": "Settings saved successfully",
+    "saving": "Saving...",
+    "profile": {
+      "title": "Profile Settings",
+      "description": "Update your personal information",
+      "name": "Display Name",
+      "namePlaceholder": "Enter your name",
+      "email": "Email Address",
+      "emailNote": "Email cannot be changed"
+    },
+    "preferences": {
+      "language": "Language",
+      "languageNote": "Choose your preferred language for the dashboard"
+    },
+    "account": {
+      "title": "Account Information",
+      "description": "View your account details",
+      "plan": "Current Plan",
+      "status": "Account Status",
+      "memberSince": "Member Since",
+      "role": "Role",
+      "admin": "Administrator",
+      "user": "User"
+    },
+    "plans": {
+      "free": "Free",
+      "basic": "Basic",
+      "premium": "Premium"
+    },
+    "status": {
+      "active": "Active",
+      "pending": "Pending Approval",
+      "suspended": "Suspended"
+    }
   }
 }

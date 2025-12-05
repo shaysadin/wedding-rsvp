@@ -1,13 +1,15 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { UserRole, NotificationType } from "@prisma/client";
+import { UserRole, NotificationType, NotificationChannel } from "@prisma/client";
 
 import { prisma } from "@/lib/db";
 import { getCurrentUser } from "@/lib/session";
-import { notificationService } from "@/lib/notifications/mock-service";
+import { getNotificationService } from "@/lib/notifications";
 
-export async function sendInvite(guestId: string) {
+export type ChannelType = "WHATSAPP" | "SMS" | "AUTO";
+
+export async function sendInvite(guestId: string, channel: ChannelType = "AUTO") {
   try {
     const user = await getCurrentUser();
 
@@ -26,7 +28,9 @@ export async function sendInvite(guestId: string) {
     }
 
     // Send notification
-    const result = await notificationService.sendInvite(guest, guest.weddingEvent);
+    const notificationService = await getNotificationService();
+    const preferredChannel = channel === "AUTO" ? undefined : (channel as NotificationChannel);
+    const result = await notificationService.sendInvite(guest, guest.weddingEvent, preferredChannel);
 
     // Log to database
     await prisma.notificationLog.create({
@@ -42,6 +46,10 @@ export async function sendInvite(guestId: string) {
 
     revalidatePath(`/dashboard/events/${guest.weddingEventId}`);
 
+    if (!result.success && result.error) {
+      return { error: result.error, channel: result.channel };
+    }
+
     return { success: result.success, channel: result.channel };
   } catch (error) {
     console.error("Error sending invite:", error);
@@ -49,7 +57,7 @@ export async function sendInvite(guestId: string) {
   }
 }
 
-export async function sendReminder(guestId: string) {
+export async function sendReminder(guestId: string, channel: ChannelType = "AUTO") {
   try {
     const user = await getCurrentUser();
 
@@ -73,7 +81,9 @@ export async function sendReminder(guestId: string) {
     }
 
     // Send notification
-    const result = await notificationService.sendReminder(guest, guest.weddingEvent);
+    const notificationService = await getNotificationService();
+    const preferredChannel = channel === "AUTO" ? undefined : (channel as NotificationChannel);
+    const result = await notificationService.sendReminder(guest, guest.weddingEvent, preferredChannel);
 
     // Log to database
     await prisma.notificationLog.create({
@@ -88,6 +98,10 @@ export async function sendReminder(guestId: string) {
     });
 
     revalidatePath(`/dashboard/events/${guest.weddingEventId}`);
+
+    if (!result.success && result.error) {
+      return { error: result.error, channel: result.channel };
+    }
 
     return { success: result.success, channel: result.channel };
   } catch (error) {
@@ -128,6 +142,9 @@ export async function sendBulkReminders(eventId: string) {
     if (pendingGuests.length === 0) {
       return { success: true, sent: 0, message: "No pending guests to remind" };
     }
+
+    // Get notification service once for all guests
+    const notificationService = await getNotificationService();
 
     // Send reminders to all pending guests
     let sent = 0;
@@ -207,6 +224,9 @@ export async function sendBulkInvites(eventId: string) {
     if (uninvitedGuests.length === 0) {
       return { success: true, sent: 0, message: "All guests have been invited" };
     }
+
+    // Get notification service once for all guests
+    const notificationService = await getNotificationService();
 
     // Send invites to all uninvited guests
     let sent = 0;

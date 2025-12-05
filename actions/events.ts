@@ -22,15 +22,16 @@ export async function createEvent(input: CreateEventInput) {
   try {
     const user = await getCurrentUser();
 
-    if (!user || user.role !== UserRole.ROLE_WEDDING_OWNER) {
+    if (!user || !user.id || user.role !== UserRole.ROLE_WEDDING_OWNER) {
       return { error: "Unauthorized" };
     }
 
+    const userId = user.id;
     const validatedData = createEventSchema.parse(input);
 
     // Check plan limits
     const eventCount = await prisma.weddingEvent.count({
-      where: { ownerId: user.id },
+      where: { ownerId: userId },
     });
 
     const limit = PLAN_LIMITS[user.plan];
@@ -42,9 +43,14 @@ export async function createEvent(input: CreateEventInput) {
 
     const event = await prisma.weddingEvent.create({
       data: {
-        ...validatedData,
+        title: validatedData.title,
+        description: validatedData.description,
+        location: validatedData.location,
+        venue: validatedData.venue,
+        notes: validatedData.notes,
+        imageUrl: validatedData.imageUrl || null,
         dateTime: new Date(validatedData.dateTime),
-        ownerId: user.id,
+        ownerId: userId,
       },
     });
 
