@@ -6,7 +6,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { toast } from "sonner";
 
 import { deleteGuest, deleteGuests } from "@/actions/guests";
-import { sendInvite, sendReminder, sendBulkInvites, sendBulkReminders } from "@/actions/notifications";
+import { sendInvite, sendReminder } from "@/actions/notifications";
 import {
   Table,
   TableBody,
@@ -101,8 +101,6 @@ export function GuestsTable({ guests, eventId, initialFilter = "all" }: GuestsTa
   const [loading, setLoading] = useState<string | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkLoading, setBulkLoading] = useState(false);
-  const [bulkInviteLoading, setBulkInviteLoading] = useState(false);
-  const [bulkReminderLoading, setBulkReminderLoading] = useState(false);
   const [editingGuest, setEditingGuest] = useState<GuestWithRsvp | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -321,38 +319,43 @@ export function GuestsTable({ guests, eventId, initialFilter = "all" }: GuestsTa
     }
   };
 
-  // Bulk send invites to guests who haven't received an invite
-  const handleBulkSendInvites = async () => {
-    setBulkInviteLoading(true);
-    const result = await sendBulkInvites(eventId);
-    setBulkInviteLoading(false);
+  // Select all guests who haven't received an invite and open send message modal
+  const handleSelectNotSentGuests = () => {
+    const notSentGuests = guests.filter((guest) => getMessageStatus(guest.notificationLogs) === "not_sent");
+    if (notSentGuests.length === 0) return;
 
-    if (result.error) {
-      toast.error(result.error);
-    } else {
-      if (result.sent === 0) {
-        toast.info(t("allGuestsInvited"));
-      } else {
-        toast.success(t("bulkInviteSuccess", { sent: result.sent ?? 0, total: result.total ?? 0 }));
-      }
-    }
+    // Select these guests
+    setSelectedIds(new Set(notSentGuests.map((g) => g.id)));
+
+    // Open send message modal
+    setSendMessageGuests({
+      ids: notSentGuests.map((g) => g.id),
+      names: notSentGuests.map((g) => g.name),
+      statuses: notSentGuests.map((g) => (g.rsvp?.status || "PENDING") as "PENDING" | "ACCEPTED" | "DECLINED" | "MAYBE"),
+    });
+    setSendMessageMode("bulk");
+    setSendMessageOpen(true);
   };
 
-  // Bulk send reminders to pending guests
-  const handleBulkSendReminders = async () => {
-    setBulkReminderLoading(true);
-    const result = await sendBulkReminders(eventId);
-    setBulkReminderLoading(false);
+  // Select all pending guests and open send message modal for reminders
+  const handleSelectPendingGuests = () => {
+    const pendingGuests = guests.filter((guest) => {
+      const status = guest.rsvp?.status || "PENDING";
+      return status === "PENDING";
+    });
+    if (pendingGuests.length === 0) return;
 
-    if (result.error) {
-      toast.error(result.error);
-    } else {
-      if (result.sent === 0) {
-        toast.info(t("noPendingGuests"));
-      } else {
-        toast.success(t("bulkReminderSuccess", { sent: result.sent ?? 0, total: result.total ?? 0 }));
-      }
-    }
+    // Select these guests
+    setSelectedIds(new Set(pendingGuests.map((g) => g.id)));
+
+    // Open send message modal
+    setSendMessageGuests({
+      ids: pendingGuests.map((g) => g.id),
+      names: pendingGuests.map((g) => g.name),
+      statuses: pendingGuests.map((g) => (g.rsvp?.status || "PENDING") as "PENDING" | "ACCEPTED" | "DECLINED" | "MAYBE"),
+    });
+    setSendMessageMode("bulk");
+    setSendMessageOpen(true);
   };
 
   // Open send message dialog for bulk
@@ -450,36 +453,17 @@ export function GuestsTable({ guests, eventId, initialFilter = "all" }: GuestsTa
           />
         </div>
 
-        {/* Filter Bar */}
-        <GuestsFilterBar
-          sideFilter={sideFilter}
-          setSideFilter={setSideFilter}
-          groupFilter={groupFilter}
-          setGroupFilter={setGroupFilter}
-          messageStatusFilter={messageStatusFilter}
-          setMessageStatusFilter={setMessageStatusFilter}
-          rsvpStatusFilter={rsvpStatusFilter}
-          setRsvpStatusFilter={setRsvpStatusFilter}
-          onClearFilters={clearFilters}
-          activeFilterCount={activeFilterCount}
-          customGroups={customGroups}
-          customSides={customSides}
-        />
-
-        {/* Quick Bulk Actions */}
+        {/* Filter Bar with Quick Bulk Actions */}
         <div className="flex flex-wrap items-center gap-2">
+          {/* Quick Bulk Actions - on the left/start */}
           <Button
             variant="outline"
             size="sm"
-            onClick={handleBulkSendInvites}
-            disabled={bulkInviteLoading || notSentCount === 0}
+            onClick={handleSelectNotSentGuests}
+            disabled={notSentCount === 0}
             className="gap-2"
           >
-            {bulkInviteLoading ? (
-              <Icons.spinner className="h-4 w-4 animate-spin" />
-            ) : (
-              <Icons.send className="h-4 w-4" />
-            )}
+            <Icons.send className="h-4 w-4" />
             {t("sendToAllNotSent")}
             {notSentCount > 0 && (
               <Badge variant="secondary" className="ms-1">
@@ -490,15 +474,11 @@ export function GuestsTable({ guests, eventId, initialFilter = "all" }: GuestsTa
           <Button
             variant="outline"
             size="sm"
-            onClick={handleBulkSendReminders}
-            disabled={bulkReminderLoading || pendingGuestsCount === 0}
+            onClick={handleSelectPendingGuests}
+            disabled={pendingGuestsCount === 0}
             className="gap-2"
           >
-            {bulkReminderLoading ? (
-              <Icons.spinner className="h-4 w-4 animate-spin" />
-            ) : (
-              <Icons.bell className="h-4 w-4" />
-            )}
+            <Icons.bell className="h-4 w-4" />
             {t("sendReminders")}
             {pendingGuestsCount > 0 && (
               <Badge variant="secondary" className="ms-1">
@@ -506,6 +486,25 @@ export function GuestsTable({ guests, eventId, initialFilter = "all" }: GuestsTa
               </Badge>
             )}
           </Button>
+
+          {/* Spacer to push filter bar to the right */}
+          <div className="flex-1" />
+
+          {/* Filter Bar */}
+          <GuestsFilterBar
+            sideFilter={sideFilter}
+            setSideFilter={setSideFilter}
+            groupFilter={groupFilter}
+            setGroupFilter={setGroupFilter}
+            messageStatusFilter={messageStatusFilter}
+            setMessageStatusFilter={setMessageStatusFilter}
+            rsvpStatusFilter={rsvpStatusFilter}
+            setRsvpStatusFilter={setRsvpStatusFilter}
+            onClearFilters={clearFilters}
+            activeFilterCount={activeFilterCount}
+            customGroups={customGroups}
+            customSides={customSides}
+          />
         </div>
       </div>
 
