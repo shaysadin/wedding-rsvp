@@ -2,7 +2,7 @@
   "crons": [
     {
       "path": "/api/cron/process-bulk-jobs",
-      "schedule": "* * * * *"
+      "schedule": "0 0 * * *"
     }
   ]
 }
