@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import Stripe from "stripe";
 
 import { stripe } from "@/lib/stripe";
 import { getCurrentUser } from "@/lib/session";
@@ -27,7 +28,7 @@ export async function POST(request: Request) {
       customer: user.stripeCustomerId,
       return_url: returnUrl || `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/settings`,
       // Locale for Hebrew/English support (he or en)
-      locale: locale === "he" ? "he" : locale === "en" ? "en" : undefined,
+      locale: (locale === "he" ? "he" : locale === "en" ? "en" : undefined) as Stripe.BillingPortal.SessionCreateParams.Locale | undefined,
     });
 
     return NextResponse.json({ url: portalSession.url });
