@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { SubscriptionPlan, UserSubscriptionPlan } from "@/types";
 
 import { Button } from "@/components/ui/button";
@@ -22,6 +22,7 @@ export function BillingFormButton({
   const [isPending, startTransition] = useTransition();
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const t = useTranslations("billing");
+  const locale = useLocale();
 
   const userOffer =
     subscriptionPlan.stripePriceId ===
@@ -42,6 +43,7 @@ export function BillingFormButton({
           },
           body: JSON.stringify({
             returnUrl: window.location.href,
+            locale: locale === "he" ? "he" : "en",
           }),
         });
 

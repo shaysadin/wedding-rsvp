@@ -21,11 +21,13 @@ export async function POST(request: Request) {
       );
     }
 
-    const { returnUrl } = await request.json();
+    const { returnUrl, locale } = await request.json();
 
     const portalSession = await stripe.billingPortal.sessions.create({
       customer: user.stripeCustomerId,
       return_url: returnUrl || `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/settings`,
+      // Locale for Hebrew/English support (he or en)
+      locale: locale === "he" ? "he" : locale === "en" ? "en" : undefined,
     });
 
     return NextResponse.json({ url: portalSession.url });

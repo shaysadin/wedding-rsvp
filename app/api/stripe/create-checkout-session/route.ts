@@ -8,6 +8,7 @@ import { getCurrentUser } from "@/lib/session";
 const createCheckoutSchema = z.object({
   plan: z.enum(["BASIC", "ADVANCED", "PREMIUM"]),
   interval: z.enum(["monthly", "yearly"]),
+  locale: z.enum(["he", "en", "auto"]).optional().default("auto"),
 });
 
 export async function POST(request: Request) {
@@ -26,7 +27,7 @@ export async function POST(request: Request) {
     const userId = user.id;
 
     const body = await request.json();
-    const { plan, interval } = createCheckoutSchema.parse(body);
+    const { plan, interval, locale } = createCheckoutSchema.parse(body);
 
     const priceId = getPriceId(plan, interval);
 
@@ -88,6 +89,8 @@ export async function POST(request: Request) {
       allow_promotion_codes: true,
       // Collect billing address
       billing_address_collection: "auto",
+      // Locale for Hebrew/English support
+      locale: locale === "auto" ? "auto" : locale,
     });
 
     return NextResponse.json({

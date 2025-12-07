@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { useSearchParams, useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
@@ -65,6 +65,7 @@ export function BillingPageContent({ userId, subscriptionPlan }: BillingPageCont
   const tPricing = useTranslations("pricing");
   const tBilling = useTranslations("billing");
   const tPlans = useTranslations("plans");
+  const locale = useLocale();
 
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -170,7 +171,7 @@ export function BillingPageContent({ userId, subscriptionPlan }: BillingPageCont
       const response = await fetch("/api/stripe/create-checkout-session", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ plan, interval }),
+        body: JSON.stringify({ plan, interval, locale: locale === "he" ? "he" : "en" }),
       });
 
       const data = await response.json();
