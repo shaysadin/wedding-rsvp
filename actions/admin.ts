@@ -87,9 +87,9 @@ export async function getSuspendedUsers() {
 
 export async function reactivateUser(userId: string) {
   try {
-    const currentUser = await getCurrentUser();
+    const currentUser = await requirePlatformOwner();
 
-    if (!currentUser || currentUser.role !== UserRole.ROLE_PLATFORM_OWNER) {
+    if (!currentUser) {
       return { error: "Unauthorized" };
     }
 
@@ -110,9 +110,9 @@ export async function reactivateUser(userId: string) {
 
 export async function suspendUser(userId: string) {
   try {
-    const currentUser = await getCurrentUser();
+    const currentUser = await requirePlatformOwner();
 
-    if (!currentUser || currentUser.role !== UserRole.ROLE_PLATFORM_OWNER) {
+    if (!currentUser) {
       return { error: "Unauthorized" };
     }
 
@@ -138,9 +138,9 @@ export async function changeUserPlan(
   syncWithStripe: boolean = false
 ) {
   try {
-    const currentUser = await getCurrentUser();
+    const currentUser = await requirePlatformOwner();
 
-    if (!currentUser || currentUser.role !== UserRole.ROLE_PLATFORM_OWNER) {
+    if (!currentUser) {
       return { error: "Unauthorized" };
     }
 
@@ -260,9 +260,9 @@ export async function changeUserPlan(
 
 export async function resetUserUsage(userId: string) {
   try {
-    const currentUser = await getCurrentUser();
+    const currentUser = await requirePlatformOwner();
 
-    if (!currentUser || currentUser.role !== UserRole.ROLE_PLATFORM_OWNER) {
+    if (!currentUser) {
       return { error: "Unauthorized" };
     }
 
@@ -297,9 +297,9 @@ export async function addBonusMessages(
   smsBonus: number = 0
 ) {
   try {
-    const currentUser = await getCurrentUser();
+    const currentUser = await requirePlatformOwner();
 
-    if (!currentUser || currentUser.role !== UserRole.ROLE_PLATFORM_OWNER) {
+    if (!currentUser) {
       return { error: "Unauthorized" };
     }
 
@@ -333,9 +333,9 @@ export async function adjustCredits(
   smsAdjustment: number = 0
 ) {
   try {
-    const currentUser = await getCurrentUser();
+    const currentUser = await requirePlatformOwner();
 
-    if (!currentUser || currentUser.role !== UserRole.ROLE_PLATFORM_OWNER) {
+    if (!currentUser) {
       return { error: "Unauthorized" };
     }
 
@@ -485,9 +485,9 @@ export async function getUsageStats() {
 
 export async function getUserUsage(userId: string) {
   try {
-    const currentUser = await getCurrentUser();
+    const currentUser = await requirePlatformOwner();
 
-    if (!currentUser || currentUser.role !== UserRole.ROLE_PLATFORM_OWNER) {
+    if (!currentUser) {
       return { error: "Unauthorized" };
     }
 
@@ -534,9 +534,9 @@ export async function getUserUsage(userId: string) {
 
 export async function toggleUserAdminRole(userId: string) {
   try {
-    const currentUser = await getCurrentUser();
+    const currentUser = await requirePlatformOwner();
 
-    if (!currentUser || currentUser.role !== UserRole.ROLE_PLATFORM_OWNER) {
+    if (!currentUser) {
       return { error: "Unauthorized" };
     }
 
