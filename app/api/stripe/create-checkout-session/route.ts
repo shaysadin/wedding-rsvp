@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import Stripe from "stripe";
 
 import { getStripe, getPriceId } from "@/lib/stripe";
 import { prisma } from "@/lib/db";
@@ -90,8 +89,9 @@ export async function POST(request: Request) {
       allow_promotion_codes: true,
       // Collect billing address
       billing_address_collection: "auto",
-      // Locale for Hebrew/English support
-      locale: (locale === "auto" ? "auto" : locale) as Stripe.Checkout.SessionCreateParams.Locale,
+      // Locale - Hebrew not supported by Stripe Checkout, use auto for browser detection
+      // Supported locales: https://stripe.com/docs/api/checkout/sessions/create#create_checkout_session-locale
+      locale: locale === "en" ? "en" : "auto",
     });
 
     return NextResponse.json({
