@@ -260,7 +260,13 @@
     "customGroup": "Custom...",
     "customGroupPlaceholder": "Enter group name",
     "customSide": "Custom...",
-    "customSidePlaceholder": "Enter side name"
+    "customSidePlaceholder": "Enter side name",
+    "sendToAllNotSent": "Send to All Not Sent",
+    "sendReminders": "Send Reminders",
+    "allGuestsInvited": "All guests have already received invites",
+    "noPendingGuests": "No pending guests to remind",
+    "bulkInviteSuccess": "Sent invites to {sent} of {total} guests",
+    "bulkReminderSuccess": "Sent reminders to {sent} of {total} guests"
   },
   "messageStatus": {
     "notSent": "Not Sent",

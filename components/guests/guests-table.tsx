@@ -6,7 +6,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { toast } from "sonner";
 
 import { deleteGuest, deleteGuests } from "@/actions/guests";
-import { sendInvite, sendReminder } from "@/actions/notifications";
+import { sendInvite, sendReminder, sendBulkInvites, sendBulkReminders } from "@/actions/notifications";
 import {
   Table,
   TableBody,
@@ -101,6 +101,8 @@ export function GuestsTable({ guests, eventId, initialFilter = "all" }: GuestsTa
   const [loading, setLoading] = useState<string | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkLoading, setBulkLoading] = useState(false);
+  const [bulkInviteLoading, setBulkInviteLoading] = useState(false);
+  const [bulkReminderLoading, setBulkReminderLoading] = useState(false);
   const [editingGuest, setEditingGuest] = useState<GuestWithRsvp | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -151,6 +153,19 @@ export function GuestsTable({ guests, eventId, initialFilter = "all" }: GuestsTa
     if (rsvpStatusFilter !== "all") count++;
     return count;
   }, [sideFilter, groupFilter, messageStatusFilter, rsvpStatusFilter]);
+
+  // Count guests who haven't received an invite
+  const notSentCount = useMemo(() => {
+    return guests.filter((guest) => getMessageStatus(guest.notificationLogs) === "not_sent").length;
+  }, [guests]);
+
+  // Count pending guests (for reminders)
+  const pendingGuestsCount = useMemo(() => {
+    return guests.filter((guest) => {
+      const status = guest.rsvp?.status || "PENDING";
+      return status === "PENDING";
+    }).length;
+  }, [guests]);
 
   // Clear all filters
   const clearFilters = () => {
@@ -306,6 +321,40 @@ export function GuestsTable({ guests, eventId, initialFilter = "all" }: GuestsTa
     }
   };
 
+  // Bulk send invites to guests who haven't received an invite
+  const handleBulkSendInvites = async () => {
+    setBulkInviteLoading(true);
+    const result = await sendBulkInvites(eventId);
+    setBulkInviteLoading(false);
+
+    if (result.error) {
+      toast.error(result.error);
+    } else {
+      if (result.sent === 0) {
+        toast.info(t("allGuestsInvited"));
+      } else {
+        toast.success(t("bulkInviteSuccess", { sent: result.sent ?? 0, total: result.total ?? 0 }));
+      }
+    }
+  };
+
+  // Bulk send reminders to pending guests
+  const handleBulkSendReminders = async () => {
+    setBulkReminderLoading(true);
+    const result = await sendBulkReminders(eventId);
+    setBulkReminderLoading(false);
+
+    if (result.error) {
+      toast.error(result.error);
+    } else {
+      if (result.sent === 0) {
+        toast.info(t("noPendingGuests"));
+      } else {
+        toast.success(t("bulkReminderSuccess", { sent: result.sent ?? 0, total: result.total ?? 0 }));
+      }
+    }
+  };
+
   // Open send message dialog for bulk
   const openBulkSendMessage = () => {
     if (selectedIds.size === 0) return;
@@ -416,6 +465,48 @@ export function GuestsTable({ guests, eventId, initialFilter = "all" }: GuestsTa
           customGroups={customGroups}
           customSides={customSides}
         />
+
+        {/* Quick Bulk Actions */}
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleBulkSendInvites}
+            disabled={bulkInviteLoading || notSentCount === 0}
+            className="gap-2"
+          >
+            {bulkInviteLoading ? (
+              <Icons.spinner className="h-4 w-4 animate-spin" />
+            ) : (
+              <Icons.send className="h-4 w-4" />
+            )}
+            {t("sendToAllNotSent")}
+            {notSentCount > 0 && (
+              <Badge variant="secondary" className="ms-1">
+                {notSentCount}
+              </Badge>
+            )}
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleBulkSendReminders}
+            disabled={bulkReminderLoading || pendingGuestsCount === 0}
+            className="gap-2"
+          >
+            {bulkReminderLoading ? (
+              <Icons.spinner className="h-4 w-4 animate-spin" />
+            ) : (
+              <Icons.bell className="h-4 w-4" />
+            )}
+            {t("sendReminders")}
+            {pendingGuestsCount > 0 && (
+              <Badge variant="secondary" className="ms-1">
+                {pendingGuestsCount}
+              </Badge>
+            )}
+          </Button>
+        </div>
       </div>
 
       {/* Bulk Actions Bar */}

@@ -260,7 +260,13 @@
     "customGroup": "מותאם אישית...",
     "customGroupPlaceholder": "הכנס שם קבוצה",
     "customSide": "מותאם אישית...",
-    "customSidePlaceholder": "הכנס שם צד"
+    "customSidePlaceholder": "הכנס שם צד",
+    "sendToAllNotSent": "שלח לכל מי שלא נשלח",
+    "sendReminders": "שלח תזכורות",
+    "allGuestsInvited": "כל האורחים כבר קיבלו הזמנות",
+    "noPendingGuests": "אין אורחים ממתינים לתזכורת",
+    "bulkInviteSuccess": "נשלחו הזמנות ל-{sent} מתוך {total} אורחים",
+    "bulkReminderSuccess": "נשלחו תזכורות ל-{sent} מתוך {total} אורחים"
   },
   "messageStatus": {
     "notSent": "לא נשלח",
