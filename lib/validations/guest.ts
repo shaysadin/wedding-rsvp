@@ -5,7 +5,7 @@ export const createGuestSchema = z.object({
   name: z.string().min(1, "Guest name is required").max(255),
   phoneNumber: z.string().max(50).optional(),
   email: z.string().email().optional().or(z.literal("")),
-  side: z.enum(["bride", "groom", "both"]).optional(),
+  side: z.string().max(100).optional(),
   groupName: z.string().max(100).optional(),
   expectedGuests: z.number().int().min(1).max(20).optional().default(1),
   notes: z.string().max(1000).optional(),
@@ -22,7 +22,7 @@ export const bulkImportGuestSchema = z.object({
       name: z.string().min(1),
       phoneNumber: z.string().optional(),
       email: z.string().email().optional().or(z.literal("")),
-      side: z.enum(["bride", "groom", "both"]).optional(),
+      side: z.string().max(100).optional(),
       groupName: z.string().optional(),
       expectedGuests: z.number().int().min(1).max(20).optional().default(1),
       notes: z.string().optional(),
@@ -30,6 +30,9 @@ export const bulkImportGuestSchema = z.object({
   ),
 });
 
-export type CreateGuestInput = z.infer<typeof createGuestSchema>;
-export type UpdateGuestInput = z.infer<typeof updateGuestSchema>;
-export type BulkImportGuestInput = z.infer<typeof bulkImportGuestSchema>;
+// Use z.input for form input types (before defaults are applied)
+// Use z.infer for output types (after validation and defaults)
+export type CreateGuestInput = z.input<typeof createGuestSchema>;
+export type CreateGuestOutput = z.infer<typeof createGuestSchema>;
+export type UpdateGuestInput = z.input<typeof updateGuestSchema>;
+export type BulkImportGuestInput = z.input<typeof bulkImportGuestSchema>;

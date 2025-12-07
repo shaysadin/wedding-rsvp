@@ -1,7 +1,38 @@
 import { NextResponse } from "next/server";
+import { CronJobStatus, CronJobType, PlanTier } from "@prisma/client";
 
 import { prisma } from "@/lib/db";
-import { getStripe, getPriceId } from "@/lib/stripe";
+import { getStripe, getPriceId, getPlanFromPriceId } from "@/lib/stripe";
+
+// Helper to log cron job execution
+async function logCronJob(params: {
+  status: CronJobStatus;
+  userId?: string;
+  userEmail?: string;
+  fromPlan?: PlanTier;
+  toPlan?: PlanTier;
+  scheduledFor?: Date;
+  message?: string;
+  errorDetails?: string;
+}) {
+  try {
+    await prisma.cronJobLog.create({
+      data: {
+        jobType: CronJobType.PLAN_CHANGE,
+        status: params.status,
+        userId: params.userId,
+        userEmail: params.userEmail,
+        fromPlan: params.fromPlan,
+        toPlan: params.toPlan,
+        scheduledFor: params.scheduledFor,
+        message: params.message,
+        errorDetails: params.errorDetails,
+      },
+    });
+  } catch (logError) {
+    console.error("Failed to write cron job log:", logError);
+  }
+}
 
 // This endpoint should be called by a cron job daily
 // It checks for pending plan changes that are due and applies them
@@ -33,6 +64,8 @@ export async function GET(request: Request) {
       },
       select: {
         id: true,
+        email: true,
+        plan: true,
         pendingPlanChange: true,
         pendingPlanChangeDate: true,
         stripeSubscriptionId: true,
@@ -65,23 +98,59 @@ export async function GET(request: Request) {
 
         // If pendingPlanChangeDate is null, check if we're within 1 day of period end
         if (!user.pendingPlanChangeDate) {
-          const periodEnd = subscription.current_period_end * 1000; // Convert to ms
+          // In Stripe SDK v20+, current_period_end is on the subscription item, not the subscription
+          const periodEnd = subscription.items.data[0].current_period_end * 1000; // Convert to ms
           const oneDayMs = 24 * 60 * 60 * 1000;
           const changeShouldHappen = now.getTime() >= periodEnd - oneDayMs;
 
           if (!changeShouldHappen) {
-            // Not yet time to apply - skip this user
+            // Not yet time to apply - skip this user (don't log, this is expected)
             continue;
           }
         }
 
-        const newPriceId = getPriceId(user.pendingPlanChange, interval as "monthly" | "yearly");
-
-        if (!newPriceId) {
+        // Skip if pending change is FREE (shouldn't happen, but handle gracefully)
+        if (user.pendingPlanChange === "FREE") {
+          const errorMsg = "Cannot downgrade to FREE via this process - use subscription cancellation instead";
           results.push({
             userId: user.id,
             success: false,
-            error: "Could not find price ID for new plan",
+            error: errorMsg,
+          });
+
+          await logCronJob({
+            status: CronJobStatus.SKIPPED,
+            userId: user.id,
+            userEmail: user.email,
+            fromPlan: user.plan,
+            toPlan: user.pendingPlanChange,
+            scheduledFor: user.pendingPlanChangeDate ?? undefined,
+            message: errorMsg,
+          });
+          continue;
+        }
+
+        const newPriceId = getPriceId(
+          user.pendingPlanChange as "BASIC" | "ADVANCED" | "PREMIUM",
+          interval as "monthly" | "yearly"
+        );
+
+        if (!newPriceId) {
+          const errorMsg = "Could not find price ID for new plan";
+          results.push({
+            userId: user.id,
+            success: false,
+            error: errorMsg,
+          });
+
+          await logCronJob({
+            status: CronJobStatus.FAILED,
+            userId: user.id,
+            userEmail: user.email,
+            fromPlan: user.plan,
+            toPlan: user.pendingPlanChange,
+            scheduledFor: user.pendingPlanChangeDate ?? undefined,
+            errorDetails: errorMsg,
           });
           continue;
         }
@@ -97,6 +166,8 @@ export async function GET(request: Request) {
           proration_behavior: "none",
         });
 
+        const previousPlan = user.plan;
+
         // Update user in database
         await prisma.user.update({
           where: { id: user.id },
@@ -109,13 +180,35 @@ export async function GET(request: Request) {
         });
 
         results.push({ userId: user.id, success: true });
-        console.log(`Applied pending downgrade for user ${user.id}: ${user.pendingPlanChange}`);
+        console.log(`Applied pending downgrade for user ${user.id}: ${previousPlan} -> ${user.pendingPlanChange}`);
+
+        // Log successful plan change
+        await logCronJob({
+          status: CronJobStatus.SUCCESS,
+          userId: user.id,
+          userEmail: user.email,
+          fromPlan: previousPlan,
+          toPlan: user.pendingPlanChange,
+          scheduledFor: user.pendingPlanChangeDate ?? undefined,
+          message: `Successfully changed plan from ${previousPlan} to ${user.pendingPlanChange}`,
+        });
       } catch (error: any) {
         console.error(`Error applying downgrade for user ${user.id}:`, error);
         results.push({
           userId: user.id,
           success: false,
           error: error.message,
+        });
+
+        // Log failed plan change
+        await logCronJob({
+          status: CronJobStatus.FAILED,
+          userId: user.id,
+          userEmail: user.email,
+          fromPlan: user.plan,
+          toPlan: user.pendingPlanChange ?? undefined,
+          scheduledFor: user.pendingPlanChangeDate ?? undefined,
+          errorDetails: error.message || "Unknown error occurred",
         });
       }
     }

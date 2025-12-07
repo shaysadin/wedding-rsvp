@@ -70,7 +70,8 @@
     "users": "משתמשים",
     "home": "דף הבית",
     "messaging": "הגדרות הודעות",
-    "billing": "חיוב ותשלומים"
+    "billing": "חיוב ותשלומים",
+    "cronLogs": "יומני משימות"
   },
   "auth": {
     "signIn": "כניסה",
@@ -255,7 +256,11 @@
     "messageSent": "סטטוס הודעה",
     "noPhone": "אין מספר טלפון",
     "selectSide": "בחר צד",
-    "clearFilters": "נקה סינון"
+    "clearFilters": "נקה סינון",
+    "customGroup": "מותאם אישית...",
+    "customGroupPlaceholder": "הכנס שם קבוצה",
+    "customSide": "מותאם אישית...",
+    "customSidePlaceholder": "הכנס שם צד"
   },
   "messageStatus": {
     "notSent": "לא נשלח",
@@ -405,7 +410,32 @@
     "viewAll": "צפה בכל",
     "stripeActive": "מנוי Stripe פעיל",
     "adminAssigned": "מנוי שהוקצה על ידי מנהל",
-    "syncWithStripe": "יסונכרן עם Stripe"
+    "syncWithStripe": "יסונכרן עם Stripe",
+    "cronLogs": "יומני משימות מתוזמנות",
+    "cronLogsDesc": "צפייה בכל הרצות המשימות המתוזמנות והסטטוס שלהן",
+    "noCronLogs": "אין עדיין יומני משימות",
+    "noCronLogsDesc": "יומנים יופיעו כאן כאשר משימות מתוזמנות ירוצו",
+    "jobType": "סוג משימה",
+    "planChange": "שינוי תוכנית",
+    "bulkMessage": "הודעות המוניות",
+    "scheduledFor": "מתוזמן ל",
+    "executedAt": "בוצע ב",
+    "details": "פרטים",
+    "successful": "הצליח",
+    "failed": "נכשל",
+    "skipped": "דולג",
+    "last24h": "24 שעות אחרונות",
+    "pendingChanges": "שינויי תוכנית ממתינים",
+    "pendingChangesDesc": "משתמשים עם שינויי תוכנית מתוזמנים שממתינים להפעלה",
+    "noPendingDate": "אין תאריך מתוזמן",
+    "overdue": "באיחור",
+    "dueSoon": "בקרוב",
+    "scheduled": "מתוזמן",
+    "historyTitle": "היסטוריית הרצות",
+    "pendingChangeCancelled": "שינוי התוכנית המתוזמן בוטל בהצלחה",
+    "cancelPendingChangeTitle": "בטל שינוי תוכנית מתוזמן",
+    "cancelPendingChangeDesc": "האם אתה בטוח שברצונך לבטל את שינוי התוכנית המתוזמן עבור {email}? תוכנית המשתמש תישאר {fromPlan} במקום להשתנות ל-{toPlan}.",
+    "confirmCancel": "אשר ביטול"
   },
   "plans": {
     "free": "חינם",

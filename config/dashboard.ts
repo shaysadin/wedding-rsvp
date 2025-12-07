@@ -30,6 +30,13 @@ export const sidebarLinks: SidebarNavItem[] = [
         authorizeOnly: UserRole.ROLE_PLATFORM_OWNER,
       },
       {
+        href: "/admin/cron-logs",
+        icon: "clock",
+        titleKey: "navigation.cronLogs",
+        title: "Cron Logs",
+        authorizeOnly: UserRole.ROLE_PLATFORM_OWNER,
+      },
+      {
         href: "/dashboard",
         icon: "dashboard",
         titleKey: "navigation.dashboard",

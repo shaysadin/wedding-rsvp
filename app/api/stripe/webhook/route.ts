@@ -237,6 +237,12 @@ async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice) {
     if (shouldApply) {
       const newPlan = user.pendingPlanChange;
 
+      // Skip if pending change is FREE (shouldn't happen - use subscription cancellation instead)
+      if (newPlan === "FREE") {
+        console.log(`Cannot apply FREE as pending plan change for customer ${customerId}`);
+        return;
+      }
+
       // Get the new price ID for the pending plan
       const { getPriceId } = await import("@/lib/stripe");
 
@@ -245,7 +251,10 @@ async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice) {
       const currentInterval = subscription.items.data[0]?.price.recurring?.interval;
       const interval = currentInterval === "year" ? "yearly" : "monthly";
 
-      const newPriceId = getPriceId(newPlan, interval as "monthly" | "yearly");
+      const newPriceId = getPriceId(
+        newPlan as "BASIC" | "ADVANCED" | "PREMIUM",
+        interval as "monthly" | "yearly"
+      );
 
       if (newPriceId) {
         // Update the subscription in Stripe to the new plan

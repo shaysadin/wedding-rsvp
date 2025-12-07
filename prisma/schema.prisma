@@ -688,3 +688,46 @@ model BulkMessageJobItem {
   @@index([status])
   @@map("bulk_message_job_items")
 }
+
+// ============ CRON JOB LOGS ============
+
+enum CronJobType {
+  PLAN_CHANGE
+  BULK_MESSAGE
+}
+
+enum CronJobStatus {
+  SUCCESS
+  FAILED
+  SKIPPED
+}
+
+model CronJobLog {
+  id        String        @id @default(cuid())
+  jobType   CronJobType   @map("job_type")
+  status    CronJobStatus
+
+  // Target user for plan changes
+  userId    String?       @map("user_id")
+  userEmail String?       @map("user_email")
+
+  // Plan change specific
+  fromPlan  PlanTier?     @map("from_plan")
+  toPlan    PlanTier?     @map("to_plan")
+
+  // Timing
+  scheduledFor DateTime?  @map("scheduled_for")
+  executedAt   DateTime   @default(now()) @map("executed_at")
+
+  // Results
+  message      String?    @db.Text
+  errorDetails String?    @db.Text @map("error_details")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([jobType])
+  @@index([status])
+  @@index([userId])
+  @@index([executedAt])
+  @@map("cron_job_logs")
+}

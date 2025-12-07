@@ -247,7 +247,58 @@ export function UserAuthForm({ className, type = "login", onModeChange, ...props
       </AnimatePresence>
 
       <AnimatePresence mode="wait">
-        {type === "register" ? (
+        {showMagicLink ? (
+          // Magic Link Form - takes priority when active
+          <motion.form
+            key="magic-link"
+            variants={formVariants}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            transition={{ duration: 0.3 }}
+            onSubmit={magicLinkForm.handleSubmit(onMagicLinkSubmit)}
+          >
+            <div className="grid gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="magic-email">
+                  {isHebrew ? "אימייל" : "Email"}
+                </Label>
+                <Input
+                  id="magic-email"
+                  placeholder="example@gmail.com"
+                  type="email"
+                  autoCapitalize="none"
+                  autoComplete="email"
+                  autoCorrect="off"
+                  disabled={isAnyLoading}
+                  {...magicLinkForm.register("email")}
+                />
+                {magicLinkForm.formState.errors?.email && (
+                  <p className="px-1 text-xs text-red-600">
+                    {magicLinkForm.formState.errors.email.message}
+                  </p>
+                )}
+              </div>
+              <Button
+                className="w-full bg-[#FF6B6B] hover:bg-[#FF5252] text-white"
+                disabled={isMagicLinkLoading}
+              >
+                {isMagicLinkLoading && (
+                  <Icons.spinner className="me-2 size-4 animate-spin" />
+                )}
+                {isHebrew ? "שלח לי קישור" : "Send Magic Link"}
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                className="text-sm"
+                onClick={() => setShowMagicLink(false)}
+              >
+                {isHebrew ? "חזרה להתחברות עם סיסמה" : "Back to password login"}
+              </Button>
+            </div>
+          </motion.form>
+        ) : type === "register" ? (
           // Registration Form
           <motion.form
             key="register"
@@ -325,57 +376,6 @@ export function UserAuthForm({ className, type = "login", onModeChange, ...props
                   <Icons.spinner className="me-2 size-4 animate-spin" />
                 )}
                 {isHebrew ? "הרשמה" : "Sign up"}
-              </Button>
-            </div>
-          </motion.form>
-        ) : showMagicLink ? (
-          // Magic Link Form
-          <motion.form
-            key="magic-link"
-            variants={formVariants}
-            initial="initial"
-            animate="animate"
-            exit="exit"
-            transition={{ duration: 0.3 }}
-            onSubmit={magicLinkForm.handleSubmit(onMagicLinkSubmit)}
-          >
-            <div className="grid gap-4">
-              <div className="grid gap-2">
-                <Label htmlFor="magic-email">
-                  {isHebrew ? "אימייל" : "Email"}
-                </Label>
-                <Input
-                  id="magic-email"
-                  placeholder="example@gmail.com"
-                  type="email"
-                  autoCapitalize="none"
-                  autoComplete="email"
-                  autoCorrect="off"
-                  disabled={isAnyLoading}
-                  {...magicLinkForm.register("email")}
-                />
-                {magicLinkForm.formState.errors?.email && (
-                  <p className="px-1 text-xs text-red-600">
-                    {magicLinkForm.formState.errors.email.message}
-                  </p>
-                )}
-              </div>
-              <Button
-                className="w-full bg-[#FF6B6B] hover:bg-[#FF5252] text-white"
-                disabled={isMagicLinkLoading}
-              >
-                {isMagicLinkLoading && (
-                  <Icons.spinner className="me-2 size-4 animate-spin" />
-                )}
-                {isHebrew ? "שלח לי קישור" : "Send Magic Link"}
-              </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                className="text-sm"
-                onClick={() => setShowMagicLink(false)}
-              >
-                {isHebrew ? "חזרה להתחברות עם סיסמה" : "Back to password login"}
               </Button>
             </div>
           </motion.form>

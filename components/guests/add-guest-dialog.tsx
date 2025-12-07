@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocale, useTranslations } from "next-intl";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 
@@ -35,6 +35,8 @@ import {
 } from "@/components/ui/select";
 import { Icons } from "@/components/shared/icons";
 
+const PREDEFINED_GROUPS = ["family", "friends", "work", "other"] as const;
+
 interface AddGuestDialogProps {
   eventId: string;
 }
@@ -48,6 +50,10 @@ export function AddGuestDialog({ eventId }: AddGuestDialogProps) {
   const isRTL = locale === "he";
   const [open, setOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [showCustomGroup, setShowCustomGroup] = useState(false);
+  const [customGroupValue, setCustomGroupValue] = useState("");
+  const [showCustomSide, setShowCustomSide] = useState(false);
+  const [customSideValue, setCustomSideValue] = useState("");
 
   const form = useForm<CreateGuestInput>({
     resolver: zodResolver(createGuestSchema),
@@ -62,6 +68,16 @@ export function AddGuestDialog({ eventId }: AddGuestDialogProps) {
     },
   });
 
+  // Watch groupName to detect if it's a custom value
+  const groupNameValue = useWatch({ control: form.control, name: "groupName" });
+
+  useEffect(() => {
+    if (groupNameValue && !PREDEFINED_GROUPS.includes(groupNameValue as typeof PREDEFINED_GROUPS[number])) {
+      setShowCustomGroup(true);
+      setCustomGroupValue(groupNameValue);
+    }
+  }, [groupNameValue]);
+
   const onSubmit = async (data: CreateGuestInput) => {
     setIsLoading(true);
 
@@ -75,6 +91,10 @@ export function AddGuestDialog({ eventId }: AddGuestDialogProps) {
 
       toast.success(ts("saved"));
       form.reset();
+      setShowCustomGroup(false);
+      setCustomGroupValue("");
+      setShowCustomSide(false);
+      setCustomSideValue("");
       setOpen(false);
     } catch (error) {
       toast.error(te("generic"));
@@ -133,18 +153,56 @@ export function AddGuestDialog({ eventId }: AddGuestDialogProps) {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>{t("side")}</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder={t("selectSide")} />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="bride">{t("sides.bride")}</SelectItem>
-                        <SelectItem value="groom">{t("sides.groom")}</SelectItem>
-                        <SelectItem value="both">{t("sides.both")}</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    {!showCustomSide ? (
+                      <Select
+                        onValueChange={(value) => {
+                          if (value === "__custom__") {
+                            setShowCustomSide(true);
+                            field.onChange("");
+                          } else {
+                            field.onChange(value);
+                          }
+                        }}
+                        defaultValue={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder={t("selectSide")} />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="bride">{t("sides.bride")}</SelectItem>
+                          <SelectItem value="groom">{t("sides.groom")}</SelectItem>
+                          <SelectItem value="both">{t("sides.both")}</SelectItem>
+                          <SelectItem value="__custom__">{t("customSide")}</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      <div className="flex gap-2">
+                        <FormControl>
+                          <Input
+                            placeholder={t("customSidePlaceholder")}
+                            value={customSideValue}
+                            onChange={(e) => {
+                              setCustomSideValue(e.target.value);
+                              field.onChange(e.target.value);
+                            }}
+                          />
+                        </FormControl>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => {
+                            setShowCustomSide(false);
+                            setCustomSideValue("");
+                            field.onChange("");
+                          }}
+                        >
+                          <Icons.close className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    )}
                     <FormMessage />
                   </FormItem>
                 )}
@@ -156,19 +214,57 @@ export function AddGuestDialog({ eventId }: AddGuestDialogProps) {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>{t("group")}</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder={t("selectGroup")} />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="family">{t("groups.family")}</SelectItem>
-                        <SelectItem value="friends">{t("groups.friends")}</SelectItem>
-                        <SelectItem value="work">{t("groups.work")}</SelectItem>
-                        <SelectItem value="other">{t("groups.other")}</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    {!showCustomGroup ? (
+                      <Select
+                        onValueChange={(value) => {
+                          if (value === "__custom__") {
+                            setShowCustomGroup(true);
+                            field.onChange("");
+                          } else {
+                            field.onChange(value);
+                          }
+                        }}
+                        defaultValue={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder={t("selectGroup")} />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="family">{t("groups.family")}</SelectItem>
+                          <SelectItem value="friends">{t("groups.friends")}</SelectItem>
+                          <SelectItem value="work">{t("groups.work")}</SelectItem>
+                          <SelectItem value="other">{t("groups.other")}</SelectItem>
+                          <SelectItem value="__custom__">{t("customGroup")}</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      <div className="flex gap-2">
+                        <FormControl>
+                          <Input
+                            placeholder={t("customGroupPlaceholder")}
+                            value={customGroupValue}
+                            onChange={(e) => {
+                              setCustomGroupValue(e.target.value);
+                              field.onChange(e.target.value);
+                            }}
+                          />
+                        </FormControl>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => {
+                            setShowCustomGroup(false);
+                            setCustomGroupValue("");
+                            field.onChange("");
+                          }}
+                        >
+                          <Icons.close className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    )}
                     <FormMessage />
                   </FormItem>
                 )}

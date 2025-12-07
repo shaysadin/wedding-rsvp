@@ -129,9 +129,31 @@ export const sendVerificationRequest: EmailConfig["sendVerificationRequest"] =
     const userName = user?.name || identifier.split("@")[0];
     const userVerified = user?.emailVerified ? true : false;
 
+    // Try to detect locale from the callback URL
+    let locale = "he"; // Default to Hebrew
+    try {
+      const urlObj = new URL(url);
+      const callbackUrl = urlObj.searchParams.get("callbackUrl");
+      if (callbackUrl) {
+        const decodedCallback = decodeURIComponent(callbackUrl);
+        // Extract locale from path like /en/dashboard or /he/dashboard
+        const localeMatch = decodedCallback.match(/^\/(en|he)\//);
+        if (localeMatch) {
+          locale = localeMatch[1];
+        }
+      }
+    } catch {
+      // Keep default locale if URL parsing fails
+    }
+
+    const isHebrew = locale === "he";
     const authSubject = userVerified
-      ? `Sign-in link for ${siteConfig.name}`
-      : `Welcome to ${siteConfig.name} - Activate your account`;
+      ? isHebrew
+        ? `קישור התחברות - ${siteConfig.name}`
+        : `Sign-in link for ${siteConfig.name}`
+      : isHebrew
+        ? `ברוכים הבאים ל-${siteConfig.name} - הפעלת החשבון`
+        : `Welcome to ${siteConfig.name} - Activate your account`;
 
     const html = await render(
       MagicLinkEmail({
@@ -139,6 +161,7 @@ export const sendVerificationRequest: EmailConfig["sendVerificationRequest"] =
         actionUrl: url,
         mailType: userVerified ? "login" : "register",
         siteName: siteConfig.name,
+        locale,
       })
     );
 

@@ -47,10 +47,13 @@ export async function POST() {
       },
     });
 
+    // In Stripe SDK v20+, current_period_end is on subscription items
+    const currentPeriodEnd = subscription.items.data[0]?.current_period_end;
+
     return NextResponse.json({
       success: true,
       cancelAt: subscription.cancel_at ? new Date(subscription.cancel_at * 1000).toISOString() : null,
-      currentPeriodEnd: new Date(subscription.current_period_end * 1000).toISOString(),
+      currentPeriodEnd: currentPeriodEnd ? new Date(currentPeriodEnd * 1000).toISOString() : null,
     });
   } catch (error) {
     console.error("Error cancelling subscription:", error);

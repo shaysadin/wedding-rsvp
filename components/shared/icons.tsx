@@ -213,4 +213,5 @@ export const Icons = {
   refresh: RefreshCw,
   rotateCcw: RotateCcw,
   plus: Plus,
+  x: X,
 };

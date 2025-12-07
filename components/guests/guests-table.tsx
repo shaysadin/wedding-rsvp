@@ -39,6 +39,9 @@ import {
   type RsvpStatusFilter,
 } from "./guests-filter-bar";
 
+const PREDEFINED_GROUPS = ["family", "friends", "work", "other"] as const;
+const PREDEFINED_SIDES = ["bride", "groom", "both"] as const;
+
 type GuestWithRsvp = Guest & {
   rsvp: GuestRsvp | null;
   notificationLogs: NotificationLog[];
@@ -122,6 +125,22 @@ export function GuestsTable({ guests, eventId, initialFilter = "all" }: GuestsTa
   useEffect(() => {
     setRsvpStatusFilter(initialFilter as RsvpStatusFilter || "all");
   }, [initialFilter]);
+
+  // Compute custom groups from guest list
+  const customGroups = useMemo(() => {
+    const groups = guests
+      .map((g) => g.groupName)
+      .filter((g): g is string => !!g && !PREDEFINED_GROUPS.includes(g as typeof PREDEFINED_GROUPS[number]));
+    return [...new Set(groups)];
+  }, [guests]);
+
+  // Compute custom sides from guest list
+  const customSides = useMemo(() => {
+    const sides = guests
+      .map((g) => g.side)
+      .filter((s): s is string => !!s && !PREDEFINED_SIDES.includes(s as typeof PREDEFINED_SIDES[number]));
+    return [...new Set(sides)];
+  }, [guests]);
 
   // Count active filters
   const activeFilterCount = useMemo(() => {
@@ -394,6 +413,8 @@ export function GuestsTable({ guests, eventId, initialFilter = "all" }: GuestsTa
           setRsvpStatusFilter={setRsvpStatusFilter}
           onClearFilters={clearFilters}
           activeFilterCount={activeFilterCount}
+          customGroups={customGroups}
+          customSides={customSides}
         />
       </div>
 
@@ -503,7 +524,9 @@ export function GuestsTable({ guests, eventId, initialFilter = "all" }: GuestsTa
                     <TableCell className="text-center">
                       {guest.side ? (
                         <Badge variant="outline" className="text-xs">
-                          {t(`sides.${guest.side}` as "sides.bride" | "sides.groom" | "sides.both")}
+                          {PREDEFINED_SIDES.includes(guest.side as typeof PREDEFINED_SIDES[number])
+                            ? t(`sides.${guest.side}` as "sides.bride" | "sides.groom" | "sides.both")
+                            : guest.side}
                         </Badge>
                       ) : (
                         <span className="text-muted-foreground">-</span>
@@ -512,7 +535,9 @@ export function GuestsTable({ guests, eventId, initialFilter = "all" }: GuestsTa
                     <TableCell className="text-center">
                       {guest.groupName ? (
                         <Badge variant="outline" className="text-xs">
-                          {t(`groups.${guest.groupName}` as "groups.family" | "groups.friends" | "groups.work" | "groups.other")}
+                          {PREDEFINED_GROUPS.includes(guest.groupName as typeof PREDEFINED_GROUPS[number])
+                            ? t(`groups.${guest.groupName}` as "groups.family" | "groups.friends" | "groups.work" | "groups.other")
+                            : guest.groupName}
                         </Badge>
                       ) : (
                         <span className="text-muted-foreground">-</span>

@@ -65,11 +65,12 @@ export async function POST(request: Request) {
     const subscription = await stripe.subscriptions.retrieve(dbUser.stripeSubscriptionId);
 
     // Debug: log subscription structure
+    // In Stripe SDK v20+, current_period_end is on subscription items
     console.log("Subscription retrieved:", {
       id: subscription.id,
       status: subscription.status,
-      current_period_end: subscription.current_period_end,
-      current_period_start: subscription.current_period_start,
+      current_period_end: subscription.items.data[0]?.current_period_end,
+      current_period_start: subscription.items.data[0]?.current_period_start,
     });
 
     if (subscription.status !== "active") {
@@ -144,8 +145,8 @@ export async function POST(request: Request) {
       // Store the pending downgrade in user record
       // User keeps current plan until end of billing period
 
-      // Get the period end - should always be present on an active subscription
-      let periodEnd = subscription.current_period_end;
+      // Get the period end - in Stripe SDK v20+, current_period_end is on subscription items
+      let periodEnd = subscription.items.data[0]?.current_period_end;
 
       // Debug logging
       console.log("Scheduling downgrade - subscription details:", {
@@ -158,7 +159,7 @@ export async function POST(request: Request) {
 
       // If period_end is missing (shouldn't happen), try to get it from the latest invoice
       if (!periodEnd || typeof periodEnd !== 'number') {
-        console.warn("current_period_end missing, trying to get from invoice...");
+        console.warn("current_period_end missing from item, trying to get from invoice...");
 
         // Try to get from latest invoice
         try {
@@ -185,7 +186,11 @@ export async function POST(request: Request) {
         );
       }
 
-      const effectiveDate = new Date(periodEnd * 1000);
+      // Schedule the downgrade for 1 day BEFORE the period end
+      // This ensures the change happens before Stripe charges for the new period
+      const periodEndMs = periodEnd * 1000;
+      const oneDayMs = 24 * 60 * 60 * 1000;
+      const effectiveDate = new Date(periodEndMs - oneDayMs);
 
       // Validate the date is valid
       if (isNaN(effectiveDate.getTime())) {

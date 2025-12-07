@@ -7,6 +7,8 @@ import * as XLSX from "xlsx";
 
 import { bulkImportGuests } from "@/actions/guests";
 import { Button } from "@/components/ui/button";
+
+const PREDEFINED_GROUPS = ["family", "friends", "work", "other"] as const;
 import {
   Dialog,
   DialogContent,
@@ -272,7 +274,11 @@ export function ImportGuestsDialog({ eventId }: ImportGuestsDialogProps) {
                         <td className="p-2">{guest.name}</td>
                         <td className="p-2">{guest.phoneNumber || "-"}</td>
                         <td className="p-2">{guest.side ? t(`sides.${guest.side}` as "sides.bride" | "sides.groom" | "sides.both") : "-"}</td>
-                        <td className="p-2">{guest.groupName ? t(`groups.${guest.groupName}` as "groups.family" | "groups.friends" | "groups.work" | "groups.other") : "-"}</td>
+                        <td className="p-2">{guest.groupName
+                          ? (PREDEFINED_GROUPS.includes(guest.groupName as typeof PREDEFINED_GROUPS[number])
+                              ? t(`groups.${guest.groupName}` as "groups.family" | "groups.friends" | "groups.work" | "groups.other")
+                              : guest.groupName)
+                          : "-"}</td>
                         <td className="p-2">{guest.expectedGuests || 1}</td>
                       </tr>
                     ))}

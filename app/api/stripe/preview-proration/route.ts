@@ -97,7 +97,15 @@ export async function POST(request: Request) {
     const currentPrice = await stripe.prices.retrieve(currentPriceId);
 
     // Calculate proration preview for upgrades using Stripe's upcoming invoice API
-    let prorationPreview = null;
+    let prorationPreview: {
+      amountDue: number;
+      subtotal: number;
+      total: number;
+      prorationItems: { description: string; amount: number }[];
+      currency: string;
+      daysRemaining: number;
+      totalDays: number;
+    } | null = null;
     if (isUpgrade) {
       // Use Stripe's upcoming invoice API to get accurate proration
       const upcomingInvoice = await stripe.invoices.createPreview({
@@ -114,9 +122,11 @@ export async function POST(request: Request) {
         },
       });
 
-      // Filter proration line items (they have proration: true)
+      // Filter proration line items - in Stripe SDK v20+, proration is nested in parent details
       const prorationLineItems = upcomingInvoice.lines.data.filter(
-        (line) => line.proration === true
+        (line) =>
+          line.parent?.invoice_item_details?.proration === true ||
+          line.parent?.subscription_item_details?.proration === true
       );
 
       // Calculate the proration amount from line items
@@ -131,9 +141,9 @@ export async function POST(request: Request) {
         });
       }
 
-      // Calculate days remaining
-      const periodStart = subscription.current_period_start;
-      const periodEnd = subscription.current_period_end;
+      // Calculate days remaining - in Stripe SDK v20+, period times are on subscription items
+      const periodStart = subscription.items.data[0]?.current_period_start;
+      const periodEnd = subscription.items.data[0]?.current_period_end;
       let daysRemaining = 0;
       let totalDays = 30;
 
@@ -167,12 +177,13 @@ export async function POST(request: Request) {
       };
     }
 
-    // Calculate period end date
+    // Calculate period end date - in Stripe SDK v20+, period times are on subscription items
     let periodEndISO = "";
     let periodEndFormatted = "";
 
-    if (subscription.current_period_end) {
-      const periodEnd = new Date(subscription.current_period_end * 1000);
+    const itemPeriodEnd = subscription.items.data[0]?.current_period_end;
+    if (itemPeriodEnd) {
+      const periodEnd = new Date(itemPeriodEnd * 1000);
       if (!isNaN(periodEnd.getTime())) {
         periodEndISO = periodEnd.toISOString();
         periodEndFormatted = periodEnd.toLocaleDateString();

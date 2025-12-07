@@ -8,6 +8,8 @@ import { motion, AnimatePresence } from "framer-motion";
 
 import { UserAuthForm } from "@/components/forms/user-auth-form";
 import { Icons } from "@/components/shared/icons";
+import { LanguageSwitcher } from "@/components/layout/language-switcher";
+import { ModeToggle } from "@/components/layout/mode-toggle";
 
 interface UnifiedAuthPageProps {
   locale: string;
@@ -47,11 +49,38 @@ export function UnifiedAuthPage({
     <div className="flex min-h-screen overflow-hidden">
       {/* Left Side - Auth Form */}
       <div className="relative flex w-full flex-col justify-center px-8 py-12 lg:w-1/2 lg:px-16 xl:px-24">
-        {/* Mac-style window controls */}
-        <div className="absolute left-6 top-6 flex items-center gap-2">
-          <div className="h-3 w-3 rounded-full bg-red-500" />
-          <div className="h-3 w-3 rounded-full bg-yellow-500" />
-          <div className="h-3 w-3 rounded-full bg-green-500" />
+        {/* Top bar with controls */}
+        <div className="absolute left-6 right-6 top-6 flex items-center justify-between">
+          {/* Navigation dots - first dot links to home */}
+          <div className="flex items-center gap-2">
+            <Link
+              href={`/${locale}`}
+              className="group"
+              title={isHebrew ? "חזרה לדף הבית" : "Back to Home"}
+            >
+              <div className="h-2.5 w-2.5 rounded-full bg-gray-300 transition-colors group-hover:bg-gray-500" />
+            </Link>
+            <motion.div
+              animate={{
+                backgroundColor: mode === "login" ? "#22c55e" : "#d1d5db",
+              }}
+              transition={{ duration: 0.3 }}
+              className="h-2.5 w-2.5 rounded-full"
+            />
+            <motion.div
+              animate={{
+                backgroundColor: mode === "register" ? "#22c55e" : "#d1d5db",
+              }}
+              transition={{ duration: 0.3 }}
+              className="h-2.5 w-2.5 rounded-full"
+            />
+            <div className="h-2.5 w-2.5 rounded-full bg-gray-300" />
+          </div>
+          {/* Language and Theme toggles */}
+          <div className="flex items-center gap-2">
+            <LanguageSwitcher />
+            <ModeToggle />
+          </div>
         </div>
 
         <div className="mx-auto w-full max-w-[400px]">
@@ -144,25 +173,6 @@ export function UnifiedAuthPage({
             )}
           </p>
 
-          {/* Pagination dots with animation */}
-          <div className="mt-8 flex justify-center gap-2">
-            <motion.div
-              animate={{
-                backgroundColor: mode === "login" ? "#22c55e" : "#e5e7eb",
-              }}
-              transition={{ duration: 0.3 }}
-              className="h-2 w-2 rounded-full"
-            />
-            <motion.div
-              animate={{
-                backgroundColor: mode === "register" ? "#22c55e" : "#e5e7eb",
-              }}
-              transition={{ duration: 0.3 }}
-              className="h-2 w-2 rounded-full"
-            />
-            <div className="h-2 w-2 rounded-full bg-gray-200" />
-            <div className="h-2 w-2 rounded-full bg-gray-200" />
-          </div>
         </div>
       </div>
 

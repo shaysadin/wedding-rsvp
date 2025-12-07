@@ -201,7 +201,7 @@ export function DashboardSidebar({ links, userEvents = [], currentRole, availabl
                                     "flex flex-1 items-center gap-3 rounded-md p-2 text-sm font-medium hover:bg-muted",
                                     isRTL && "flex-row-reverse text-right",
                                     isPathActive(item.href) || isEventsPage
-                                      ? "bg-background/60"
+                                      ? "bg-background/90"
                                       : "text-muted-foreground hover:text-accent-foreground",
                                   )}
                                 >
@@ -231,7 +231,7 @@ export function DashboardSidebar({ links, userEvents = [], currentRole, availabl
                                         "flex items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted",
                                         isRTL && "flex-row-reverse text-right",
                                         isEventActive(event.id)
-                                          ? "bg-background/60 font-medium"
+                                          ? "bg-background/80 font-medium"
                                           : "text-muted-foreground hover:text-accent-foreground",
                                       )}
                                     >
@@ -257,7 +257,7 @@ export function DashboardSidebar({ links, userEvents = [], currentRole, availabl
                                   "flex items-center gap-3 rounded-md p-2 text-sm font-medium hover:bg-muted",
                                   isRTL && "flex-row-reverse text-right",
                                   isPathActive(item.href)
-                                    ? "bg-background/60"
+                                    ? "bg-background/80"
                                     : "text-muted-foreground hover:text-accent-foreground",
                                   item.disabled &&
                                     "cursor-not-allowed opacity-80 hover:bg-transparent hover:text-muted-foreground",
@@ -280,7 +280,7 @@ export function DashboardSidebar({ links, userEvents = [], currentRole, availabl
                                     className={cn(
                                       "flex items-center gap-3 rounded-md py-2 text-sm font-medium hover:bg-muted",
                                       isPathActive(item.href)
-                                        ? "bg-background/60"
+                                        ? "bg-background/80"
                                         : "text-muted-foreground hover:text-accent-foreground",
                                       item.disabled &&
                                         "cursor-not-allowed opacity-80 hover:bg-transparent hover:text-muted-foreground",
@@ -430,7 +430,7 @@ export function MobileSheetSidebar({ links, userEvents = [], currentRole, availa
                                     "flex flex-1 items-center gap-3 rounded-md p-2 text-sm font-medium hover:bg-muted",
                                     isRTL && "flex-row-reverse text-right",
                                     isPathActive(item.href) || isEventsPage
-                                      ? "bg-background/60"
+                                      ? "bg-background/80"
                                       : "text-muted-foreground hover:text-accent-foreground",
                                   )}
                                 >
@@ -461,7 +461,7 @@ export function MobileSheetSidebar({ links, userEvents = [], currentRole, availa
                                         "flex items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted",
                                         isRTL && "flex-row-reverse text-right",
                                         isEventActive(event.id)
-                                          ? "bg-background/60 font-medium"
+                                          ? "bg-background/80 font-medium"
                                           : "text-muted-foreground hover:text-accent-foreground",
                                       )}
                                     >
@@ -489,7 +489,7 @@ export function MobileSheetSidebar({ links, userEvents = [], currentRole, availa
                                 "flex items-center gap-3 rounded-md p-2 text-sm font-medium hover:bg-muted",
                                 isRTL && "flex-row-reverse text-right",
                                 isPathActive(item.href)
-                                  ? "bg-background/60"
+                                  ? "bg-background/80"
                                   : "text-muted-foreground hover:text-accent-foreground",
                                 item.disabled &&
                                   "cursor-not-allowed opacity-80 hover:bg-transparent hover:text-muted-foreground",

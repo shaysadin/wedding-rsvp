@@ -44,6 +44,8 @@ interface GuestRow {
   side: string;
   groupName: string;
   expectedGuests: number;
+  showCustomSide: boolean;
+  showCustomGroup: boolean;
 }
 
 const createEmptyRow = (): GuestRow => ({
@@ -53,6 +55,8 @@ const createEmptyRow = (): GuestRow => ({
   side: "",
   groupName: "",
   expectedGuests: 1,
+  showCustomSide: false,
+  showCustomGroup: false,
 });
 
 export function BulkAddGuestsDialog({ eventId }: BulkAddGuestsDialogProps) {
@@ -192,35 +196,101 @@ export function BulkAddGuestsDialog({ eventId }: BulkAddGuestsDialogProps) {
                       />
                     </TableCell>
                     <TableCell className="p-2">
-                      <Select
-                        value={row.side}
-                        onValueChange={(value) => updateRow(row.id, "side", value)}
-                      >
-                        <SelectTrigger className="h-9">
-                          <SelectValue placeholder={t("selectSide")} />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="bride">{t("sides.bride")}</SelectItem>
-                          <SelectItem value="groom">{t("sides.groom")}</SelectItem>
-                          <SelectItem value="both">{t("sides.both")}</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      {!row.showCustomSide ? (
+                        <Select
+                          value={row.side}
+                          onValueChange={(value) => {
+                            if (value === "__custom__") {
+                              setRows(rows.map(r =>
+                                r.id === row.id ? { ...r, showCustomSide: true, side: "" } : r
+                              ));
+                            } else {
+                              updateRow(row.id, "side", value);
+                            }
+                          }}
+                        >
+                          <SelectTrigger className="h-9">
+                            <SelectValue placeholder={t("selectSide")} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="bride">{t("sides.bride")}</SelectItem>
+                            <SelectItem value="groom">{t("sides.groom")}</SelectItem>
+                            <SelectItem value="both">{t("sides.both")}</SelectItem>
+                            <SelectItem value="__custom__">{t("customSide")}</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      ) : (
+                        <div className="flex gap-1">
+                          <Input
+                            value={row.side}
+                            onChange={(e) => updateRow(row.id, "side", e.target.value)}
+                            placeholder={t("customSidePlaceholder")}
+                            className="h-9"
+                          />
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="h-9 w-9 shrink-0"
+                            onClick={() => {
+                              setRows(rows.map(r =>
+                                r.id === row.id ? { ...r, showCustomSide: false, side: "" } : r
+                              ));
+                            }}
+                          >
+                            <Icons.close className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      )}
                     </TableCell>
                     <TableCell className="p-2">
-                      <Select
-                        value={row.groupName}
-                        onValueChange={(value) => updateRow(row.id, "groupName", value)}
-                      >
-                        <SelectTrigger className="h-9">
-                          <SelectValue placeholder={t("selectGroup")} />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="family">{t("groups.family")}</SelectItem>
-                          <SelectItem value="friends">{t("groups.friends")}</SelectItem>
-                          <SelectItem value="work">{t("groups.work")}</SelectItem>
-                          <SelectItem value="other">{t("groups.other")}</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      {!row.showCustomGroup ? (
+                        <Select
+                          value={row.groupName}
+                          onValueChange={(value) => {
+                            if (value === "__custom__") {
+                              setRows(rows.map(r =>
+                                r.id === row.id ? { ...r, showCustomGroup: true, groupName: "" } : r
+                              ));
+                            } else {
+                              updateRow(row.id, "groupName", value);
+                            }
+                          }}
+                        >
+                          <SelectTrigger className="h-9">
+                            <SelectValue placeholder={t("selectGroup")} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="family">{t("groups.family")}</SelectItem>
+                            <SelectItem value="friends">{t("groups.friends")}</SelectItem>
+                            <SelectItem value="work">{t("groups.work")}</SelectItem>
+                            <SelectItem value="other">{t("groups.other")}</SelectItem>
+                            <SelectItem value="__custom__">{t("customGroup")}</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      ) : (
+                        <div className="flex gap-1">
+                          <Input
+                            value={row.groupName}
+                            onChange={(e) => updateRow(row.id, "groupName", e.target.value)}
+                            placeholder={t("customGroupPlaceholder")}
+                            className="h-9"
+                          />
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="h-9 w-9 shrink-0"
+                            onClick={() => {
+                              setRows(rows.map(r =>
+                                r.id === row.id ? { ...r, showCustomGroup: false, groupName: "" } : r
+                              ));
+                            }}
+                          >
+                            <Icons.close className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      )}
                     </TableCell>
                     <TableCell className="p-2">
                       <Input

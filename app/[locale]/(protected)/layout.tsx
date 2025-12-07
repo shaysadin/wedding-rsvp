@@ -70,7 +70,7 @@ export default async function ProtectedLayout({ children }: ProtectedLayoutProps
         availableRoles={userRoles}
       />
 
-      <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border bg-background shadow-md m-2">
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border bg-background shadow-md m-3">
         <header className="shrink-0 flex h-14 items-center border-b px-4 lg:h-[60px] xl:px-8">
           <MaxWidthWrapper className="flex max-w-7xl items-center gap-x-3 px-0">
             <MobileSheetSidebar

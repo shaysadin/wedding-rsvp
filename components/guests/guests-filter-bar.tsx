@@ -13,10 +13,14 @@ import {
 import { Icons } from "@/components/shared/icons";
 import { Badge } from "@/components/ui/badge";
 
-export type SideFilter = "all" | "bride" | "groom" | "both";
-export type GroupFilter = "all" | "family" | "friends" | "work" | "other";
+export type SideFilter = string; // Changed to string to support custom sides
+export type GroupFilter = string; // Changed to string to support custom groups
+
+const PREDEFINED_SIDES = ["bride", "groom", "both"] as const;
 export type MessageStatusFilter = "all" | "not_sent" | "invite_sent" | "reminder_sent";
 export type RsvpStatusFilter = "all" | "pending" | "accepted" | "declined";
+
+const PREDEFINED_GROUPS = ["family", "friends", "work", "other"] as const;
 
 interface GuestsFilterBarProps {
   sideFilter: SideFilter;
@@ -29,6 +33,8 @@ interface GuestsFilterBarProps {
   setRsvpStatusFilter: (value: RsvpStatusFilter) => void;
   onClearFilters: () => void;
   activeFilterCount: number;
+  customGroups?: string[];
+  customSides?: string[];
 }
 
 export function GuestsFilterBar({
@@ -42,6 +48,8 @@ export function GuestsFilterBar({
   setRsvpStatusFilter,
   onClearFilters,
   activeFilterCount,
+  customGroups = [],
+  customSides = [],
 }: GuestsFilterBarProps) {
   const t = useTranslations("guests");
   const tc = useTranslations("common");
@@ -58,12 +66,14 @@ export function GuestsFilterBar({
             {t("side")}
             {sideFilter !== "all" && (
               <Badge variant="secondary" className="ms-1 h-5 px-1.5 text-xs">
-                {t(`sides.${sideFilter}`)}
+                {PREDEFINED_SIDES.includes(sideFilter as typeof PREDEFINED_SIDES[number])
+                  ? t(`sides.${sideFilter}` as "sides.bride" | "sides.groom" | "sides.both")
+                  : sideFilter}
               </Badge>
             )}
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="start" className="w-40">
+        <DropdownMenuContent align="start" className="w-48">
           <DropdownMenuLabel>{t("side")}</DropdownMenuLabel>
           <DropdownMenuSeparator />
           <DropdownMenuCheckboxItem
@@ -90,6 +100,20 @@ export function GuestsFilterBar({
           >
             {t("sides.both")}
           </DropdownMenuCheckboxItem>
+          {customSides.length > 0 && (
+            <>
+              <DropdownMenuSeparator />
+              {customSides.map((side) => (
+                <DropdownMenuCheckboxItem
+                  key={side}
+                  checked={sideFilter === side}
+                  onCheckedChange={() => setSideFilter(side)}
+                >
+                  {side}
+                </DropdownMenuCheckboxItem>
+              ))}
+            </>
+          )}
         </DropdownMenuContent>
       </DropdownMenu>
 
@@ -101,12 +125,14 @@ export function GuestsFilterBar({
             {t("group")}
             {groupFilter !== "all" && (
               <Badge variant="secondary" className="ms-1 h-5 px-1.5 text-xs">
-                {t(`groups.${groupFilter}`)}
+                {PREDEFINED_GROUPS.includes(groupFilter as typeof PREDEFINED_GROUPS[number])
+                  ? t(`groups.${groupFilter}` as "groups.family" | "groups.friends" | "groups.work" | "groups.other")
+                  : groupFilter}
               </Badge>
             )}
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="start" className="w-40">
+        <DropdownMenuContent align="start" className="w-48">
           <DropdownMenuLabel>{t("group")}</DropdownMenuLabel>
           <DropdownMenuSeparator />
           <DropdownMenuCheckboxItem
@@ -139,6 +165,20 @@ export function GuestsFilterBar({
           >
             {t("groups.other")}
           </DropdownMenuCheckboxItem>
+          {customGroups.length > 0 && (
+            <>
+              <DropdownMenuSeparator />
+              {customGroups.map((group) => (
+                <DropdownMenuCheckboxItem
+                  key={group}
+                  checked={groupFilter === group}
+                  onCheckedChange={() => setGroupFilter(group)}
+                >
+                  {group}
+                </DropdownMenuCheckboxItem>
+              ))}
+            </>
+          )}
         </DropdownMenuContent>
       </DropdownMenu>
 

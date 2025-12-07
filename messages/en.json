@@ -70,7 +70,8 @@
     "users": "Users",
     "home": "Home",
     "messaging": "Messaging Settings",
-    "billing": "Billing"
+    "billing": "Billing",
+    "cronLogs": "Cron Logs"
   },
   "auth": {
     "signIn": "Sign In",
@@ -255,7 +256,11 @@
     "messageSent": "Message Status",
     "noPhone": "No phone number",
     "selectSide": "Select Side",
-    "clearFilters": "Clear Filters"
+    "clearFilters": "Clear Filters",
+    "customGroup": "Custom...",
+    "customGroupPlaceholder": "Enter group name",
+    "customSide": "Custom...",
+    "customSidePlaceholder": "Enter side name"
   },
   "messageStatus": {
     "notSent": "Not Sent",
@@ -405,7 +410,32 @@
     "viewAll": "View All",
     "stripeActive": "Stripe subscription active",
     "adminAssigned": "Admin assigned plan",
-    "syncWithStripe": "Will sync with Stripe"
+    "syncWithStripe": "Will sync with Stripe",
+    "cronLogs": "Cron Job Logs",
+    "cronLogsDesc": "View all scheduled job executions and their status",
+    "noCronLogs": "No cron job logs yet",
+    "noCronLogsDesc": "Logs will appear here when scheduled jobs run",
+    "jobType": "Job Type",
+    "planChange": "Plan Change",
+    "bulkMessage": "Bulk Message",
+    "scheduledFor": "Scheduled For",
+    "executedAt": "Executed At",
+    "details": "Details",
+    "successful": "Successful",
+    "failed": "Failed",
+    "skipped": "Skipped",
+    "last24h": "Last 24h",
+    "pendingChanges": "Pending Plan Changes",
+    "pendingChangesDesc": "Users with scheduled plan changes waiting to be applied",
+    "noPendingDate": "No scheduled date",
+    "overdue": "Overdue",
+    "dueSoon": "Due Soon",
+    "scheduled": "Scheduled",
+    "historyTitle": "Execution History",
+    "pendingChangeCancelled": "Pending plan change cancelled successfully",
+    "cancelPendingChangeTitle": "Cancel Pending Plan Change",
+    "cancelPendingChangeDesc": "Are you sure you want to cancel the pending plan change for {email}? The user's plan will remain as {fromPlan} instead of changing to {toPlan}.",
+    "confirmCancel": "Confirm Cancel"
   },
   "plans": {
     "free": "Free",

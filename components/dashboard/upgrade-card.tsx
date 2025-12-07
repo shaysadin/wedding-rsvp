@@ -9,7 +9,7 @@ import {
 
 export function UpgradeCard() {
   return (
-    <Card dir="rtl" className="md:max-xl:rounded-none md:max-xl:border-none md:max-xl:shadow-none">
+    <Card dir="rtl" className="md:max-xl:rounded-none md:max-xl:border-none md:max-xl:shadow-none rounded-xl border bg-background shadow-md">
       <CardHeader className="md:max-xl:px-4">
         <CardTitle>שדרגו לגרסת פרו</CardTitle>
         <CardDescription>
