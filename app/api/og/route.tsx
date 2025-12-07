@@ -1,23 +1,21 @@
 import { ImageResponse } from "@vercel/og"
+import { readFileSync } from "fs"
+import { join } from "path"
 
 import { ogImageSchema } from "@/lib/validations/og"
 
 export const runtime = "nodejs"
 
-const interRegular = fetch(
-  new URL("../../../assets/fonts/Inter-Regular.ttf", import.meta.url)
-).then((res) => res.arrayBuffer())
-
-const interBold = fetch(
-  new URL("../../../assets/fonts/CalSans-SemiBold.ttf", import.meta.url)
-).then((res) => res.arrayBuffer())
-
+// Load fonts using fs for Node.js runtime
+const fontRegular = readFileSync(
+  join(process.cwd(), "assets/fonts/Inter-Regular.ttf")
+)
+const fontBold = readFileSync(
+  join(process.cwd(), "assets/fonts/CalSans-SemiBold.ttf")
+)
 
 export async function GET(req: Request) {
   try {
-    const fontRegular = await interRegular
-    const fontBold = await interBold
-
     const url = new URL(req.url)
     const values = ogImageSchema.parse(Object.fromEntries(url.searchParams))
     const heading =
