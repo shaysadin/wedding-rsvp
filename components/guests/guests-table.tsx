@@ -31,13 +31,19 @@ import { Icons } from "@/components/shared/icons";
 import { EmptyPlaceholder } from "@/components/shared/empty-placeholder";
 import { EditGuestDialog } from "./edit-guest-dialog";
 import { SendMessageDialog } from "./send-message-dialog";
+import {
+  GuestsFilterBar,
+  type SideFilter,
+  type GroupFilter,
+  type MessageStatusFilter,
+  type RsvpStatusFilter,
+} from "./guests-filter-bar";
 
 type GuestWithRsvp = Guest & {
   rsvp: GuestRsvp | null;
   notificationLogs: NotificationLog[];
 };
 
-type StatusFilter = "all" | "pending" | "accepted" | "declined";
 
 interface GuestsTableProps {
   guests: GuestWithRsvp[];
@@ -94,27 +100,83 @@ export function GuestsTable({ guests, eventId, initialFilter = "all" }: GuestsTa
   const [bulkLoading, setBulkLoading] = useState(false);
   const [editingGuest, setEditingGuest] = useState<GuestWithRsvp | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>(initialFilter as StatusFilter);
+
+  // Filter states
+  const [sideFilter, setSideFilter] = useState<SideFilter>("all");
+  const [groupFilter, setGroupFilter] = useState<GroupFilter>("all");
+  const [messageStatusFilter, setMessageStatusFilter] = useState<MessageStatusFilter>("all");
+  const [rsvpStatusFilter, setRsvpStatusFilter] = useState<RsvpStatusFilter>(
+    initialFilter as RsvpStatusFilter || "all"
+  );
 
   // Send message dialog state
   const [sendMessageOpen, setSendMessageOpen] = useState(false);
-  const [sendMessageGuests, setSendMessageGuests] = useState<{ ids: string[]; names: string[] }>({ ids: [], names: [] });
+  const [sendMessageGuests, setSendMessageGuests] = useState<{
+    ids: string[];
+    names: string[];
+    statuses: ("PENDING" | "ACCEPTED" | "DECLINED" | "MAYBE")[];
+  }>({ ids: [], names: [], statuses: [] });
   const [sendMessageMode, setSendMessageMode] = useState<"single" | "bulk">("single");
 
-  // Sync statusFilter when initialFilter prop changes (URL navigation)
+  // Sync rsvpStatusFilter when initialFilter prop changes (URL navigation)
   useEffect(() => {
-    setStatusFilter(initialFilter as StatusFilter);
+    setRsvpStatusFilter(initialFilter as RsvpStatusFilter || "all");
   }, [initialFilter]);
 
-  // Filter guests based on search query and status filter
+  // Count active filters
+  const activeFilterCount = useMemo(() => {
+    let count = 0;
+    if (sideFilter !== "all") count++;
+    if (groupFilter !== "all") count++;
+    if (messageStatusFilter !== "all") count++;
+    if (rsvpStatusFilter !== "all") count++;
+    return count;
+  }, [sideFilter, groupFilter, messageStatusFilter, rsvpStatusFilter]);
+
+  // Clear all filters
+  const clearFilters = () => {
+    setSideFilter("all");
+    setGroupFilter("all");
+    setMessageStatusFilter("all");
+    setRsvpStatusFilter("all");
+  };
+
+  // Filter guests based on search query and all filters
   const filteredGuests = useMemo(() => {
     let filtered = guests;
 
-    // Apply status filter
-    if (statusFilter !== "all") {
+    // Apply RSVP status filter
+    if (rsvpStatusFilter !== "all") {
       filtered = filtered.filter((guest) => {
         const guestStatus = guest.rsvp?.status || "PENDING";
-        return guestStatus.toLowerCase() === statusFilter;
+        return guestStatus.toLowerCase() === rsvpStatusFilter;
+      });
+    }
+
+    // Apply side filter
+    if (sideFilter !== "all") {
+      filtered = filtered.filter((guest) => guest.side === sideFilter);
+    }
+
+    // Apply group filter
+    if (groupFilter !== "all") {
+      filtered = filtered.filter((guest) => guest.groupName === groupFilter);
+    }
+
+    // Apply message status filter
+    if (messageStatusFilter !== "all") {
+      filtered = filtered.filter((guest) => {
+        const msgStatus = getMessageStatus(guest.notificationLogs);
+        if (messageStatusFilter === "not_sent") {
+          return msgStatus === "not_sent";
+        }
+        if (messageStatusFilter === "invite_sent") {
+          return msgStatus === "invite_sent";
+        }
+        if (messageStatusFilter === "reminder_sent") {
+          return msgStatus === "reminder_1" || msgStatus === "reminder_2_plus";
+        }
+        return true;
       });
     }
 
@@ -129,7 +191,7 @@ export function GuestsTable({ guests, eventId, initialFilter = "all" }: GuestsTa
     }
 
     return filtered;
-  }, [guests, searchQuery, statusFilter]);
+  }, [guests, searchQuery, rsvpStatusFilter, sideFilter, groupFilter, messageStatusFilter]);
 
   const allSelected = filteredGuests.length > 0 && selectedIds.size === filteredGuests.length;
   const someSelected = selectedIds.size > 0 && selectedIds.size < filteredGuests.length;
@@ -232,6 +294,7 @@ export function GuestsTable({ guests, eventId, initialFilter = "all" }: GuestsTa
     setSendMessageGuests({
       ids: selectedGuests.map((g) => g.id),
       names: selectedGuests.map((g) => g.name),
+      statuses: selectedGuests.map((g) => (g.rsvp?.status || "PENDING") as "PENDING" | "ACCEPTED" | "DECLINED" | "MAYBE"),
     });
     setSendMessageMode("bulk");
     setSendMessageOpen(true);
@@ -242,6 +305,7 @@ export function GuestsTable({ guests, eventId, initialFilter = "all" }: GuestsTa
     setSendMessageGuests({
       ids: [guest.id],
       names: [guest.name],
+      statuses: [(guest.rsvp?.status || "PENDING") as "PENDING" | "ACCEPTED" | "DECLINED" | "MAYBE"],
     });
     setSendMessageMode("single");
     setSendMessageOpen(true);
@@ -301,18 +365,35 @@ export function GuestsTable({ guests, eventId, initialFilter = "all" }: GuestsTa
         onOpenChange={handleSendMessageClose}
         guestIds={sendMessageGuests.ids}
         guestNames={sendMessageGuests.names}
+        guestStatuses={sendMessageGuests.statuses}
         eventId={eventId}
         mode={sendMessageMode}
       />
 
-      {/* Search Input */}
-      <div className="relative">
-        <Icons.search className="absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          placeholder={tc("search")}
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="ps-9"
+      {/* Search and Filter Bar */}
+      <div className="space-y-3">
+        <div className="relative">
+          <Icons.search className="absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            placeholder={tc("search")}
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="ps-9"
+          />
+        </div>
+
+        {/* Filter Bar */}
+        <GuestsFilterBar
+          sideFilter={sideFilter}
+          setSideFilter={setSideFilter}
+          groupFilter={groupFilter}
+          setGroupFilter={setGroupFilter}
+          messageStatusFilter={messageStatusFilter}
+          setMessageStatusFilter={setMessageStatusFilter}
+          rsvpStatusFilter={rsvpStatusFilter}
+          setRsvpStatusFilter={setRsvpStatusFilter}
+          onClearFilters={clearFilters}
+          activeFilterCount={activeFilterCount}
         />
       </div>
 
@@ -375,6 +456,8 @@ export function GuestsTable({ guests, eventId, initialFilter = "all" }: GuestsTa
               </TableHead>
               <TableHead>{t("name")}</TableHead>
               <TableHead>{t("phone")}</TableHead>
+              <TableHead className="text-center">{t("side")}</TableHead>
+              <TableHead className="text-center">{t("group")}</TableHead>
               <TableHead className="text-center">{t("status")}</TableHead>
               <TableHead className="text-center">{t("messageSent")}</TableHead>
               <TableHead className="text-center">{t("guestCount")}</TableHead>
@@ -384,7 +467,7 @@ export function GuestsTable({ guests, eventId, initialFilter = "all" }: GuestsTa
           <TableBody>
             {filteredGuests.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="h-24 text-center">
+                <TableCell colSpan={9} className="h-24 text-center">
                   {tc("noResults")}
                 </TableCell>
               </TableRow>
@@ -418,6 +501,24 @@ export function GuestsTable({ guests, eventId, initialFilter = "all" }: GuestsTa
                     </TableCell>
                     <TableCell className="text-start">{guest.phoneNumber || "-"}</TableCell>
                     <TableCell className="text-center">
+                      {guest.side ? (
+                        <Badge variant="outline" className="text-xs">
+                          {t(`sides.${guest.side}` as "sides.bride" | "sides.groom" | "sides.both")}
+                        </Badge>
+                      ) : (
+                        <span className="text-muted-foreground">-</span>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-center">
+                      {guest.groupName ? (
+                        <Badge variant="outline" className="text-xs">
+                          {t(`groups.${guest.groupName}` as "groups.family" | "groups.friends" | "groups.work" | "groups.other")}
+                        </Badge>
+                      ) : (
+                        <span className="text-muted-foreground">-</span>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-center">
                       <Badge className={statusColors[status]} variant="secondary">
                         {tStatus(status.toLowerCase() as "pending" | "accepted" | "declined")}
                       </Badge>
@@ -428,7 +529,15 @@ export function GuestsTable({ guests, eventId, initialFilter = "all" }: GuestsTa
                       </Badge>
                     </TableCell>
                     <TableCell className="text-center">
-                      {status === "ACCEPTED" ? guest.rsvp?.guestCount || 1 : "-"}
+                      {status === "ACCEPTED" ? (
+                        <span title={t("confirmedGuests")}>
+                          {guest.rsvp?.guestCount || 1}
+                        </span>
+                      ) : (
+                        <span className="text-muted-foreground" title={t("expectedGuests")}>
+                          {guest.expectedGuests || 1}
+                        </span>
+                      )}
                     </TableCell>
                     <TableCell className="w-24">
                       <div className="flex items-center gap-1">

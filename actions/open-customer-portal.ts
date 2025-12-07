@@ -1,9 +1,22 @@
 "use server";
 
-// TODO: Implement Stripe customer portal
-// This is a placeholder action for Stripe customer portal integration
+import { redirect } from "next/navigation";
+import { getStripe } from "@/lib/stripe";
+import { getCurrentUser } from "@/lib/session";
+
 export async function openCustomerPortal(userStripeId: string) {
-  console.log("openCustomerPortal called with userStripeId:", userStripeId);
-  // Placeholder - implement Stripe customer portal session creation
-  throw new Error("Stripe customer portal not yet implemented");
+  const user = await getCurrentUser();
+
+  if (!user || !user.id) {
+    throw new Error("Unauthorized");
+  }
+
+  const stripe = getStripe();
+
+  const session = await stripe.billingPortal.sessions.create({
+    customer: userStripeId,
+    return_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/billing`,
+  });
+
+  redirect(session.url);
 }

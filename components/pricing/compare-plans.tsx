@@ -1,5 +1,8 @@
+"use client";
+
 import { PlansRow } from "@/types";
 import { CircleCheck, Info } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 import { comparePlans, plansColumns } from "@/config/subscriptions";
 import {
@@ -11,19 +14,23 @@ import { HeaderSection } from "@/components/shared/header-section";
 import MaxWidthWrapper from "@/components/shared/max-width-wrapper";
 
 export function ComparePlans() {
-  const renderCell = (value: string | boolean | null) => {
+  const t = useTranslations("pricing.compare");
+  const renderCell = (value: string | boolean | null, featureKey?: string) => {
     if (value === null) return "—";
     if (typeof value === "boolean")
       return value ? <CircleCheck className="mx-auto size-[22px]" /> : "—";
+    // Translate string values if they're specific keywords
+    if (value === "Unlimited") return t("unlimited");
+    if (value === "24/7") return t("247");
     return value;
   };
 
   return (
     <MaxWidthWrapper>
       <HeaderSection
-        label="Plans"
-        title="Compare Our Plans"
-        subtitle="Find the perfect plan tailored for your business needs!"
+        label={t("label")}
+        title={t("title")}
+        subtitle={t("subtitle")}
       />
 
       <div className="my-10 overflow-x-scroll max-lg:mx-[-0.8rem] md:overflow-x-visible">
@@ -36,7 +43,7 @@ export function ComparePlans() {
                   key={col}
                   className="sticky z-10 w-40 bg-accent p-5 font-heading text-xl capitalize tracking-wide md:w-auto lg:top-14 lg:text-2xl"
                 >
-                  {col}
+                  {t(`columns.${col}`)}
                 </th>
               ))}
             </tr>
@@ -50,7 +57,7 @@ export function ComparePlans() {
                 >
                   <div className="flex items-center justify-between space-x-2 p-4">
                     <span className="text-[15px] font-medium lg:text-base">
-                      {row.feature}
+                      {t(`features.${index}`)}
                     </span>
                     {row.tooltip && (
                       <Popover>
@@ -61,7 +68,7 @@ export function ComparePlans() {
                           side="top"
                           className="max-w-80 p-3 text-sm"
                         >
-                          {row.tooltip}
+                          {t(`tooltips.${index}`)}
                         </PopoverContent>
                       </Popover>
                     )}

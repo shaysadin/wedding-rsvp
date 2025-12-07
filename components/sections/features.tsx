@@ -1,30 +1,42 @@
-import Link from "next/link";
+"use client";
 
-import { features } from "@/config/landing";
+import Link from "next/link";
+import { useTranslations } from "next-intl";
+
 import { Button } from "@/components/ui/button";
 import { HeaderSection } from "@/components/shared/header-section";
 import { Icons } from "@/components/shared/icons";
 import MaxWidthWrapper from "@/components/shared/max-width-wrapper";
 
+const featureKeys = [
+  { key: "whatsappInvitations", icon: "messageCircle" },
+  { key: "smsMessaging", icon: "phone" },
+  { key: "customRsvpPages", icon: "palette" },
+  { key: "guestManagement", icon: "users" },
+  { key: "realtimeDashboard", icon: "chart" },
+  { key: "smartAnalytics", icon: "lineChart" },
+] as const;
+
 export default function Features() {
+  const t = useTranslations("marketing.features");
+
   return (
     <section>
       <div className="pb-6 pt-28">
         <MaxWidthWrapper>
           <HeaderSection
-            label="Features"
-            title="Discover all features."
-            subtitle="Harum quae dolore inventore repudiandae? orrupti aut temporibus
-          ariatur."
+            label={t("label")}
+            title={t("title")}
+            subtitle={t("subtitle")}
           />
 
           <div className="mt-12 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {features.map((feature) => {
+            {featureKeys.map((feature) => {
               const Icon = Icons[feature.icon || "nextjs"];
               return (
                 <div
                   className="group relative overflow-hidden rounded-2xl border bg-background p-5 md:p-8"
-                  key={feature.title}
+                  key={feature.key}
                 >
                   <div
                     aria-hidden="true"
@@ -36,7 +48,7 @@ export default function Features() {
                     </div>
 
                     <p className="mt-6 pb-6 text-muted-foreground">
-                      {feature.description}
+                      {t(`${feature.key}.description`)}
                     </p>
 
                     <div className="-mb-5 flex gap-3 border-t border-muted py-4 md:-mb-7">
@@ -46,8 +58,8 @@ export default function Features() {
                         rounded="xl"
                         className="px-4"
                       >
-                        <Link href="/" className="flex items-center gap-2">
-                          <span>Visit the site</span>
+                        <Link href="/pricing" className="flex items-center gap-2">
+                          <span>{t("visitSite")}</span>
                           <Icons.arrowUpRight className="size-4" />
                         </Link>
                       </Button>

@@ -69,12 +69,15 @@ export type UserSubscriptionPlan = SubscriptionPlan & {
     isPaid: boolean;
     interval: "month" | "year" | null;
     isCanceled?: boolean;
+    isAdminAssigned?: boolean; // True if plan was assigned by admin without Stripe subscription
+    pendingPlanChange?: string | null; // Scheduled plan change (e.g., downgrade)
+    pendingPlanChangeDate?: number | null; // When the scheduled change will take effect
   };
 
 // compare plans
 export type ColumnType = string | boolean | null;
 export type PlansRow = { feature: string; tooltip?: string } & {
-  [key in (typeof plansColumns)[number]]: ColumnType;
+  [key in "basic" | "advanced" | "premium" | "business"]: ColumnType;
 };
 
 // landing sections

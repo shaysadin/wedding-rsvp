@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Card,
   CardContent,
@@ -53,6 +54,16 @@ export function MessagingSettingsForm({ settings }: MessagingSettingsFormProps) 
   const [whatsappPhoneNumber, setWhatsappPhoneNumber] = useState(settings?.whatsappPhoneNumber || "");
   const [whatsappEnabled, setWhatsappEnabled] = useState(settings?.whatsappEnabled || false);
 
+  // WhatsApp Content Template SIDs
+  const [whatsappInviteContentSid, setWhatsappInviteContentSid] = useState(settings?.whatsappInviteContentSid || "");
+  const [whatsappReminderContentSid, setWhatsappReminderContentSid] = useState(settings?.whatsappReminderContentSid || "");
+  const [whatsappConfirmationContentSid, setWhatsappConfirmationContentSid] = useState(settings?.whatsappConfirmationContentSid || "");
+
+  // WhatsApp Template Text (for display to wedding owners)
+  const [whatsappInviteTemplateText, setWhatsappInviteTemplateText] = useState(settings?.whatsappInviteTemplateText || "");
+  const [whatsappReminderTemplateText, setWhatsappReminderTemplateText] = useState(settings?.whatsappReminderTemplateText || "");
+  const [whatsappConfirmationTemplateText, setWhatsappConfirmationTemplateText] = useState(settings?.whatsappConfirmationTemplateText || "");
+
   // SMS state (Twilio only)
   const smsProvider = "twilio"; // Fixed to Twilio
   const [smsApiKey, setSmsApiKey] = useState(settings?.smsApiKey || "");
@@ -69,6 +80,12 @@ export function MessagingSettingsForm({ settings }: MessagingSettingsFormProps) 
         whatsappApiSecret,
         whatsappPhoneNumber,
         whatsappEnabled,
+        whatsappInviteContentSid: whatsappInviteContentSid || null,
+        whatsappReminderContentSid: whatsappReminderContentSid || null,
+        whatsappConfirmationContentSid: whatsappConfirmationContentSid || null,
+        whatsappInviteTemplateText: whatsappInviteTemplateText || null,
+        whatsappReminderTemplateText: whatsappReminderTemplateText || null,
+        whatsappConfirmationTemplateText: whatsappConfirmationTemplateText || null,
       });
 
       if (result.success) {
@@ -254,6 +271,125 @@ export function MessagingSettingsForm({ settings }: MessagingSettingsFormProps) 
                 value={whatsappApiSecret}
                 onChange={(e) => setWhatsappApiSecret(e.target.value)}
               />
+            </div>
+          </div>
+
+          {/* WhatsApp Content Templates Section */}
+          <div className="border-t pt-4 mt-4">
+            <div className="mb-4">
+              <h4 className="text-sm font-medium">Content Templates (Required for WhatsApp Business API)</h4>
+              <p className="text-xs text-muted-foreground mt-1">
+                Enter your approved Content Template SIDs from{" "}
+                <a
+                  href="https://console.twilio.com/us1/develop/sms/content-editor/content-templates"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary underline"
+                >
+                  Twilio Content API
+                </a>
+                . Templates must be approved by WhatsApp before use.
+              </p>
+            </div>
+            <div className="grid gap-6">
+              {/* Invite Template */}
+              <div className="space-y-3 rounded-lg border p-4">
+                <div className="flex items-center gap-2">
+                  <Icons.mail className="h-4 w-4 text-blue-600" />
+                  <Label className="text-sm font-medium">Invite Template</Label>
+                </div>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="whatsapp-invite-template" className="text-xs text-muted-foreground">Content SID</Label>
+                    <Input
+                      id="whatsapp-invite-template"
+                      placeholder="HXxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+                      value={whatsappInviteContentSid}
+                      onChange={(e) => setWhatsappInviteContentSid(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="whatsapp-invite-text" className="text-xs text-muted-foreground">Template Text (for display to users)</Label>
+                    <Textarea
+                      id="whatsapp-invite-text"
+                      placeholder="שלום {{1}} 👋&#10;&#10;הוזמנת ל{{2}}! 🎊💍&#10;&#10;לאישור הגעה: {{3}}"
+                      value={whatsappInviteTemplateText}
+                      onChange={(e) => setWhatsappInviteTemplateText(e.target.value)}
+                      rows={4}
+                      className="text-sm"
+                    />
+                  </div>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Variables: {"{{1}}"} = guest name, {"{{2}}"} = event title, {"{{3}}"} = RSVP link
+                </p>
+              </div>
+
+              {/* Reminder Template */}
+              <div className="space-y-3 rounded-lg border p-4">
+                <div className="flex items-center gap-2">
+                  <Icons.bell className="h-4 w-4 text-yellow-600" />
+                  <Label className="text-sm font-medium">Reminder Template</Label>
+                </div>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="whatsapp-reminder-template" className="text-xs text-muted-foreground">Content SID</Label>
+                    <Input
+                      id="whatsapp-reminder-template"
+                      placeholder="HXxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+                      value={whatsappReminderContentSid}
+                      onChange={(e) => setWhatsappReminderContentSid(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="whatsapp-reminder-text" className="text-xs text-muted-foreground">Template Text (for display to users)</Label>
+                    <Textarea
+                      id="whatsapp-reminder-text"
+                      placeholder="היי {{1}} 👋&#10;&#10;עדיין לא קיבלנו את אישור ההגעה שלך ל{{2}} 📋&#10;&#10;לאישור: {{3}}"
+                      value={whatsappReminderTemplateText}
+                      onChange={(e) => setWhatsappReminderTemplateText(e.target.value)}
+                      rows={4}
+                      className="text-sm"
+                    />
+                  </div>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Variables: {"{{1}}"} = guest name, {"{{2}}"} = event title, {"{{3}}"} = RSVP link
+                </p>
+              </div>
+
+              {/* Confirmation Template */}
+              <div className="space-y-3 rounded-lg border p-4">
+                <div className="flex items-center gap-2">
+                  <Icons.check className="h-4 w-4 text-green-600" />
+                  <Label className="text-sm font-medium">Confirmation Template (Optional)</Label>
+                </div>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="whatsapp-confirmation-template" className="text-xs text-muted-foreground">Content SID</Label>
+                    <Input
+                      id="whatsapp-confirmation-template"
+                      placeholder="HXxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+                      value={whatsappConfirmationContentSid}
+                      onChange={(e) => setWhatsappConfirmationContentSid(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="whatsapp-confirmation-text" className="text-xs text-muted-foreground">Template Text (for display to users)</Label>
+                    <Textarea
+                      id="whatsapp-confirmation-text"
+                      placeholder="תודה {{1}}! ✅&#10;&#10;קיבלנו את תשובתך ל{{2}}. 🎉"
+                      value={whatsappConfirmationTemplateText}
+                      onChange={(e) => setWhatsappConfirmationTemplateText(e.target.value)}
+                      rows={3}
+                      className="text-sm"
+                    />
+                  </div>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Variables: {"{{1}}"} = guest name, {"{{2}}"} = event title
+                </p>
+              </div>
             </div>
           </div>
 

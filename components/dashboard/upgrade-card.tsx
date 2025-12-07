@@ -9,16 +9,16 @@ import {
 
 export function UpgradeCard() {
   return (
-    <Card className="md:max-xl:rounded-none md:max-xl:border-none md:max-xl:shadow-none">
+    <Card dir="rtl" className="md:max-xl:rounded-none md:max-xl:border-none md:max-xl:shadow-none">
       <CardHeader className="md:max-xl:px-4">
-        <CardTitle>Upgrade to Pro</CardTitle>
+        <CardTitle>שדרגו לגרסת פרו</CardTitle>
         <CardDescription>
-          Unlock all features and get unlimited access to our support team.
+פתחו את כל התכונות וקבלו גישה בלתי מוגבלת לצוות התמיכה שלנו.
         </CardDescription>
       </CardHeader>
       <CardContent className="md:max-xl:px-4">
         <Button size="sm" className="w-full">
-          Upgrade
+          שדרגו
         </Button>
       </CardContent>
     </Card>

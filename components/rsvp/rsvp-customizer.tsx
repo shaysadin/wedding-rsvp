@@ -518,7 +518,7 @@ export function RsvpCustomizer({
 
   return (
     <div
-      className="-mx-4 -mt-4 flex h-[calc(100vh_-_76px)] flex-col lg:-mx-8 xl:-mx-8"
+      className="-m-4 flex h-[calc(100%_+_2rem)] flex-col overflow-hidden lg:-mx-8 xl:-mx-8"
       dir={isRTL ? "rtl" : "ltr"}
     >
       {/* Header */}
@@ -681,7 +681,7 @@ export function RsvpCustomizer({
       {/* Main Content */}
       <div className="grid min-h-0 flex-1 lg:grid-cols-[380px_1fr]">
         {/* Settings Panel */}
-        <div className="flex min-h-0 max-h-[89vh] flex-col border-e bg-background" dir={isRTL ? "rtl" : "ltr"}>
+        <div className="flex min-h-0 flex-col overflow-hidden border-e bg-background" dir={isRTL ? "rtl" : "ltr"}>
           {/* Animated Tabs */}
           <div className="shrink-0 border-b bg-muted/30">
             <div className="flex gap-1 p-1">
@@ -1885,7 +1885,7 @@ export function RsvpCustomizer({
         </div>
 
         {/* Preview Panel */}
-        <div className="hidden min-h-0 flex-col bg-muted/20 lg:flex">
+        <div className="hidden min-h-0 flex-col overflow-hidden bg-muted/20 lg:flex">
           <DevicePreview previewUrl={`/rsvp/${event.id}`} isRTL={isRTL}>
             <RsvpFormPreview
               settings={settings as RsvpPageSettings}

@@ -6,16 +6,21 @@ export const BLOG_CATEGORIES: {
   {
     title: "News",
     slug: "news",
-    description: "Updates and announcements from Next SaaS Starter.",
+    description: "Updates and announcements from Go Approval.",
   },
   {
     title: "Education",
     slug: "education",
-    description: "Educational content about SaaS management.",
+    description: "Tips and guides for managing your wedding RSVPs.",
   },
 ];
 
 export const BLOG_AUTHORS = {
+  goapproval: {
+    name: "Go Approval Team",
+    image: "/_static/avatars/default.png",
+    twitter: "goapproval",
+  },
   mickasmt: {
     name: "mickasmt",
     image: "/_static/avatars/mickasmt.png",

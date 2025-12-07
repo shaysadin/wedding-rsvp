@@ -42,21 +42,28 @@ export const sidebarLinks: SidebarNavItem[] = [
         title: "Events",
         authorizeOnly: UserRole.ROLE_WEDDING_OWNER,
       },
-      {
-        href: "/dashboard/charts",
-        icon: "lineChart",
-        titleKey: "common.analytics",
-        title: "Analytics",
-        authorizeOnly: UserRole.ROLE_WEDDING_OWNER,
-      },
+      // {
+      //   href: "/dashboard/charts",
+      //   icon: "lineChart",
+      //   titleKey: "common.analytics",
+      //   title: "Analytics",
+      //   authorizeOnly: UserRole.ROLE_WEDDING_OWNER,
+      // },
+   
     ],
   },
   {
     titleKey: "common.options",
     title: "OPTIONS",
     items: [
+         {
+        href: "/dashboard/billing",
+        icon: "creditCard",
+        titleKey: "navigation.billing",
+        title: "Billing",
+      },
       { href: "/dashboard/settings", icon: "settings", titleKey: "navigation.settings", title: "Settings" },
-      { href: "/", icon: "home", titleKey: "common.homepage", title: "Homepage" },
+      // { href: "/", icon: "home", titleKey: "common.homepage", title: "Homepage" },
     ],
   },
 ];

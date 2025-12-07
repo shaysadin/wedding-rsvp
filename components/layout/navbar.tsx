@@ -4,10 +4,10 @@ import { useContext } from "react";
 import Link from "next/link";
 import { useSelectedLayoutSegment } from "next/navigation";
 import { useSession } from "next-auth/react";
+import { useTranslations } from "next-intl";
 import { UserRole } from "@prisma/client";
 
 import { docsConfig } from "@/config/docs";
-import { marketingConfig } from "@/config/marketing";
 import { siteConfig } from "@/config/site";
 import { cn } from "@/lib/utils";
 import { useScroll } from "@/hooks/use-scroll";
@@ -17,26 +17,35 @@ import { DocsSearch } from "@/components/docs/search";
 import { ModalContext } from "@/components/modals/providers";
 import { Icons } from "@/components/shared/icons";
 import MaxWidthWrapper from "@/components/shared/max-width-wrapper";
+import { ModeToggle } from "@/components/layout/mode-toggle";
+import { LanguageSwitcher } from "@/components/layout/language-switcher";
+import { NavMobile } from "@/components/layout/mobile-nav";
 
 interface NavBarProps {
   scroll?: boolean;
   large?: boolean;
 }
 
+const navKeys = ["pricing", "blog", "documentation"] as const;
+
 export function NavBar({ scroll = false }: NavBarProps) {
   const scrolled = useScroll(50);
   const { data: session, status } = useSession();
   const { setShowSignInModal } = useContext(ModalContext);
+  const t = useTranslations("marketing.nav");
+  const tAuth = useTranslations("auth");
+  const tCommon = useTranslations("common");
 
   const selectedLayout = useSelectedLayoutSegment();
   const documentation = selectedLayout === "docs";
 
-  const configMap = {
-    docs: docsConfig.mainNav,
-  };
+  const navLinks = [
+    { titleKey: "pricing", href: "/pricing" },
+    { titleKey: "blog", href: "/blog" },
+    { titleKey: "documentation", href: "/docs" },
+  ];
 
-  const links =
-    (selectedLayout && configMap[selectedLayout]) || marketingConfig.mainNav;
+  const links = documentation ? docsConfig.mainNav : navLinks;
 
   return (
     <header
@@ -61,17 +70,17 @@ export function NavBar({ scroll = false }: NavBarProps) {
               {links.map((item, index) => (
                 <Link
                   key={index}
-                  href={item.disabled ? "#" : item.href}
+                  href={"disabled" in item && item.disabled ? "#" : item.href}
                   prefetch={true}
                   className={cn(
                     "flex items-center text-lg font-medium transition-colors hover:text-foreground/80 sm:text-sm",
                     item.href.startsWith(`/${selectedLayout}`)
                       ? "text-foreground"
                       : "text-foreground/60",
-                    item.disabled && "cursor-not-allowed opacity-80",
+                    "disabled" in item && item.disabled && "cursor-not-allowed opacity-80",
                   )}
                 >
-                  {item.title}
+                  {"titleKey" in item ? t(item.titleKey) : item.title}
                 </Link>
               ))}
             </nav>
@@ -88,18 +97,13 @@ export function NavBar({ scroll = false }: NavBarProps) {
               <div className="flex lg:hidden">
                 <Icons.search className="size-6 text-muted-foreground" />
               </div>
-              <div className="flex space-x-4">
-                <Link
-                  href={siteConfig.links.github}
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  <Icons.gitHub className="size-7" />
-                  <span className="sr-only">GitHub</span>
-                </Link>
-              </div>
             </div>
           ) : null}
+
+          <div className="hidden items-center space-x-2 md:flex">
+            <LanguageSwitcher />
+            <ModeToggle />
+          </div>
 
           {session ? (
             <Link
@@ -112,7 +116,7 @@ export function NavBar({ scroll = false }: NavBarProps) {
                 size="sm"
                 rounded="full"
               >
-                <span>Dashboard</span>
+                <span>{tCommon("dashboard")}</span>
               </Button>
             </Link>
           ) : status === "unauthenticated" ? (
@@ -123,12 +127,14 @@ export function NavBar({ scroll = false }: NavBarProps) {
               rounded="full"
               onClick={() => setShowSignInModal(true)}
             >
-              <span>Sign In</span>
+              <span>{tAuth("signIn")}</span>
               <Icons.arrowRight className="size-4" />
             </Button>
           ) : (
             <Skeleton className="hidden h-9 w-28 rounded-full lg:flex" />
           )}
+
+          <NavMobile />
         </div>
       </MaxWidthWrapper>
     </header>

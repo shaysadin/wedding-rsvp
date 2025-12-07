@@ -57,6 +57,7 @@ export function AddGuestDialog({ eventId }: AddGuestDialogProps) {
       phoneNumber: "",
       side: undefined,
       groupName: "",
+      expectedGuests: 1,
       notes: "",
     },
   });
@@ -125,25 +126,70 @@ export function AddGuestDialog({ eventId }: AddGuestDialogProps) {
               )}
             />
 
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="side"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t("side")}</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder={t("selectSide")} />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="bride">{t("sides.bride")}</SelectItem>
+                        <SelectItem value="groom">{t("sides.groom")}</SelectItem>
+                        <SelectItem value="both">{t("sides.both")}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="groupName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t("group")}</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder={t("selectGroup")} />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="family">{t("groups.family")}</SelectItem>
+                        <SelectItem value="friends">{t("groups.friends")}</SelectItem>
+                        <SelectItem value="work">{t("groups.work")}</SelectItem>
+                        <SelectItem value="other">{t("groups.other")}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
             <FormField
               control={form.control}
-              name="groupName"
+              name="expectedGuests"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>{t("group")}</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder={t("selectGroup")} />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="family">{t("groups.family")}</SelectItem>
-                      <SelectItem value="friends">{t("groups.friends")}</SelectItem>
-                      <SelectItem value="work">{t("groups.work")}</SelectItem>
-                      <SelectItem value="other">{t("groups.other")}</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <FormLabel>{t("expectedGuests")}</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      min={1}
+                      max={20}
+                      {...field}
+                      onChange={(e) => field.onChange(parseInt(e.target.value) || 1)}
+                    />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}

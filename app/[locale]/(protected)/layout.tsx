@@ -13,6 +13,7 @@ import {
 import { ModeToggle } from "@/components/layout/mode-toggle";
 import { LanguageSwitcher } from "@/components/layout/language-switcher";
 import { UserAccountNav } from "@/components/layout/user-account-nav";
+import { RoleSwitcher } from "@/components/dashboard/role-switcher";
 import MaxWidthWrapper from "@/components/shared/max-width-wrapper";
 
 interface ProtectedLayoutProps {
@@ -24,6 +25,20 @@ export default async function ProtectedLayout({ children }: ProtectedLayoutProps
   const locale = await getLocale();
 
   if (!user) redirect(`/${locale}/login`);
+
+  // Get user data including email verification status and roles
+  const dbUser = await prisma.user.findUnique({
+    where: { id: user.id },
+    select: { emailVerified: true, roles: true, accounts: true },
+  });
+
+  // If user has no OAuth accounts and email is not verified, block access
+  const hasOAuthAccount = dbUser?.accounts && dbUser.accounts.length > 0;
+  if (!hasOAuthAccount && !dbUser?.emailVerified) {
+    redirect(`/${locale}/login?error=EmailNotVerified`);
+  }
+
+  const userRoles = dbUser?.roles || [user.role];
 
   // Fetch user's events for sidebar (only for wedding owners)
   let userEvents: { id: string; title: string }[] = [];
@@ -43,14 +58,27 @@ export default async function ProtectedLayout({ children }: ProtectedLayoutProps
     ),
   }));
 
-  return (
-    <div className="relative flex min-h-screen w-full">
-      <DashboardSidebar links={filteredLinks} userEvents={userEvents} />
+  // Check if user can switch roles (has multiple roles)
+  const canSwitchRoles = userRoles.length > 1;
 
-      <div className="flex flex-1 flex-col">
-        <header className="sticky top-0 z-50 flex h-14 bg-background border-b px-4 lg:h-[60px] xl:px-8">
+  return (
+    <div className="relative flex h-screen w-full overflow-hidden bg-sidebar">
+      <DashboardSidebar
+        links={filteredLinks}
+        userEvents={userEvents}
+        currentRole={user.role}
+        availableRoles={userRoles}
+      />
+
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border bg-background shadow-md m-2">
+        <header className="shrink-0 flex h-14 items-center border-b px-4 lg:h-[60px] xl:px-8">
           <MaxWidthWrapper className="flex max-w-7xl items-center gap-x-3 px-0">
-            <MobileSheetSidebar links={filteredLinks} userEvents={userEvents} />
+            <MobileSheetSidebar
+              links={filteredLinks}
+              userEvents={userEvents}
+              currentRole={user.role}
+              availableRoles={userRoles}
+            />
 
             <div className="w-full flex-1">
               <SearchCommand links={filteredLinks} />
@@ -62,7 +90,7 @@ export default async function ProtectedLayout({ children }: ProtectedLayoutProps
           </MaxWidthWrapper>
         </header>
 
-        <main className="flex-1 p-4 xl:px-8">
+        <main className="min-h-0 flex-1 overflow-hidden p-4 xl:px-8">
           <MaxWidthWrapper className="flex h-full max-w-7xl flex-col gap-4 px-0 lg:gap-6">
             {children}
           </MaxWidthWrapper>

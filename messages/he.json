@@ -38,6 +38,8 @@
     "homepage": "דף הבית",
     "analytics": "ניתוח נתונים",
     "or": "או",
+    "switchTo": "עבור ל",
+    "owner": "בעל אירוע",
     "orContinueWith": "או המשך עם",
     "total": "סה\"כ",
     "people": "אנשים",
@@ -55,7 +57,8 @@
     "guests": "אורחים",
     "noResults": "לא נמצאו תוצאות",
     "awaitingReview": "ממתין לבדיקה",
-    "weddingEvents": "אירועי חתונה"
+    "weddingEvents": "אירועי חתונה",
+    "all": "הכל"
   },
   "navigation": {
     "dashboard": "לוח בקרה",
@@ -66,7 +69,8 @@
     "admin": "ניהול מערכת",
     "users": "משתמשים",
     "home": "דף הבית",
-    "messaging": "הגדרות הודעות"
+    "messaging": "הגדרות הודעות",
+    "billing": "חיוב ותשלומים"
   },
   "auth": {
     "signIn": "כניסה",
@@ -88,7 +92,15 @@
     "checkEmail": "בדוק את האימייל שלך",
     "checkEmailDescription": "שלחנו לך קישור להתחברות. בדוק גם בתיקיית הספאם.",
     "errorTitle": "משהו השתבש",
-    "errorDescription": "בקשת ההתחברות נכשלה. אנא נסה שוב."
+    "errorDescription": "בקשת ההתחברות נכשלה. אנא נסה שוב.",
+    "verificationEmailSent": "מייל אימות נשלח",
+    "verificationEmailDescription": "בדוק את תיבת הדואר שלך ולחץ על קישור האימות כדי להפעיל את החשבון.",
+    "emailExistsTitle": "האימייל כבר קיים",
+    "emailExistsDescription": "חשבון עם אימייל זה כבר קיים. אנא התחבר או השתמש באימייל אחר.",
+    "emailNotVerifiedTitle": "האימייל לא אומת",
+    "emailNotVerifiedDescription": "אנא אמת את האימייל שלך לפני ההתחברות. בדוק את תיבת הדואר לקישור האימות.",
+    "invalidCredentialsTitle": "פרטים שגויים",
+    "invalidCredentialsDescription": "האימייל או הסיסמה שהזנת שגויים."
   },
   "dashboard": {
     "title": "לוח בקרה",
@@ -152,6 +164,8 @@
     "group": "קבוצה",
     "status": "סטטוס",
     "guestCount": "מספר אורחים",
+    "expectedGuests": "מספר אורחים צפוי",
+    "confirmedGuests": "מספר אורחים מאושר",
     "lastReminder": "תזכורת אחרונה",
     "sendInvite": "שלח הזמנה",
     "sendReminder": "שלח תזכורת",
@@ -179,7 +193,9 @@
       "work": "עבודה",
       "other": "אחר"
     },
-    "importInstructions": "העלה קובץ Excel או CSV עם העמודות: שם, טלפון, אימייל, צד, קבוצה",
+    "importInstructions": "העלה קובץ Excel או CSV עם העמודות: שם, טלפון, צד, קבוצה, מספר אורחים",
+    "downloadTemplate": "הורד תבנית",
+    "downloadTemplateDescription": "הורד קובץ Excel מוכן עם כל העמודות הנדרשות",
     "copyLink": "העתק קישור",
     "linkCopied": "הקישור הועתק ללוח",
     "bulkAdd": "הוספה מרובה",
@@ -237,7 +253,9 @@
     "sendingFailed": "השליחה נכשלה",
     "partiallySent": "חלק מההודעות נשלחו",
     "messageSent": "סטטוס הודעה",
-    "noPhone": "אין מספר טלפון"
+    "noPhone": "אין מספר טלפון",
+    "selectSide": "בחר צד",
+    "clearFilters": "נקה סינון"
   },
   "messageStatus": {
     "notSent": "לא נשלח",
@@ -343,6 +361,8 @@
     "allUsers": "כל המשתמשים",
     "weddingOwners": "בעלי חתונות",
     "pendingApproval": "ממתינים לאישור",
+    "suspendedUsers": "משתמשים מושהים",
+    "accountsSuspended": "חשבונות מושהים",
     "createUser": "צור משתמש",
     "editUser": "עריכת משתמש",
     "approveUser": "אשר משתמש",
@@ -352,15 +372,52 @@
     "stats": "סטטיסטיקות",
     "totalUsers": "סה\"כ משתמשים",
     "totalEvents": "סה\"כ אירועים",
-    "totalGuests": "סה\"כ אורחים"
+    "totalGuests": "סה\"כ אורחים",
+    "usage": "שימוש",
+    "usageActions": "פעולות שימוש",
+    "whatsappUsage": "שימוש ב-WhatsApp",
+    "smsUsage": "שימוש ב-SMS",
+    "bonus": "בונוס",
+    "addBonusMessages": "הוסף הודעות בונוס",
+    "addBonusMessagesDesc": "הוסף קרדיט הודעות בונוס עבור {name}",
+    "addBonus": "הוסף בונוס",
+    "resetUsage": "אפס שימוש",
+    "grantAdminRole": "הענק גישת מנהל",
+    "revokeAdminRole": "בטל גישת מנהל",
+    "adminRoleGranted": "גישת מנהל הוענקה",
+    "adminRoleRevoked": "גישת מנהל בוטלה",
+    "manageCredits": "ניהול קרדיטים",
+    "manageCreditsDesc": "הוסף או הסר קרדיטים בונוס עבור {name}",
+    "currentBonus": "בונוס נוכחי",
+    "newBonus": "בונוס חדש",
+    "removeCreditsMode": "הסר קרדיטים במקום להוסיף",
+    "addCredits": "הוסף קרדיטים",
+    "removeCredits": "הסר קרדיטים",
+    "messagesSent": "הודעות שנשלחו",
+    "recentActivity": "פעילות אחרונה",
+    "newEventsThisWeek": "אירועים חדשים השבוע",
+    "rsvpsThisWeek": "אישורים השבוע",
+    "quickActions": "פעולות מהירות",
+    "manageUsers": "ניהול משתמשים",
+    "messagingSettings": "הגדרות הודעות",
+    "recentUsers": "משתמשים אחרונים",
+    "recentUsersDesc": "משתמשים שנרשמו לאחרונה לפלטפורמה",
+    "viewAll": "צפה בכל",
+    "stripeActive": "מנוי Stripe פעיל",
+    "adminAssigned": "מנוי שהוקצה על ידי מנהל",
+    "syncWithStripe": "יסונכרן עם Stripe"
   },
   "plans": {
     "free": "חינם",
     "basic": "בסיסי",
+    "advanced": "מתקדם",
     "premium": "פרימיום",
-    "freeDescription": "אירוע אחד, עד 50 אורחים",
-    "basicDescription": "עד 3 אירועים, 200 אורחים לאירוע",
-    "premiumDescription": "אירועים ואורחים ללא הגבלה"
+    "business": "עסקי",
+    "freeDescription": "ללא אירועים, גישת ניסיון",
+    "basicDescription": "אירוע אחד, 650 הודעות וואטסאפ",
+    "advancedDescription": "אירוע אחד, 750 וואטסאפ + 30 SMS",
+    "premiumDescription": "2 אירועים, 1000 וואטסאפ + 50 SMS",
+    "businessDescription": "אירועים והודעות ללא הגבלה"
   },
   "status": {
     "pending": "ממתין",
@@ -368,7 +425,7 @@
     "declined": "סירב",
     "active": "פעיל",
     "suspended": "מושהה",
-    "pendingApproval": "ממתין לאישור"
+    "pending_approval": "ממתין לאישור"
   },
   "errors": {
     "generic": "אירעה שגיאה, אנא נסו שוב",
@@ -435,9 +492,295 @@
       "saved": "מזהה שולח SMS נשמר",
       "saveFailed": "שמירת מזהה שולח SMS נכשלה"
     },
+    "whatsappTemplates": "תבניות וואטסאפ",
+    "readOnly": "לקריאה בלבד",
+    "whatsappTemplatesDescription": "תבניות וואטסאפ עסקי מאושרות מראש ומנוהלות על ידי הפלטפורמה",
+    "whatsappTemplatesNote": "תבניות וואטסאפ מאושרות מראש על ידי Meta ולא ניתנות לעריכה. פנה למנהל המערכת אם נדרשים שינויים.",
+    "smsTemplates": "תבניות SMS",
+    "editable": "ניתן לעריכה",
+    "smsTemplatesDescription": "התאם אישית הודעות SMS לאורחים שלך",
     "pageTitle": "תבניות הודעות",
     "pageDescription": "התאמה אישית של הודעות עבור {eventTitle}",
     "backToEvent": "חזרה לאירוע"
+  },
+  "marketing": {
+    "hero": {
+      "badge": "הזמנות בוואטסאפ ו-SMS זמינות",
+      "title": "אישורי הגעה לחתונה",
+      "titleHighlight": "בקלות",
+      "description": "שלחו הזמנות יפהפיות בוואטסאפ ו-SMS, עקבו אחר תגובות האורחים בזמן אמת, ונהלו את רשימת האורחים בקלות. בלי עוד כאב ראש של גיליונות אקסל.",
+      "startFree": "התחל בחינם",
+      "viewPricing": "צפה במחירים"
+    },
+    "bento": {
+      "responseRate": "אחוז תגובה",
+      "securePrivate": "מאובטח ופרטי",
+      "secureDescription": "נתוני האורחים שלכם מוצפנים ולא משותפים. עומד בתקני GDPR עם טיפול מאובטח בנתונים.",
+      "instantDelivery": "משלוח מיידי",
+      "instantDescription": "הזמנות בוואטסאפ ו-SMS נשלחות מיידית. לא עוד המתנה לדואר או פתיחת מיילים.",
+      "realtimeDashboard": "לוח בקרה בזמן אמת",
+      "realtimeDescription": "צפו בתגובות מגיעות בזמן אמת. דעו את מספר האורחים בכל רגע עם סטטיסטיקות מעודכנות.",
+      "confirmed": "אישרו",
+      "pending": "ממתינים",
+      "declined": "סירבו",
+      "smartGuestManagement": "ניהול אורחים חכם",
+      "smartGuestDescription": "ארגנו לפי משפחה, צד, או קבוצות מותאמות אישית. כולם ברשימה אחת יפה ומסודרת.",
+      "bridesSide": "צד הכלה",
+      "groomsSide": "צד החתן",
+      "family": "משפחה"
+    },
+    "nav": {
+      "pricing": "מחירים",
+      "blog": "בלוג",
+      "documentation": "תיעוד"
+    },
+    "features": {
+      "label": "תכונות",
+      "title": "גלו את כל התכונות.",
+      "subtitle": "כל מה שצריך לניהול אישורי הגעה לחתונה בקלות.",
+      "visitSite": "בקר באתר",
+      "whatsappInvitations": {
+        "title": "הזמנות בוואטסאפ",
+        "description": "שלחו הזמנות חתונה מותאמות אישית ישירות לוואטסאפ. אחוז פתיחה גבוה יותר ממייל."
+      },
+      "smsMessaging": {
+        "title": "הודעות SMS",
+        "description": "הגיעו לאורחים ללא וואטסאפ דרך SMS. מושלם לבני משפחה מבוגרים."
+      },
+      "customRsvpPages": {
+        "title": "דפי אישור מותאמים",
+        "description": "דפי אישור הגעה יפים וממותגים עם הצבעים, הגופנים ופרטי החתונה שלכם."
+      },
+      "guestManagement": {
+        "title": "ניהול אורחים",
+        "description": "ארגנו אורחים לפי משפחה, צד (כלה/חתן) וקבוצות. ייבוא מאקסל."
+      },
+      "realtimeDashboard": {
+        "title": "לוח בקרה בזמן אמת",
+        "description": "עקבו אחר אישורים בזמן אמת. ראו מאושרים, מסרבים וממתינים במבט אחד."
+      },
+      "smartAnalytics": {
+        "title": "ניתוח חכם",
+        "description": "דעו בדיוק כמה אורחים מגיעים, דרישות תזונה ועוד."
+      }
+    },
+    "info": {
+      "section1": {
+        "title": "פשטו את תכנון החתונה",
+        "description": "Go Approval מוריד את הלחץ מניהול אישורי הגעה. משליחת הזמנות ועד מעקב אחר תגובות, הכל מנוהל בלוח בקרה יפהפה אחד.",
+        "item1Title": "וואטסאפ ו-SMS",
+        "item1Description": "שלחו הזמנות דרך ערוצים שהאורחים שלכם באמת משתמשים בהם.",
+        "item2Title": "מעקב בזמן אמת",
+        "item2Description": "ראו מי מגיע, מי לא, ומי עדיין לא הגיב.",
+        "item3Title": "דפי אישור יפים",
+        "item3Description": "דפי אישור הגעה מותאמים אישית שתואמים לסגנון החתונה שלכם."
+      },
+      "section2": {
+        "title": "הכל במקום אחד",
+        "description": "ייבאו את רשימת האורחים, התאימו את ההודעות, ותנו ל-Go Approval לעשות את השאר. עקבו אחר תגובות, שלחו תזכורות וייצאו דוחות בקלות.",
+        "item1Title": "ייבוא קל",
+        "item1Description": "ייבאו אורחים מאקסל או הוסיפו ידנית בשניות.",
+        "item2Title": "תזכורות חכמות",
+        "item2Description": "תזכורות אוטומטיות לאורחים שעדיין לא הגיבו.",
+        "item3Title": "דוחות מפורטים",
+        "item3Description": "ייצאו רשימות אורחים ודרישות תזונה למקום האירוע."
+      }
+    },
+    "testimonials": {
+      "label": "המלצות",
+      "title": "מה הלקוחות שלנו אומרים.",
+      "subtitle": "גלו את המשוב הנהדר מהלקוחות המרוצים שלנו.",
+      "reviews": {
+        "review1": {
+          "name": "שרה ודוד",
+          "job": "התחתנו יוני 2024",
+          "review": "Go Approval חסך לנו כל כך הרבה זמן! היו לנו 300 אורחים ומעקב אחר אישורים היה סיוט קודם. השילוב עם וואטסאפ גאוני - כולם הגיבו תוך ימים."
+        },
+        "review2": {
+          "name": "רחל כהן",
+          "job": "אמא של הכלה",
+          "review": "כאמא שעוזרת לתכנן את חתונת הבת, חששתי מהטכנולוגיה. אבל Go Approval כל כך קל לשימוש. אפילו בעלי הבין!"
+        },
+        "review3": {
+          "name": "מיכאל ונועה",
+          "job": "התחתנו אוגוסט 2024",
+          "review": "תכונת התזכורות האוטומטיות מדהימה. לא היינו צריכים לרדוף אחרי אף אחד - המערכת עשתה את זה בשבילנו. ממליצים בחום לזוגות עסוקים."
+        },
+        "review4": {
+          "name": "יעל לוי",
+          "job": "מתכננת אירועים",
+          "review": "אני ממליצה על Go Approval לכל הלקוחות שלי עכשיו. זה מקצועי, אמין, והופך את העבודה שלי להרבה יותר קלה. תכונות הדוחות מצוינות."
+        },
+        "review5": {
+          "name": "דניאל ומאיה",
+          "job": "התחתנו דצמבר 2024",
+          "review": "אהבנו שיכולנו להתאים את דף האישור לנושא החתונה שלנו. תכונת התצוגה המקדימה עזרה לנו להשיג תוצאה מושלמת לפני השליחה."
+        },
+        "review6": {
+          "name": "עמית שפירא",
+          "job": "מנהל אולם אירועים",
+          "review": "זוגות שמשתמשים ב-Go Approval תמיד מגיעים עם מספרי אורחים מדויקים. תכונת הייצוא הופכת את תכנון הקייטרינג שלנו לחלק. מוצר נהדר!"
+        },
+        "review7": {
+          "name": "שירה ואורן",
+          "job": "התחתנו אוקטובר 2024",
+          "review": "ניהול אישורי הגעה לחתונה של 400 אורחים היה ללא מאמץ עם Go Approval. תכונת ה-SMS הייתה מושלמת להגיע לסבא וסבתא."
+        }
+      }
+    }
+  },
+  "pricing": {
+    "label": "מחירים",
+    "title": "תמחור פשוט ושקוף",
+    "yearly": "שנתי (-20%)",
+    "monthly": "חודשי",
+    "perMonth": "חודש",
+    "yearlyCharge": "${amount} יחויב שנתית",
+    "monthlyCharge": "בחיוב חודשי",
+    "goToDashboard": "עבור ללוח הבקרה",
+    "signIn": "התחבר",
+    "questions": "שאלות? שלחו מייל",
+    "happyToHelp": "ונשמח לעזור.",
+    "plans": {
+      "basic": {
+        "title": "בסיסי",
+        "benefits": {
+          "0": "אירוע חתונה אחד",
+          "1": "650 הודעות וואטסאפ",
+          "2": "מעקב אישורים בסיסי",
+          "3": "תמיכה במייל"
+        },
+        "limitations": {
+          "0": "ללא הודעות SMS",
+          "1": "התאמה מוגבלת של תבניות"
+        }
+      },
+      "advanced": {
+        "title": "מתקדם",
+        "benefits": {
+          "0": "2 אירועי חתונה",
+          "1": "750 הודעות וואטסאפ",
+          "2": "30 הודעות SMS",
+          "3": "עיצוב דף אישור מותאם אישית",
+          "4": "תזכורות אוטומטיות",
+          "5": "ניתוח נתונים בזמן אמת",
+          "6": "תמיכה עדיפות"
+        },
+        "limitations": {}
+      },
+      "premium": {
+        "title": "פרימיום",
+        "benefits": {
+          "0": "3 אירועי חתונה",
+          "1": "1000 הודעות וואטסאפ",
+          "2": "50 הודעות SMS",
+          "3": "התאמה מלאה של תבניות",
+          "4": "ניתוח מתקדם ודוחות",
+          "5": "תמיכה עדיפות"
+        },
+        "limitations": {}
+      },
+      "business": {
+        "title": "עסקי",
+        "benefits": {
+          "0": "אירועים ללא הגבלה",
+          "1": "הודעות וואטסאפ ללא הגבלה",
+          "2": "הודעות SMS ללא הגבלה",
+          "3": "התאמה מלאה של תבניות",
+          "4": "ניתוח מתקדם ודוחות",
+          "5": "שיתוף פעולה צוותי",
+          "6": "מיתוג בהתאמה אישית",
+          "7": "תמיכה 24/7",
+          "8": "גישה ל-API"
+        },
+        "limitations": {}
+      }
+    },
+    "compare": {
+      "label": "מסלולים",
+      "title": "השוו את המסלולים שלנו",
+      "subtitle": "מצאו את המסלול המושלם המותאם לצרכים שלכם!",
+      "unlimited": "ללא הגבלה",
+      "247": "24/7",
+      "columns": {
+        "basic": "בסיסי",
+        "advanced": "מתקדם",
+        "premium": "פרימיום",
+        "business": "עסקי"
+      },
+      "features": {
+        "0": "אירועי חתונה",
+        "1": "מגבלת אורחים",
+        "2": "הזמנות וואטסאפ",
+        "3": "הזמנות SMS",
+        "4": "דפי אישור מותאמים",
+        "5": "תזכורות אוטומטיות",
+        "6": "ניתוח בזמן אמת",
+        "7": "שיתוף פעולה צוותי",
+        "8": "מיתוג בהתאמה אישית",
+        "9": "גישה ל-API",
+        "10": "תמיכה עדיפות"
+      },
+      "tooltips": {}
+    },
+    "faq": {
+      "label": "שאלות נפוצות",
+      "title": "שאלות נפוצות",
+      "subtitle": "עיינו בשאלות הנפוצות שלנו למציאת תשובות מהירות. אם אתם צריכים עזרה נוספת, אל תהססו ליצור קשר.",
+      "questions": {
+        "item1": {
+          "question": "איך Go Approval עובד?",
+          "answer": "פשוט העלו את רשימת האורחים, התאימו את הודעת ההזמנה ושלחו בוואטסאפ או SMS. האורחים לוחצים על קישור מותאם אישית לאישור הגעה, ואתם עוקבים אחר התגובות בזמן אמת בלוח הבקרה."
+        },
+        "item2": {
+          "question": "המסלול הבסיסי באמת בחינם?",
+          "answer": "כן! המסלול הבסיסי חינמי לחלוטין וכולל עד 100 אורחים, הזמנות בוואטסאפ ו-SMS ומעקב אישורים בסיסי. מושלם לאירועים אינטימיים."
+        },
+        "item3": {
+          "question": "אפשר לשדרג את המסלול מאוחר יותר?",
+          "answer": "בהחלט! אפשר לשדרג מהמסלול הבסיסי למקצועי או עסקי בכל עת. הנתונים הקיימים ותגובות האורחים יישמרו."
+        },
+        "item4": {
+          "question": "איך נשלחות הודעות וואטסאפ?",
+          "answer": "אנחנו משתמשים ב-API הרשמי של WhatsApp Business לשליחת ההזמנות. ההודעות נשלחות מיד ומופיעות כהודעות וואטסאפ רגילות לאורחים."
+        },
+        "item5": {
+          "question": "מה קורה אם לאורח אין וואטסאפ?",
+          "answer": "אין בעיה! אפשר לשלוח הזמנות ב-SMS לאורחים שלא משתמשים בוואטסאפ. המערכת שלנו מאפשרת לבחור את הערוץ המתאים ביותר לכל אורח."
+        },
+        "item6": {
+          "question": "האם נתוני האורחים שלי מאובטחים?",
+          "answer": "כן, אנחנו מתייחסים לאבטחה ברצינות. כל הנתונים מוצפנים, מאוחסנים באופן מאובטח ולעולם לא משותפים עם צדדים שלישיים. אנחנו עומדים בתקני GDPR."
+        }
+      }
+    }
+  },
+  "blog": {
+    "label": "בלוג",
+    "title": "טיפים ומדריכים אחרונים",
+    "subtitle": "עצות מומחים לניהול אישורי הגעה לחתונה, תקשורת עם אורחים והפיכת היום הגדול שלכם לנטול לחץ.",
+    "noPosts": "עדיין לא פורסמו פוסטים. בקרו שוב בקרוב!"
+  },
+  "billing": {
+    "processing": "מעבד...",
+    "payNow": "שלם עכשיו",
+    "loading": "טוען...",
+    "upgrade": "שדרג",
+    "downgrade": "שנמך",
+    "manageSubscription": "נהל מנוי",
+    "cancelSubscription": "בטל מנוי",
+    "contactSales": "צור קשר",
+    "paymentSuccessful": "התשלום בוצע בהצלחה!",
+    "paymentFailed": "התשלום נכשל",
+    "planUpgraded": "התוכנית שודרגה בהצלחה!",
+    "preparingPayment": "מכין תשלום...",
+    "completePayment": "השלמת תשלום",
+    "enterPaymentDetails": "הזינו את פרטי התשלום להפעלת המנוי",
+    "securePayment": "תשלום מאובטח עם Stripe",
+    "tryAgain": "נסה שוב",
+    "yearly": "שנתי",
+    "monthly": "חודשי",
+    "save": "חיסכון"
   },
   "settings": {
     "title": "הגדרות",
@@ -469,12 +812,86 @@
     "plans": {
       "free": "חינם",
       "basic": "בסיסי",
-      "premium": "פרימיום"
+      "advanced": "מתקדם",
+      "premium": "פרימיום",
+      "business": "עסקי"
     },
     "status": {
       "active": "פעיל",
       "pending": "ממתין לאישור",
       "suspended": "מושעה"
     }
+  },
+  "billingPage": {
+    "title": "חיוב ותשלומים",
+    "description": "ניהול המנוי והחיוב שלך",
+    "currentPlan": "המנוי הנוכחי",
+    "youAreOn": "אתה נמצא כרגע במנוי",
+    "plan": "",
+    "active": "פעיל",
+    "free": "חינם",
+    "includedFeatures": "כלול במנוי:",
+    "renewsOn": "המנוי שלך יחודש בתאריך",
+    "canceledOn": "המנוי שלך יבוטל בתאריך",
+    "noActiveSubscription": "אין לך מנוי פעיל",
+    "choosePlan": "בחר מנוי",
+    "yearly": "שנתי",
+    "monthly": "חודשי",
+    "adminAssignedPlan": "מנוי זה הוקצה על ידי מנהל המערכת",
+    "perUserMonth": "/חודש",
+    "forStandardPlans": "שדרג כדי לפתוח תכונות נוספות.",
+    "features": {
+      "noEvents": "ללא אירועים",
+      "trialAccess": "גישת ניסיון בלבד"
+    },
+    "cancelSubscriptionTitle": "לבטל את המנוי?",
+    "cancelSubscriptionDescription": "האם אתה בטוח שברצונך לבטל את המנוי? תאבד גישה לתכונות בתשלום ותועבר למנוי החינמי.",
+    "keepSubscription": "שמור מנוי",
+    "confirmCancel": "כן, בטל",
+    "cancelling": "מבטל...",
+    "subscriptionCancelled": "המנוי בוטל בהצלחה",
+    "paymentSuccess": "התשלום בוצע בהצלחה! המנוי שלך פעיל כעת.",
+    "paymentCanceled": "התשלום בוטל. לא בוצע חיוב.",
+    "confirmUpgradeTitle": "לשדרג את התוכנית?",
+    "confirmUpgradeDescription": "תשודרג לתוכנית {plan}. כרטיס האשראי שלך יחויב בהפרש היחסי לתקופת החיוב הנותרת.",
+    "confirmDowngradeTitle": "להוריד דרגת תוכנית?",
+    "confirmDowngradeDescription": "תועבר לתוכנית {plan}. השינוי ייכנס לתוקף בסוף תקופת החיוב הנוכחית. לא יינתן החזר כספי.",
+    "keepCurrentPlan": "שמור תוכנית נוכחית",
+    "confirmUpgrade": "כן, שדרג",
+    "confirmDowngrade": "כן, הורד דרגה",
+    "processing": "מעבד...",
+    "upgradeSuccess": "התוכנית שודרגה בהצלחה!",
+    "downgradeSuccess": "התוכנית תשונה בסוף תקופת החיוב.",
+    "upgradeTitle": "שדרג את התוכנית",
+    "downgradeTitle": "הורד דרגת תוכנית",
+    "upgradeDescription": "עיין בפרטים למטה ואשר את השדרוג.",
+    "downgradeDescription": "עיין בפרטים למטה ואשר את הורדת הדרגה.",
+    "currentPlanLabel": "נוכחי",
+    "newPlanLabel": "תוכנית חדשה",
+    "month": "חודש",
+    "year": "שנה",
+    "paymentSummary": "סיכום תשלום",
+    "amountDueNow": "סכום לתשלום כעת",
+    "upgradeEffectiveImmediately": "התוכנית החדשה תהיה פעילה מיד לאחר התשלום.",
+    "downgradeScheduledTitle": "מתוזמן לסוף התקופה",
+    "downgradeScheduledMessage": "התוכנית שלך תשתנה לתוכנית החדשה בתאריך {date}. תשמור על התכונות הנוכחיות עד אז.",
+    "noRefundNotice": "לא יינתן החזר כספי. תמשיך להינות מתכונות התוכנית הנוכחית עד סוף תקופת החיוב.",
+    "cancel": "ביטול",
+    "confirmUpgradeAndPay": "שדרג ושלם עכשיו",
+    "tryAgain": "נסה שוב",
+    "upgradeSuccessImmediate": "התוכנית שודרגה! התכונות החדשות זמינות כעת.",
+    "downgradeScheduled": "התוכנית תשונה בתאריך {date}.",
+    "paymentMethod": "אמצעי תשלום",
+    "manageBilling": "נהל חיוב",
+    "expires": "פג תוקף",
+    "noPaymentMethod": "לא נמצא אמצעי תשלום.",
+    "addPaymentMethod": "הוסף אמצעי תשלום",
+    "scheduledPlanChange": "שינוי תוכנית מתוזמן",
+    "planWillChangeTo": "התוכנית שלך תשתנה ל-{plan} בתאריך {date}.",
+    "daysRemaining": "{days} ימים נותרו",
+    "cancelScheduledChange": "בטל שינוי",
+    "scheduledChangeCancelled": "שינוי התוכנית המתוזמן בוטל.",
+    "endOfBillingPeriod": "סוף תקופת החיוב",
+    "changePending": "השינוי יבוצע בקרוב"
   }
 }

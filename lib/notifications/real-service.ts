@@ -51,7 +51,11 @@ export class TwilioNotificationService implements NotificationService {
     guest: Guest,
     message: string,
     preferredChannel?: NotificationChannel,
-    alphaSenderId?: string | null
+    alphaSenderId?: string | null,
+    whatsappOptions?: {
+      contentSid?: string;
+      contentVariables?: Record<string, string>;
+    }
   ): Promise<NotificationResult> {
     const settings = await this.getSettings();
 
@@ -126,7 +130,7 @@ export class TwilioNotificationService implements NotificationService {
     if (channel === NotificationChannel.WHATSAPP) {
       // WhatsApp always uses Twilio
       const client = createTwilioClient(accountSid, authToken);
-      result = await sendWhatsApp(client, fromNumber, phoneNumber, message);
+      result = await sendWhatsApp(client, fromNumber, phoneNumber, message, whatsappOptions);
     } else {
       // SMS uses Twilio
       const smsProvider = createSmsProvider({
@@ -152,42 +156,8 @@ export class TwilioNotificationService implements NotificationService {
       };
     }
 
-    // If WhatsApp failed and SMS is available, try SMS as fallback
-    if (channel === NotificationChannel.WHATSAPP && smsAvailable) {
-      console.log("WhatsApp failed, falling back to SMS");
-
-      const fallbackProvider = createSmsProvider({
-        provider: "twilio",
-        authId: settings.smsApiKey!,
-        authToken: settings.smsApiSecret!,
-        phoneNumber: settings.smsPhoneNumber!,
-        messagingServiceSid: settings.smsMessagingServiceSid || undefined,
-        alphaSenderId: alphaSenderId || undefined,
-      });
-      const smsResult = await fallbackProvider.sendSms(phoneNumber, message);
-
-      if (smsResult.success) {
-        return {
-          success: true,
-          status: NotificationStatus.SENT,
-          channel: NotificationChannel.SMS,
-          providerResponse: JSON.stringify({
-            messageId: smsResult.messageId,
-            status: smsResult.status,
-            fallbackFrom: "whatsapp",
-          }),
-        };
-      }
-
-      return {
-        success: false,
-        error: `WhatsApp failed: ${result.error}. SMS fallback also failed: ${smsResult.error}`,
-        status: NotificationStatus.FAILED,
-        channel: NotificationChannel.SMS,
-      };
-    }
-
-    // Include trial error info in the response for better error handling
+    // Return error - no automatic fallback to SMS
+    // Include detailed error info for better user feedback
     const errorInfo = result.isTrialError
       ? `${result.error} (Trial account limitation)`
       : result.error;
@@ -206,22 +176,56 @@ export class TwilioNotificationService implements NotificationService {
 
   async sendInvite(guest: Guest, event: WeddingEvent, preferredChannel?: NotificationChannel): Promise<NotificationResult> {
     const channel = preferredChannel || this.getChannel(guest);
+    const settings = await this.getSettings();
 
-    // Use custom template from database (or fallback to default)
+    // Use custom template from database (or fallback to default) for SMS
     const message = await renderMessage(guest, event, "INVITE");
 
+    // Prepare WhatsApp options with Content Template if available
+    let whatsappOptions: { contentSid?: string; contentVariables?: Record<string, string> } | undefined;
+
+    if (settings?.whatsappInviteContentSid && channel === NotificationChannel.WHATSAPP) {
+      // Use Content Template for WhatsApp Business API
+      whatsappOptions = {
+        contentSid: settings.whatsappInviteContentSid,
+        contentVariables: {
+          "1": guest.name, // {{1}} = guest name
+          "2": event.title, // {{2}} = event title
+          "3": this.getRsvpLink(guest.slug), // {{3}} = RSVP link
+        },
+      };
+      console.log(`Using WhatsApp Content Template for INVITE: ${settings.whatsappInviteContentSid}`);
+    }
+
     // Pass event's SMS sender ID for SMS channel
-    return this.sendMessage(guest, message, channel, event.smsSenderId);
+    return this.sendMessage(guest, message, channel, event.smsSenderId, whatsappOptions);
   }
 
   async sendReminder(guest: Guest, event: WeddingEvent, preferredChannel?: NotificationChannel): Promise<NotificationResult> {
     const channel = preferredChannel || this.getChannel(guest);
+    const settings = await this.getSettings();
 
-    // Use custom template from database (or fallback to default)
+    // Use custom template from database (or fallback to default) for SMS
     const message = await renderMessage(guest, event, "REMINDER");
 
+    // Prepare WhatsApp options with Content Template if available
+    let whatsappOptions: { contentSid?: string; contentVariables?: Record<string, string> } | undefined;
+
+    if (settings?.whatsappReminderContentSid && channel === NotificationChannel.WHATSAPP) {
+      // Use Content Template for WhatsApp Business API
+      whatsappOptions = {
+        contentSid: settings.whatsappReminderContentSid,
+        contentVariables: {
+          "1": guest.name, // {{1}} = guest name
+          "2": event.title, // {{2}} = event title
+          "3": this.getRsvpLink(guest.slug), // {{3}} = RSVP link
+        },
+      };
+      console.log(`Using WhatsApp Content Template for REMINDER: ${settings.whatsappReminderContentSid}`);
+    }
+
     // Pass event's SMS sender ID for SMS channel
-    return this.sendMessage(guest, message, channel, event.smsSenderId);
+    return this.sendMessage(guest, message, channel, event.smsSenderId, whatsappOptions);
   }
 
   async sendConfirmation(
@@ -231,6 +235,7 @@ export class TwilioNotificationService implements NotificationService {
     preferredChannel?: NotificationChannel
   ): Promise<NotificationResult> {
     const channel = preferredChannel || this.getChannel(guest);
+    const settings = await this.getSettings();
 
     const locale = event.notes?.includes("locale:en") ? "en" : "he";
     const templates = locale === "en" ? englishTemplates : hebrewTemplates;
@@ -245,7 +250,22 @@ export class TwilioNotificationService implements NotificationService {
           )
         : templates.confirmation.declined.message(guest.name, event.title);
 
+    // Prepare WhatsApp options with Content Template if available
+    let whatsappOptions: { contentSid?: string; contentVariables?: Record<string, string> } | undefined;
+
+    if (settings?.whatsappConfirmationContentSid && channel === NotificationChannel.WHATSAPP) {
+      // Use Content Template for WhatsApp Business API
+      whatsappOptions = {
+        contentSid: settings.whatsappConfirmationContentSid,
+        contentVariables: {
+          "1": guest.name, // {{1}} = guest name
+          "2": event.title, // {{2}} = event title
+        },
+      };
+      console.log(`Using WhatsApp Content Template for CONFIRMATION: ${settings.whatsappConfirmationContentSid}`);
+    }
+
     // Pass event's SMS sender ID for SMS channel
-    return this.sendMessage(guest, message, channel, event.smsSenderId);
+    return this.sendMessage(guest, message, channel, event.smsSenderId, whatsappOptions);
   }
 }

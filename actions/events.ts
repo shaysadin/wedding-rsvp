@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { UserRole, PlanTier } from "@prisma/client";
+import { UserRole } from "@prisma/client";
 
 import { prisma } from "@/lib/db";
 import { getCurrentUser } from "@/lib/session";
@@ -11,12 +11,7 @@ import {
   type CreateEventInput,
   type UpdateEventInput,
 } from "@/lib/validations/event";
-
-const PLAN_LIMITS: Record<PlanTier, number> = {
-  FREE: 1,
-  BASIC: 3,
-  PREMIUM: Infinity,
-};
+import { PLAN_LIMITS } from "@/config/plans";
 
 export async function createEvent(input: CreateEventInput) {
   try {
@@ -34,10 +29,11 @@ export async function createEvent(input: CreateEventInput) {
       where: { ownerId: userId },
     });
 
-    const limit = PLAN_LIMITS[user.plan];
-    if (eventCount >= limit) {
+    const planLimits = PLAN_LIMITS[user.plan];
+    if (eventCount >= planLimits.maxEvents) {
       return {
-        error: `You have reached the limit of ${limit} event(s) for your plan. Please upgrade to create more events.`,
+        error: `You have reached the limit of ${planLimits.maxEvents} event(s) for your plan. Please upgrade to create more events.`,
+        limitReached: true,
       };
     }
 
@@ -156,8 +152,10 @@ export async function getEventById(eventId: string) {
           include: {
             rsvp: true,
             notificationLogs: {
+              where: {
+                type: { in: ["INVITE", "REMINDER"] },
+              },
               orderBy: { createdAt: "desc" },
-              take: 1,
             },
           },
         },

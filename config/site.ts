@@ -4,23 +4,23 @@ import { env } from "@/env.mjs";
 const site_url = env.NEXT_PUBLIC_APP_URL;
 
 export const siteConfig: SiteConfig = {
-  name: "RSVP Manager",
+  name: "Go Approval",
   description:
-    "Manage your wedding invitations and RSVPs with ease. Create beautiful RSVP pages, track guest responses, and send reminders.",
+    "The smartest way to manage wedding RSVPs. Send invitations via WhatsApp & SMS, track responses in real-time, and create beautiful RSVP pages.",
   url: site_url,
   ogImage: `${site_url}/_static/og.jpg`,
   links: {
-    twitter: "",
+    twitter: "https://twitter.com/goapproval",
     github: "",
   },
-  mailSupport: "support@rsvp-manager.com",
+  mailSupport: "support@goapproval.com",
 };
 
 export const footerLinks: SidebarNavItem[] = [
   {
     title: "Company",
     items: [
-      { title: "About", href: "#" },
+      { title: "About", href: "/about" },
       { title: "Terms", href: "/terms" },
       { title: "Privacy", href: "/privacy" },
     ],
@@ -28,9 +28,17 @@ export const footerLinks: SidebarNavItem[] = [
   {
     title: "Product",
     items: [
-      { title: "Features", href: "#" },
-      { title: "Pricing", href: "#" },
-      { title: "Support", href: "#" },
+      { title: "Features", href: "/#features" },
+      { title: "Pricing", href: "/pricing" },
+      { title: "Blog", href: "/blog" },
+    ],
+  },
+  {
+    title: "Support",
+    items: [
+      { title: "Help Center", href: "/help" },
+      { title: "Contact", href: "/contact" },
+      { title: "FAQ", href: "/pricing#faq" },
     ],
   },
 ];

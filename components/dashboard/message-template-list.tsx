@@ -33,6 +33,7 @@ import {
   getBulkSendStats,
   updateSmsSenderId,
 } from "@/actions/message-templates";
+import { getWhatsAppTemplates } from "@/actions/messaging-settings";
 
 interface MessageTemplateListProps {
   templates: MessageTemplate[];
@@ -65,6 +66,22 @@ export function MessageTemplateList({
   } | null>(null);
   const [smsSenderId, setSmsSenderId] = useState(initialSmsSenderId || "");
   const [isSavingSenderId, setIsSavingSenderId] = useState(false);
+  const [whatsappTemplates, setWhatsappTemplates] = useState<{
+    invite: string | null;
+    reminder: string | null;
+    confirmation: string | null;
+  } | null>(null);
+  const [whatsappEnabled, setWhatsappEnabled] = useState(false);
+
+  // Fetch WhatsApp templates on mount
+  useEffect(() => {
+    getWhatsAppTemplates().then((result) => {
+      if (result.success && result.templates) {
+        setWhatsappTemplates(result.templates);
+        setWhatsappEnabled(result.whatsappEnabled || false);
+      }
+    });
+  }, []);
 
   // Placeholder definitions with translation keys
   const placeholders = [
@@ -289,94 +306,164 @@ export function MessageTemplateList({
         </CardContent>
       </Card>
 
-      {/* Template Cards - Only 2 templates */}
-      <div className="grid gap-4 md:grid-cols-2">
-        {templateCategories.map((category) => {
-          const template = groupedTemplates[category.key];
-          const IconComponent = Icons[category.icon];
-
-          return (
-            <Card key={category.key} className={!template?.isActive ? "opacity-60" : ""}>
-              <CardHeader className="pb-3">
-                <div className="flex items-start justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className={`flex h-10 w-10 items-center justify-center rounded-lg ${category.colorClass}`}>
-                      <IconComponent className="h-5 w-5" />
-                    </div>
-                    <div>
-                      <CardTitle className="text-base">{t(category.labelKey)}</CardTitle>
-                      <CardDescription className="text-xs">
-                        {t(category.descriptionKey)}
-                      </CardDescription>
-                    </div>
+      {/* WhatsApp Templates (Read-only) */}
+      {whatsappEnabled && whatsappTemplates && (
+        <Card>
+          <CardHeader className="pb-3">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-green-100 dark:bg-green-900">
+                <Icons.messageCircle className="h-5 w-5 text-green-600 dark:text-green-300" />
+              </div>
+              <div className="flex-1">
+                <div className="flex items-center gap-2">
+                  <CardTitle className="text-base">{t("whatsappTemplates")}</CardTitle>
+                  <Badge variant="secondary" className="text-xs">{t("readOnly")}</Badge>
+                </div>
+                <CardDescription>
+                  {t("whatsappTemplatesDescription")}
+                </CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-4 md:grid-cols-2">
+              {/* WhatsApp Invite */}
+              {whatsappTemplates.invite && (
+                <div className="rounded-lg border bg-muted/30 p-4 space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Icons.mail className="h-4 w-4 text-blue-600" />
+                    <span className="text-sm font-medium">{t("inviteMessage")}</span>
                   </div>
-                  {template && (
-                    <Switch
-                      checked={template.isActive}
-                      onCheckedChange={() => handleToggleActive(template.id)}
-                      disabled={isPending}
-                    />
+                  <p className="text-sm whitespace-pre-wrap text-muted-foreground">
+                    {whatsappTemplates.invite}
+                  </p>
+                </div>
+              )}
+              {/* WhatsApp Reminder */}
+              {whatsappTemplates.reminder && (
+                <div className="rounded-lg border bg-muted/30 p-4 space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Icons.bell className="h-4 w-4 text-yellow-600" />
+                    <span className="text-sm font-medium">{t("reminderMessage")}</span>
+                  </div>
+                  <p className="text-sm whitespace-pre-wrap text-muted-foreground">
+                    {whatsappTemplates.reminder}
+                  </p>
+                </div>
+              )}
+            </div>
+            <p className="mt-4 text-xs text-muted-foreground">
+              {t("whatsappTemplatesNote")}
+            </p>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* SMS Templates (Editable) */}
+      <Card>
+        <CardHeader className="pb-3">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100 dark:bg-blue-900">
+              <Icons.phone className="h-5 w-5 text-blue-600 dark:text-blue-300" />
+            </div>
+            <div className="flex-1">
+              <div className="flex items-center gap-2">
+                <CardTitle className="text-base">{t("smsTemplates")}</CardTitle>
+                <Badge variant="outline" className="text-xs">{t("editable")}</Badge>
+              </div>
+              <CardDescription>
+                {t("smsTemplatesDescription")}
+              </CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-4 md:grid-cols-2">
+            {templateCategories.map((category) => {
+              const template = groupedTemplates[category.key];
+              const IconComponent = Icons[category.icon];
+
+              return (
+                <div
+                  key={category.key}
+                  className={`rounded-lg border p-4 ${!template?.isActive ? "opacity-60" : ""}`}
+                >
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <div className={`flex h-8 w-8 items-center justify-center rounded-lg ${category.colorClass}`}>
+                        <IconComponent className="h-4 w-4" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium">{t(category.labelKey)}</p>
+                        <p className="text-xs text-muted-foreground">{t(category.descriptionKey)}</p>
+                      </div>
+                    </div>
+                    {template && (
+                      <Switch
+                        checked={template.isActive}
+                        onCheckedChange={() => handleToggleActive(template.id)}
+                        disabled={isPending}
+                      />
+                    )}
+                  </div>
+
+                  {template ? (
+                    <div className="space-y-3">
+                      <div>
+                        <p className="text-xs font-medium text-muted-foreground">{t("titleLabel")}</p>
+                        <p className="text-sm">{template.title}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs font-medium text-muted-foreground">{t("messagePreview")}</p>
+                        <p className="text-sm line-clamp-3 whitespace-pre-wrap text-muted-foreground">
+                          {template.message}
+                        </p>
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full"
+                        onClick={() => handleEdit(template)}
+                      >
+                        <Icons.edit className="mr-2 h-4 w-4" />
+                        {t("editTemplate")}
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center py-4 text-center">
+                      <Icons.messageCircle className="mb-2 h-6 w-6 text-muted-foreground" />
+                      <p className="text-xs text-muted-foreground">{t("noTemplateConfigured")}</p>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="mt-2"
+                        onClick={() => {
+                          setEditingTemplate({
+                            id: "",
+                            weddingEventId: eventId,
+                            type: category.key as NotificationType,
+                            locale,
+                            title: "",
+                            message: "",
+                            isAcceptedVariant: false,
+                            isActive: true,
+                            createdAt: new Date(),
+                            updatedAt: new Date(),
+                          });
+                          setIsEditorOpen(true);
+                        }}
+                      >
+                        <Icons.add className="mr-2 h-4 w-4" />
+                        {t("createTemplate")}
+                      </Button>
+                    </div>
                   )}
                 </div>
-              </CardHeader>
-              <CardContent>
-                {template ? (
-                  <div className="space-y-3">
-                    <div>
-                      <p className="text-sm font-medium text-muted-foreground">{t("titleLabel")}</p>
-                      <p className="text-sm">{template.title}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-muted-foreground">{t("messagePreview")}</p>
-                      <p className="text-sm line-clamp-3 whitespace-pre-wrap text-muted-foreground">
-                        {template.message}
-                      </p>
-                    </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="w-full"
-                      onClick={() => handleEdit(template)}
-                    >
-                      <Icons.edit className="mr-2 h-4 w-4" />
-                      {t("editTemplate")}
-                    </Button>
-                  </div>
-                ) : (
-                  <div className="flex flex-col items-center justify-center py-6 text-center">
-                    <Icons.messageCircle className="mb-2 h-8 w-8 text-muted-foreground" />
-                    <p className="text-sm text-muted-foreground">{t("noTemplateConfigured")}</p>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="mt-2"
-                      onClick={() => {
-                        // Create a new template with defaults
-                        setEditingTemplate({
-                          id: "",
-                          weddingEventId: eventId,
-                          type: category.key as NotificationType,
-                          locale,
-                          title: "",
-                          message: "",
-                          isAcceptedVariant: false,
-                          isActive: true,
-                          createdAt: new Date(),
-                          updatedAt: new Date(),
-                        });
-                        setIsEditorOpen(true);
-                      }}
-                    >
-                      <Icons.add className="mr-2 h-4 w-4" />
-                      {t("createTemplate")}
-                    </Button>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          );
-        })}
-      </div>
+              );
+            })}
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Editor Dialog */}
       <Dialog open={isEditorOpen} onOpenChange={setIsEditorOpen}>

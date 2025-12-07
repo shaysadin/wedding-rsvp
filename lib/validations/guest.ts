@@ -7,6 +7,7 @@ export const createGuestSchema = z.object({
   email: z.string().email().optional().or(z.literal("")),
   side: z.enum(["bride", "groom", "both"]).optional(),
   groupName: z.string().max(100).optional(),
+  expectedGuests: z.number().int().min(1).max(20).optional().default(1),
   notes: z.string().max(1000).optional(),
 });
 
@@ -23,6 +24,7 @@ export const bulkImportGuestSchema = z.object({
       email: z.string().email().optional().or(z.literal("")),
       side: z.enum(["bride", "groom", "both"]).optional(),
       groupName: z.string().optional(),
+      expectedGuests: z.number().int().min(1).max(20).optional().default(1),
       notes: z.string().optional(),
     })
   ),

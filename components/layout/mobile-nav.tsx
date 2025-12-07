@@ -5,29 +5,34 @@ import Link from "next/link";
 import { useSelectedLayoutSegment } from "next/navigation";
 import { Menu, X } from "lucide-react";
 import { useSession } from "next-auth/react";
+import { useTranslations } from "next-intl";
 import { UserRole } from "@prisma/client";
 
 import { docsConfig } from "@/config/docs";
-import { marketingConfig } from "@/config/marketing";
 import { siteConfig } from "@/config/site";
 import { cn } from "@/lib/utils";
 import { DocsSidebarNav } from "@/components/docs/sidebar-nav";
 import { Icons } from "@/components/shared/icons";
 
 import { ModeToggle } from "./mode-toggle";
+import { LanguageSwitcher } from "./language-switcher";
 
 export function NavMobile() {
   const { data: session } = useSession();
   const [open, setOpen] = useState(false);
   const selectedLayout = useSelectedLayoutSegment();
   const documentation = selectedLayout === "docs";
+  const t = useTranslations("marketing.nav");
+  const tAuth = useTranslations("auth");
+  const tCommon = useTranslations("common");
 
-  const configMap = {
-    docs: docsConfig.mainNav,
-  };
+  const navLinks = [
+    { titleKey: "pricing", href: "/pricing" },
+    { titleKey: "blog", href: "/blog" },
+    { titleKey: "documentation", href: "/docs" },
+  ];
 
-  const links =
-    (selectedLayout && configMap[selectedLayout]) || marketingConfig.mainNav;
+  const links = documentation ? docsConfig.mainNav : navLinks;
 
   // prevent body scroll when modal is open
   useEffect(() => {
@@ -61,14 +66,14 @@ export function NavMobile() {
         )}
       >
         <ul className="grid divide-y divide-muted">
-          {links && links.length > 0 && links.map(({ title, href }) => (
-            <li key={href} className="py-3">
+          {links && links.length > 0 && links.map((item, index) => (
+            <li key={item.href} className="py-3">
               <Link
-                href={href}
+                href={item.href}
                 onClick={() => setOpen(false)}
                 className="flex w-full font-medium capitalize"
               >
-                {title}
+                {"titleKey" in item ? t(item.titleKey) : item.title}
               </Link>
             </li>
           ))}
@@ -82,7 +87,7 @@ export function NavMobile() {
                     onClick={() => setOpen(false)}
                     className="flex w-full font-medium capitalize"
                   >
-                    Admin
+                    {tCommon("admin")}
                   </Link>
                 </li>
               ) : null}
@@ -93,7 +98,7 @@ export function NavMobile() {
                   onClick={() => setOpen(false)}
                   className="flex w-full font-medium capitalize"
                 >
-                  Dashboard
+                  {tCommon("dashboard")}
                 </Link>
               </li>
             </>
@@ -105,7 +110,7 @@ export function NavMobile() {
                   onClick={() => setOpen(false)}
                   className="flex w-full font-medium capitalize"
                 >
-                  Login
+                  {tCommon("login")}
                 </Link>
               </li>
 
@@ -115,7 +120,7 @@ export function NavMobile() {
                   onClick={() => setOpen(false)}
                   className="flex w-full font-medium capitalize"
                 >
-                  Sign up
+                  {tCommon("register")}
                 </Link>
               </li>
             </>
@@ -129,10 +134,7 @@ export function NavMobile() {
         ) : null}
 
         <div className="mt-5 flex items-center justify-end space-x-4">
-          <Link href={siteConfig.links.github} target="_blank" rel="noreferrer">
-            <Icons.gitHub className="size-6" />
-            <span className="sr-only">GitHub</span>
-          </Link>
+          <LanguageSwitcher />
           <ModeToggle />
         </div>
       </nav>

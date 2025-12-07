@@ -41,14 +41,18 @@ interface GuestRow {
   id: string;
   name: string;
   phoneNumber: string;
+  side: string;
   groupName: string;
+  expectedGuests: number;
 }
 
 const createEmptyRow = (): GuestRow => ({
   id: crypto.randomUUID(),
   name: "",
   phoneNumber: "",
+  side: "",
   groupName: "",
+  expectedGuests: 1,
 });
 
 export function BulkAddGuestsDialog({ eventId }: BulkAddGuestsDialogProps) {
@@ -60,7 +64,7 @@ export function BulkAddGuestsDialog({ eventId }: BulkAddGuestsDialogProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [rows, setRows] = useState<GuestRow[]>([createEmptyRow(), createEmptyRow(), createEmptyRow()]);
 
-  const updateRow = (id: string, field: keyof GuestRow, value: string) => {
+  const updateRow = (id: string, field: keyof GuestRow, value: string | number) => {
     setRows(rows.map(row =>
       row.id === id ? { ...row, [field]: value } : row
     ));
@@ -98,7 +102,9 @@ export function BulkAddGuestsDialog({ eventId }: BulkAddGuestsDialogProps) {
           weddingEventId: eventId,
           name: guest.name.trim(),
           phoneNumber: guest.phoneNumber.trim(),
+          side: guest.side as "bride" | "groom" | "both" | undefined || undefined,
           groupName: guest.groupName || undefined,
+          expectedGuests: guest.expectedGuests || 1,
           notes: "",
         });
 
@@ -144,7 +150,7 @@ export function BulkAddGuestsDialog({ eventId }: BulkAddGuestsDialogProps) {
           {t("bulkAdd")}
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-3xl" dir={isRTL ? "rtl" : "ltr"}>
+      <DialogContent className="max-w-4xl" dir={isRTL ? "rtl" : "ltr"}>
         <DialogHeader>
           <DialogTitle>{t("bulkAdd")}</DialogTitle>
           <DialogDescription>
@@ -157,10 +163,12 @@ export function BulkAddGuestsDialog({ eventId }: BulkAddGuestsDialogProps) {
             <Table dir={isRTL ? "rtl" : "ltr"}>
               <TableHeader>
                 <TableRow className="bg-muted/50">
-                  <TableHead className="w-[220px] text-start">{t("name")} *</TableHead>
-                  <TableHead className="w-[180px] text-start">{t("phone")}</TableHead>
-                  <TableHead className="w-[180px] text-start">{t("group")}</TableHead>
-                  <TableHead className="w-[60px]"></TableHead>
+                  <TableHead className="w-[180px] text-start">{t("name")} *</TableHead>
+                  <TableHead className="w-[130px] text-start">{t("phone")}</TableHead>
+                  <TableHead className="w-[120px] text-start">{t("side")}</TableHead>
+                  <TableHead className="w-[120px] text-start">{t("group")}</TableHead>
+                  <TableHead className="w-[80px] text-start">{t("guestCount")}</TableHead>
+                  <TableHead className="w-[50px]"></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -185,6 +193,21 @@ export function BulkAddGuestsDialog({ eventId }: BulkAddGuestsDialogProps) {
                     </TableCell>
                     <TableCell className="p-2">
                       <Select
+                        value={row.side}
+                        onValueChange={(value) => updateRow(row.id, "side", value)}
+                      >
+                        <SelectTrigger className="h-9">
+                          <SelectValue placeholder={t("selectSide")} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="bride">{t("sides.bride")}</SelectItem>
+                          <SelectItem value="groom">{t("sides.groom")}</SelectItem>
+                          <SelectItem value="both">{t("sides.both")}</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </TableCell>
+                    <TableCell className="p-2">
+                      <Select
                         value={row.groupName}
                         onValueChange={(value) => updateRow(row.id, "groupName", value)}
                       >
@@ -198,6 +221,16 @@ export function BulkAddGuestsDialog({ eventId }: BulkAddGuestsDialogProps) {
                           <SelectItem value="other">{t("groups.other")}</SelectItem>
                         </SelectContent>
                       </Select>
+                    </TableCell>
+                    <TableCell className="p-2">
+                      <Input
+                        type="number"
+                        min={1}
+                        max={20}
+                        value={row.expectedGuests}
+                        onChange={(e) => updateRow(row.id, "expectedGuests", parseInt(e.target.value) || 1)}
+                        className="h-9 w-16"
+                      />
                     </TableCell>
                     <TableCell className="p-2">
                       <Button

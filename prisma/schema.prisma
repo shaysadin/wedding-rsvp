@@ -18,7 +18,7 @@ enum UserRole {
 }
 
 enum UserStatus {
-  PENDING_APPROVAL
+  PENDING_APPROVAL  // @deprecated - kept for database compatibility, not used in app
   ACTIVE
   SUSPENDED
 }
@@ -26,7 +26,9 @@ enum UserStatus {
 enum PlanTier {
   FREE
   BASIC
+  ADVANCED
   PREMIUM
+  BUSINESS
 }
 
 enum RsvpStatus {
@@ -126,6 +128,20 @@ model VerificationToken {
   @@map("verification_tokens")
 }
 
+// Email verification tokens for credential-based auth
+model EmailVerificationToken {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String   @map("user_id")
+  expires   DateTime
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("email_verification_tokens")
+}
+
 // ============ CORE DOMAIN MODELS ============
 
 model User {
@@ -133,21 +149,61 @@ model User {
   name          String?
   email         String     @unique
   emailVerified DateTime?  @map("email_verified")
+  password      String?    // Hashed password for email/password auth
   image         String?
-  role          UserRole   @default(ROLE_WEDDING_OWNER)
-  status        UserStatus @default(PENDING_APPROVAL)
+  role          UserRole   @default(ROLE_WEDDING_OWNER)  // Current active role
+  roles         UserRole[] @default([ROLE_WEDDING_OWNER]) // All roles user has access to
+  status        UserStatus @default(ACTIVE)
   plan          PlanTier   @default(FREE)
   locale        String     @default("he")
   createdAt     DateTime   @default(now()) @map("created_at")
   updatedAt     DateTime   @default(now()) @updatedAt @map("updated_at")
 
-  accounts        Account[]
-  sessions        Session[]
-  weddingEvents   WeddingEvent[]
-  rsvpTemplates   RsvpTemplate[]
-  bulkMessageJobs BulkMessageJob[]
+  // Stripe subscription fields
+  stripeCustomerId       String?   @unique @map("stripe_customer_id")
+  stripeSubscriptionId   String?   @unique @map("stripe_subscription_id")
+  stripePriceId          String?   @map("stripe_price_id")
+  stripeCurrentPeriodEnd DateTime? @map("stripe_current_period_end")
+
+  // Pending plan change (for scheduled downgrades)
+  pendingPlanChange      PlanTier? @map("pending_plan_change")
+  pendingPlanChangeDate  DateTime? @map("pending_plan_change_date")
+
+  accounts              Account[]
+  sessions              Session[]
+  weddingEvents         WeddingEvent[]
+  rsvpTemplates         RsvpTemplate[]
+  bulkMessageJobs       BulkMessageJob[]
+  usageTracking         UsageTracking?
+  emailVerificationTokens EmailVerificationToken[]
 
   @@map("users")
+}
+
+// ============ USAGE TRACKING (Per User) ============
+
+model UsageTracking {
+  id     String @id @default(cuid())
+  userId String @unique @map("user_id")
+
+  // Current billing period usage
+  whatsappSent     Int @default(0) @map("whatsapp_sent")
+  smsSent          Int @default(0) @map("sms_sent")
+
+  // One-time package additions (purchased separately)
+  whatsappBonus    Int @default(0) @map("whatsapp_bonus")
+  smsBonus         Int @default(0) @map("sms_bonus")
+
+  // Period tracking
+  periodStart      DateTime @default(now()) @map("period_start")
+  periodEnd        DateTime? @map("period_end")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("usage_tracking")
 }
 
 model WeddingEvent {
@@ -184,6 +240,7 @@ model Guest {
   slug           String   @unique
   side           String?
   groupName      String?  @map("group_name")
+  expectedGuests Int      @default(1) @map("expected_guests")
   notes          String?  @db.Text
   createdAt      DateTime @default(now()) @map("created_at")
   updatedAt      DateTime @default(now()) @updatedAt @map("updated_at")
@@ -526,6 +583,19 @@ model MessagingProviderSettings {
   whatsappApiSecret   String?  @map("whatsapp_api_secret")
   whatsappPhoneNumber String?  @map("whatsapp_phone_number")
   whatsappEnabled     Boolean  @default(false) @map("whatsapp_enabled")
+
+  // WhatsApp Content Templates (Twilio Content API)
+  // These are pre-approved template SIDs from Twilio Content API
+  // Required for WhatsApp Business API - free-form messages only work within 24h window
+  whatsappInviteContentSid      String?  @map("whatsapp_invite_content_sid")      // Template SID for invitation messages
+  whatsappReminderContentSid    String?  @map("whatsapp_reminder_content_sid")    // Template SID for reminder messages
+  whatsappConfirmationContentSid String? @map("whatsapp_confirmation_content_sid") // Template SID for confirmation messages
+
+  // WhatsApp Template Text (for display to users - read-only)
+  // The admin enters the actual template text here so wedding owners can see what will be sent
+  whatsappInviteTemplateText      String?  @db.Text @map("whatsapp_invite_template_text")
+  whatsappReminderTemplateText    String?  @db.Text @map("whatsapp_reminder_template_text")
+  whatsappConfirmationTemplateText String? @db.Text @map("whatsapp_confirmation_template_text")
 
   // SMS Config (Twilio)
   smsProvider           String?  @map("sms_provider")

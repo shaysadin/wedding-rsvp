@@ -4,6 +4,7 @@ import { Fragment, useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
+import { UserRole } from "@prisma/client";
 import { NavItem, SidebarNavItem } from "@/types";
 import { Menu, PanelLeftClose, PanelRightClose, ChevronDown, ChevronRight } from "lucide-react";
 
@@ -25,7 +26,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import ProjectSwitcher from "@/components/dashboard/project-switcher";
+import { RoleSwitcher } from "@/components/dashboard/role-switcher";
 import { UpgradeCard } from "@/components/dashboard/upgrade-card";
 import { Icons } from "@/components/shared/icons";
 
@@ -37,9 +38,11 @@ interface UserEvent {
 interface DashboardSidebarProps {
   links: SidebarNavItem[];
   userEvents?: UserEvent[];
+  currentRole?: UserRole;
+  availableRoles?: UserRole[];
 }
 
-export function DashboardSidebar({ links, userEvents = [] }: DashboardSidebarProps) {
+export function DashboardSidebar({ links, userEvents = [], currentRole, availableRoles = [] }: DashboardSidebarProps) {
   const path = usePathname();
   const t = useTranslations();
 
@@ -73,6 +76,14 @@ export function DashboardSidebar({ links, userEvents = [] }: DashboardSidebarPro
     setIsSidebarExpanded(!isTablet);
   }, [isTablet]);
 
+  // Check if current path matches the item href (accounting for locale prefix)
+  const isPathActive = (href: string) => {
+    if (!path) return false;
+    // Remove locale prefix from path for comparison
+    const pathWithoutLocale = path.replace(`/${locale}`, "") || "/";
+    return pathWithoutLocale === href;
+  };
+
   // Check if current path is an event page
   const isEventActive = (eventId: string) => {
     return path?.includes(`/dashboard/events/${eventId}`);
@@ -83,11 +94,11 @@ export function DashboardSidebar({ links, userEvents = [] }: DashboardSidebarPro
   return (
     <TooltipProvider delayDuration={0}>
       <div className="sticky top-0 h-full">
-        <ScrollArea className="h-full overflow-y-auto border-s">
+        <ScrollArea className="h-full overflow-y-auto">
           <aside
             className={cn(
               isSidebarExpanded ? "w-[220px] xl:w-[260px]" : "w-[68px]",
-              "hidden h-screen md:block",
+              "hidden h-screen bg-sidebar border-e border-sidebar-border md:block",
             )}
           >
             <div className="flex h-full max-h-screen flex-1 flex-col gap-2">
@@ -95,7 +106,31 @@ export function DashboardSidebar({ links, userEvents = [] }: DashboardSidebarPro
                 "flex h-14 items-center p-4 lg:h-[60px]",
                 isRTL && "flex-row-reverse"
               )}>
-                {isSidebarExpanded ? <ProjectSwitcher /> : null}
+                {isSidebarExpanded ? (
+                  <Link
+                    href={`/${locale}/dashboard`}
+                    className={cn(
+                      "flex items-center gap-2",
+                      isRTL && "flex-row-reverse"
+                    )}
+                  >
+                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-pink-500 to-rose-500">
+                      <Icons.heart className="h-4 w-4 text-white" />
+                    </div>
+                    <span className="font-semibold text-foreground">
+                      {siteConfig.name}
+                    </span>
+                  </Link>
+                ) : (
+                  <Link
+                    href={`/${locale}/dashboard`}
+                    className="flex items-center justify-center"
+                  >
+                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-pink-500 to-rose-500">
+                      <Icons.heart className="h-4 w-4 text-white" />
+                    </div>
+                  </Link>
+                )}
 
                 <Button
                   variant="ghost"
@@ -117,6 +152,17 @@ export function DashboardSidebar({ links, userEvents = [] }: DashboardSidebarPro
                   <span className="sr-only">Toggle Sidebar</span>
                 </Button>
               </div>
+
+              {/* Role Switcher - only visible for users with multiple roles */}
+              {currentRole && availableRoles.length > 1 && (
+                <div className="px-4">
+                  <RoleSwitcher
+                    currentRole={currentRole}
+                    availableRoles={availableRoles}
+                    expanded={isSidebarExpanded}
+                  />
+                </div>
+              )}
 
               <nav className="flex flex-1 flex-col gap-8 px-4 pt-4">
                 {links.map((section) => (
@@ -154,8 +200,8 @@ export function DashboardSidebar({ links, userEvents = [] }: DashboardSidebarPro
                                   className={cn(
                                     "flex flex-1 items-center gap-3 rounded-md p-2 text-sm font-medium hover:bg-muted",
                                     isRTL && "flex-row-reverse text-right",
-                                    path === item.href || isEventsPage
-                                      ? "bg-muted"
+                                    isPathActive(item.href) || isEventsPage
+                                      ? "bg-background/60"
                                       : "text-muted-foreground hover:text-accent-foreground",
                                   )}
                                 >
@@ -185,7 +231,7 @@ export function DashboardSidebar({ links, userEvents = [] }: DashboardSidebarPro
                                         "flex items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted",
                                         isRTL && "flex-row-reverse text-right",
                                         isEventActive(event.id)
-                                          ? "bg-muted/60 font-medium"
+                                          ? "bg-background/60 font-medium"
                                           : "text-muted-foreground hover:text-accent-foreground",
                                       )}
                                     >
@@ -210,8 +256,8 @@ export function DashboardSidebar({ links, userEvents = [] }: DashboardSidebarPro
                                 className={cn(
                                   "flex items-center gap-3 rounded-md p-2 text-sm font-medium hover:bg-muted",
                                   isRTL && "flex-row-reverse text-right",
-                                  path === item.href
-                                    ? "bg-muted"
+                                  isPathActive(item.href)
+                                    ? "bg-background/60"
                                     : "text-muted-foreground hover:text-accent-foreground",
                                   item.disabled &&
                                     "cursor-not-allowed opacity-80 hover:bg-transparent hover:text-muted-foreground",
@@ -233,8 +279,8 @@ export function DashboardSidebar({ links, userEvents = [] }: DashboardSidebarPro
                                     href={item.disabled ? "#" : item.href}
                                     className={cn(
                                       "flex items-center gap-3 rounded-md py-2 text-sm font-medium hover:bg-muted",
-                                      path === item.href
-                                        ? "bg-muted"
+                                      isPathActive(item.href)
+                                        ? "bg-background/60"
                                         : "text-muted-foreground hover:text-accent-foreground",
                                       item.disabled &&
                                         "cursor-not-allowed opacity-80 hover:bg-transparent hover:text-muted-foreground",
@@ -269,7 +315,7 @@ export function DashboardSidebar({ links, userEvents = [] }: DashboardSidebarPro
   );
 }
 
-export function MobileSheetSidebar({ links, userEvents = [] }: DashboardSidebarProps) {
+export function MobileSheetSidebar({ links, userEvents = [], currentRole, availableRoles = [] }: DashboardSidebarProps) {
   const path = usePathname();
   const [open, setOpen] = useState(false);
   const [eventsOpen, setEventsOpen] = useState(true);
@@ -292,6 +338,14 @@ export function MobileSheetSidebar({ links, userEvents = [] }: DashboardSidebarP
     } catch {
       return fallback || "";
     }
+  };
+
+  // Check if current path matches the item href (accounting for locale prefix)
+  const isPathActive = (href: string) => {
+    if (!path) return false;
+    // Remove locale prefix from path for comparison
+    const pathWithoutLocale = path.replace(`/${locale}`, "") || "/";
+    return pathWithoutLocale === href;
   };
 
   // Check if current path is an event page
@@ -319,19 +373,28 @@ export function MobileSheetSidebar({ links, userEvents = [] }: DashboardSidebarP
             <div className="flex h-screen flex-col">
               <nav className="flex flex-1 flex-col gap-y-8 p-6 text-lg font-medium">
                 <Link
-                  href="#"
+                  href={`/${locale}/dashboard`}
                   className={cn(
                     "flex items-center gap-2 text-lg font-semibold",
                     isRTL && "flex-row-reverse"
                   )}
                 >
-                  <Icons.logo className="size-6" />
+                  <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-pink-500 to-rose-500">
+                    <Icons.heart className="h-5 w-5 text-white" />
+                  </div>
                   <span className="font-urban text-xl font-bold">
-                    {t("common.appName")}
+                    {siteConfig.name}
                   </span>
                 </Link>
 
-                <ProjectSwitcher large />
+                {/* Role Switcher - only visible for users with multiple roles */}
+                {currentRole && availableRoles.length > 1 && (
+                  <RoleSwitcher
+                    currentRole={currentRole}
+                    availableRoles={availableRoles}
+                    expanded={true}
+                  />
+                )}
 
                 {links.map((section) => (
                   <section
@@ -366,8 +429,8 @@ export function MobileSheetSidebar({ links, userEvents = [] }: DashboardSidebarP
                                   className={cn(
                                     "flex flex-1 items-center gap-3 rounded-md p-2 text-sm font-medium hover:bg-muted",
                                     isRTL && "flex-row-reverse text-right",
-                                    path === item.href || isEventsPage
-                                      ? "bg-muted"
+                                    isPathActive(item.href) || isEventsPage
+                                      ? "bg-background/60"
                                       : "text-muted-foreground hover:text-accent-foreground",
                                   )}
                                 >
@@ -398,7 +461,7 @@ export function MobileSheetSidebar({ links, userEvents = [] }: DashboardSidebarP
                                         "flex items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted",
                                         isRTL && "flex-row-reverse text-right",
                                         isEventActive(event.id)
-                                          ? "bg-muted/60 font-medium"
+                                          ? "bg-background/60 font-medium"
                                           : "text-muted-foreground hover:text-accent-foreground",
                                       )}
                                     >
@@ -425,8 +488,8 @@ export function MobileSheetSidebar({ links, userEvents = [] }: DashboardSidebarP
                               className={cn(
                                 "flex items-center gap-3 rounded-md p-2 text-sm font-medium hover:bg-muted",
                                 isRTL && "flex-row-reverse text-right",
-                                path === item.href
-                                  ? "bg-muted"
+                                isPathActive(item.href)
+                                  ? "bg-background/60"
                                   : "text-muted-foreground hover:text-accent-foreground",
                                 item.disabled &&
                                   "cursor-not-allowed opacity-80 hover:bg-transparent hover:text-muted-foreground",

@@ -25,7 +25,7 @@ export default async function AdminMessagingPage() {
         text="Configure WhatsApp and SMS providers for sending notifications to guests."
       />
 
-      <div className="grid gap-6">
+      <div className="grid gap-6  overflow-auto">
         <MessagingSettingsForm settings={settings} />
       </div>
     </>

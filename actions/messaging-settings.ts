@@ -17,6 +17,16 @@ export interface MessagingSettingsInput {
   whatsappPhoneNumber?: string | null;
   whatsappEnabled?: boolean;
 
+  // WhatsApp Content Template SIDs (Twilio Content API)
+  whatsappInviteContentSid?: string | null;
+  whatsappReminderContentSid?: string | null;
+  whatsappConfirmationContentSid?: string | null;
+
+  // WhatsApp Template Text (for display to wedding owners)
+  whatsappInviteTemplateText?: string | null;
+  whatsappReminderTemplateText?: string | null;
+  whatsappConfirmationTemplateText?: string | null;
+
   // SMS Config
   smsProvider?: string | null;
   smsApiKey?: string | null;
@@ -90,6 +100,28 @@ export async function updateMessagingSettings(input: MessagingSettingsInput) {
     }
     if (input.whatsappEnabled !== undefined) {
       updateData.whatsappEnabled = input.whatsappEnabled;
+    }
+
+    // WhatsApp Content Template SIDs
+    if (input.whatsappInviteContentSid !== undefined) {
+      updateData.whatsappInviteContentSid = input.whatsappInviteContentSid;
+    }
+    if (input.whatsappReminderContentSid !== undefined) {
+      updateData.whatsappReminderContentSid = input.whatsappReminderContentSid;
+    }
+    if (input.whatsappConfirmationContentSid !== undefined) {
+      updateData.whatsappConfirmationContentSid = input.whatsappConfirmationContentSid;
+    }
+
+    // WhatsApp Template Text (for display to wedding owners)
+    if (input.whatsappInviteTemplateText !== undefined) {
+      updateData.whatsappInviteTemplateText = input.whatsappInviteTemplateText;
+    }
+    if (input.whatsappReminderTemplateText !== undefined) {
+      updateData.whatsappReminderTemplateText = input.whatsappReminderTemplateText;
+    }
+    if (input.whatsappConfirmationTemplateText !== undefined) {
+      updateData.whatsappConfirmationTemplateText = input.whatsappConfirmationTemplateText;
     }
 
     // SMS fields
@@ -254,6 +286,45 @@ function maskApiKey(key: string): string {
     return "••••••••";
   }
   return key.slice(0, 4) + "••••••••" + key.slice(-4);
+}
+
+// Get WhatsApp templates for display to wedding owners (read-only)
+// This returns the template text without exposing credentials
+export async function getWhatsAppTemplates() {
+  try {
+    const user = await getCurrentUser();
+
+    if (!user) {
+      return { error: "Unauthorized" };
+    }
+
+    const settings = await prisma.messagingProviderSettings.findFirst();
+
+    if (!settings) {
+      return {
+        success: true,
+        templates: {
+          invite: null,
+          reminder: null,
+          confirmation: null,
+        },
+        whatsappEnabled: false,
+      };
+    }
+
+    return {
+      success: true,
+      templates: {
+        invite: settings.whatsappInviteTemplateText,
+        reminder: settings.whatsappReminderTemplateText,
+        confirmation: settings.whatsappConfirmationTemplateText,
+      },
+      whatsappEnabled: settings.whatsappEnabled && !!settings.whatsappInviteContentSid,
+    };
+  } catch (error) {
+    console.error("Error fetching WhatsApp templates:", error);
+    return { error: "Failed to fetch templates" };
+  }
 }
 
 // Get available messaging channels for wedding owners (public endpoint)

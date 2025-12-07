@@ -10,8 +10,8 @@ import { Progress } from "@/components/ui/progress";
 import { Icons } from "@/components/shared/icons";
 
 type EventWithStats = WeddingEvent & {
-  guests: (Guest & { rsvp: GuestRsvp | null })[];
-  _count: { guests: number };
+  guests?: (Guest & { rsvp: GuestRsvp | null })[];
+  _count?: { guests: number };
   stats: {
     total: number;
     pending: number;

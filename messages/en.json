@@ -38,6 +38,8 @@
     "homepage": "Homepage",
     "analytics": "Analytics",
     "or": "or",
+    "switchTo": "Switch to",
+    "owner": "Wedding Owner",
     "orContinueWith": "Or continue with",
     "total": "Total",
     "people": "people",
@@ -55,7 +57,8 @@
     "guests": "Guests",
     "noResults": "No results found",
     "awaitingReview": "awaiting review",
-    "weddingEvents": "wedding events"
+    "weddingEvents": "wedding events",
+    "all": "All"
   },
   "navigation": {
     "dashboard": "Dashboard",
@@ -66,7 +69,8 @@
     "admin": "Admin Panel",
     "users": "Users",
     "home": "Home",
-    "messaging": "Messaging Settings"
+    "messaging": "Messaging Settings",
+    "billing": "Billing"
   },
   "auth": {
     "signIn": "Sign In",
@@ -88,7 +92,15 @@
     "checkEmail": "Check your email",
     "checkEmailDescription": "We sent you a login link. Be sure to check your spam too.",
     "errorTitle": "Something went wrong",
-    "errorDescription": "Your sign in request failed. Please try again."
+    "errorDescription": "Your sign in request failed. Please try again.",
+    "verificationEmailSent": "Verification email sent",
+    "verificationEmailDescription": "Please check your inbox and click the verification link to activate your account.",
+    "emailExistsTitle": "Email already exists",
+    "emailExistsDescription": "An account with this email already exists. Please login or use a different email.",
+    "emailNotVerifiedTitle": "Email not verified",
+    "emailNotVerifiedDescription": "Please verify your email before signing in. Check your inbox for the verification link.",
+    "invalidCredentialsTitle": "Invalid credentials",
+    "invalidCredentialsDescription": "The email or password you entered is incorrect."
   },
   "dashboard": {
     "title": "Dashboard",
@@ -152,6 +164,8 @@
     "group": "Group",
     "status": "Status",
     "guestCount": "Guest Count",
+    "expectedGuests": "Expected Guests",
+    "confirmedGuests": "Confirmed Guests",
     "lastReminder": "Last Reminder",
     "sendInvite": "Send Invite",
     "sendReminder": "Send Reminder",
@@ -179,7 +193,9 @@
       "work": "Work",
       "other": "Other"
     },
-    "importInstructions": "Upload an Excel or CSV file with columns: Name, Phone, Email, Side, Group",
+    "importInstructions": "Upload an Excel or CSV file with columns: Name, Phone, Side, Group, Guest Count",
+    "downloadTemplate": "Download Template",
+    "downloadTemplateDescription": "Download a ready-to-use Excel file with all required columns",
     "copyLink": "Copy Link",
     "linkCopied": "Link copied to clipboard",
     "bulkAdd": "Bulk Add",
@@ -237,7 +253,9 @@
     "sendingFailed": "Sending failed",
     "partiallySent": "Some messages sent",
     "messageSent": "Message Status",
-    "noPhone": "No phone number"
+    "noPhone": "No phone number",
+    "selectSide": "Select Side",
+    "clearFilters": "Clear Filters"
   },
   "messageStatus": {
     "notSent": "Not Sent",
@@ -343,6 +361,8 @@
     "allUsers": "All Users",
     "weddingOwners": "Wedding Owners",
     "pendingApproval": "Pending Approval",
+    "suspendedUsers": "Suspended Users",
+    "accountsSuspended": "accounts suspended",
     "createUser": "Create User",
     "editUser": "Edit User",
     "approveUser": "Approve User",
@@ -352,15 +372,52 @@
     "stats": "Statistics",
     "totalUsers": "Total Users",
     "totalEvents": "Total Events",
-    "totalGuests": "Total Guests"
+    "totalGuests": "Total Guests",
+    "usage": "Usage",
+    "usageActions": "Usage Actions",
+    "whatsappUsage": "WhatsApp Usage",
+    "smsUsage": "SMS Usage",
+    "bonus": "bonus",
+    "addBonusMessages": "Add Bonus Messages",
+    "addBonusMessagesDesc": "Add bonus message credits for {name}",
+    "addBonus": "Add Bonus",
+    "resetUsage": "Reset Usage",
+    "grantAdminRole": "Grant Admin Access",
+    "revokeAdminRole": "Revoke Admin Access",
+    "adminRoleGranted": "Admin access granted",
+    "adminRoleRevoked": "Admin access revoked",
+    "manageCredits": "Manage Credits",
+    "manageCreditsDesc": "Add or remove bonus credits for {name}",
+    "currentBonus": "Current Bonus",
+    "newBonus": "New Bonus",
+    "removeCreditsMode": "Remove credits instead of adding",
+    "addCredits": "Add Credits",
+    "removeCredits": "Remove Credits",
+    "messagesSent": "Messages Sent",
+    "recentActivity": "Recent Activity",
+    "newEventsThisWeek": "New events this week",
+    "rsvpsThisWeek": "RSVPs this week",
+    "quickActions": "Quick Actions",
+    "manageUsers": "Manage Users",
+    "messagingSettings": "Messaging Settings",
+    "recentUsers": "Recent Users",
+    "recentUsersDesc": "Latest registered users on the platform",
+    "viewAll": "View All",
+    "stripeActive": "Stripe subscription active",
+    "adminAssigned": "Admin assigned plan",
+    "syncWithStripe": "Will sync with Stripe"
   },
   "plans": {
     "free": "Free",
     "basic": "Basic",
+    "advanced": "Advanced",
     "premium": "Premium",
-    "freeDescription": "1 event, up to 50 guests",
-    "basicDescription": "Up to 3 events, 200 guests per event",
-    "premiumDescription": "Unlimited events and guests"
+    "business": "Business",
+    "freeDescription": "No events, trial access",
+    "basicDescription": "1 event, 650 WhatsApp messages",
+    "advancedDescription": "1 event, 750 WhatsApp + 30 SMS",
+    "premiumDescription": "2 events, 1000 WhatsApp + 50 SMS",
+    "businessDescription": "Unlimited events & messages"
   },
   "status": {
     "pending": "Pending",
@@ -368,7 +425,7 @@
     "declined": "Declined",
     "active": "Active",
     "suspended": "Suspended",
-    "pendingApproval": "Pending Approval"
+    "pending_approval": "Pending Approval"
   },
   "errors": {
     "generic": "An error occurred, please try again",
@@ -435,9 +492,295 @@
       "saved": "SMS Sender ID saved",
       "saveFailed": "Failed to save SMS Sender ID"
     },
+    "whatsappTemplates": "WhatsApp Templates",
+    "readOnly": "Read Only",
+    "whatsappTemplatesDescription": "Pre-approved WhatsApp Business templates managed by the platform",
+    "whatsappTemplatesNote": "WhatsApp templates are pre-approved by Meta and cannot be edited. Contact your administrator if you need changes.",
+    "smsTemplates": "SMS Templates",
+    "editable": "Editable",
+    "smsTemplatesDescription": "Customize SMS messages for your guests",
     "pageTitle": "Message Templates",
     "pageDescription": "Customize messages for {eventTitle}",
     "backToEvent": "Back to Event"
+  },
+  "marketing": {
+    "hero": {
+      "badge": "WhatsApp & SMS Invitations Available",
+      "title": "Wedding RSVPs Made",
+      "titleHighlight": "Effortless",
+      "description": "Send beautiful invitations via WhatsApp & SMS, track guest responses in real-time, and manage your wedding guest list with ease. No more spreadsheet chaos.",
+      "startFree": "Start Free",
+      "viewPricing": "View Pricing"
+    },
+    "bento": {
+      "responseRate": "Response Rate",
+      "securePrivate": "Secure & Private",
+      "secureDescription": "Your guest data is encrypted and never shared. GDPR compliant with secure data handling.",
+      "instantDelivery": "Instant Delivery",
+      "instantDescription": "WhatsApp & SMS invitations delivered instantly. No more waiting for postal mail or email opens.",
+      "realtimeDashboard": "Real-time Dashboard",
+      "realtimeDescription": "Watch responses come in live. Know your guest count at any moment with up-to-date stats.",
+      "confirmed": "Confirmed",
+      "pending": "Pending",
+      "declined": "Declined",
+      "smartGuestManagement": "Smart Guest Management",
+      "smartGuestDescription": "Organize by family, side, or custom groups. Everyone in one beautiful, sortable list.",
+      "bridesSide": "Bride's Side",
+      "groomsSide": "Groom's Side",
+      "family": "Family"
+    },
+    "nav": {
+      "pricing": "Pricing",
+      "blog": "Blog",
+      "documentation": "Documentation"
+    },
+    "features": {
+      "label": "Features",
+      "title": "Discover all features.",
+      "subtitle": "Everything you need to manage your wedding RSVPs effortlessly.",
+      "visitSite": "Visit the site",
+      "whatsappInvitations": {
+        "title": "WhatsApp Invitations",
+        "description": "Send personalized wedding invitations directly to WhatsApp. Higher open rates than email."
+      },
+      "smsMessaging": {
+        "title": "SMS Messaging",
+        "description": "Reach guests without WhatsApp via SMS. Perfect for older family members."
+      },
+      "customRsvpPages": {
+        "title": "Custom RSVP Pages",
+        "description": "Beautiful, branded RSVP pages with your colors, fonts, and wedding details."
+      },
+      "guestManagement": {
+        "title": "Guest Management",
+        "description": "Organize guests by family, side (bride/groom), and groups. Import from Excel."
+      },
+      "realtimeDashboard": {
+        "title": "Real-time Dashboard",
+        "description": "Track RSVPs in real-time. See confirmed, declined, and pending responses at a glance."
+      },
+      "smartAnalytics": {
+        "title": "Smart Analytics",
+        "description": "Know exactly how many guests are coming, dietary requirements, and more."
+      }
+    },
+    "info": {
+      "section1": {
+        "title": "Streamline Your Wedding Planning",
+        "description": "Go Approval takes the stress out of managing wedding RSVPs. From sending invitations to tracking responses, everything is handled in one beautiful dashboard.",
+        "item1Title": "WhatsApp & SMS",
+        "item1Description": "Send invitations through channels your guests actually use.",
+        "item2Title": "Real-time Tracking",
+        "item2Description": "See who's coming, who's not, and who hasn't responded yet.",
+        "item3Title": "Beautiful RSVP Pages",
+        "item3Description": "Customizable RSVP pages that match your wedding style."
+      },
+      "section2": {
+        "title": "Everything You Need in One Place",
+        "description": "Import your guest list, customize your messages, and let Go Approval handle the rest. Track responses, send reminders, and export reports effortlessly.",
+        "item1Title": "Easy Import",
+        "item1Description": "Import guests from Excel or add them manually in seconds.",
+        "item2Title": "Smart Reminders",
+        "item2Description": "Automatic reminders to guests who haven't responded.",
+        "item3Title": "Detailed Reports",
+        "item3Description": "Export guest lists and dietary requirements for your venue."
+      }
+    },
+    "testimonials": {
+      "label": "Testimonials",
+      "title": "What our clients are sharing.",
+      "subtitle": "Discover the glowing feedback from our delighted customers worldwide.",
+      "reviews": {
+        "review1": {
+          "name": "Sarah & David",
+          "job": "Married June 2024",
+          "review": "Go Approval saved us so much time! We had 300 guests and tracking RSVPs was a nightmare before. The WhatsApp integration is genius - everyone responded within days."
+        },
+        "review2": {
+          "name": "Rachel Cohen",
+          "job": "Mother of the Bride",
+          "review": "As a mom helping plan my daughter's wedding, I was worried about the technology. But Go Approval is so easy to use. Even my husband figured it out!"
+        },
+        "review3": {
+          "name": "Michael & Noa",
+          "job": "Married August 2024",
+          "review": "The automatic reminders feature is amazing. We didn't have to chase anyone - the system did it for us. Highly recommend for busy couples."
+        },
+        "review4": {
+          "name": "Yael Levi",
+          "job": "Wedding Planner",
+          "review": "I recommend Go Approval to all my clients now. It's professional, reliable, and makes my job so much easier. The reporting features are excellent."
+        },
+        "review5": {
+          "name": "Daniel & Maya",
+          "job": "Married December 2024",
+          "review": "We loved being able to customize our RSVP page to match our wedding theme. The preview feature helped us get it perfect before sending."
+        },
+        "review6": {
+          "name": "Amit Shapira",
+          "job": "Event Venue Manager",
+          "review": "Couples who use Go Approval always have accurate guest counts. The export feature makes our catering planning seamless. Great product!"
+        },
+        "review7": {
+          "name": "Shira & Oren",
+          "job": "Married October 2024",
+          "review": "Managing RSVPs for our wedding of 400 guests was effortless with Go Approval. The SMS feature was perfect for reaching our grandparents."
+        }
+      }
+    }
+  },
+  "pricing": {
+    "label": "Pricing",
+    "title": "Simple, transparent pricing",
+    "yearly": "Yearly (-20%)",
+    "monthly": "Monthly",
+    "perMonth": "month",
+    "yearlyCharge": "${amount} will be charged annually",
+    "monthlyCharge": "when charged monthly",
+    "goToDashboard": "Go to dashboard",
+    "signIn": "Sign in",
+    "questions": "Questions? Email",
+    "happyToHelp": "and we'll be happy to help.",
+    "plans": {
+      "basic": {
+        "title": "Basic",
+        "benefits": {
+          "0": "1 wedding event",
+          "1": "650 WhatsApp messages",
+          "2": "Basic RSVP tracking",
+          "3": "Email support"
+        },
+        "limitations": {
+          "0": "No SMS messages",
+          "1": "Limited template customization"
+        }
+      },
+      "advanced": {
+        "title": "Advanced",
+        "benefits": {
+          "0": "2 wedding events",
+          "1": "750 WhatsApp messages",
+          "2": "30 SMS messages",
+          "3": "Custom RSVP page design",
+          "4": "Automatic reminders",
+          "5": "Real-time analytics",
+          "6": "Priority support"
+        },
+        "limitations": {}
+      },
+      "premium": {
+        "title": "Premium",
+        "benefits": {
+          "0": "3 wedding events",
+          "1": "1000 WhatsApp messages",
+          "2": "50 SMS messages",
+          "3": "Full template customization",
+          "4": "Advanced analytics & reports",
+          "5": "Priority support"
+        },
+        "limitations": {}
+      },
+      "business": {
+        "title": "Business",
+        "benefits": {
+          "0": "Unlimited events",
+          "1": "Unlimited WhatsApp messages",
+          "2": "Unlimited SMS messages",
+          "3": "Full template customization",
+          "4": "Advanced analytics & reports",
+          "5": "Team collaboration",
+          "6": "White-label branding",
+          "7": "24/7 priority support",
+          "8": "API access"
+        },
+        "limitations": {}
+      }
+    },
+    "compare": {
+      "label": "Plans",
+      "title": "Compare Our Plans",
+      "subtitle": "Find the perfect plan tailored for your business needs!",
+      "unlimited": "Unlimited",
+      "247": "24/7",
+      "columns": {
+        "basic": "Basic",
+        "advanced": "Advanced",
+        "premium": "Premium",
+        "business": "Business"
+      },
+      "features": {
+        "0": "Wedding Events",
+        "1": "Guest Limit",
+        "2": "WhatsApp Invitations",
+        "3": "SMS Invitations",
+        "4": "Custom RSVP Pages",
+        "5": "Automatic Reminders",
+        "6": "Real-time Analytics",
+        "7": "Team Collaboration",
+        "8": "White-label Branding",
+        "9": "API Access",
+        "10": "Priority Support"
+      },
+      "tooltips": {}
+    },
+    "faq": {
+      "label": "FAQ",
+      "title": "Frequently Asked Questions",
+      "subtitle": "Explore our comprehensive FAQ to find quick answers to common inquiries. If you need further assistance, don't hesitate to contact us for personalized help.",
+      "questions": {
+        "item1": {
+          "question": "How does Go Approval work?",
+          "answer": "Simply upload your guest list, customize your invitation message, and send via WhatsApp or SMS. Guests click a personalized link to RSVP, and you track responses in real-time on your dashboard."
+        },
+        "item2": {
+          "question": "Is the Starter plan really free?",
+          "answer": "Yes! The Starter plan is completely free and includes up to 100 guests, WhatsApp & SMS invitations, and basic RSVP tracking. Perfect for intimate celebrations."
+        },
+        "item3": {
+          "question": "Can I upgrade my plan later?",
+          "answer": "Absolutely! You can upgrade from Starter to Pro or Business at any time. Your existing data and guest responses will be preserved."
+        },
+        "item4": {
+          "question": "How are WhatsApp messages sent?",
+          "answer": "We use the official WhatsApp Business API to send your invitations. Messages are delivered instantly and appear as regular WhatsApp messages to your guests."
+        },
+        "item5": {
+          "question": "What happens if a guest doesn't have WhatsApp?",
+          "answer": "No problem! You can send SMS invitations to guests who don't use WhatsApp. Our system lets you choose the best channel for each guest."
+        },
+        "item6": {
+          "question": "Is my guest data secure?",
+          "answer": "Yes, we take security seriously. All data is encrypted, stored securely, and never shared with third parties. We're fully GDPR compliant."
+        }
+      }
+    }
+  },
+  "blog": {
+    "label": "Blog",
+    "title": "Latest Tips & Guides",
+    "subtitle": "Expert advice on managing wedding RSVPs, guest communication, and making your big day stress-free.",
+    "noPosts": "No posts published yet. Check back soon!"
+  },
+  "billing": {
+    "processing": "Processing...",
+    "payNow": "Pay Now",
+    "loading": "Loading...",
+    "upgrade": "Upgrade",
+    "downgrade": "Downgrade",
+    "manageSubscription": "Manage Subscription",
+    "cancelSubscription": "Cancel Subscription",
+    "contactSales": "Contact Sales",
+    "paymentSuccessful": "Payment successful!",
+    "paymentFailed": "Payment failed",
+    "planUpgraded": "Plan upgraded successfully!",
+    "preparingPayment": "Preparing payment...",
+    "completePayment": "Complete Payment",
+    "enterPaymentDetails": "Enter your payment details to activate your subscription",
+    "securePayment": "Secure payment with Stripe",
+    "tryAgain": "Try again",
+    "yearly": "Yearly",
+    "monthly": "Monthly",
+    "save": "Save"
   },
   "settings": {
     "title": "Settings",
@@ -469,12 +812,86 @@
     "plans": {
       "free": "Free",
       "basic": "Basic",
-      "premium": "Premium"
+      "advanced": "Advanced",
+      "premium": "Premium",
+      "business": "Business"
     },
     "status": {
       "active": "Active",
       "pending": "Pending Approval",
       "suspended": "Suspended"
     }
+  },
+  "billingPage": {
+    "title": "Billing",
+    "description": "Manage your subscription and billing",
+    "currentPlan": "Current Plan",
+    "youAreOn": "You are currently on the",
+    "plan": "plan",
+    "active": "Active",
+    "free": "Free",
+    "includedFeatures": "Included features:",
+    "renewsOn": "Your plan renews on",
+    "canceledOn": "Your plan will be canceled on",
+    "noActiveSubscription": "You don't have an active subscription",
+    "choosePlan": "Choose a plan",
+    "yearly": "yearly",
+    "monthly": "monthly",
+    "adminAssignedPlan": "This plan was assigned by your administrator",
+    "perUserMonth": "/user/month",
+    "forStandardPlans": "Upgrade to unlock more features.",
+    "features": {
+      "noEvents": "No events included",
+      "trialAccess": "Trial access only"
+    },
+    "cancelSubscriptionTitle": "Cancel Subscription?",
+    "cancelSubscriptionDescription": "Are you sure you want to cancel your subscription? You will lose access to paid features and be downgraded to the Free plan.",
+    "keepSubscription": "Keep Subscription",
+    "confirmCancel": "Yes, Cancel",
+    "cancelling": "Cancelling...",
+    "subscriptionCancelled": "Subscription cancelled successfully",
+    "paymentSuccess": "Payment successful! Your subscription is now active.",
+    "paymentCanceled": "Payment was canceled. No charges were made.",
+    "confirmUpgradeTitle": "Upgrade Your Plan?",
+    "confirmUpgradeDescription": "You will be upgraded to the {plan} plan. Your card will be charged the prorated difference for the remaining billing period.",
+    "confirmDowngradeTitle": "Downgrade Your Plan?",
+    "confirmDowngradeDescription": "You will be downgraded to the {plan} plan. The change will take effect at the end of your current billing period. No refund will be issued.",
+    "keepCurrentPlan": "Keep Current Plan",
+    "confirmUpgrade": "Yes, Upgrade",
+    "confirmDowngrade": "Yes, Downgrade",
+    "processing": "Processing...",
+    "upgradeSuccess": "Your plan has been upgraded successfully!",
+    "downgradeSuccess": "Your plan will be downgraded at the end of your billing period.",
+    "upgradeTitle": "Upgrade Your Plan",
+    "downgradeTitle": "Downgrade Your Plan",
+    "upgradeDescription": "Review the details below and confirm your upgrade.",
+    "downgradeDescription": "Review the details below and confirm your downgrade.",
+    "currentPlanLabel": "Current",
+    "newPlanLabel": "New Plan",
+    "month": "month",
+    "year": "year",
+    "paymentSummary": "Payment Summary",
+    "amountDueNow": "Amount Due Now",
+    "upgradeEffectiveImmediately": "Your new plan will be active immediately after payment.",
+    "downgradeScheduledTitle": "Scheduled for End of Period",
+    "downgradeScheduledMessage": "Your plan will change to the new plan on {date}. You'll keep your current features until then.",
+    "noRefundNotice": "No refund will be issued. You'll continue to have access to your current plan features until the end of your billing period.",
+    "cancel": "Cancel",
+    "confirmUpgradeAndPay": "Upgrade & Pay Now",
+    "tryAgain": "Try Again",
+    "upgradeSuccessImmediate": "Your plan has been upgraded! New features are now available.",
+    "downgradeScheduled": "Your plan will be downgraded on {date}.",
+    "paymentMethod": "Payment Method",
+    "manageBilling": "Manage Billing",
+    "expires": "Expires",
+    "noPaymentMethod": "No payment method on file.",
+    "addPaymentMethod": "Add a payment method",
+    "scheduledPlanChange": "Scheduled Plan Change",
+    "planWillChangeTo": "Your plan will change to {plan} on {date}.",
+    "daysRemaining": "{days} days remaining",
+    "cancelScheduledChange": "Cancel Change",
+    "scheduledChangeCancelled": "Scheduled plan change has been cancelled.",
+    "endOfBillingPeriod": "end of billing period",
+    "changePending": "Change will be applied soon"
   }
 }

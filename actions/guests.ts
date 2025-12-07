@@ -17,8 +17,10 @@ import {
 
 const PLAN_GUEST_LIMITS: Record<PlanTier, number> = {
   FREE: 50,
-  BASIC: 200,
+  BASIC: Infinity,
+  ADVANCED: Infinity,
   PREMIUM: Infinity,
+  BUSINESS: Infinity,
 };
 
 function generateGuestSlug(): string {
@@ -274,8 +276,10 @@ export async function getEventGuests(eventId: string) {
       include: {
         rsvp: true,
         notificationLogs: {
+          where: {
+            type: { in: ["INVITE", "REMINDER"] },
+          },
           orderBy: { createdAt: "desc" },
-          take: 1,
         },
       },
       orderBy: { createdAt: "desc" },

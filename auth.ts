@@ -1,21 +1,9 @@
 import authConfig from "@/auth.config";
 import { PrismaAdapter } from "@auth/prisma-adapter";
-import { UserRole, UserStatus, PlanTier } from "@prisma/client";
-import NextAuth, { type DefaultSession } from "next-auth";
+import NextAuth from "next-auth";
 
 import { prisma } from "@/lib/db";
 import { getUserById } from "@/lib/user";
-
-// More info: https://authjs.dev/getting-started/typescript#module-augmentation
-declare module "next-auth" {
-  interface Session {
-    user: {
-      role: UserRole;
-      status: UserStatus;
-      plan: PlanTier;
-    } & DefaultSession["user"];
-  }
-}
 
 export const {
   handlers: { GET, POST },
@@ -59,13 +47,49 @@ export const {
             });
           }
 
-          // Update user image from Google if not set
+          // Auto-verify email for Google users (Google already verified their email)
+          // Also update user image from Google if not set
+          const updateData: { emailVerified?: Date; image?: string } = {};
+
+          if (!existingUser.emailVerified) {
+            updateData.emailVerified = new Date();
+          }
           if (!existingUser.image && user.image) {
+            updateData.image = user.image;
+          }
+
+          if (Object.keys(updateData).length > 0) {
             await prisma.user.update({
               where: { id: existingUser.id },
-              data: { image: user.image },
+              data: updateData,
             });
           }
+        }
+      }
+
+      // For new Google sign-ups (no existing user), NextAuth will create user with emailVerified = null
+      // We need to update it after creation - this is handled in the events.createUser or we set it here
+      if (account?.provider === "google" && user.id) {
+        // Ensure the user is marked as verified
+        await prisma.user.update({
+          where: { id: user.id },
+          data: { emailVerified: new Date() },
+        }).catch(() => {
+          // User might not exist yet (first time OAuth), that's fine
+        });
+      }
+
+      // For magic link (nodemailer) sign-in, auto-verify the email
+      if (account?.provider === "nodemailer" && user.email) {
+        const existingUser = await prisma.user.findUnique({
+          where: { email: user.email },
+        });
+
+        if (existingUser && !existingUser.emailVerified) {
+          await prisma.user.update({
+            where: { id: existingUser.id },
+            data: { emailVerified: new Date() },
+          });
         }
       }
 
@@ -86,6 +110,10 @@ export const {
           session.user.role = token.role;
         }
 
+        if (token.roles) {
+          session.user.roles = token.roles;
+        }
+
         if (token.status) {
           session.user.status = token.status;
         }
@@ -96,6 +124,12 @@ export const {
 
         session.user.name = token.name;
         session.user.image = token.picture;
+
+        // Stripe fields
+        session.user.stripeCustomerId = token.stripeCustomerId;
+        session.user.stripeSubscriptionId = token.stripeSubscriptionId;
+        session.user.stripePriceId = token.stripePriceId;
+        session.user.stripeCurrentPeriodEnd = token.stripeCurrentPeriodEnd;
       }
 
       return session;
@@ -112,8 +146,15 @@ export const {
       token.email = dbUser.email;
       token.picture = dbUser.image;
       token.role = dbUser.role;
+      token.roles = dbUser.roles;
       token.status = dbUser.status;
       token.plan = dbUser.plan;
+
+      // Stripe fields
+      token.stripeCustomerId = dbUser.stripeCustomerId;
+      token.stripeSubscriptionId = dbUser.stripeSubscriptionId;
+      token.stripePriceId = dbUser.stripePriceId;
+      token.stripeCurrentPeriodEnd = dbUser.stripeCurrentPeriodEnd;
 
       return token;
     },

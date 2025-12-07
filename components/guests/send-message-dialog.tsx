@@ -1,8 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import { toast } from "sonner";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
+import { ArrowUpRight } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -17,7 +19,7 @@ import { Label } from "@/components/ui/label";
 import { Icons } from "@/components/shared/icons";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { sendInvite, sendReminder, ChannelType } from "@/actions/notifications";
+import { sendInvite, sendReminder, ChannelType, getCurrentUserUsage } from "@/actions/notifications";
 import { getAvailableChannels } from "@/actions/messaging-settings";
 
 interface SendMessageDialogProps {
@@ -25,6 +27,7 @@ interface SendMessageDialogProps {
   onOpenChange: (open: boolean) => void;
   guestIds: string[];
   guestNames?: string[];
+  guestStatuses?: ("PENDING" | "ACCEPTED" | "DECLINED" | "MAYBE")[];
   eventId: string;
   mode: "single" | "bulk";
 }
@@ -64,52 +67,103 @@ interface ChannelStatus {
   sms: { enabled: boolean; configured: boolean };
 }
 
+interface UsageStatus {
+  canSendMessages: boolean;
+  whatsappRemaining: number;
+  smsRemaining: number;
+}
+
 export function SendMessageDialog({
   open,
   onOpenChange,
   guestIds,
   guestNames,
+  guestStatuses,
   eventId,
   mode,
 }: SendMessageDialogProps) {
   const t = useTranslations("guests");
   const tc = useTranslations("common");
   const tn = useTranslations("notifications");
+  const locale = useLocale();
+  const isRTL = locale === "he";
   const [messageType, setMessageType] = useState<MessageType>("INVITE");
   const [channel, setChannel] = useState<ChannelType>("SMS");
   const [sending, setSending] = useState(false);
   const [progress, setProgress] = useState(0);
   const [results, setResults] = useState<{ success: number; failed: number; errors: string[] } | null>(null);
   const [channelStatus, setChannelStatus] = useState<ChannelStatus | null>(null);
+  const [usageStatus, setUsageStatus] = useState<UsageStatus | null>(null);
   const [loadingChannels, setLoadingChannels] = useState(true);
+  const [showConfirmation, setShowConfirmation] = useState(false);
 
-  // Fetch available channels when dialog opens
+  // Count guests who already accepted
+  const acceptedGuestsCount = guestStatuses?.filter(s => s === "ACCEPTED").length || 0;
+  const hasAcceptedGuests = acceptedGuestsCount > 0;
+
+  // Fetch available channels and user usage when dialog opens
   useEffect(() => {
     if (open) {
       setProgress(0);
       setResults(null);
       setSending(false);
       setLoadingChannels(true);
+      setShowConfirmation(false);
 
-      getAvailableChannels().then((result) => {
-        if (result.success && result.channels) {
-          setChannelStatus(result.channels);
-          // Auto-select first enabled channel
-          if (result.channels.sms.enabled) {
+      // Fetch channels and usage in parallel
+      Promise.all([
+        getAvailableChannels(),
+        getCurrentUserUsage()
+      ]).then(([channelsResult, usageResult]) => {
+        let channels: ChannelStatus | null = null;
+        let usage: UsageStatus | null = null;
+
+        if (channelsResult.success && channelsResult.channels) {
+          channels = channelsResult.channels;
+          setChannelStatus(channels);
+        }
+
+        if (usageResult.success) {
+          usage = {
+            canSendMessages: usageResult.canSendMessages,
+            whatsappRemaining: usageResult.usage.whatsapp.remaining,
+            smsRemaining: usageResult.usage.sms.remaining,
+          };
+          setUsageStatus(usage);
+        }
+
+        // Auto-select first channel that is both enabled AND has quota
+        if (channels && usage) {
+          const smsAvailable = channels.sms.enabled && usage.smsRemaining > 0;
+          const whatsappAvailable = channels.whatsapp.enabled && usage.whatsappRemaining > 0;
+
+          if (smsAvailable) {
             setChannel("SMS");
-          } else if (result.channels.whatsapp.enabled) {
+          } else if (whatsappAvailable) {
             setChannel("WHATSAPP");
           }
         }
+
         setLoadingChannels(false);
       });
     }
   }, [open]);
 
-  const handleSend = async () => {
+  const handleSendClick = () => {
+    // If there are accepted guests, show confirmation first
+    if (hasAcceptedGuests && !showConfirmation) {
+      setShowConfirmation(true);
+      return;
+    }
+    // Otherwise proceed to send
+    executeSend();
+  };
+
+  const executeSend = async () => {
     setSending(true);
     setProgress(0);
     setResults(null);
+    setShowConfirmation(false);
 
     let successCount = 0;
     let failedCount = 0;
@@ -162,6 +216,7 @@ export function SendMessageDialog({
   };
 
   const noChannelsAvailable = channelStatus && !channelStatus.whatsapp.enabled && !channelStatus.sms.enabled;
+  const noQuotaAvailable = usageStatus && !usageStatus.canSendMessages;
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
@@ -181,6 +236,31 @@ export function SendMessageDialog({
         {loadingChannels ? (
           <div className="flex items-center justify-center py-8">
             <Icons.spinner className="h-6 w-6 animate-spin" />
+          </div>
+        ) : noQuotaAvailable ? (
+          <div className="py-6 text-center">
+            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-900/50">
+              <ArrowUpRight className="h-8 w-8 text-amber-600 dark:text-amber-400" />
+            </div>
+            <h3 className="text-lg font-semibold">
+              {isRTL ? "שדרג כדי לשלוח הודעות" : "Upgrade to Send Messages"}
+            </h3>
+            <p className="mt-2 text-sm text-muted-foreground max-w-xs mx-auto">
+              {isRTL
+                ? "התוכנית החינמית שלך לא כוללת הודעות. שדרג לתוכנית בתשלום כדי להתחיל לשלוח הזמנות ותזכורות לאורחים."
+                : "Your free plan doesn't include messages. Upgrade to a paid plan to start sending invitations and reminders to your guests."}
+            </p>
+            <DialogFooter className="mt-6 flex-col sm:flex-row gap-2">
+              <Button variant="outline" onClick={handleClose}>
+                {tc("cancel")}
+              </Button>
+              <Button asChild>
+                <Link href={`/${locale}/dashboard/billing`} className="gap-1">
+                  {isRTL ? "שדרג עכשיו" : "Upgrade Now"}
+                  <ArrowUpRight className="h-4 w-4" />
+                </Link>
+              </Button>
+            </DialogFooter>
           </div>
         ) : noChannelsAvailable ? (
           <div className="py-6 text-center">
@@ -204,10 +284,16 @@ export function SendMessageDialog({
                 <div className="flex gap-2">
                   {CHANNELS.map((ch) => {
                     const IconComponent = Icons[ch.icon];
-                    const isEnabled = ch.value === "WHATSAPP"
+                    const isChannelEnabled = ch.value === "WHATSAPP"
                       ? channelStatus?.whatsapp.enabled
                       : channelStatus?.sms.enabled;
+                    const remainingQuota = ch.value === "WHATSAPP"
+                      ? usageStatus?.whatsappRemaining ?? 0
+                      : usageStatus?.smsRemaining ?? 0;
+                    const hasQuota = remainingQuota > 0;
+                    const isEnabled = isChannelEnabled && hasQuota;
                     const isSelected = channel === ch.value;
+                    const noQuotaLabel = isRTL ? "אזלה המכסה" : "No quota";
 
                     return (
                       <button
@@ -215,7 +301,7 @@ export function SendMessageDialog({
                         type="button"
                         onClick={() => isEnabled && setChannel(ch.value)}
                         disabled={!isEnabled || sending}
-                        className={`flex flex-1 items-center justify-center gap-2 rounded-lg border p-3 transition-colors ${
+                        className={`flex flex-1 flex-col items-center justify-center gap-1 rounded-lg border p-3 transition-colors ${
                           isSelected && isEnabled
                             ? "border-primary bg-primary/5"
                             : isEnabled
@@ -223,15 +309,27 @@ export function SendMessageDialog({
                             : "border-border bg-muted/30 opacity-50 cursor-not-allowed"
                         }`}
                       >
-                        <IconComponent className="h-4 w-4" />
-                        <span className="font-medium">{tn(ch.labelKey as "whatsapp" | "sms")}</span>
-                        {!isEnabled && (
-                          <Badge variant="outline" className="ml-1 text-xs">
-                            {t("offline")}
-                          </Badge>
-                        )}
-                        {isSelected && isEnabled && (
-                          <Icons.check className="h-4 w-4 text-primary" />
+                        <div className="flex items-center gap-2">
+                          <IconComponent className="h-4 w-4" />
+                          <span className="font-medium">{tn(ch.labelKey as "whatsapp" | "sms")}</span>
+                          {!isChannelEnabled && (
+                            <Badge variant="outline" className="ml-1 text-xs">
+                              {t("offline")}
+                            </Badge>
+                          )}
+                          {isChannelEnabled && !hasQuota && (
+                            <Badge variant="destructive" className="ml-1 text-xs">
+                              {noQuotaLabel}
+                            </Badge>
+                          )}
+                          {isSelected && isEnabled && (
+                            <Icons.check className="h-4 w-4 text-primary" />
+                          )}
+                        </div>
+                        {isChannelEnabled && (
+                          <span className={`text-xs ${hasQuota ? 'text-muted-foreground' : 'text-destructive'}`}>
+                            {remainingQuota} {isRTL ? 'נותרו' : 'remaining'}
+                          </span>
                         )}
                       </button>
                     );
@@ -309,15 +407,41 @@ export function SendMessageDialog({
               )}
             </div>
 
+            {/* Confirmation for accepted guests */}
+            {showConfirmation && (
+              <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 dark:border-amber-800 dark:bg-amber-900/30">
+                <div className="flex items-start gap-3">
+                  <Icons.warning className="h-5 w-5 shrink-0 text-amber-600 dark:text-amber-400 mt-0.5" />
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-amber-800 dark:text-amber-200">
+                      {isRTL
+                        ? `${acceptedGuestsCount} ${acceptedGuestsCount === 1 ? "אורח כבר אישר" : "אורחים כבר אישרו"} הגעה`
+                        : `${acceptedGuestsCount} ${acceptedGuestsCount === 1 ? "guest has" : "guests have"} already accepted`}
+                    </p>
+                    <p className="mt-1 text-xs text-amber-700 dark:text-amber-300">
+                      {isRTL
+                        ? "האם בכל זאת לשלוח להם את ההודעה?"
+                        : "Do you still want to send them a message?"}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
             <DialogFooter>
               <Button variant="outline" onClick={handleClose} disabled={sending}>
                 {tc("cancel")}
               </Button>
-              <Button onClick={handleSend} disabled={sending}>
+              <Button onClick={handleSendClick} disabled={sending}>
                 {sending ? (
                   <>
                     <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
                     {t("sending")}
+                  </>
+                ) : showConfirmation ? (
+                  <>
+                    <Icons.check className="mr-2 h-4 w-4" />
+                    {isRTL ? "שלח בכל זאת" : "Send Anyway"}
                   </>
                 ) : (
                   <>

@@ -273,12 +273,19 @@ export async function sendSms(
  * Reference: https://www.twilio.com/docs/whatsapp/quickstart
  *
  * Important: WhatsApp requires the "whatsapp:" prefix before phone numbers
+ *
+ * For WhatsApp Business API, use contentSid (approved templates) instead of body.
+ * Free-form messages (body) only work within 24-hour window after user initiates contact.
  */
 export async function sendWhatsApp(
   client: TwilioClient,
   fromNumber: string,
   toNumber: string,
-  body: string
+  body: string,
+  options?: {
+    contentSid?: string;
+    contentVariables?: Record<string, string>;
+  }
 ): Promise<{
   success: boolean;
   messageId?: string;
@@ -294,20 +301,68 @@ export async function sendWhatsApp(
       : `whatsapp:${fromNumber}`;
     const to = toNumber.startsWith("whatsapp:") ? toNumber : `whatsapp:${toNumber}`;
 
-    // Send the message using Twilio's messages.create API
-    const message = await client.messages.create({
-      body,
-      from,
-      to,
-    });
+    console.log("=".repeat(60));
+    console.log("📱 SENDING WHATSAPP MESSAGE VIA TWILIO");
+    console.log("=".repeat(60));
+    console.log(`From: ${from}`);
+    console.log(`To: ${to}`);
 
+    let message;
+
+    if (options?.contentSid) {
+      // Use Content Template (required for WhatsApp Business API outside 24h window)
+      console.log(`Using Content Template SID: ${options.contentSid}`);
+      console.log(`Content Variables: ${JSON.stringify(options.contentVariables || {})}`);
+      console.log("-".repeat(60));
+
+      const messageParams: any = {
+        from,
+        to,
+        contentSid: options.contentSid,
+      };
+
+      // Add content variables if provided
+      if (options.contentVariables && Object.keys(options.contentVariables).length > 0) {
+        messageParams.contentVariables = JSON.stringify(options.contentVariables);
+      }
+
+      message = await client.messages.create(messageParams);
+    } else {
+      // Use free-form body (only works within 24h session window)
+      console.log(`Message length: ${body.length} characters`);
+      console.log("-".repeat(60));
+      console.log("⚠️  Using free-form message - this only works within 24h session window");
+
+      message = await client.messages.create({
+        body,
+        from,
+        to,
+      });
+    }
+
+    console.log("✅ TWILIO API RESPONSE:");
+    console.log(`   Message SID: ${message.sid}`);
+    console.log(`   Status: ${message.status}`);
+    console.log(`   Direction: ${message.direction}`);
+    console.log(`   Date Created: ${message.dateCreated}`);
+    console.log(`   Error Code: ${message.errorCode || "none"}`);
+    console.log(`   Error Message: ${message.errorMessage || "none"}`);
+    console.log("=".repeat(60));
+
+    // Note: Twilio returns 'queued' or 'accepted' initially, not 'delivered'
+    // The actual delivery status comes via webhook
     return {
       success: true,
       messageId: message.sid,
       status: message.status,
     };
   } catch (error: any) {
-    console.error("Twilio WhatsApp error:", error);
+    console.error("=".repeat(60));
+    console.error("❌ TWILIO WHATSAPP ERROR:");
+    console.error(`   Error Code: ${error.code}`);
+    console.error(`   Error Message: ${error.message}`);
+    console.error(`   More Info: ${error.moreInfo || "N/A"}`);
+    console.error("=".repeat(60));
 
     // Use centralized error messages for known error codes
     const errorMessage = error.code && ERROR_MESSAGES[error.code]

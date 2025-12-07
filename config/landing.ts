@@ -2,51 +2,48 @@ import { FeatureLdg, InfoLdg, TestimonialType } from "types";
 
 export const infos: InfoLdg[] = [
   {
-    title: "Empower your projects",
+    title: "Streamline Your Wedding Planning",
     description:
-      "Unlock the full potential of your projects with our open-source SaaS platform. Collaborate seamlessly, innovate effortlessly, and scale limitlessly.",
+      "Go Approval takes the stress out of managing wedding RSVPs. From sending invitations to tracking responses, everything is handled in one beautiful dashboard.",
     image: "/_static/illustrations/work-from-home.jpg",
     list: [
       {
-        title: "Collaborative",
-        description: "Work together with your team members in real-time.",
-        icon: "laptop",
+        title: "WhatsApp & SMS",
+        description: "Send invitations through channels your guests actually use.",
+        icon: "messageCircle",
       },
       {
-        title: "Innovative",
-        description: "Stay ahead of the curve with access constant updates.",
-        icon: "settings",
+        title: "Real-time Tracking",
+        description: "See who's coming, who's not, and who hasn't responded yet.",
+        icon: "chart",
       },
       {
-        title: "Scalable",
-        description:
-          "Our platform offers the scalability needed to adapt to your needs.",
-        icon: "search",
+        title: "Beautiful RSVP Pages",
+        description: "Customizable RSVP pages that match your wedding style.",
+        icon: "palette",
       },
     ],
   },
   {
-    title: "Seamless Integration",
+    title: "Everything You Need in One Place",
     description:
-      "Integrate our open-source SaaS seamlessly into your existing workflows. Effortlessly connect with your favorite tools and services for a streamlined experience.",
+      "Import your guest list, customize your messages, and let Go Approval handle the rest. Track responses, send reminders, and export reports effortlessly.",
     image: "/_static/illustrations/work-from-home.jpg",
     list: [
       {
-        title: "Flexible",
-        description:
-          "Customize your integrations to fit your unique requirements.",
-        icon: "laptop",
+        title: "Easy Import",
+        description: "Import guests from Excel or add them manually in seconds.",
+        icon: "fileText",
       },
       {
-        title: "Efficient",
-        description: "Streamline your processes and reducing manual effort.",
-        icon: "search",
+        title: "Smart Reminders",
+        description: "Automatic reminders to guests who haven't responded.",
+        icon: "bell",
       },
       {
-        title: "Reliable",
-        description:
-          "Rely on our robust infrastructure and comprehensive documentation.",
-        icon: "settings",
+        title: "Detailed Reports",
+        description: "Export guest lists and dietary requirements for your venue.",
+        icon: "download",
       },
     ],
   },
@@ -54,97 +51,97 @@ export const infos: InfoLdg[] = [
 
 export const features: FeatureLdg[] = [
   {
-    title: "Feature 1",
+    title: "WhatsApp Invitations",
     description:
-      "Amet praesentium deserunt ex commodi tempore fuga voluptatem. Sit, sapiente.",
-    link: "/",
-    icon: "nextjs",
+      "Send personalized wedding invitations directly to WhatsApp. Higher open rates than email.",
+    link: "/pricing",
+    icon: "messageCircle",
   },
   {
-    title: "Feature 2",
+    title: "SMS Messaging",
     description:
-      "Amet praesentium deserunt ex commodi tempore fuga voluptatem. Sit, sapiente.",
-    link: "/",
-    icon: "google",
+      "Reach guests without WhatsApp via SMS. Perfect for older family members.",
+    link: "/pricing",
+    icon: "phone",
   },
   {
-    title: "Feature 3",
+    title: "Custom RSVP Pages",
     description:
-      "Amet praesentium deserunt ex commodi tempore fuga voluptatem. Sit, sapiente.",
-    link: "/",
-    icon: "gitHub",
+      "Beautiful, branded RSVP pages with your colors, fonts, and wedding details.",
+    link: "/pricing",
+    icon: "palette",
   },
   {
-    title: "Feature 4",
+    title: "Guest Management",
     description:
-      "Amet praesentium deserunt ex commodi tempore fuga voluptatem. Sit, sapiente.",
-    link: "/",
-    icon: "laptop",
+      "Organize guests by family, side (bride/groom), and groups. Import from Excel.",
+    link: "/pricing",
+    icon: "users",
   },
   {
-    title: "Feature 5",
+    title: "Real-time Dashboard",
     description:
-      "Amet praesentium deserunt ex commodi tempore fuga voluptatem. Sit, sapiente.",
-    link: "/",
-    icon: "user",
+      "Track RSVPs in real-time. See confirmed, declined, and pending responses at a glance.",
+    link: "/pricing",
+    icon: "chart",
   },
   {
-    title: "Feature 6",
+    title: "Smart Analytics",
     description:
-      "Amet praesentium deserunt ex commodi tempore fuga voluptatem. Sit, sapiente.",
-    link: "/",
-    icon: "copy",
+      "Know exactly how many guests are coming, dietary requirements, and more.",
+    link: "/pricing",
+    icon: "lineChart",
   },
 ];
 
 export const testimonials: TestimonialType[] = [
   {
-    name: "John Doe",
-    job: "Full Stack Developer",
-    image: "https://randomuser.me/api/portraits/men/1.jpg",
+    name: "Sarah & David",
+    job: "Married June 2024",
+    image: "https://randomuser.me/api/portraits/women/1.jpg",
     review:
-      "The next-saas-stripe-starter repo has truly revolutionized my development workflow. With its comprehensive features and seamless integration with Stripe, I've been able to build and deploy projects faster than ever before. The documentation is clear and concise, making it easy to navigate through the setup process. I highly recommend next-saas-stripe-starter to any developer.",
+      "Go Approval saved us so much time! We had 300 guests and tracking RSVPs was a nightmare before. The WhatsApp integration is genius - everyone responded within days.",
   },
   {
-    name: "Alice Smith",
-    job: "UI/UX Designer",
+    name: "Rachel Cohen",
+    job: "Mother of the Bride",
     image: "https://randomuser.me/api/portraits/women/2.jpg",
     review:
-      "Thanks to next-saas-stripe-starter, I've been able to create modern and attractive user interfaces in record time. The starter kit provides a solid foundation for building sleek and intuitive designs, allowing me to focus more on the creative aspects of my work.",
+      "As a mom helping plan my daughter's wedding, I was worried about the technology. But Go Approval is so easy to use. Even my husband figured it out!",
   },
   {
-    name: "David Johnson",
-    job: "DevOps Engineer",
+    name: "Michael & Noa",
+    job: "Married August 2024",
     image: "https://randomuser.me/api/portraits/men/3.jpg",
     review:
-      "Thanks to next-saas-stripe-starter, I was able to streamline the entire process and get payments up and running in no time. ",
+      "The automatic reminders feature is amazing. We didn't have to chase anyone - the system did it for us. Highly recommend for busy couples.",
   },
   {
-    name: "Michael Wilson",
-    job: "Project Manager",
-    image: "https://randomuser.me/api/portraits/men/5.jpg",
-    review:
-      "I'm impressed by the quality of code and clear documentation of next-saas-stripe-starter. Kudos to the team!",
-  },
-  {
-    name: "Sophia Garcia",
-    job: "Data Analyst",
-    image: "https://randomuser.me/api/portraits/women/6.jpg",
-    review:
-      "next-saas-stripe-starter provided me with the tools I needed to efficiently manage user data. Thank you so much!",
-  },
-  {
-    name: "Emily Brown",
-    job: "Marketing Manager",
+    name: "Yael Levi",
+    job: "Wedding Planner",
     image: "https://randomuser.me/api/portraits/women/4.jpg",
     review:
-      "next-saas-stripe-starter has been an invaluable asset in my role as a marketing manager. With its seamless integration with Stripe, I've been able to launch targeted marketing campaigns with built-in payment functionality, allowing us to monetize our products and services more effectively.",
+      "I recommend Go Approval to all my clients now. It's professional, reliable, and makes my job so much easier. The reporting features are excellent.",
   },
   {
-    name: "Jason Stan",
-    job: "Web Designer",
-    image: "https://randomuser.me/api/portraits/men/9.jpg",
+    name: "Daniel & Maya",
+    job: "Married December 2024",
+    image: "https://randomuser.me/api/portraits/men/5.jpg",
     review:
-      "Thanks to next-saas-stripe-starter, I've been able to create modern and attractive user interfaces in record time. The starter kit provides a solid foundation for building sleek and intuitive designs, allowing me to focus more on the creative aspects of my work.",
+      "We loved being able to customize our RSVP page to match our wedding theme. The preview feature helped us get it perfect before sending.",
+  },
+  {
+    name: "Amit Shapira",
+    job: "Event Venue Manager",
+    image: "https://randomuser.me/api/portraits/men/6.jpg",
+    review:
+      "Couples who use Go Approval always have accurate guest counts. The export feature makes our catering planning seamless. Great product!",
+  },
+  {
+    name: "Shira & Oren",
+    job: "Married October 2024",
+    image: "https://randomuser.me/api/portraits/women/7.jpg",
+    review:
+      "Managing RSVPs for our wedding of 400 guests was effortless with Go Approval. The SMS feature was perfect for reaching our grandparents.",
   },
 ];

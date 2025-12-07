@@ -27,6 +27,7 @@ interface ParsedGuest {
   email?: string;
   side?: "bride" | "groom" | "both";
   groupName?: string;
+  expectedGuests?: number;
   notes?: string;
 }
 
@@ -38,6 +39,54 @@ export function ImportGuestsDialog({ eventId }: ImportGuestsDialogProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [parsedGuests, setParsedGuests] = useState<ParsedGuest[]>([]);
   const [fileName, setFileName] = useState("");
+
+  const downloadTemplate = useCallback(() => {
+    // Create template data with example rows
+    const templateData = [
+      {
+        "שם / Name": "ישראל ישראלי",
+        "טלפון / Phone": "0501234567",
+        "צד / Side": "חתן",
+        "קבוצה / Group": "משפחה",
+        "מספר אורחים / Guests": 2,
+        "הערות / Notes": ""
+      },
+      {
+        "שם / Name": "שרה כהן",
+        "טלפון / Phone": "0529876543",
+        "צד / Side": "כלה",
+        "קבוצה / Group": "חברים",
+        "מספר אורחים / Guests": 1,
+        "הערות / Notes": ""
+      },
+      {
+        "שם / Name": "David Smith",
+        "טלפון / Phone": "+1234567890",
+        "צד / Side": "both",
+        "קבוצה / Group": "work",
+        "מספר אורחים / Guests": 3,
+        "הערות / Notes": "VIP guest"
+      }
+    ];
+
+    const worksheet = XLSX.utils.json_to_sheet(templateData);
+
+    // Set column widths
+    worksheet["!cols"] = [
+      { wch: 20 }, // Name
+      { wch: 15 }, // Phone
+      { wch: 12 }, // Side
+      { wch: 12 }, // Group
+      { wch: 18 }, // Guests
+      { wch: 20 }, // Notes
+    ];
+
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Guests");
+
+    // Generate and download
+    XLSX.writeFile(workbook, "guests-template.xlsx");
+  }, []);
 
   const parseFile = useCallback((file: File) => {
     const reader = new FileReader();
@@ -51,13 +100,14 @@ export function ImportGuestsDialog({ eventId }: ImportGuestsDialogProps) {
         const jsonData = XLSX.utils.sheet_to_json(worksheet);
 
         const guests: ParsedGuest[] = jsonData.map((row: Record<string, unknown>) => {
-          // Try to find columns by common names (Hebrew and English)
-          const nameCol = row["name"] || row["Name"] || row["שם"] || row["שם מלא"];
-          const phoneCol = row["phone"] || row["Phone"] || row["phoneNumber"] || row["טלפון"];
+          // Try to find columns by common names (Hebrew, English, and bilingual from template)
+          const nameCol = row["שם / Name"] || row["name"] || row["Name"] || row["שם"] || row["שם מלא"];
+          const phoneCol = row["טלפון / Phone"] || row["phone"] || row["Phone"] || row["phoneNumber"] || row["טלפון"];
           const emailCol = row["email"] || row["Email"] || row["אימייל"];
-          const sideCol = row["side"] || row["Side"] || row["צד"];
-          const groupCol = row["group"] || row["Group"] || row["groupName"] || row["קבוצה"];
-          const notesCol = row["notes"] || row["Notes"] || row["הערות"];
+          const sideCol = row["צד / Side"] || row["side"] || row["Side"] || row["צד"];
+          const groupCol = row["קבוצה / Group"] || row["group"] || row["Group"] || row["groupName"] || row["קבוצה"];
+          const expectedGuestsCol = row["מספר אורחים / Guests"] || row["expectedGuests"] || row["Expected Guests"] || row["guests"] || row["מספר אורחים"] || row["כמות"];
+          const notesCol = row["הערות / Notes"] || row["notes"] || row["Notes"] || row["הערות"];
 
           // Map side values
           let side: "bride" | "groom" | "both" | undefined;
@@ -66,12 +116,25 @@ export function ImportGuestsDialog({ eventId }: ImportGuestsDialogProps) {
           else if (sideValue.includes("groom") || sideValue.includes("חתן")) side = "groom";
           else if (sideValue.includes("both") || sideValue.includes("משותף")) side = "both";
 
+          // Map group values
+          let groupName: string | undefined;
+          const groupValue = String(groupCol || "").toLowerCase();
+          if (groupValue.includes("family") || groupValue.includes("משפחה")) groupName = "family";
+          else if (groupValue.includes("friend") || groupValue.includes("חבר")) groupName = "friends";
+          else if (groupValue.includes("work") || groupValue.includes("עבודה")) groupName = "work";
+          else if (groupValue.includes("other") || groupValue.includes("אחר")) groupName = "other";
+          else if (groupCol) groupName = String(groupCol).trim();
+
+          // Parse expected guests
+          const expectedGuests = expectedGuestsCol ? parseInt(String(expectedGuestsCol), 10) : undefined;
+
           return {
             name: String(nameCol || "").trim(),
             phoneNumber: phoneCol ? String(phoneCol).trim() : undefined,
             email: emailCol ? String(emailCol).trim() : undefined,
             side,
-            groupName: groupCol ? String(groupCol).trim() : undefined,
+            groupName,
+            expectedGuests: expectedGuests && !isNaN(expectedGuests) && expectedGuests > 0 ? expectedGuests : 1,
             notes: notesCol ? String(notesCol).trim() : undefined,
           };
         }).filter((g) => g.name); // Filter out empty rows
@@ -132,7 +195,7 @@ export function ImportGuestsDialog({ eventId }: ImportGuestsDialogProps) {
           {t("import")}
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-3xl">
         <DialogHeader>
           <DialogTitle>{t("import")}</DialogTitle>
           <DialogDescription>
@@ -141,6 +204,18 @@ export function ImportGuestsDialog({ eventId }: ImportGuestsDialogProps) {
         </DialogHeader>
 
         <div className="space-y-4">
+          {/* Download Template Button */}
+          <div className="flex items-center justify-between rounded-lg border bg-muted/30 p-3">
+            <div className="space-y-0.5">
+              <p className="text-sm font-medium">{t("downloadTemplate")}</p>
+              <p className="text-xs text-muted-foreground">{t("downloadTemplateDescription")}</p>
+            </div>
+            <Button variant="outline" size="sm" onClick={downloadTemplate}>
+              <Icons.download className="me-2 h-4 w-4" />
+              {t("downloadTemplate")}
+            </Button>
+          </div>
+
           {/* File Upload */}
           <div className="rounded-lg border-2 border-dashed p-8 text-center">
             <input
@@ -186,8 +261,9 @@ export function ImportGuestsDialog({ eventId }: ImportGuestsDialogProps) {
                     <tr>
                       <th className="p-2 text-start">{t("name")}</th>
                       <th className="p-2 text-start">{t("phone")}</th>
-                      <th className="p-2 text-start">{t("email")}</th>
                       <th className="p-2 text-start">{t("side")}</th>
+                      <th className="p-2 text-start">{t("group")}</th>
+                      <th className="p-2 text-start">{t("guestCount")}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -195,8 +271,9 @@ export function ImportGuestsDialog({ eventId }: ImportGuestsDialogProps) {
                       <tr key={i} className="border-t">
                         <td className="p-2">{guest.name}</td>
                         <td className="p-2">{guest.phoneNumber || "-"}</td>
-                        <td className="p-2">{guest.email || "-"}</td>
-                        <td className="p-2">{guest.side || "-"}</td>
+                        <td className="p-2">{guest.side ? t(`sides.${guest.side}` as "sides.bride" | "sides.groom" | "sides.both") : "-"}</td>
+                        <td className="p-2">{guest.groupName ? t(`groups.${guest.groupName}` as "groups.family" | "groups.friends" | "groups.work" | "groups.other") : "-"}</td>
+                        <td className="p-2">{guest.expectedGuests || 1}</td>
                       </tr>
                     ))}
                   </tbody>

@@ -74,6 +74,7 @@ export async function getNotificationService(): Promise<NotificationService> {
 
   // Use cached service if available and not expired
   if (cachedService && now - lastCheck < CACHE_TTL) {
+    console.log(`[NotificationService] Using cached ${cachedService instanceof TwilioNotificationService ? 'REAL Twilio' : 'MOCK'} service`);
     return cachedService;
   }
 
@@ -81,10 +82,15 @@ export async function getNotificationService(): Promise<NotificationService> {
   const useRealService = await isRealServiceConfigured();
 
   if (useRealService) {
-    console.log("Using Twilio notification service");
+    console.log("=".repeat(60));
+    console.log("🚀 [NotificationService] Using REAL Twilio notification service");
+    console.log("=".repeat(60));
     cachedService = new TwilioNotificationService();
   } else {
-    console.log("Using mock notification service (real service not configured)");
+    console.log("=".repeat(60));
+    console.log("⚠️ [NotificationService] Using MOCK notification service");
+    console.log("   Real service not configured - check admin messaging settings");
+    console.log("=".repeat(60));
     cachedService = new MockNotificationService();
   }
 

@@ -1,13 +1,181 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { UserRole, NotificationType, NotificationChannel } from "@prisma/client";
+import { UserRole, NotificationType, NotificationChannel, PlanTier } from "@prisma/client";
 
 import { prisma } from "@/lib/db";
 import { getCurrentUser } from "@/lib/session";
 import { getNotificationService } from "@/lib/notifications";
+import { PLAN_LIMITS } from "@/config/plans";
 
 export type ChannelType = "WHATSAPP" | "SMS" | "AUTO";
+
+// Helper to check and update usage
+async function checkAndUpdateUsage(
+  userId: string,
+  channel: NotificationChannel,
+  count: number = 1
+): Promise<{ allowed: boolean; remaining: number; error?: string }> {
+  // Get user with usage tracking
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    include: { usageTracking: true },
+  });
+
+  if (!user) {
+    return { allowed: false, remaining: 0, error: "User not found" };
+  }
+
+  const planLimits = PLAN_LIMITS[user.plan];
+  const usage = user.usageTracking || {
+    whatsappSent: 0,
+    smsSent: 0,
+    whatsappBonus: 0,
+    smsBonus: 0,
+  };
+
+  if (channel === NotificationChannel.WHATSAPP) {
+    const totalAllowed = planLimits.maxWhatsappMessages + (usage.whatsappBonus || 0);
+    const remaining = totalAllowed - usage.whatsappSent;
+
+    if (remaining < count) {
+      return {
+        allowed: false,
+        remaining,
+        error: `WhatsApp message limit reached. ${remaining} messages remaining.`,
+      };
+    }
+
+    // Update usage
+    await prisma.usageTracking.upsert({
+      where: { userId },
+      create: {
+        userId,
+        whatsappSent: count,
+        periodStart: new Date(),
+      },
+      update: {
+        whatsappSent: { increment: count },
+      },
+    });
+
+    return { allowed: true, remaining: remaining - count };
+  }
+
+  if (channel === NotificationChannel.SMS) {
+    const totalAllowed = planLimits.maxSmsMessages + (usage.smsBonus || 0);
+    const remaining = totalAllowed - usage.smsSent;
+
+    if (remaining < count) {
+      return {
+        allowed: false,
+        remaining,
+        error: `SMS message limit reached. ${remaining} messages remaining.`,
+      };
+    }
+
+    // Update usage
+    await prisma.usageTracking.upsert({
+      where: { userId },
+      create: {
+        userId,
+        smsSent: count,
+        periodStart: new Date(),
+      },
+      update: {
+        smsSent: { increment: count },
+      },
+    });
+
+    return { allowed: true, remaining: remaining - count };
+  }
+
+  return { allowed: true, remaining: 0 };
+}
+
+// Helper to get remaining messages for a user (internal use)
+async function getRemainingMessages(userId: string): Promise<{
+  whatsapp: number;
+  sms: number;
+}> {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    include: { usageTracking: true },
+  });
+
+  if (!user) {
+    return { whatsapp: 0, sms: 0 };
+  }
+
+  const planLimits = PLAN_LIMITS[user.plan];
+  const usage = user.usageTracking;
+
+  return {
+    whatsapp: Math.max(
+      0,
+      planLimits.maxWhatsappMessages + (usage?.whatsappBonus || 0) - (usage?.whatsappSent || 0)
+    ),
+    sms: Math.max(
+      0,
+      planLimits.maxSmsMessages + (usage?.smsBonus || 0) - (usage?.smsSent || 0)
+    ),
+  };
+}
+
+// Public function to get current user's message usage and limits
+export async function getCurrentUserUsage() {
+  try {
+    const user = await getCurrentUser();
+
+    if (!user || user.role !== UserRole.ROLE_WEDDING_OWNER) {
+      return { error: "Unauthorized" };
+    }
+
+    const dbUser = await prisma.user.findUnique({
+      where: { id: user.id },
+      include: { usageTracking: true },
+    });
+
+    if (!dbUser) {
+      return { error: "User not found" };
+    }
+
+    const planLimits = PLAN_LIMITS[dbUser.plan];
+    const usage = dbUser.usageTracking;
+
+    const whatsappSent = usage?.whatsappSent || 0;
+    const smsSent = usage?.smsSent || 0;
+    const whatsappBonus = usage?.whatsappBonus || 0;
+    const smsBonus = usage?.smsBonus || 0;
+    const whatsappTotal = planLimits.maxWhatsappMessages + whatsappBonus;
+    const smsTotal = planLimits.maxSmsMessages + smsBonus;
+
+    return {
+      success: true,
+      plan: dbUser.plan,
+      usage: {
+        whatsapp: {
+          sent: whatsappSent,
+          limit: planLimits.maxWhatsappMessages,
+          bonus: whatsappBonus,
+          total: whatsappTotal,
+          remaining: Math.max(0, whatsappTotal - whatsappSent),
+        },
+        sms: {
+          sent: smsSent,
+          limit: planLimits.maxSmsMessages,
+          bonus: smsBonus,
+          total: smsTotal,
+          remaining: Math.max(0, smsTotal - smsSent),
+        },
+      },
+      canSendMessages: whatsappTotal > 0 || smsTotal > 0,
+    };
+  } catch (error) {
+    console.error("Error fetching user usage:", error);
+    return { error: "Failed to fetch usage" };
+  }
+}
 
 export async function sendInvite(guestId: string, channel: ChannelType = "AUTO") {
   try {
@@ -27,9 +195,22 @@ export async function sendInvite(guestId: string, channel: ChannelType = "AUTO")
       return { error: "Guest not found" };
     }
 
-    // Send notification
+    // Determine channel to use
     const notificationService = await getNotificationService();
     const preferredChannel = channel === "AUTO" ? undefined : (channel as NotificationChannel);
+
+    // Check usage before sending (estimate channel if AUTO)
+    const effectiveChannel = preferredChannel || (guest.phoneNumber?.startsWith("+") ? NotificationChannel.WHATSAPP : NotificationChannel.SMS);
+    const remaining = await getRemainingMessages(user.id);
+
+    if (effectiveChannel === NotificationChannel.WHATSAPP && remaining.whatsapp <= 0) {
+      return { error: "WhatsApp message limit reached", limitReached: true };
+    }
+    if (effectiveChannel === NotificationChannel.SMS && remaining.sms <= 0) {
+      return { error: "SMS message limit reached", limitReached: true };
+    }
+
+    // Send notification
     const result = await notificationService.sendInvite(guest, guest.weddingEvent, preferredChannel);
 
     // Log to database
@@ -43,6 +224,11 @@ export async function sendInvite(guestId: string, channel: ChannelType = "AUTO")
         sentAt: result.success ? new Date() : null,
       },
     });
+
+    // Update usage tracking if message was sent
+    if (result.success) {
+      await checkAndUpdateUsage(user.id, result.channel, 1);
+    }
 
     revalidatePath(`/dashboard/events/${guest.weddingEventId}`);
 
@@ -80,9 +266,22 @@ export async function sendReminder(guestId: string, channel: ChannelType = "AUTO
       return { error: "Guest has already responded" };
     }
 
-    // Send notification
+    // Determine channel to use
     const notificationService = await getNotificationService();
     const preferredChannel = channel === "AUTO" ? undefined : (channel as NotificationChannel);
+
+    // Check usage before sending
+    const effectiveChannel = preferredChannel || (guest.phoneNumber?.startsWith("+") ? NotificationChannel.WHATSAPP : NotificationChannel.SMS);
+    const remaining = await getRemainingMessages(user.id);
+
+    if (effectiveChannel === NotificationChannel.WHATSAPP && remaining.whatsapp <= 0) {
+      return { error: "WhatsApp message limit reached", limitReached: true };
+    }
+    if (effectiveChannel === NotificationChannel.SMS && remaining.sms <= 0) {
+      return { error: "SMS message limit reached", limitReached: true };
+    }
+
+    // Send notification
     const result = await notificationService.sendReminder(guest, guest.weddingEvent, preferredChannel);
 
     // Log to database
@@ -96,6 +295,11 @@ export async function sendReminder(guestId: string, channel: ChannelType = "AUTO
         sentAt: result.success ? new Date() : null,
       },
     });
+
+    // Update usage tracking if message was sent
+    if (result.success) {
+      await checkAndUpdateUsage(user.id, result.channel, 1);
+    }
 
     revalidatePath(`/dashboard/events/${guest.weddingEventId}`);
 
@@ -114,7 +318,7 @@ export async function sendBulkReminders(eventId: string) {
   try {
     const user = await getCurrentUser();
 
-    if (!user || user.role !== UserRole.ROLE_WEDDING_OWNER) {
+    if (!user || !user.id || user.role !== UserRole.ROLE_WEDDING_OWNER) {
       return { error: "Unauthorized" };
     }
 
@@ -143,14 +347,28 @@ export async function sendBulkReminders(eventId: string) {
       return { success: true, sent: 0, message: "No pending guests to remind" };
     }
 
+    // Check remaining messages
+    const remaining = await getRemainingMessages(user.id);
+    if (remaining.whatsapp <= 0 && remaining.sms <= 0) {
+      return { error: "Message limit reached", limitReached: true };
+    }
+
     // Get notification service once for all guests
     const notificationService = await getNotificationService();
 
     // Send reminders to all pending guests
     let sent = 0;
     let failed = 0;
+    let skippedLimit = 0;
 
     for (const guest of pendingGuests) {
+      // Check remaining before each send
+      const currentRemaining = await getRemainingMessages(user.id);
+      if (currentRemaining.whatsapp <= 0 && currentRemaining.sms <= 0) {
+        skippedLimit++;
+        continue;
+      }
+
       try {
         const result = await notificationService.sendReminder(guest, guest.weddingEvent);
 
@@ -166,6 +384,7 @@ export async function sendBulkReminders(eventId: string) {
         });
 
         if (result.success) {
+          await checkAndUpdateUsage(user.id, result.channel, 1);
           sent++;
         } else {
           failed++;
@@ -182,6 +401,7 @@ export async function sendBulkReminders(eventId: string) {
       success: true,
       sent,
       failed,
+      skippedLimit,
       total: pendingGuests.length,
     };
   } catch (error) {
@@ -194,7 +414,7 @@ export async function sendBulkInvites(eventId: string) {
   try {
     const user = await getCurrentUser();
 
-    if (!user || user.role !== UserRole.ROLE_WEDDING_OWNER) {
+    if (!user || !user.id || user.role !== UserRole.ROLE_WEDDING_OWNER) {
       return { error: "Unauthorized" };
     }
 
@@ -225,14 +445,28 @@ export async function sendBulkInvites(eventId: string) {
       return { success: true, sent: 0, message: "All guests have been invited" };
     }
 
+    // Check remaining messages
+    const remaining = await getRemainingMessages(user.id);
+    if (remaining.whatsapp <= 0 && remaining.sms <= 0) {
+      return { error: "Message limit reached", limitReached: true };
+    }
+
     // Get notification service once for all guests
     const notificationService = await getNotificationService();
 
     // Send invites to all uninvited guests
     let sent = 0;
     let failed = 0;
+    let skippedLimit = 0;
 
     for (const guest of uninvitedGuests) {
+      // Check remaining before each send
+      const currentRemaining = await getRemainingMessages(user.id);
+      if (currentRemaining.whatsapp <= 0 && currentRemaining.sms <= 0) {
+        skippedLimit++;
+        continue;
+      }
+
       try {
         const result = await notificationService.sendInvite(guest, guest.weddingEvent);
 
@@ -248,6 +482,7 @@ export async function sendBulkInvites(eventId: string) {
         });
 
         if (result.success) {
+          await checkAndUpdateUsage(user.id, result.channel, 1);
           sent++;
         } else {
           failed++;
@@ -264,6 +499,7 @@ export async function sendBulkInvites(eventId: string) {
       success: true,
       sent,
       failed,
+      skippedLimit,
       total: uninvitedGuests.length,
     };
   } catch (error) {

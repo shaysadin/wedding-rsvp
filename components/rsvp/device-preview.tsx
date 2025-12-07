@@ -20,7 +20,7 @@ export function DevicePreview({ children, previewUrl, isRTL }: DevicePreviewProp
   const handleRefresh = () => setKey((k) => k + 1);
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full overflow-hidden">
       {/* Device Selector Header */}
       <div className="shrink-0 flex items-center justify-between p-2 border-b bg-muted/30">
         <div className="flex items-center gap-1 p-0.5 bg-muted rounded-lg">
@@ -101,7 +101,7 @@ export function DevicePreview({ children, previewUrl, isRTL }: DevicePreviewProp
                 </div>
               </div>
               {/* Browser Content */}
-              <div key={key} className="max-h-[80vh] overflow-auto">
+              <div key={key} className="h-full overflow-auto">
                 {children}
               </div>
             </div>
