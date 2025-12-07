@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { useTranslations } from "next-intl";
@@ -29,6 +30,7 @@ import { EmptyPlaceholder } from "@/components/shared/empty-placeholder";
 import { Icons } from "@/components/shared/icons";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
+import { AddEventModal } from "@/components/events/add-event-modal";
 
 interface EventData {
   id: string;
@@ -104,6 +106,7 @@ export function DashboardContent({ userName, events, stats, locale, usageData }:
   const t = useTranslations("dashboard");
   const tPlans = useTranslations("plans");
   const isRTL = locale === "he";
+  const [showAddEventModal, setShowAddEventModal] = useState(false);
 
   const getUsagePercent = (sent: number, total: number) => {
     if (total === 0) return 0;
@@ -334,9 +337,11 @@ export function DashboardContent({ userName, events, stats, locale, usageData }:
                           : "Your free plan doesn't include messages. Upgrade to start sending invitations."}
                       </p>
                     </div>
-                    <Button size="sm" className="gap-1 shrink-0">
-                      {isRTL ? "שדרג" : "Upgrade"}
-                      <ArrowUpRight className="h-4 w-4" />
+                    <Button size="sm" className="gap-1 shrink-0" asChild>
+                      <Link href={`/${locale}/dashboard/billing`}>
+                        {isRTL ? "שדרג" : "Upgrade"}
+                        <ArrowUpRight className="h-4 w-4" />
+                      </Link>
                     </Button>
                   </div>
                 )}
@@ -359,7 +364,10 @@ export function DashboardContent({ userName, events, stats, locale, usageData }:
             transition={{ duration: 0.1 }}
             style={{ willChange: "transform" }}
           >
-            <Link href={`/${locale}/dashboard/events/new`}>
+            <button
+              onClick={() => setShowAddEventModal(true)}
+              className="w-full text-left"
+            >
               <div className="group relative overflow-hidden rounded-xl border border-border/50 bg-card p-5 shadow-sm transition-all duration-300 hover:border-border hover:shadow-lg">
                 <div className={cn(
                   "flex items-center gap-4",
@@ -387,7 +395,7 @@ export function DashboardContent({ userName, events, stats, locale, usageData }:
                   )} />
                 </div>
               </div>
-            </Link>
+            </button>
           </motion.div>
 
           {/* Send Invitations Card */}
@@ -454,11 +462,9 @@ export function DashboardContent({ userName, events, stats, locale, usageData }:
             <EmptyPlaceholder.Description>
               {t("createFirstEvent")}
             </EmptyPlaceholder.Description>
-            <Button asChild>
-              <Link href={`/${locale}/dashboard/events/new`}>
-                <Icons.add className="me-2 h-4 w-4" />
-                {t("createEvent")}
-              </Link>
+            <Button onClick={() => setShowAddEventModal(true)}>
+              <Icons.add className="me-2 h-4 w-4" />
+              {t("createEvent")}
             </Button>
           </EmptyPlaceholder>
         ) : (
@@ -475,6 +481,12 @@ export function DashboardContent({ userName, events, stats, locale, usageData }:
           </div>
         )}
       </motion.div>
+
+      {/* Add Event Modal */}
+      <AddEventModal
+        open={showAddEventModal}
+        onOpenChange={setShowAddEventModal}
+      />
     </motion.div>
   );
 }
