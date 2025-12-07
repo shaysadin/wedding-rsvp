@@ -135,26 +135,45 @@ export const {
       return session;
     },
 
-    async jwt({ token }) {
+    async jwt({ token, user, trigger }) {
       if (!token.sub) return token;
 
-      const dbUser = await getUserById(token.sub);
+      // On initial sign-in, populate token from user object
+      if (user) {
+        token.name = user.name;
+        token.email = user.email;
+        token.picture = user.image;
+        token.role = user.role;
+        token.roles = user.roles;
+        token.status = user.status;
+        token.plan = user.plan;
+        token.stripeCustomerId = user.stripeCustomerId;
+        token.stripeSubscriptionId = user.stripeSubscriptionId;
+        token.stripePriceId = user.stripePriceId;
+        token.stripeCurrentPeriodEnd = user.stripeCurrentPeriodEnd;
+        return token;
+      }
 
-      if (!dbUser) return token;
+      // Only refresh from database on explicit session update
+      // or if critical fields are missing (first time after migration)
+      const needsRefresh = trigger === "update" || !token.role;
 
-      token.name = dbUser.name;
-      token.email = dbUser.email;
-      token.picture = dbUser.image;
-      token.role = dbUser.role;
-      token.roles = dbUser.roles;
-      token.status = dbUser.status;
-      token.plan = dbUser.plan;
-
-      // Stripe fields
-      token.stripeCustomerId = dbUser.stripeCustomerId;
-      token.stripeSubscriptionId = dbUser.stripeSubscriptionId;
-      token.stripePriceId = dbUser.stripePriceId;
-      token.stripeCurrentPeriodEnd = dbUser.stripeCurrentPeriodEnd;
+      if (needsRefresh) {
+        const dbUser = await getUserById(token.sub);
+        if (dbUser) {
+          token.name = dbUser.name;
+          token.email = dbUser.email;
+          token.picture = dbUser.image;
+          token.role = dbUser.role;
+          token.roles = dbUser.roles;
+          token.status = dbUser.status;
+          token.plan = dbUser.plan;
+          token.stripeCustomerId = dbUser.stripeCustomerId;
+          token.stripeSubscriptionId = dbUser.stripeSubscriptionId;
+          token.stripePriceId = dbUser.stripePriceId;
+          token.stripeCurrentPeriodEnd = dbUser.stripeCurrentPeriodEnd;
+        }
+      }
 
       return token;
     },

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { UserRole } from "@prisma/client";
 import { Shield, Users, ArrowLeftRight } from "lucide-react";
@@ -42,9 +42,12 @@ export function RoleSwitcher({
   className,
 }: RoleSwitcherProps) {
   const t = useTranslations("common");
-  const router = useRouter();
+  const pathname = usePathname();
   const [isPending, startTransition] = useTransition();
   const [isHovered, setIsHovered] = useState(false);
+
+  // Get the current locale from the pathname
+  const locale = pathname?.split("/")[1] || "he";
 
   // Only show if user has multiple roles
   if (availableRoles.length <= 1) {
@@ -59,17 +62,19 @@ export function RoleSwitcher({
   const CurrentIcon = currentConfig.icon;
   const OtherIcon = otherConfig.icon;
 
-  const handleSwitch = () => {
+  const handleSwitch = async () => {
     startTransition(async () => {
       const result = await switchRole(otherRole);
+
       if (result.success) {
-        // Redirect based on the new role
-        if (otherRole === UserRole.ROLE_PLATFORM_OWNER) {
-          router.push("/admin");
-        } else {
-          router.push("/dashboard");
-        }
-        router.refresh();
+        // Redirect based on the new role (with locale)
+        // Add cache-busting timestamp to force fresh request
+        const targetPath = otherRole === UserRole.ROLE_PLATFORM_OWNER
+          ? `/${locale}/admin`
+          : `/${locale}/dashboard`;
+
+        // Force a hard refresh by replacing the entire location
+        window.location.replace(targetPath + "?t=" + Date.now());
       }
     });
   };

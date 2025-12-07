@@ -35,7 +35,8 @@ export default async function AdminPage() {
   const tPlans = await getTranslations("plans");
   const tStatus = await getTranslations("status");
 
-  if (!user || user.role !== UserRole.ROLE_PLATFORM_OWNER) {
+  // Role check is handled by the admin layout - no need to duplicate here
+  if (!user) {
     redirect(`/${locale}/dashboard`);
   }
 

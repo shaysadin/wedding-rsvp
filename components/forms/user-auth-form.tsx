@@ -37,9 +37,9 @@ type AlertState = {
 } | null;
 
 const formVariants = {
-  initial: { opacity: 0, x: 20 },
+  initial: { opacity: 0, x: 10 },
   animate: { opacity: 1, x: 0 },
-  exit: { opacity: 0, x: -20 },
+  exit: { opacity: 0, x: -10 },
 };
 
 export function UserAuthForm({ className, type = "login", onModeChange, ...props }: UserAuthFormProps) {
@@ -224,10 +224,10 @@ export function UserAuthForm({ className, type = "login", onModeChange, ...props
       <AnimatePresence mode="wait">
         {alert && (
           <motion.div
-            initial={{ opacity: 0, y: -10 }}
+            initial={{ opacity: 0, y: -6 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.2 }}
+            exit={{ opacity: 0, y: -6 }}
+            transition={{ duration: 0.1 }}
           >
             <Alert
               variant={alert.type === "error" ? "destructive" : "default"}
@@ -255,7 +255,7 @@ export function UserAuthForm({ className, type = "login", onModeChange, ...props
             initial="initial"
             animate="animate"
             exit="exit"
-            transition={{ duration: 0.3 }}
+            transition={{ duration: 0.15 }}
             onSubmit={magicLinkForm.handleSubmit(onMagicLinkSubmit)}
           >
             <div className="grid gap-4">
@@ -306,7 +306,7 @@ export function UserAuthForm({ className, type = "login", onModeChange, ...props
             initial="initial"
             animate="animate"
             exit="exit"
-            transition={{ duration: 0.3 }}
+            transition={{ duration: 0.15 }}
             onSubmit={registerForm.handleSubmit(onRegisterSubmit)}
           >
             <div className="grid gap-4">
@@ -387,7 +387,7 @@ export function UserAuthForm({ className, type = "login", onModeChange, ...props
             initial="initial"
             animate="animate"
             exit="exit"
-            transition={{ duration: 0.3 }}
+            transition={{ duration: 0.15 }}
             onSubmit={loginForm.handleSubmit(onLoginSubmit)}
           >
             <div className="grid gap-4">

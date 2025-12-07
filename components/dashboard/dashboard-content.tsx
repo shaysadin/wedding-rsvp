@@ -1,5 +1,6 @@
 "use client";
 
+import * as React from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { useTranslations } from "next-intl";
@@ -82,19 +83,19 @@ const containerVariants = {
   visible: {
     opacity: 1,
     transition: {
-      staggerChildren: 0.08,
+      staggerChildren: 0.03,
     },
   },
 };
 
 const itemVariants = {
-  hidden: { opacity: 0, y: 20 },
+  hidden: { opacity: 0, y: 12 },
   visible: {
     opacity: 1,
     y: 0,
     transition: {
-      duration: 0.5,
-      ease: [0.25, 0.46, 0.45, 0.94] as const,
+      duration: 0.2,
+      ease: "easeOut",
     },
   },
 };
@@ -164,13 +165,9 @@ export function DashboardContent({ userName, events, stats, locale, usageData }:
       <motion.div variants={itemVariants} className="space-y-1">
         <h1 className="text-2xl font-bold tracking-tight md:text-3xl">
           {t("welcome")}, {userName}
-          <motion.span
-            className="ms-2 inline-block"
-            animate={{ rotate: [0, 14, -8, 14, -4, 10, 0] }}
-            transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
-          >
+          <span className="ms-2 inline-block">
             <Sparkles className="h-6 w-6 text-amber-500" />
-          </motion.span>
+          </span>
         </h1>
         <p className="text-muted-foreground">
           {isRTL ? "הנה סקירה של האירועים שלך" : "Here's an overview of your events"}
@@ -185,10 +182,11 @@ export function DashboardContent({ userName, events, stats, locale, usageData }:
         {statCards.map((stat, index) => (
           <motion.div
             key={stat.title}
-            initial={{ opacity: 0, y: 20, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            transition={{ delay: index * 0.1, duration: 0.4, ease: "easeOut" }}
-            whileHover={{ y: -2, transition: { duration: 0.2 } }}
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: index * 0.03, duration: 0.15, ease: "easeOut" }}
+            whileHover={{ y: -2, transition: { duration: 0.15 } }}
+            style={{ willChange: "transform" }}
           >
             <Card className={cn(
               "relative overflow-hidden border transition-all duration-300 hover:shadow-md",
@@ -201,30 +199,23 @@ export function DashboardContent({ userName, events, stats, locale, usageData }:
                   isRTL && "flex-row-reverse"
                 )}>
                   {/* Icon */}
-                  <motion.div
+                  <div
                     className={cn(
-                      "flex h-11 w-11 shrink-0 items-center justify-center rounded-xl",
+                      "flex h-11 w-11 shrink-0 items-center justify-center rounded-xl transition-transform duration-150 hover:scale-105",
                       stat.iconBg
                     )}
-                    whileHover={{ scale: 1.05 }}
-                    transition={{ duration: 0.2 }}
                   >
                     <stat.icon className="h-5 w-5 text-white" />
-                  </motion.div>
+                  </div>
 
                   {/* Content */}
                   <div className={cn("flex-1 min-w-0", isRTL && "text-right")}>
                     <p className="text-sm font-medium text-muted-foreground truncate">
                       {stat.title}
                     </p>
-                    <motion.p
-                      className="mt-0.5 text-2xl font-bold tracking-tight"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{ delay: 0.2 + index * 0.1, duration: 0.4 }}
-                    >
+                    <p className="mt-0.5 text-2xl font-bold tracking-tight">
                       {stat.value}
-                    </motion.p>
+                    </p>
                   </div>
                 </div>
               </CardContent>
@@ -363,9 +354,10 @@ export function DashboardContent({ userName, events, stats, locale, usageData }:
         )}>
           {/* Create Event Card */}
           <motion.div
-            whileHover={{ y: -3 }}
+            whileHover={{ y: -2 }}
             whileTap={{ scale: 0.98 }}
-            transition={{ duration: 0.2 }}
+            transition={{ duration: 0.1 }}
+            style={{ willChange: "transform" }}
           >
             <Link href={`/${locale}/dashboard/events/new`}>
               <div className="group relative overflow-hidden rounded-xl border border-border/50 bg-card p-5 shadow-sm transition-all duration-300 hover:border-border hover:shadow-lg">
@@ -400,9 +392,10 @@ export function DashboardContent({ userName, events, stats, locale, usageData }:
 
           {/* Send Invitations Card */}
           <motion.div
-            whileHover={{ y: -3 }}
+            whileHover={{ y: -2 }}
             whileTap={{ scale: 0.98 }}
-            transition={{ duration: 0.2 }}
+            transition={{ duration: 0.1 }}
+            style={{ willChange: "transform" }}
           >
             <Link href={`/${locale}/dashboard/events`}>
               <div className="group relative overflow-hidden rounded-xl border border-border/50 bg-card p-5 shadow-sm transition-all duration-300 hover:border-border hover:shadow-lg">
@@ -486,7 +479,7 @@ export function DashboardContent({ userName, events, stats, locale, usageData }:
   );
 }
 
-function EventCard({
+const EventCard = React.memo(function EventCard({
   event,
   locale,
   index,
@@ -518,10 +511,11 @@ function EventCard({
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.1, duration: 0.4 }}
-      whileHover={{ y: -4 }}
+      transition={{ delay: index * 0.03, duration: 0.15 }}
+      whileHover={{ y: -3, transition: { duration: 0.1 } }}
+      style={{ willChange: "transform" }}
     >
       <Link href={`/${locale}/dashboard/events/${event.id}`}>
         <Card className="group relative overflow-hidden transition-all hover:shadow-lg">
@@ -549,13 +543,9 @@ function EventCard({
                 )}
               </div>
               <div className="shrink-0">
-                <motion.div
-                  className="rounded-full bg-gradient-to-br from-pink-100 to-rose-100 p-2 dark:from-pink-900/30 dark:to-rose-900/30"
-                  whileHover={{ rotate: 12 }}
-                  transition={{ duration: 0.2 }}
-                >
+                <div className="rounded-full bg-gradient-to-br from-pink-100 to-rose-100 p-2 dark:from-pink-900/30 dark:to-rose-900/30 transition-transform duration-150 hover:rotate-12">
                   <Heart className="h-4 w-4 text-rose-500" />
-                </motion.div>
+                </div>
               </div>
             </div>
 
@@ -637,7 +627,7 @@ function EventCard({
                   className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-green-500"
                   initial={{ width: 0 }}
                   animate={{ width: `${acceptanceRate}%` }}
-                  transition={{ delay: 0.3 + index * 0.1, duration: 0.8, ease: "easeOut" }}
+                  transition={{ delay: 0.1, duration: 0.3, ease: "easeOut" }}
                 />
               </div>
             </div>
@@ -646,4 +636,4 @@ function EventCard({
       </Link>
     </motion.div>
   );
-}
+});

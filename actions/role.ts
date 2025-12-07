@@ -34,7 +34,8 @@ export async function switchRole(newRole: UserRole) {
       data: { role: newRole },
     });
 
-    revalidatePath("/");
+    // Revalidate all paths to ensure fresh data
+    revalidatePath("/", "layout");
 
     return { success: true, role: newRole };
   } catch (error) {

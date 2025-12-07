@@ -4,15 +4,15 @@ import { revalidatePath } from "next/cache";
 import { UserRole, UserStatus, PlanTier } from "@prisma/client";
 
 import { prisma } from "@/lib/db";
-import { getCurrentUser } from "@/lib/session";
+import { requirePlatformOwner } from "@/lib/session";
 import { PLAN_LIMITS } from "@/config/plans";
 import { getStripe, getPriceId } from "@/lib/stripe";
 
 export async function getAllUsers() {
   try {
-    const user = await getCurrentUser();
+    const user = await requirePlatformOwner();
 
-    if (!user || user.role !== UserRole.ROLE_PLATFORM_OWNER) {
+    if (!user) {
       return { error: "Unauthorized" };
     }
 
@@ -61,9 +61,9 @@ export async function getAllUsers() {
 
 export async function getSuspendedUsers() {
   try {
-    const user = await getCurrentUser();
+    const user = await requirePlatformOwner();
 
-    if (!user || user.role !== UserRole.ROLE_PLATFORM_OWNER) {
+    if (!user) {
       return { error: "Unauthorized" };
     }
 
@@ -377,9 +377,9 @@ export async function adjustCredits(
 
 export async function getRecentUsers(limit: number = 5) {
   try {
-    const user = await getCurrentUser();
+    const user = await requirePlatformOwner();
 
-    if (!user || user.role !== UserRole.ROLE_PLATFORM_OWNER) {
+    if (!user) {
       return { error: "Unauthorized" };
     }
 
@@ -428,9 +428,9 @@ export async function getRecentUsers(limit: number = 5) {
 
 export async function getUsageStats() {
   try {
-    const user = await getCurrentUser();
+    const user = await requirePlatformOwner();
 
-    if (!user || user.role !== UserRole.ROLE_PLATFORM_OWNER) {
+    if (!user) {
       return { error: "Unauthorized" };
     }
 
@@ -587,9 +587,9 @@ export async function toggleUserAdminRole(userId: string) {
 
 export async function getAdminStats() {
   try {
-    const user = await getCurrentUser();
+    const user = await requirePlatformOwner();
 
-    if (!user || user.role !== UserRole.ROLE_PLATFORM_OWNER) {
+    if (!user) {
       return { error: "Unauthorized" };
     }
 

@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { nanoid } from "nanoid";
+import { customAlphabet } from "nanoid";
 import { UserRole, PlanTier } from "@prisma/client";
 
 import { prisma } from "@/lib/db";
@@ -23,8 +23,14 @@ const PLAN_GUEST_LIMITS: Record<PlanTier, number> = {
   BUSINESS: Infinity,
 };
 
+// Custom nanoid with only alphanumeric characters (no special chars like _ or -)
+const generateSlug = customAlphabet(
+  "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz",
+  12
+);
+
 function generateGuestSlug(): string {
-  return nanoid(10);
+  return generateSlug();
 }
 
 export async function createGuest(input: CreateGuestInput) {

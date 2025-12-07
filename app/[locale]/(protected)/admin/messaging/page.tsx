@@ -1,6 +1,5 @@
 import { redirect } from "next/navigation";
 import { getLocale } from "next-intl/server";
-import { UserRole } from "@prisma/client";
 
 import { getCurrentUser } from "@/lib/session";
 import { getMessagingSettings } from "@/actions/messaging-settings";
@@ -11,7 +10,8 @@ export default async function AdminMessagingPage() {
   const user = await getCurrentUser();
   const locale = await getLocale();
 
-  if (!user || user.role !== UserRole.ROLE_PLATFORM_OWNER) {
+  // Role check is handled by the admin layout
+  if (!user) {
     redirect(`/${locale}/dashboard`);
   }
 

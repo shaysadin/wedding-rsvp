@@ -8,7 +8,11 @@ const withNextIntl = createNextIntlPlugin("./lib/i18n/request.ts");
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+
+  // Image optimization
   images: {
+    formats: ["image/avif", "image/webp"],
+    minimumCacheTTL: 60 * 60 * 24, // 24 hours
     remotePatterns: [
       {
         protocol: "https",
@@ -32,8 +36,31 @@ const nextConfig = {
       },
     ],
   },
+
+  // Remove console logs in production for cleaner output
+  compiler: {
+    removeConsole: process.env.NODE_ENV === "production",
+  },
+
+  // Security headers
+  async headers() {
+    return [
+      {
+        source: "/:path*",
+        headers: [
+          { key: "X-Content-Type-Options", value: "nosniff" },
+          { key: "X-Frame-Options", value: "DENY" },
+          { key: "X-XSS-Protection", value: "1; mode=block" },
+          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+          { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
+        ],
+      },
+    ];
+  },
+
   serverExternalPackages: ["@prisma/client"],
-  // Increase server action body size limit to 8MB for image uploads (base64 encoding adds ~33% overhead)
+
+  // Server actions configuration
   experimental: {
     serverActions: {
       bodySizeLimit: "8mb",

@@ -3,14 +3,14 @@
 import { UserRole, CronJobStatus, CronJobType, PlanTier } from "@prisma/client";
 
 import { prisma } from "@/lib/db";
-import { getCurrentUser } from "@/lib/session";
+import { requirePlatformOwner } from "@/lib/session";
 
 // Get all users with pending plan changes (scheduled but not yet applied)
 export async function getPendingPlanChanges() {
   try {
-    const user = await getCurrentUser();
+    const user = await requirePlatformOwner();
 
-    if (!user || user.role !== UserRole.ROLE_PLATFORM_OWNER) {
+    if (!user) {
       return { error: "Unauthorized", pendingChanges: [] };
     }
 
@@ -44,9 +44,9 @@ export async function getPendingPlanChanges() {
 // Cancel a pending plan change for a user (admin only)
 export async function cancelPendingPlanChange(userId: string) {
   try {
-    const currentUser = await getCurrentUser();
+    const currentUser = await requirePlatformOwner();
 
-    if (!currentUser || currentUser.role !== UserRole.ROLE_PLATFORM_OWNER) {
+    if (!currentUser) {
       return { error: "Unauthorized" };
     }
 
@@ -107,9 +107,9 @@ export async function getCronJobLogs(options?: {
   jobType?: CronJobType;
 }) {
   try {
-    const user = await getCurrentUser();
+    const user = await requirePlatformOwner();
 
-    if (!user || user.role !== UserRole.ROLE_PLATFORM_OWNER) {
+    if (!user) {
       return { error: "Unauthorized", logs: [] };
     }
 
@@ -147,9 +147,9 @@ export async function getCronJobLogs(options?: {
 
 export async function getCronJobStats() {
   try {
-    const user = await getCurrentUser();
+    const user = await requirePlatformOwner();
 
-    if (!user || user.role !== UserRole.ROLE_PLATFORM_OWNER) {
+    if (!user) {
       return { error: "Unauthorized" };
     }
 

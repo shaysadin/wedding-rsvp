@@ -1,6 +1,5 @@
 import { redirect } from "next/navigation";
 import { getTranslations, getLocale } from "next-intl/server";
-import { UserRole } from "@prisma/client";
 
 import { getCurrentUser } from "@/lib/session";
 import { getCronJobLogs, getCronJobStats, getPendingPlanChanges } from "@/actions/cron-logs";
@@ -12,7 +11,8 @@ export default async function AdminCronLogsPage() {
   const locale = await getLocale();
   const t = await getTranslations("admin");
 
-  if (!user || user.role !== UserRole.ROLE_PLATFORM_OWNER) {
+  // Role check is handled by the admin layout
+  if (!user) {
     redirect(`/${locale}/dashboard`);
   }
 

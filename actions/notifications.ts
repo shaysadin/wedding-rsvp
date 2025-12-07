@@ -361,9 +361,11 @@ export async function sendBulkReminders(eventId: string) {
     let failed = 0;
     let skippedLimit = 0;
 
+    // Track remaining messages locally to avoid N+1 queries
+    let currentRemaining = { ...remaining };
+
     for (const guest of pendingGuests) {
-      // Check remaining before each send
-      const currentRemaining = await getRemainingMessages(user.id);
+      // Check remaining using local tracking (avoids DB query per guest)
       if (currentRemaining.whatsapp <= 0 && currentRemaining.sms <= 0) {
         skippedLimit++;
         continue;
@@ -385,6 +387,12 @@ export async function sendBulkReminders(eventId: string) {
 
         if (result.success) {
           await checkAndUpdateUsage(user.id, result.channel, 1);
+          // Update local tracking
+          if (result.channel === NotificationChannel.WHATSAPP) {
+            currentRemaining.whatsapp--;
+          } else if (result.channel === NotificationChannel.SMS) {
+            currentRemaining.sms--;
+          }
           sent++;
         } else {
           failed++;
@@ -459,9 +467,11 @@ export async function sendBulkInvites(eventId: string) {
     let failed = 0;
     let skippedLimit = 0;
 
+    // Track remaining messages locally to avoid N+1 queries
+    let currentRemaining = { ...remaining };
+
     for (const guest of uninvitedGuests) {
-      // Check remaining before each send
-      const currentRemaining = await getRemainingMessages(user.id);
+      // Check remaining using local tracking (avoids DB query per guest)
       if (currentRemaining.whatsapp <= 0 && currentRemaining.sms <= 0) {
         skippedLimit++;
         continue;
@@ -483,6 +493,12 @@ export async function sendBulkInvites(eventId: string) {
 
         if (result.success) {
           await checkAndUpdateUsage(user.id, result.channel, 1);
+          // Update local tracking
+          if (result.channel === NotificationChannel.WHATSAPP) {
+            currentRemaining.whatsapp--;
+          } else if (result.channel === NotificationChannel.SMS) {
+            currentRemaining.sms--;
+          }
           sent++;
         } else {
           failed++;

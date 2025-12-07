@@ -30,7 +30,7 @@ export function RsvpForm({ guest, event, existingRsvp, settings, locale = "he" }
   const dateLocale = isRTL ? he : enUS;
 
   const [status, setStatus] = useState<RsvpStatus | null>(
-    existingRsvp?.status || null
+    existingRsvp?.status || "ACCEPTED"
   );
   const [guestCount, setGuestCount] = useState(existingRsvp?.guestCount || 1);
   const [guestName, setGuestName] = useState(guest.name);

@@ -1,10 +1,9 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { UserRole } from "@prisma/client";
 
 import { prisma } from "@/lib/db";
-import { getCurrentUser } from "@/lib/session";
+import { getCurrentUser, requirePlatformOwner } from "@/lib/session";
 import { testWhatsAppConnection as twilioTestWhatsApp } from "@/lib/notifications/twilio-service";
 import { clearNotificationServiceCache } from "@/lib/notifications";
 import { createSmsProvider } from "@/lib/notifications/sms-providers";
@@ -39,9 +38,9 @@ export interface MessagingSettingsInput {
 // Get messaging provider settings (admin only)
 export async function getMessagingSettings() {
   try {
-    const user = await getCurrentUser();
+    const user = await requirePlatformOwner();
 
-    if (!user || user.role !== UserRole.ROLE_PLATFORM_OWNER) {
+    if (!user) {
       return { error: "Unauthorized" };
     }
 
@@ -73,9 +72,9 @@ export async function getMessagingSettings() {
 // Update messaging provider settings (admin only)
 export async function updateMessagingSettings(input: MessagingSettingsInput) {
   try {
-    const user = await getCurrentUser();
+    const user = await requirePlatformOwner();
 
-    if (!user || user.role !== UserRole.ROLE_PLATFORM_OWNER) {
+    if (!user) {
       return { error: "Unauthorized" };
     }
 
@@ -180,9 +179,9 @@ export async function updateMessagingSettings(input: MessagingSettingsInput) {
 // Test WhatsApp connection (admin only)
 export async function testWhatsAppConnection() {
   try {
-    const user = await getCurrentUser();
+    const user = await requirePlatformOwner();
 
-    if (!user || user.role !== UserRole.ROLE_PLATFORM_OWNER) {
+    if (!user) {
       return { error: "Unauthorized" };
     }
 
@@ -221,9 +220,9 @@ export async function testWhatsAppConnection() {
 // Test SMS connection (admin only)
 export async function testSmsConnection() {
   try {
-    const user = await getCurrentUser();
+    const user = await requirePlatformOwner();
 
-    if (!user || user.role !== UserRole.ROLE_PLATFORM_OWNER) {
+    if (!user) {
       return { error: "Unauthorized" };
     }
 
@@ -266,9 +265,9 @@ export async function testSmsConnection() {
 // Get raw settings for internal use (not masked)
 export async function getRawMessagingSettings() {
   try {
-    const user = await getCurrentUser();
+    const user = await requirePlatformOwner();
 
-    if (!user || user.role !== UserRole.ROLE_PLATFORM_OWNER) {
+    if (!user) {
       return { error: "Unauthorized" };
     }
 

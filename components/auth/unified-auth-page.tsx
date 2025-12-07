@@ -27,9 +27,9 @@ interface UnifiedAuthPageProps {
 }
 
 const contentVariants = {
-  initial: { opacity: 0, y: 10 },
+  initial: { opacity: 0, y: 6 },
   animate: { opacity: 1, y: 0 },
-  exit: { opacity: 0, y: -10 },
+  exit: { opacity: 0, y: -6 },
 };
 
 export function UnifiedAuthPage({
@@ -64,14 +64,14 @@ export function UnifiedAuthPage({
               animate={{
                 backgroundColor: mode === "login" ? "#22c55e" : "#d1d5db",
               }}
-              transition={{ duration: 0.3 }}
+              transition={{ duration: 0.15 }}
               className="h-2.5 w-2.5 rounded-full"
             />
             <motion.div
               animate={{
                 backgroundColor: mode === "register" ? "#22c55e" : "#d1d5db",
               }}
-              transition={{ duration: 0.3 }}
+              transition={{ duration: 0.15 }}
               className="h-2.5 w-2.5 rounded-full"
             />
             <div className="h-2.5 w-2.5 rounded-full bg-gray-300" />
@@ -99,7 +99,7 @@ export function UnifiedAuthPage({
               initial="initial"
               animate="animate"
               exit="exit"
-              transition={{ duration: 0.3 }}
+              transition={{ duration: 0.15 }}
               className="mb-8"
             >
               <h1 className="text-3xl font-semibold tracking-tight">
@@ -130,7 +130,7 @@ export function UnifiedAuthPage({
               initial="initial"
               animate="animate"
               exit="exit"
-              transition={{ duration: 0.2 }}
+              transition={{ duration: 0.1 }}
               className="mt-6 text-center text-sm text-muted-foreground"
             >
               {mode === "login" ? translations.noAccount : translations.haveAccount}{" "}

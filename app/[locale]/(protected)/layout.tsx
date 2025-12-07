@@ -16,6 +16,9 @@ import { UserAccountNav } from "@/components/layout/user-account-nav";
 import { RoleSwitcher } from "@/components/dashboard/role-switcher";
 import MaxWidthWrapper from "@/components/shared/max-width-wrapper";
 
+// Force dynamic rendering to avoid caching issues with role switching
+export const dynamic = "force-dynamic";
+
 interface ProtectedLayoutProps {
   children: React.ReactNode;
 }
@@ -27,9 +30,10 @@ export default async function ProtectedLayout({ children }: ProtectedLayoutProps
   if (!user) redirect(`/${locale}/login`);
 
   // Get user data including email verification status and roles
+  // Also fetch current role from DB to ensure role switches are reflected immediately
   const dbUser = await prisma.user.findUnique({
     where: { id: user.id },
-    select: { emailVerified: true, roles: true, accounts: true },
+    select: { emailVerified: true, role: true, roles: true, accounts: true },
   });
 
   // If user has no OAuth accounts and email is not verified, block access
@@ -38,11 +42,12 @@ export default async function ProtectedLayout({ children }: ProtectedLayoutProps
     redirect(`/${locale}/login?error=EmailNotVerified`);
   }
 
-  const userRoles = dbUser?.roles || [user.role];
+  const currentRole = dbUser?.role || user.role;
+  const userRoles = dbUser?.roles || [currentRole];
 
   // Fetch user's events for sidebar (only for wedding owners)
   let userEvents: { id: string; title: string }[] = [];
-  if (user.role === UserRole.ROLE_WEDDING_OWNER) {
+  if (currentRole === UserRole.ROLE_WEDDING_OWNER) {
     const events = await prisma.weddingEvent.findMany({
       where: { ownerId: user.id },
       select: { id: true, title: true },
@@ -54,7 +59,7 @@ export default async function ProtectedLayout({ children }: ProtectedLayoutProps
   const filteredLinks = sidebarLinks.map((section) => ({
     ...section,
     items: section.items.filter(
-      ({ authorizeOnly }) => !authorizeOnly || authorizeOnly === user.role,
+      ({ authorizeOnly }) => !authorizeOnly || authorizeOnly === currentRole,
     ),
   }));
 
@@ -66,7 +71,7 @@ export default async function ProtectedLayout({ children }: ProtectedLayoutProps
       <DashboardSidebar
         links={filteredLinks}
         userEvents={userEvents}
-        currentRole={user.role}
+        currentRole={currentRole}
         availableRoles={userRoles}
       />
 
@@ -76,7 +81,7 @@ export default async function ProtectedLayout({ children }: ProtectedLayoutProps
             <MobileSheetSidebar
               links={filteredLinks}
               userEvents={userEvents}
-              currentRole={user.role}
+              currentRole={currentRole}
               availableRoles={userRoles}
             />
 
