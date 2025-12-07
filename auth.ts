@@ -126,10 +126,10 @@ export const {
         session.user.image = token.picture;
 
         // Stripe fields
-        session.user.stripeCustomerId = token.stripeCustomerId;
-        session.user.stripeSubscriptionId = token.stripeSubscriptionId;
-        session.user.stripePriceId = token.stripePriceId;
-        session.user.stripeCurrentPeriodEnd = token.stripeCurrentPeriodEnd;
+        session.user.stripeCustomerId = token.stripeCustomerId ?? null;
+        session.user.stripeSubscriptionId = token.stripeSubscriptionId ?? null;
+        session.user.stripePriceId = token.stripePriceId ?? null;
+        session.user.stripeCurrentPeriodEnd = token.stripeCurrentPeriodEnd ?? null;
       }
 
       return session;
