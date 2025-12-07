@@ -1,20 +1,9 @@
 import { UserRole, UserStatus, PlanTier } from "@prisma/client";
-import { User } from "next-auth";
-import { JWT } from "next-auth/jwt";
+import { DefaultSession, DefaultUser } from "next-auth";
+import { JWT, DefaultJWT } from "next-auth/jwt";
 
-export type ExtendedUser = User & {
-  role: UserRole;
-  roles: UserRole[];
-  status: UserStatus;
-  plan: PlanTier;
-  stripeCustomerId: string | null;
-  stripeSubscriptionId: string | null;
-  stripePriceId: string | null;
-  stripeCurrentPeriodEnd: Date | null;
-};
-
-declare module "next-auth/jwt" {
-  interface JWT {
+declare module "next-auth" {
+  interface User extends DefaultUser {
     role: UserRole;
     roles: UserRole[];
     status: UserStatus;
@@ -24,10 +13,21 @@ declare module "next-auth/jwt" {
     stripePriceId: string | null;
     stripeCurrentPeriodEnd: Date | null;
   }
+
+  interface Session {
+    user: User & DefaultSession["user"];
+  }
 }
 
-declare module "next-auth" {
-  interface Session {
-    user: ExtendedUser;
+declare module "next-auth/jwt" {
+  interface JWT extends DefaultJWT {
+    role: UserRole;
+    roles: UserRole[];
+    status: UserStatus;
+    plan: PlanTier;
+    stripeCustomerId: string | null;
+    stripeSubscriptionId: string | null;
+    stripePriceId: string | null;
+    stripeCurrentPeriodEnd: Date | null;
   }
 }

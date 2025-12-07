@@ -138,25 +138,9 @@ export const {
     async jwt({ token, user, trigger }) {
       if (!token.sub) return token;
 
-      // On initial sign-in, populate token from user object
-      if (user) {
-        token.name = user.name;
-        token.email = user.email;
-        token.picture = user.image;
-        token.role = user.role;
-        token.roles = user.roles;
-        token.status = user.status;
-        token.plan = user.plan;
-        token.stripeCustomerId = user.stripeCustomerId;
-        token.stripeSubscriptionId = user.stripeSubscriptionId;
-        token.stripePriceId = user.stripePriceId;
-        token.stripeCurrentPeriodEnd = user.stripeCurrentPeriodEnd;
-        return token;
-      }
-
-      // Only refresh from database on explicit session update
-      // or if critical fields are missing (first time after migration)
-      const needsRefresh = trigger === "update" || !token.role;
+      // On initial sign-in or when critical fields are missing, fetch from database
+      // The user object from NextAuth doesn't include our custom fields
+      const needsRefresh = user || trigger === "update" || !token.role;
 
       if (needsRefresh) {
         const dbUser = await getUserById(token.sub);
