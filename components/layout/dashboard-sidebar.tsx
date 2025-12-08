@@ -196,7 +196,7 @@ export function DashboardSidebar({ links, userEvents = [], currentRole, availabl
                                 isRTL && "flex-row-reverse"
                               )}>
                                 <Link
-                                  href={item.href}
+                                  href={`/${locale}${item.href}`}
                                   className={cn(
                                     "flex flex-1 items-center gap-3 rounded-md p-2 text-sm font-medium hover:bg-muted",
                                     isRTL && "flex-row-reverse text-right",
@@ -252,7 +252,7 @@ export function DashboardSidebar({ links, userEvents = [], currentRole, availabl
                             {isSidebarExpanded ? (
                               <Link
                                 key={`link-${item.title}`}
-                                href={item.disabled ? "#" : item.href}
+                                href={item.disabled ? "#" : `/${locale}${item.href}`}
                                 className={cn(
                                   "flex items-center gap-3 rounded-md p-2 text-sm font-medium hover:bg-muted",
                                   isRTL && "flex-row-reverse text-right",
@@ -276,7 +276,7 @@ export function DashboardSidebar({ links, userEvents = [], currentRole, availabl
                                 <TooltipTrigger asChild>
                                   <Link
                                     key={`link-tooltip-${item.title}`}
-                                    href={item.disabled ? "#" : item.href}
+                                    href={item.disabled ? "#" : `/${locale}${item.href}`}
                                     className={cn(
                                       "flex items-center gap-3 rounded-md py-2 text-sm font-medium hover:bg-muted",
                                       isPathActive(item.href)
@@ -425,7 +425,7 @@ export function MobileSheetSidebar({ links, userEvents = [], currentRole, availa
                               )}>
                                 <Link
                                   onClick={() => setOpen(false)}
-                                  href={item.href}
+                                  href={`/${locale}${item.href}`}
                                   className={cn(
                                     "flex flex-1 items-center gap-3 rounded-md p-2 text-sm font-medium hover:bg-muted",
                                     isRTL && "flex-row-reverse text-right",
@@ -484,7 +484,7 @@ export function MobileSheetSidebar({ links, userEvents = [], currentRole, availa
                               onClick={() => {
                                 if (!item.disabled) setOpen(false);
                               }}
-                              href={item.disabled ? "#" : item.href}
+                              href={item.disabled ? "#" : `/${locale}${item.href}`}
                               className={cn(
                                 "flex items-center gap-3 rounded-md p-2 text-sm font-medium hover:bg-muted",
                                 isRTL && "flex-row-reverse text-right",

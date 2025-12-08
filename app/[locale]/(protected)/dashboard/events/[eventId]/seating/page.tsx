@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useState, useEffect, useCallback } from "react";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
@@ -12,11 +13,20 @@ import { Icons } from "@/components/shared/icons";
 import { SeatingStats } from "@/components/seating/seating-stats";
 import { SeatingViewToggle } from "@/components/seating/seating-view-toggle";
 import { TableGridView } from "@/components/seating/table-grid-view";
-import { TableFloorPlan } from "@/components/seating/table-floor-plan";
+import { TableFloorPlanSkeleton } from "@/components/skeletons";
 import { AddTableDialog } from "@/components/seating/add-table-dialog";
 import { AddVenueBlockDialog } from "@/components/seating/add-venue-block-dialog";
 import { AssignGuestsDialog } from "@/components/seating/assign-guests-dialog";
 import { EditTableDialog } from "@/components/seating/edit-table-dialog";
+
+// Lazy load the heavy TableFloorPlan component (~1302 lines, ~90KB with @dnd-kit)
+const TableFloorPlan = dynamic(
+  () => import("@/components/seating/table-floor-plan").then((mod) => mod.TableFloorPlan),
+  {
+    loading: () => <TableFloorPlanSkeleton />,
+    ssr: false,
+  }
+);
 
 interface TableGuest {
   id: string;

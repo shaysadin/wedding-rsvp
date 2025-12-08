@@ -1,9 +1,18 @@
+import dynamic from "next/dynamic";
 import { redirect } from "next/navigation";
 import { getLocale } from "next-intl/server";
 
 import { getCurrentUser } from "@/lib/session";
 import { getUserSubscriptionPlan } from "@/lib/subscription";
-import { BillingPageContent } from "@/components/dashboard/billing-page-content";
+import { BillingPageContentSkeleton } from "@/components/skeletons";
+
+// Lazy load the heavy BillingPageContent component (~730 lines, ~85KB)
+const BillingPageContent = dynamic(
+  () => import("@/components/dashboard/billing-page-content").then((mod) => mod.BillingPageContent),
+  {
+    loading: () => <BillingPageContentSkeleton />,
+  }
+);
 
 export default async function BillingPage() {
   const user = await getCurrentUser();

@@ -1,3 +1,4 @@
+import dynamic from "next/dynamic";
 import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
 import { getTranslations, getLocale } from "next-intl/server";
@@ -8,13 +9,21 @@ import { getEventById } from "@/actions/events";
 import { DashboardHeader } from "@/components/dashboard/header";
 import { Button } from "@/components/ui/button";
 import { Icons } from "@/components/shared/icons";
-import { GuestsTable } from "@/components/guests/guests-table";
+import { GuestsTableSkeleton } from "@/components/skeletons";
 import { AddGuestDialog } from "@/components/guests/add-guest-dialog";
 import { BulkAddGuestsDialog } from "@/components/guests/bulk-add-guests-dialog";
 import { ImportGuestsDialog } from "@/components/guests/import-guests-dialog";
 import { CopyLinkButton } from "@/components/events/copy-link-button";
 import { EventStatsCards } from "@/components/events/event-stats-cards";
 import { DuplicatePhoneWarning } from "@/components/guests/duplicate-phone-warning";
+
+// Lazy load the heavy GuestsTable component (~721 lines, ~60KB)
+const GuestsTable = dynamic(
+  () => import("@/components/guests/guests-table").then((mod) => mod.GuestsTable),
+  {
+    loading: () => <GuestsTableSkeleton />,
+  }
+);
 
 interface EventPageProps {
   params: Promise<{ eventId: string }>;

@@ -1,10 +1,19 @@
+import dynamic from "next/dynamic";
 import { redirect, notFound } from "next/navigation";
 import { getLocale, getTranslations } from "next-intl/server";
 
 import { getRsvpPageSettings, getTemplates } from "@/actions/rsvp-settings";
 import { getCurrentUser } from "@/lib/session";
 import { DashboardHeader } from "@/components/dashboard/header";
-import { RsvpCustomizer } from "@/components/rsvp/rsvp-customizer";
+import { RsvpCustomizerSkeleton } from "@/components/skeletons";
+
+// Lazy load the heavy RsvpCustomizer component (~1900 lines, ~120KB)
+const RsvpCustomizer = dynamic(
+  () => import("@/components/rsvp/rsvp-customizer").then((mod) => mod.RsvpCustomizer),
+  {
+    loading: () => <RsvpCustomizerSkeleton />,
+  }
+);
 
 interface CustomizePageProps {
   params: Promise<{ eventId: string }>;
