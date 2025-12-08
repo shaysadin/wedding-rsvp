@@ -976,9 +976,11 @@
     "capacityPlaceholder": "Number of seats",
     "shape": "Table Shape",
     "shapes": {
-      "round": "Round",
-      "rectangular": "Rectangular",
-      "oval": "Oval"
+      "circle": "Circle",
+      "rectangle": "Rectangle",
+      "rectangleRounded": "Rectangle (Rounded)",
+      "concave": "Concave Semicircle",
+      "concaveRounded": "Concave Semicircle (Rounded)"
     },
     "seatsUsed": "{used} of {total} seats",
     "seatsAvailable": "{available} seats available",
@@ -1052,7 +1054,41 @@
     "unsavedChangesDescription": "You have unsaved table position changes. Are you sure you want to discard them?",
     "positionsSaved": "Table positions saved successfully",
     "savePositionError": "Failed to save table positions",
-    "changesDiscarded": "Changes discarded"
+    "changesDiscarded": "Changes discarded",
+    "rotate45": "Rotate 45 degrees",
+    "venueBlocks": {
+      "title": "Venue Blocks",
+      "add": "Add Block",
+      "edit": "Edit Block",
+      "delete": "Delete Block",
+      "name": "Block Name",
+      "namePlaceholder": "e.g., DJ Booth, Main Bar",
+      "type": "Block Type",
+      "width": "Width",
+      "height": "Height",
+      "rotation": "Rotation",
+      "blockCreated": "Block created successfully",
+      "blockUpdated": "Block updated successfully",
+      "blockDeleted": "Block deleted successfully",
+      "confirmDelete": "Are you sure you want to delete this block?",
+      "deleteTitle": "Delete Venue Block",
+      "deleteDescription": "Are you sure you want to delete \"{name}\"? This action cannot be undone.",
+      "deleteError": "Failed to delete venue block",
+      "noBlocks": "No venue blocks yet",
+      "addBlockToStart": "Add venue blocks like DJ booth, bar, or dance floor",
+      "types": {
+        "dj": "DJ Booth",
+        "bar": "Bar",
+        "stage": "Stage",
+        "danceFloor": "Dance Floor",
+        "entrance": "Entrance",
+        "photoBooth": "Photo Booth",
+        "buffet": "Buffet",
+        "cake": "Cake Table",
+        "gifts": "Gift Table",
+        "other": "Other"
+      }
+    }
   },
   "invitations": {
     "title": "Send Invitations",

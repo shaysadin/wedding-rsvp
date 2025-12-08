@@ -5,7 +5,7 @@ import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { toast } from "sonner";
 
-import { getEventTables, getSeatingStats } from "@/actions/seating";
+import { getEventTables, getSeatingStats, getEventVenueBlocks } from "@/actions/seating";
 import { DashboardHeader } from "@/components/dashboard/header";
 import { Button } from "@/components/ui/button";
 import { Icons } from "@/components/shared/icons";
@@ -14,6 +14,7 @@ import { SeatingViewToggle } from "@/components/seating/seating-view-toggle";
 import { TableGridView } from "@/components/seating/table-grid-view";
 import { TableFloorPlan } from "@/components/seating/table-floor-plan";
 import { AddTableDialog } from "@/components/seating/add-table-dialog";
+import { AddVenueBlockDialog } from "@/components/seating/add-venue-block-dialog";
 import { AssignGuestsDialog } from "@/components/seating/assign-guests-dialog";
 import { EditTableDialog } from "@/components/seating/edit-table-dialog";
 
@@ -57,6 +58,17 @@ interface SeatingStatsType {
   capacityRemaining: number;
 }
 
+interface VenueBlock {
+  id: string;
+  name: string;
+  type: string;
+  positionX?: number | null;
+  positionY?: number | null;
+  width: number;
+  height: number;
+  rotation: number;
+}
+
 type ViewMode = "grid" | "floor";
 
 interface SeatingPageProps {
@@ -71,9 +83,11 @@ export default function SeatingPage({ params }: SeatingPageProps) {
   const [locale, setLocale] = useState<string>("en");
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const [tables, setTables] = useState<Table[]>([]);
+  const [venueBlocks, setVenueBlocks] = useState<VenueBlock[]>([]);
   const [stats, setStats] = useState<SeatingStatsType | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [addTableOpen, setAddTableOpen] = useState(false);
+  const [addBlockOpen, setAddBlockOpen] = useState(false);
 
   // Floor plan dialog states
   const [assignDialogOpen, setAssignDialogOpen] = useState(false);
@@ -107,9 +121,10 @@ export default function SeatingPage({ params }: SeatingPageProps) {
 
     setIsLoading(true);
     try {
-      const [tablesResult, statsResult] = await Promise.all([
+      const [tablesResult, statsResult, blocksResult] = await Promise.all([
         getEventTables(eventId),
         getSeatingStats(eventId),
+        getEventVenueBlocks(eventId),
       ]);
 
       if (tablesResult.error) {
@@ -122,6 +137,12 @@ export default function SeatingPage({ params }: SeatingPageProps) {
         toast.error(statsResult.error);
       } else if (statsResult.stats) {
         setStats(statsResult.stats);
+      }
+
+      if (blocksResult.error) {
+        toast.error(blocksResult.error);
+      } else if (blocksResult.blocks) {
+        setVenueBlocks(blocksResult.blocks as VenueBlock[]);
       }
     } catch {
       toast.error("Failed to load seating data");
@@ -167,6 +188,10 @@ export default function SeatingPage({ params }: SeatingPageProps) {
               {tc("back")}
             </Link>
           </Button>
+          <Button variant="outline" onClick={() => setAddBlockOpen(true)}>
+            <Icons.add className="mr-2 h-4 w-4" />
+            {t("venueBlocks.add")}
+          </Button>
           <Button onClick={() => setAddTableOpen(true)}>
             <Icons.add className="mr-2 h-4 w-4" />
             {t("addTable")}
@@ -176,11 +201,11 @@ export default function SeatingPage({ params }: SeatingPageProps) {
 
       {/* Loading State */}
       {isLoading ? (
-        <div className="flex items-center justify-center py-12">
+        <div className="flex h-full w-full items-center justify-center py-12">
           <Icons.spinner className="h-8 w-8 animate-spin text-muted-foreground" />
         </div>
       ) : (
-        <div className="space-y-6">
+        <div className="space-y-6 overflow-auto">
           {/* Stats Cards */}
           {stats && <SeatingStats stats={stats} />}
 
@@ -196,6 +221,7 @@ export default function SeatingPage({ params }: SeatingPageProps) {
             ) : (
               <TableFloorPlan
                 tables={tables}
+                venueBlocks={venueBlocks}
                 eventId={eventId}
                 onAssignGuests={handleAssignGuests}
                 onEditTable={handleEditTable}
@@ -209,6 +235,13 @@ export default function SeatingPage({ params }: SeatingPageProps) {
       <AddTableDialog
         open={addTableOpen}
         onOpenChange={setAddTableOpen}
+        eventId={eventId}
+      />
+
+      {/* Add Venue Block Dialog */}
+      <AddVenueBlockDialog
+        open={addBlockOpen}
+        onOpenChange={setAddBlockOpen}
         eventId={eventId}
       />
 

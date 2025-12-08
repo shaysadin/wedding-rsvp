@@ -9,15 +9,29 @@ import {
   createTableSchema,
   updateTableSchema,
   updateTablePositionSchema,
+  updateTableSizeSchema,
+  updateTableRotationSchema,
   assignGuestsSchema,
   removeGuestSchema,
   moveGuestSchema,
+  createVenueBlockSchema,
+  updateVenueBlockSchema,
+  updateVenueBlockPositionSchema,
+  updateVenueBlockSizeSchema,
+  updateVenueBlockRotationSchema,
   type CreateTableInput,
   type UpdateTableInput,
   type UpdateTablePositionInput,
+  type UpdateTableSizeInput,
+  type UpdateTableRotationInput,
   type AssignGuestsInput,
   type RemoveGuestInput,
   type MoveGuestInput,
+  type CreateVenueBlockInput,
+  type UpdateVenueBlockInput,
+  type UpdateVenueBlockPositionInput,
+  type UpdateVenueBlockSizeInput,
+  type UpdateVenueBlockRotationInput,
 } from "@/lib/validations/seating";
 
 // ============ HELPER FUNCTIONS ============
@@ -145,6 +159,79 @@ export async function updateTablePosition(input: UpdateTablePositionInput) {
   } catch (error) {
     console.error("Error updating table position:", error);
     return { error: "Failed to update table position" };
+  }
+}
+
+export async function updateTableSize(input: UpdateTableSizeInput) {
+  try {
+    const user = await getCurrentUser();
+
+    if (!user || user.role !== UserRole.ROLE_WEDDING_OWNER) {
+      return { error: "Unauthorized" };
+    }
+
+    const validatedData = updateTableSizeSchema.parse(input);
+
+    // Verify ownership through event
+    const existingTable = await prisma.weddingTable.findFirst({
+      where: { id: validatedData.id },
+      include: { weddingEvent: true },
+    });
+
+    if (!existingTable || existingTable.weddingEvent.ownerId !== user.id) {
+      return { error: "Table not found" };
+    }
+
+    const table = await prisma.weddingTable.update({
+      where: { id: validatedData.id },
+      data: {
+        width: validatedData.width,
+        height: validatedData.height,
+      },
+    });
+
+    revalidatePath(`/dashboard/events/${existingTable.weddingEventId}/seating`);
+
+    return { success: true, table };
+  } catch (error) {
+    console.error("Error updating table size:", error);
+    return { error: "Failed to update table size" };
+  }
+}
+
+export async function updateTableRotation(input: UpdateTableRotationInput) {
+  try {
+    const user = await getCurrentUser();
+
+    if (!user || user.role !== UserRole.ROLE_WEDDING_OWNER) {
+      return { error: "Unauthorized" };
+    }
+
+    const validatedData = updateTableRotationSchema.parse(input);
+
+    // Verify ownership through event
+    const existingTable = await prisma.weddingTable.findFirst({
+      where: { id: validatedData.id },
+      include: { weddingEvent: true },
+    });
+
+    if (!existingTable || existingTable.weddingEvent.ownerId !== user.id) {
+      return { error: "Table not found" };
+    }
+
+    const table = await prisma.weddingTable.update({
+      where: { id: validatedData.id },
+      data: {
+        rotation: validatedData.rotation,
+      },
+    });
+
+    revalidatePath(`/dashboard/events/${existingTable.weddingEventId}/seating`);
+
+    return { success: true, table };
+  } catch (error) {
+    console.error("Error updating table rotation:", error);
+    return { error: "Failed to update table rotation" };
   }
 }
 
@@ -651,5 +738,249 @@ export async function getGuestsForAssignment(
   } catch (error) {
     console.error("Error fetching guests for assignment:", error);
     return { error: "Failed to fetch guests" };
+  }
+}
+
+// ============ VENUE BLOCK CRUD ============
+
+export async function createVenueBlock(input: CreateVenueBlockInput) {
+  try {
+    const user = await getCurrentUser();
+
+    if (!user || user.role !== UserRole.ROLE_WEDDING_OWNER) {
+      return { error: "Unauthorized" };
+    }
+
+    const validatedData = createVenueBlockSchema.parse(input);
+
+    // Verify event ownership
+    const event = await prisma.weddingEvent.findFirst({
+      where: { id: validatedData.weddingEventId, ownerId: user.id },
+    });
+
+    if (!event) {
+      return { error: "Event not found" };
+    }
+
+    const block = await prisma.venueBlock.create({
+      data: {
+        weddingEventId: validatedData.weddingEventId,
+        name: validatedData.name,
+        type: validatedData.type,
+        shape: validatedData.shape,
+      },
+    });
+
+    revalidatePath(`/dashboard/events/${validatedData.weddingEventId}/seating`);
+
+    return { success: true, block };
+  } catch (error) {
+    console.error("Error creating venue block:", error);
+    return { error: "Failed to create venue block" };
+  }
+}
+
+export async function updateVenueBlock(input: UpdateVenueBlockInput) {
+  try {
+    const user = await getCurrentUser();
+
+    if (!user || user.role !== UserRole.ROLE_WEDDING_OWNER) {
+      return { error: "Unauthorized" };
+    }
+
+    const validatedData = updateVenueBlockSchema.parse(input);
+    const { id, ...updateData } = validatedData;
+
+    // Verify ownership through event
+    const existingBlock = await prisma.venueBlock.findFirst({
+      where: { id },
+      include: { weddingEvent: true },
+    });
+
+    if (!existingBlock || existingBlock.weddingEvent.ownerId !== user.id) {
+      return { error: "Block not found" };
+    }
+
+    const block = await prisma.venueBlock.update({
+      where: { id },
+      data: updateData,
+    });
+
+    revalidatePath(`/dashboard/events/${existingBlock.weddingEventId}/seating`);
+
+    return { success: true, block };
+  } catch (error) {
+    console.error("Error updating venue block:", error);
+    return { error: "Failed to update venue block" };
+  }
+}
+
+export async function updateVenueBlockPosition(input: UpdateVenueBlockPositionInput) {
+  try {
+    const user = await getCurrentUser();
+
+    if (!user || user.role !== UserRole.ROLE_WEDDING_OWNER) {
+      return { error: "Unauthorized" };
+    }
+
+    const validatedData = updateVenueBlockPositionSchema.parse(input);
+
+    // Verify ownership through event
+    const existingBlock = await prisma.venueBlock.findFirst({
+      where: { id: validatedData.id },
+      include: { weddingEvent: true },
+    });
+
+    if (!existingBlock || existingBlock.weddingEvent.ownerId !== user.id) {
+      return { error: "Block not found" };
+    }
+
+    const block = await prisma.venueBlock.update({
+      where: { id: validatedData.id },
+      data: {
+        positionX: validatedData.positionX,
+        positionY: validatedData.positionY,
+      },
+    });
+
+    revalidatePath(`/dashboard/events/${existingBlock.weddingEventId}/seating`);
+
+    return { success: true, block };
+  } catch (error) {
+    console.error("Error updating venue block position:", error);
+    return { error: "Failed to update venue block position" };
+  }
+}
+
+export async function updateVenueBlockSize(input: UpdateVenueBlockSizeInput) {
+  try {
+    const user = await getCurrentUser();
+
+    if (!user || user.role !== UserRole.ROLE_WEDDING_OWNER) {
+      return { error: "Unauthorized" };
+    }
+
+    const validatedData = updateVenueBlockSizeSchema.parse(input);
+
+    // Verify ownership through event
+    const existingBlock = await prisma.venueBlock.findFirst({
+      where: { id: validatedData.id },
+      include: { weddingEvent: true },
+    });
+
+    if (!existingBlock || existingBlock.weddingEvent.ownerId !== user.id) {
+      return { error: "Block not found" };
+    }
+
+    const block = await prisma.venueBlock.update({
+      where: { id: validatedData.id },
+      data: {
+        width: validatedData.width,
+        height: validatedData.height,
+      },
+    });
+
+    revalidatePath(`/dashboard/events/${existingBlock.weddingEventId}/seating`);
+
+    return { success: true, block };
+  } catch (error) {
+    console.error("Error updating venue block size:", error);
+    return { error: "Failed to update venue block size" };
+  }
+}
+
+export async function updateVenueBlockRotation(input: UpdateVenueBlockRotationInput) {
+  try {
+    const user = await getCurrentUser();
+
+    if (!user || user.role !== UserRole.ROLE_WEDDING_OWNER) {
+      return { error: "Unauthorized" };
+    }
+
+    const validatedData = updateVenueBlockRotationSchema.parse(input);
+
+    // Verify ownership through event
+    const existingBlock = await prisma.venueBlock.findFirst({
+      where: { id: validatedData.id },
+      include: { weddingEvent: true },
+    });
+
+    if (!existingBlock || existingBlock.weddingEvent.ownerId !== user.id) {
+      return { error: "Block not found" };
+    }
+
+    const block = await prisma.venueBlock.update({
+      where: { id: validatedData.id },
+      data: {
+        rotation: validatedData.rotation,
+      },
+    });
+
+    revalidatePath(`/dashboard/events/${existingBlock.weddingEventId}/seating`);
+
+    return { success: true, block };
+  } catch (error) {
+    console.error("Error updating venue block rotation:", error);
+    return { error: "Failed to update venue block rotation" };
+  }
+}
+
+export async function deleteVenueBlock(blockId: string) {
+  try {
+    const user = await getCurrentUser();
+
+    if (!user || user.role !== UserRole.ROLE_WEDDING_OWNER) {
+      return { error: "Unauthorized" };
+    }
+
+    // Verify ownership through event
+    const existingBlock = await prisma.venueBlock.findFirst({
+      where: { id: blockId },
+      include: { weddingEvent: true },
+    });
+
+    if (!existingBlock || existingBlock.weddingEvent.ownerId !== user.id) {
+      return { error: "Block not found" };
+    }
+
+    await prisma.venueBlock.delete({
+      where: { id: blockId },
+    });
+
+    revalidatePath(`/dashboard/events/${existingBlock.weddingEventId}/seating`);
+
+    return { success: true };
+  } catch (error) {
+    console.error("Error deleting venue block:", error);
+    return { error: "Failed to delete venue block" };
+  }
+}
+
+export async function getEventVenueBlocks(eventId: string) {
+  try {
+    const user = await getCurrentUser();
+
+    if (!user || user.role !== UserRole.ROLE_WEDDING_OWNER) {
+      return { error: "Unauthorized" };
+    }
+
+    // Verify event ownership
+    const event = await prisma.weddingEvent.findFirst({
+      where: { id: eventId, ownerId: user.id },
+    });
+
+    if (!event) {
+      return { error: "Event not found" };
+    }
+
+    const blocks = await prisma.venueBlock.findMany({
+      where: { weddingEventId: eventId },
+      orderBy: { createdAt: "asc" },
+    });
+
+    return { success: true, blocks };
+  } catch (error) {
+    console.error("Error fetching venue blocks:", error);
+    return { error: "Failed to fetch venue blocks" };
   }
 }

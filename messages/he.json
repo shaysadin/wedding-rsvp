@@ -976,9 +976,11 @@
     "capacityPlaceholder": "מספר מקומות",
     "shape": "צורת השולחן",
     "shapes": {
-      "round": "עגול",
-      "rectangular": "מלבני",
-      "oval": "אליפסה"
+      "circle": "עיגול",
+      "rectangle": "מלבן",
+      "rectangleRounded": "מלבן (פינות מעוגלות)",
+      "concave": "חצי עיגול קעור",
+      "concaveRounded": "חצי עיגול קעור (מעוגל)"
     },
     "seatsUsed": "{used} מתוך {total} מקומות",
     "seatsAvailable": "{available} מקומות פנויים",
@@ -1052,7 +1054,41 @@
     "unsavedChangesDescription": "יש לך שינויים במיקום השולחנות שלא נשמרו. האם אתה בטוח שברצונך לבטל אותם?",
     "positionsSaved": "מיקום השולחנות נשמר בהצלחה",
     "savePositionError": "שמירת מיקום השולחנות נכשלה",
-    "changesDiscarded": "השינויים בוטלו"
+    "changesDiscarded": "השינויים בוטלו",
+    "rotate45": "סובב 45 מעלות",
+    "venueBlocks": {
+      "title": "אזורי מקום",
+      "add": "הוסף אזור",
+      "edit": "ערוך אזור",
+      "delete": "מחק אזור",
+      "name": "שם האזור",
+      "namePlaceholder": "לדוגמה: עמדת DJ, בר ראשי",
+      "type": "סוג האזור",
+      "width": "רוחב",
+      "height": "גובה",
+      "rotation": "סיבוב",
+      "blockCreated": "האזור נוצר בהצלחה",
+      "blockUpdated": "האזור עודכן בהצלחה",
+      "blockDeleted": "האזור נמחק בהצלחה",
+      "confirmDelete": "האם אתה בטוח שברצונך למחוק אזור זה?",
+      "deleteTitle": "מחק אזור",
+      "deleteDescription": "האם אתה בטוח שברצונך למחוק את \"{name}\"? פעולה זו אינה ניתנת לביטול.",
+      "deleteError": "שגיאה במחיקת האזור",
+      "noBlocks": "אין אזורים עדיין",
+      "addBlockToStart": "הוסף אזורים כמו עמדת DJ, בר או רחבת ריקודים",
+      "types": {
+        "dj": "עמדת DJ",
+        "bar": "בר",
+        "stage": "במה",
+        "danceFloor": "רחבת ריקודים",
+        "entrance": "כניסה",
+        "photoBooth": "פוטובוט",
+        "buffet": "בופה",
+        "cake": "שולחן עוגה",
+        "gifts": "שולחן מתנות",
+        "other": "אחר"
+      }
+    }
   },
   "invitations": {
     "title": "שליחת הזמנות",

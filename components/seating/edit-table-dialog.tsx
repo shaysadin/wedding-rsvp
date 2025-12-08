@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { z } from "zod";
 
 import { updateTable } from "@/actions/seating";
+import { Shape } from "@/lib/validations/seating";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -33,11 +34,19 @@ import {
 } from "@/components/ui/select";
 import { Icons } from "@/components/shared/icons";
 
+const SHAPES: Shape[] = [
+  "circle",
+  "rectangle",
+  "rectangleRounded",
+  "concave",
+  "concaveRounded",
+];
+
 const editTableSchema = z.object({
   id: z.string(),
   name: z.string().min(1).max(100),
   capacity: z.number().int().min(1).max(100),
-  shape: z.enum(["round", "rectangular", "oval"]).optional(),
+  shape: z.enum(["circle", "rectangle", "rectangleRounded", "concave", "concaveRounded"]).optional(),
 });
 
 type EditTableInput = z.infer<typeof editTableSchema>;
@@ -63,7 +72,7 @@ export function EditTableDialog({ open, onOpenChange, table }: EditTableDialogPr
       id: "",
       name: "",
       capacity: 10,
-      shape: "round",
+      shape: "circle",
     },
   });
 
@@ -74,7 +83,7 @@ export function EditTableDialog({ open, onOpenChange, table }: EditTableDialogPr
         id: table.id,
         name: table.name,
         capacity: table.capacity,
-        shape: (table.shape as "round" | "rectangular" | "oval") || "round",
+        shape: (table.shape as Shape) || "circle",
       });
     }
   }, [table, form]);
@@ -160,9 +169,11 @@ export function EditTableDialog({ open, onOpenChange, table }: EditTableDialogPr
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="round">{t("shapes.round")}</SelectItem>
-                      <SelectItem value="rectangular">{t("shapes.rectangular")}</SelectItem>
-                      <SelectItem value="oval">{t("shapes.oval")}</SelectItem>
+                      {SHAPES.map((shape) => (
+                        <SelectItem key={shape} value={shape}>
+                          {t(`shapes.${shape}`)}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                   <FormMessage />

@@ -6,16 +6,8 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 
-import { createTable } from "@/actions/seating";
-import { createTableSchema, type CreateTableInput, type Shape } from "@/lib/validations/seating";
-
-const SHAPES: Shape[] = [
-  "circle",
-  "rectangle",
-  "rectangleRounded",
-  "concave",
-  "concaveRounded",
-];
+import { createVenueBlock } from "@/actions/seating";
+import { createVenueBlockSchema, type CreateVenueBlockInput, type VenueBlockType, type Shape } from "@/lib/validations/seating";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -42,13 +34,34 @@ import {
 } from "@/components/ui/select";
 import { Icons } from "@/components/shared/icons";
 
-interface AddTableDialogProps {
+const VENUE_BLOCK_TYPES: VenueBlockType[] = [
+  "dj",
+  "bar",
+  "stage",
+  "danceFloor",
+  "entrance",
+  "photoBooth",
+  "buffet",
+  "cake",
+  "gifts",
+  "other",
+];
+
+const SHAPES: Shape[] = [
+  "circle",
+  "rectangle",
+  "rectangleRounded",
+  "concave",
+  "concaveRounded",
+];
+
+interface AddVenueBlockDialogProps {
   eventId: string;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
 }
 
-export function AddTableDialog({ eventId, open: controlledOpen, onOpenChange }: AddTableDialogProps) {
+export function AddVenueBlockDialog({ eventId, open: controlledOpen, onOpenChange }: AddVenueBlockDialogProps) {
   const t = useTranslations("seating");
   const tc = useTranslations("common");
   const [internalOpen, setInternalOpen] = useState(false);
@@ -59,34 +72,43 @@ export function AddTableDialog({ eventId, open: controlledOpen, onOpenChange }: 
   const open = isControlled ? controlledOpen : internalOpen;
   const setOpen = isControlled ? (onOpenChange || (() => {})) : setInternalOpen;
 
-  const form = useForm<CreateTableInput>({
-    resolver: zodResolver(createTableSchema),
+  const form = useForm<CreateVenueBlockInput>({
+    resolver: zodResolver(createVenueBlockSchema),
     defaultValues: {
       weddingEventId: eventId,
       name: "",
-      capacity: 10,
-      shape: "circle",
+      type: "other",
+      shape: "rectangle",
     },
   });
 
-  async function onSubmit(data: CreateTableInput) {
+  // When type changes, set a default name based on type
+  const handleTypeChange = (type: VenueBlockType, onChange: (value: VenueBlockType) => void) => {
+    onChange(type);
+    const currentName = form.getValues("name");
+    if (!currentName) {
+      form.setValue("name", t(`venueBlocks.types.${type}`));
+    }
+  };
+
+  async function onSubmit(data: CreateVenueBlockInput) {
     setIsLoading(true);
     try {
-      const result = await createTable(data);
+      const result = await createVenueBlock(data);
 
       if (result.error) {
         toast.error(result.error);
         return;
       }
 
-      toast.success(t("tableCreated"));
+      toast.success(t("venueBlocks.blockCreated"));
       setOpen(false);
       form.reset();
 
       // Dispatch event to refresh data
       window.dispatchEvent(new CustomEvent("seating-data-changed"));
     } catch {
-      toast.error("Failed to create table");
+      toast.error("Failed to create venue block");
     } finally {
       setIsLoading(false);
     }
@@ -96,30 +118,41 @@ export function AddTableDialog({ eventId, open: controlledOpen, onOpenChange }: 
     <Dialog open={open} onOpenChange={setOpen}>
       {!isControlled && (
         <DialogTrigger asChild>
-          <Button>
+          <Button variant="outline">
             <Icons.add className="mr-2 h-4 w-4" />
-            {t("addTable")}
+            {t("venueBlocks.add")}
           </Button>
         </DialogTrigger>
       )}
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{t("addTable")}</DialogTitle>
+          <DialogTitle>{t("venueBlocks.add")}</DialogTitle>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
               control={form.control}
-              name="name"
+              name="type"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>{t("tableName")}</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder={t("tableNamePlaceholder")}
-                      {...field}
-                    />
-                  </FormControl>
+                  <FormLabel>{t("venueBlocks.type")}</FormLabel>
+                  <Select
+                    onValueChange={(value) => handleTypeChange(value as VenueBlockType, field.onChange)}
+                    defaultValue={field.value}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder={t("venueBlocks.type")} />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {VENUE_BLOCK_TYPES.map((type) => (
+                        <SelectItem key={type} value={type}>
+                          {t(`venueBlocks.types.${type}`)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                   <FormMessage />
                 </FormItem>
               )}
@@ -127,18 +160,14 @@ export function AddTableDialog({ eventId, open: controlledOpen, onOpenChange }: 
 
             <FormField
               control={form.control}
-              name="capacity"
+              name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>{t("capacity")}</FormLabel>
+                  <FormLabel>{t("venueBlocks.name")}</FormLabel>
                   <FormControl>
                     <Input
-                      type="number"
-                      min={1}
-                      max={100}
-                      placeholder={t("capacityPlaceholder")}
+                      placeholder={t("venueBlocks.namePlaceholder")}
                       {...field}
-                      onChange={(e) => field.onChange(parseInt(e.target.value) || 1)}
                     />
                   </FormControl>
                   <FormMessage />

@@ -1,8 +1,18 @@
 import { z } from "zod";
 
+// ============ SHARED SHAPE SCHEMA ============
+
+export const shapeSchema = z.enum([
+  "circle",
+  "rectangle",
+  "rectangleRounded",
+  "concave",
+  "concaveRounded",
+]);
+
 // ============ TABLE SCHEMAS ============
 
-export const tableShapeSchema = z.enum(["round", "rectangular", "oval"]);
+export const tableShapeSchema = shapeSchema;
 
 export const createTableSchema = z.object({
   weddingEventId: z.string().min(1, "Event ID is required"),
@@ -17,6 +27,9 @@ export const updateTableSchema = z.object({
   capacity: z.number().int().min(1).max(100).optional(),
   positionX: z.number().int().optional().nullable(),
   positionY: z.number().int().optional().nullable(),
+  width: z.number().int().min(40).max(400).optional(),
+  height: z.number().int().min(40).max(400).optional(),
+  rotation: z.number().int().min(0).max(359).optional(),
   shape: tableShapeSchema.optional(),
 });
 
@@ -24,6 +37,17 @@ export const updateTablePositionSchema = z.object({
   id: z.string().min(1, "Table ID is required"),
   positionX: z.number().int(),
   positionY: z.number().int(),
+});
+
+export const updateTableSizeSchema = z.object({
+  id: z.string().min(1, "Table ID is required"),
+  width: z.number().int().min(40).max(400),
+  height: z.number().int().min(40).max(400),
+});
+
+export const updateTableRotationSchema = z.object({
+  id: z.string().min(1, "Table ID is required"),
+  rotation: z.number().int().min(0).max(359),
 });
 
 // ============ ASSIGNMENT SCHEMAS ============
@@ -52,13 +76,77 @@ export const seatingFilterSchema = z.object({
   search: z.string().optional(),
 });
 
+// ============ VENUE BLOCK SCHEMAS ============
+
+export const venueBlockTypeSchema = z.enum([
+  "dj",
+  "bar",
+  "stage",
+  "danceFloor",
+  "entrance",
+  "photoBooth",
+  "buffet",
+  "cake",
+  "gifts",
+  "other",
+]);
+
+export const venueBlockShapeSchema = shapeSchema;
+
+export const createVenueBlockSchema = z.object({
+  weddingEventId: z.string().min(1, "Event ID is required"),
+  name: z.string().min(1, "Block name is required").max(100, "Block name is too long"),
+  type: venueBlockTypeSchema,
+  shape: venueBlockShapeSchema,
+});
+
+export const updateVenueBlockSchema = z.object({
+  id: z.string().min(1, "Block ID is required"),
+  name: z.string().min(1).max(100).optional(),
+  type: venueBlockTypeSchema.optional(),
+  shape: venueBlockShapeSchema.optional(),
+  width: z.number().int().min(40).max(400).optional(),
+  height: z.number().int().min(40).max(400).optional(),
+  positionX: z.number().int().optional().nullable(),
+  positionY: z.number().int().optional().nullable(),
+  rotation: z.number().int().min(0).max(359).optional(),
+});
+
+export const updateVenueBlockPositionSchema = z.object({
+  id: z.string().min(1, "Block ID is required"),
+  positionX: z.number().int(),
+  positionY: z.number().int(),
+});
+
+export const updateVenueBlockSizeSchema = z.object({
+  id: z.string().min(1, "Block ID is required"),
+  width: z.number().int().min(40).max(400),
+  height: z.number().int().min(40).max(400),
+});
+
+export const updateVenueBlockRotationSchema = z.object({
+  id: z.string().min(1, "Block ID is required"),
+  rotation: z.number().int().min(0).max(359),
+});
+
 // ============ TYPES ============
 
+export type Shape = z.infer<typeof shapeSchema>;
 export type TableShape = z.infer<typeof tableShapeSchema>;
 export type CreateTableInput = z.infer<typeof createTableSchema>;
 export type UpdateTableInput = z.infer<typeof updateTableSchema>;
 export type UpdateTablePositionInput = z.infer<typeof updateTablePositionSchema>;
+export type UpdateTableSizeInput = z.infer<typeof updateTableSizeSchema>;
+export type UpdateTableRotationInput = z.infer<typeof updateTableRotationSchema>;
 export type AssignGuestsInput = z.infer<typeof assignGuestsSchema>;
 export type RemoveGuestInput = z.infer<typeof removeGuestSchema>;
 export type MoveGuestInput = z.infer<typeof moveGuestSchema>;
 export type SeatingFilter = z.infer<typeof seatingFilterSchema>;
+
+export type VenueBlockType = z.infer<typeof venueBlockTypeSchema>;
+export type VenueBlockShape = z.infer<typeof venueBlockShapeSchema>;
+export type CreateVenueBlockInput = z.infer<typeof createVenueBlockSchema>;
+export type UpdateVenueBlockInput = z.infer<typeof updateVenueBlockSchema>;
+export type UpdateVenueBlockPositionInput = z.infer<typeof updateVenueBlockPositionSchema>;
+export type UpdateVenueBlockSizeInput = z.infer<typeof updateVenueBlockSizeSchema>;
+export type UpdateVenueBlockRotationInput = z.infer<typeof updateVenueBlockRotationSchema>;

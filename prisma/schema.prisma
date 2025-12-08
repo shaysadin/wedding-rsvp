@@ -232,6 +232,7 @@ model WeddingEvent {
   messageTemplates MessageTemplate[]
   bulkMessageJobs  BulkMessageJob[]
   tables           WeddingTable[]
+  venueBlocks      VenueBlock[]
 
   @@index([ownerId])
   @@map("wedding_events")
@@ -706,7 +707,10 @@ model WeddingTable {
   capacity       Int      @default(10)
   positionX      Int?     @map("position_x")
   positionY      Int?     @map("position_y")
-  shape          String?  @default("round") // round, rectangular, oval
+  width          Int      @default(100)
+  height         Int      @default(100)
+  rotation       Int      @default(0)
+  shape          String?  @default("circle") // circle, rectangle, rectangleRounded, concave, concaveRounded
   createdAt      DateTime @default(now()) @map("created_at")
   updatedAt      DateTime @default(now()) @updatedAt @map("updated_at")
 
@@ -730,6 +734,28 @@ model TableAssignment {
   @@index([tableId])
   @@index([guestId])
   @@map("table_assignments")
+}
+
+// ============ VENUE BLOCKS (DJ, Bar, Stage, etc.) ============
+
+model VenueBlock {
+  id             String   @id @default(cuid())
+  weddingEventId String   @map("wedding_event_id")
+  name           String
+  type           String   // dj, bar, stage, danceFloor, entrance, photoBooth, buffet, cake, gifts, other
+  shape          String   @default("rectangle") // circle, rectangle, rectangleRounded, concave, concaveRounded
+  positionX      Int?     @map("position_x")
+  positionY      Int?     @map("position_y")
+  width          Int      @default(100)
+  height         Int      @default(100)
+  rotation       Int      @default(0)
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @default(now()) @updatedAt @map("updated_at")
+
+  weddingEvent WeddingEvent @relation(fields: [weddingEventId], references: [id], onDelete: Cascade)
+
+  @@index([weddingEventId])
+  @@map("venue_blocks")
 }
 
 // ============ CRON JOB LOGS ============
