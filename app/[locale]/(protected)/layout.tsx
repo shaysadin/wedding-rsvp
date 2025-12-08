@@ -67,7 +67,7 @@ export default async function ProtectedLayout({ children }: ProtectedLayoutProps
   const canSwitchRoles = userRoles.length > 1;
 
   return (
-    <div className="relative flex h-dvh w-full overflow-hidden bg-sidebar">
+    <div className="fixed inset-0 flex w-full overflow-hidden bg-sidebar">
       <DashboardSidebar
         links={filteredLinks}
         userEvents={userEvents}
