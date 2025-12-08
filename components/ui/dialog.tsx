@@ -40,12 +40,14 @@ const DialogContent = React.forwardRef<
       className={cn(
         // Mobile: full screen with safe areas
         "fixed inset-0 z-50 flex flex-col bg-card",
-        // Desktop: centered modal
-        "sm:inset-auto sm:left-1/2 sm:top-1/2 sm:max-h-[90vh] sm:w-full sm:max-w-lg sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-xl sm:border sm:border-border/50 sm:shadow-xl",
+        // Desktop: centered modal (max-w-lg is default, can be overridden by className)
+        "sm:inset-auto sm:left-1/2 sm:top-1/2 sm:max-h-[90vh] sm:w-full sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-xl sm:border sm:border-border/50 sm:shadow-xl",
         // Animations
         "duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
         // Mobile slide up, desktop zoom
         "data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom sm:data-[state=closed]:slide-out-to-bottom-0 sm:data-[state=open]:slide-in-from-bottom-0 sm:data-[state=closed]:zoom-out-95 sm:data-[state=open]:zoom-in-95",
+        // Default max-width for desktop (placed after other sm: classes so it can be overridden)
+        "sm:max-w-lg",
         className
       )}
       {...props}

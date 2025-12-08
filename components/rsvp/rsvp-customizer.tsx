@@ -552,7 +552,7 @@ export function RsvpCustomizer({
                 {isRTL ? "תבניות" : "Templates"}
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-md">
+            <DialogContent className="sm:max-w-md">
               <DialogHeader>
                 <DialogTitle>
                   {isRTL ? "בחר תבנית" : "Choose Template"}

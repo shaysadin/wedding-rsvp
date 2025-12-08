@@ -181,7 +181,7 @@ export function BulkAddGuestsDialog({ eventId }: BulkAddGuestsDialogProps) {
           {t("bulkAdd")}
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-4xl" dir={isRTL ? "rtl" : "ltr"}>
+      <DialogContent className="sm:max-w-4xl" dir={isRTL ? "rtl" : "ltr"}>
         <DialogHeader>
           <DialogTitle>{t("bulkAdd")}</DialogTitle>
           <DialogDescription>

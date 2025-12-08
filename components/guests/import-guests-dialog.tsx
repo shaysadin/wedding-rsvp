@@ -225,7 +225,7 @@ export function ImportGuestsDialog({ eventId }: ImportGuestsDialogProps) {
           {t("import")}
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-3xl">
+      <DialogContent className="sm:max-w-3xl">
         <DialogHeader>
           <DialogTitle>{t("import")}</DialogTitle>
           <DialogDescription>

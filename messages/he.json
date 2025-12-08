@@ -980,7 +980,9 @@
     "shapes": {
       "circle": "עיגול",
       "rectangle": "מלבן",
+      "rectangular": "מלבני",
       "rectangleRounded": "מלבן (פינות מעוגלות)",
+      "semicircle": "חצי עיגול",
       "concave": "חצי עיגול קעור",
       "concaveRounded": "חצי עיגול קעור (מעוגל)"
     },

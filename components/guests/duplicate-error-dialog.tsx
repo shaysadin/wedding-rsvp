@@ -138,7 +138,7 @@ export function DuplicateErrorDialog({
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent dir={isRTL ? "rtl" : "ltr"} className="max-w-lg">
+        <DialogContent dir={isRTL ? "rtl" : "ltr"} className="sm:max-w-lg">
           <DialogHeader className={cn(isRTL && "text-right")}>
             <div className={cn("flex items-center gap-3", isRTL && "flex-row-reverse")}>
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-destructive/10">

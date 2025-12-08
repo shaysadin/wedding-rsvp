@@ -980,7 +980,9 @@
     "shapes": {
       "circle": "Circle",
       "rectangle": "Rectangle",
+      "rectangular": "Rectangular",
       "rectangleRounded": "Rectangle (Rounded)",
+      "semicircle": "Semicircle",
       "concave": "Concave Semicircle",
       "concaveRounded": "Concave Semicircle (Rounded)"
     },

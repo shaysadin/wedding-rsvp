@@ -467,7 +467,7 @@ export function MessageTemplateList({
 
       {/* Editor Dialog */}
       <Dialog open={isEditorOpen} onOpenChange={setIsEditorOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="sm:max-w-2xl">
           <DialogHeader>
             <DialogTitle>
               {editingTemplate?.id ? t("editTemplateTitle") : t("createTemplateTitle")}

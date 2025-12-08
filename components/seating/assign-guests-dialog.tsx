@@ -224,163 +224,165 @@ export function AssignGuestsDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col">
-        <DialogHeader>
+      <DialogContent className="sm:max-w-4xl" dir={isRTL ? "rtl" : "ltr"}>
+        <DialogHeader className="shrink-0">
           <DialogTitle>{t("assignDialog.title", { tableName })}</DialogTitle>
           <DialogDescription>
             {t("assignDialog.description")}
           </DialogDescription>
         </DialogHeader>
 
-        {/* Stats Bar */}
-        <div className={cn("flex items-center gap-4 py-2 px-3 bg-muted rounded-lg text-sm", isRTL && "flex-row")}>
-          <span>
-            {t("assignDialog.availableSeats", { count: availableSeats })}
-          </span>
-          <span className="text-muted-foreground">|</span>
-          <span className={cn(selectedSeats > availableSeats && "text-destructive font-medium")}>
-            {t("assignDialog.selectedSeats", { count: selectedSeats })}
-          </span>
-          <span className="text-muted-foreground">|</span>
-          <span>
-            {t("assignDialog.selectedGuests", { count: selectedIds.size })}
-          </span>
-        </div>
-
-        {/* Filters */}
-        <div className={cn("flex items-center gap-2", isRTL && "flex-row")}>
-          <div className="flex-1">
-            <Input
-              placeholder={t("assignDialog.search")}
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="h-9"
-            />
+        <div className="flex flex-col gap-4 min-h-0 flex-1">
+          {/* Stats Bar */}
+          <div className={cn("flex items-center gap-4 py-2 px-3 bg-muted rounded-lg text-sm shrink-0", isRTL && "flex-row")}>
+            <span>
+              {t("assignDialog.availableSeats", { count: availableSeats })}
+            </span>
+            <span className="text-muted-foreground">|</span>
+            <span className={cn(selectedSeats > availableSeats && "text-destructive font-medium")}>
+              {t("assignDialog.selectedSeats", { count: selectedSeats })}
+            </span>
+            <span className="text-muted-foreground">|</span>
+            <span>
+              {t("assignDialog.selectedGuests", { count: selectedIds.size })}
+            </span>
           </div>
-          <Select dir={isRTL ? "rtl" : undefined} value={seatedFilter} onValueChange={setSeatedFilter}>
-            <SelectTrigger className="max-w-[120px] h-9">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">{t("filters.all")}</SelectItem>
-              <SelectItem value="seated">{t("filters.seated")}</SelectItem>
-              <SelectItem value="unseated">{t("filters.unseated")}</SelectItem>
-            </SelectContent>
-          </Select>
-          {sides.length > 0 && (
-            <Select dir={isRTL ? "rtl" : undefined} value={sideFilter} onValueChange={setSideFilter}>
-              <SelectTrigger className="w-[100px] h-9">
-                <SelectValue placeholder={t("filters.side")} />
+
+          {/* Filters */}
+          <div className={cn("flex flex-wrap items-center gap-2 shrink-0", isRTL && "flex-row")}>
+            <div className="flex-1 min-w-[200px]">
+              <Input
+                placeholder={t("assignDialog.search")}
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="h-9"
+              />
+            </div>
+            <Select dir={isRTL ? "rtl" : undefined} value={seatedFilter} onValueChange={setSeatedFilter}>
+              <SelectTrigger className="w-[120px] h-9">
+                <SelectValue />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">{t("filters.all")}</SelectItem>
-                {sides.map((side) => (
-                  <SelectItem key={side} value={side}>
-                    {tGuests(`sides.${side.toLowerCase()}`) || side}
-                  </SelectItem>
-                ))}
+                <SelectItem value="seated">{t("filters.seated")}</SelectItem>
+                <SelectItem value="unseated">{t("filters.unseated")}</SelectItem>
               </SelectContent>
             </Select>
-          )}
-          {groups.length > 0 && (
-            <Select dir={isRTL ? "rtl" : undefined} value={groupFilter} onValueChange={setGroupFilter}>
+            {sides.length > 0 && (
+              <Select dir={isRTL ? "rtl" : undefined} value={sideFilter} onValueChange={setSideFilter}>
+                <SelectTrigger className="w-[100px] h-9">
+                  <SelectValue placeholder={t("filters.side")} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">{t("filters.all")}</SelectItem>
+                  {sides.map((side) => (
+                    <SelectItem key={side} value={side}>
+                      {tGuests(`sides.${side.toLowerCase()}`) || side}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+            {groups.length > 0 && (
+              <Select dir={isRTL ? "rtl" : undefined} value={groupFilter} onValueChange={setGroupFilter}>
+                <SelectTrigger className="w-[100px] h-9">
+                  <SelectValue placeholder={t("filters.group")} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">{t("filters.all")}</SelectItem>
+                  {groups.map((group) => (
+                    <SelectItem key={group} value={group}>
+                      {tGuests(`groups.${group.toLowerCase()}`) || group}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+            <Select dir={isRTL ? "rtl" : undefined} value={rsvpFilter} onValueChange={setRsvpFilter}>
               <SelectTrigger className="w-[100px] h-9">
-                <SelectValue placeholder={t("filters.group")} />
+                <SelectValue placeholder={t("filters.rsvpStatus")} />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">{t("filters.all")}</SelectItem>
-                {groups.map((group) => (
-                  <SelectItem key={group} value={group}>
-                    {tGuests(`groups.${group.toLowerCase()}`) || group}
-                  </SelectItem>
-                ))}
+                <SelectItem value="ACCEPTED">{tStatus("accepted")}</SelectItem>
+                <SelectItem value="PENDING">{tStatus("pending")}</SelectItem>
+                <SelectItem value="DECLINED">{tStatus("declined")}</SelectItem>
               </SelectContent>
             </Select>
-          )}
-          <Select dir={isRTL ? "rtl" : undefined} value={rsvpFilter} onValueChange={setRsvpFilter}>
-            <SelectTrigger className="w-[100px] h-9">
-              <SelectValue placeholder={t("filters.rsvpStatus")} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">{t("filters.all")}</SelectItem>
-              <SelectItem value="ACCEPTED">{tStatus("accepted")}</SelectItem>
-              <SelectItem value="PENDING">{tStatus("pending")}</SelectItem>
-              <SelectItem value="DECLINED">{tStatus("declined")}</SelectItem>
-            </SelectContent>
-          </Select>
+          </div>
+
+          {/* Select/Deselect All */}
+          <div className={cn("flex gap-2 shrink-0", isRTL && "flex-row-reverse")}>
+            <Button variant="outline" size="sm" onClick={selectAll}>
+              {t("assignDialog.selectAll")} ({filteredGuests.length})
+            </Button>
+            <Button variant="outline" size="sm" onClick={deselectAll}>
+              {t("assignDialog.deselectAll")}
+            </Button>
+          </div>
+
+          {/* Guest List - Fixed height for ~10 items, scrollable */}
+          <ScrollArea dir={isRTL ? "rtl" : undefined} className="h-[350px] border rounded-lg">
+            {isLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <Icons.spinner className="h-6 w-6 animate-spin text-muted-foreground" />
+              </div>
+            ) : filteredGuests.length === 0 ? (
+              <div className="flex items-center justify-center py-8 text-muted-foreground">
+                {t("assignDialog.noResults")}
+              </div>
+            ) : (
+              <div className="divide-y">
+                {filteredGuests.map((guest) => (
+                  <label
+                    key={guest.id}
+                    className={cn(
+                      "flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-muted/50 transition-colors",
+                      selectedIds.has(guest.id) && "bg-muted"
+                    )}
+                  >
+                    <Checkbox
+                      checked={selectedIds.has(guest.id)}
+                      onCheckedChange={() => toggleGuest(guest.id)}
+                    />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium truncate">{guest.name}</span>
+                        {guest.seatsNeeded > 1 && (
+                          <Badge variant="outline" className="text-xs">
+                            {t("partySize", { count: guest.seatsNeeded })}
+                          </Badge>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
+                        {guest.side && (
+                          <span>{tGuests(`sides.${guest.side.toLowerCase()}`) || guest.side}</span>
+                        )}
+                        {guest.side && guest.groupName && <span>•</span>}
+                        {guest.groupName && (
+                          <span>{tGuests(`groups.${guest.groupName.toLowerCase()}`) || guest.groupName}</span>
+                        )}
+                        {guest.tableAssignment && (
+                          <>
+                            <span>•</span>
+                            <span className="text-primary">
+                              {guest.tableAssignment.table.name}
+                            </span>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                    <Badge variant={getRsvpBadgeVariant(guest.rsvp?.status)}>
+                      {tStatus(guest.rsvp?.status?.toLowerCase() || "pending")}
+                    </Badge>
+                  </label>
+                ))}
+              </div>
+            )}
+          </ScrollArea>
         </div>
 
-        {/* Select/Deselect All */}
-        <div className={cn("flex gap-2", isRTL && "flex-row-reverse")}>
-          <Button variant="outline" size="sm" onClick={selectAll}>
-            {t("assignDialog.selectAll")} ({filteredGuests.length})
-          </Button>
-          <Button variant="outline" size="sm" onClick={deselectAll}>
-            {t("assignDialog.deselectAll")}
-          </Button>
-        </div>
-
-        {/* Guest List */}
-        <ScrollArea dir={isRTL ? "rtl" : undefined} className="flex-1 min-h-0 border rounded-lg">
-          {isLoading ? (
-            <div className="flex items-center justify-center py-8">
-              <Icons.spinner className="h-6 w-6 animate-spin text-muted-foreground" />
-            </div>
-          ) : filteredGuests.length === 0 ? (
-            <div className="flex items-center justify-center py-8 text-muted-foreground">
-              {t("assignDialog.noResults")}
-            </div>
-          ) : (
-            <div className="divide-y">
-              {filteredGuests.map((guest) => (
-                <label
-                  key={guest.id}
-                  className={cn(
-                    "flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-muted/50 transition-colors",
-                    selectedIds.has(guest.id) && "bg-muted"
-                  )}
-                >
-                  <Checkbox
-                    checked={selectedIds.has(guest.id)}
-                    onCheckedChange={() => toggleGuest(guest.id)}
-                  />
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium truncate">{guest.name}</span>
-                      {guest.seatsNeeded > 1 && (
-                        <Badge variant="outline" className="text-xs">
-                          {t("partySize", { count: guest.seatsNeeded })}
-                        </Badge>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
-                      {guest.side && (
-                        <span>{tGuests(`sides.${guest.side.toLowerCase()}`) || guest.side}</span>
-                      )}
-                      {guest.side && guest.groupName && <span>•</span>}
-                      {guest.groupName && (
-                        <span>{tGuests(`groups.${guest.groupName.toLowerCase()}`) || guest.groupName}</span>
-                      )}
-                      {guest.tableAssignment && (
-                        <>
-                          <span>•</span>
-                          <span className="text-primary">
-                            {guest.tableAssignment.table.name}
-                          </span>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                  <Badge variant={getRsvpBadgeVariant(guest.rsvp?.status)}>
-                    {tStatus(guest.rsvp?.status?.toLowerCase() || "pending")}
-                  </Badge>
-                </label>
-              ))}
-            </div>
-          )}
-        </ScrollArea>
-
-        <DialogFooter>
+        <DialogFooter className="shrink-0 gap-2 border-t pt-4 sm:border-0 sm:pt-0">
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             {tc("cancel")}
           </Button>
