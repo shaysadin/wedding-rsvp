@@ -16,6 +16,7 @@ import { ImportGuestsDialog } from "@/components/guests/import-guests-dialog";
 import { CopyLinkButton } from "@/components/events/copy-link-button";
 import { EventStatsCards } from "@/components/events/event-stats-cards";
 import { DuplicatePhoneWarning } from "@/components/guests/duplicate-phone-warning";
+import { PageFadeIn } from "@/components/shared/page-fade-in";
 
 // Lazy load the heavy GuestsTable component (~721 lines, ~60KB)
 const GuestsTable = dynamic(
@@ -68,7 +69,7 @@ export default async function EventPage({ params, searchParams }: EventPageProps
   const activeFilter = filter && validFilters.includes(filter) ? filter : "all";
 
   return (
-    <>
+    <PageFadeIn>
       <DashboardHeader heading={event.title} text={event.location}>
         <div className="flex flex-row flex-wrap gap-2">
           <CopyLinkButton eventId={event.id} />
@@ -121,6 +122,6 @@ export default async function EventPage({ params, searchParams }: EventPageProps
         </div>
         <GuestsTable guests={event.guests} eventId={event.id} initialFilter={activeFilter} />
       </div>
-    </>
+    </PageFadeIn>
   );
 }

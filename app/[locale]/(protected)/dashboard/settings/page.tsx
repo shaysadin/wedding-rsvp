@@ -5,6 +5,7 @@ import { getCurrentUser } from "@/lib/session";
 import { prisma } from "@/lib/db";
 import { DashboardHeader } from "@/components/dashboard/header";
 import { UserSettingsForm } from "@/components/dashboard/user-settings-form";
+import { PageFadeIn } from "@/components/shared/page-fade-in";
 
 export default async function SettingsPage() {
   const user = await getCurrentUser();
@@ -36,7 +37,7 @@ export default async function SettingsPage() {
   }
 
   return (
-    <>
+    <PageFadeIn>
       <DashboardHeader
         heading={t("title")}
         text={t("description")}
@@ -44,6 +45,6 @@ export default async function SettingsPage() {
       <div className="grid gap-8">
         <UserSettingsForm user={userData} />
       </div>
-    </>
+    </PageFadeIn>
   );
 }

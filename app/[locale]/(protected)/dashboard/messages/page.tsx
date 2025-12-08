@@ -5,6 +5,7 @@ import { UserRole } from "@prisma/client";
 import { getCurrentUser } from "@/lib/session";
 import { getEventsForMessagesSelector } from "@/actions/event-selector";
 import { MessagesEventSelector } from "@/components/events/messages-event-selector";
+import { PageFadeIn } from "@/components/shared/page-fade-in";
 
 export default async function MessagesPage() {
   const user = await getCurrentUser();
@@ -26,11 +27,13 @@ export default async function MessagesPage() {
   }
 
   return (
-    <MessagesEventSelector
-      events={result.events}
-      title={t("messageTemplates")}
-      description={t("selectEventForMessages")}
-      locale={locale}
-    />
+    <PageFadeIn>
+      <MessagesEventSelector
+        events={result.events}
+        title={t("messageTemplates")}
+        description={t("selectEventForMessages")}
+        locale={locale}
+      />
+    </PageFadeIn>
   );
 }

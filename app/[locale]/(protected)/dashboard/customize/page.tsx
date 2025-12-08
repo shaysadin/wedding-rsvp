@@ -5,6 +5,7 @@ import { UserRole } from "@prisma/client";
 import { getCurrentUser } from "@/lib/session";
 import { getEventsForCustomizeSelector } from "@/actions/event-selector";
 import { CustomizeEventSelector } from "@/components/events/customize-event-selector";
+import { PageFadeIn } from "@/components/shared/page-fade-in";
 
 export default async function CustomizePage() {
   const user = await getCurrentUser();
@@ -26,11 +27,13 @@ export default async function CustomizePage() {
   }
 
   return (
-    <CustomizeEventSelector
-      events={result.events}
-      title={t("customizeRsvp")}
-      description={t("selectEventForCustomize")}
-      locale={locale}
-    />
+    <PageFadeIn>
+      <CustomizeEventSelector
+        events={result.events}
+        title={t("customizeRsvp")}
+        description={t("selectEventForCustomize")}
+        locale={locale}
+      />
+    </PageFadeIn>
   );
 }

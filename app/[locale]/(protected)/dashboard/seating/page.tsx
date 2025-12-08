@@ -5,6 +5,7 @@ import { UserRole } from "@prisma/client";
 import { getCurrentUser } from "@/lib/session";
 import { getEventsForSeatingSelector } from "@/actions/event-selector";
 import { SeatingEventSelector } from "@/components/events/seating-event-selector";
+import { PageFadeIn } from "@/components/shared/page-fade-in";
 
 export default async function SeatingPage() {
   const user = await getCurrentUser();
@@ -26,11 +27,13 @@ export default async function SeatingPage() {
   }
 
   return (
-    <SeatingEventSelector
-      events={result.events}
-      title={t("title")}
-      description={t("selectEventDescription")}
-      locale={locale}
-    />
+    <PageFadeIn>
+      <SeatingEventSelector
+        events={result.events}
+        title={t("title")}
+        description={t("selectEventDescription")}
+        locale={locale}
+      />
+    </PageFadeIn>
   );
 }

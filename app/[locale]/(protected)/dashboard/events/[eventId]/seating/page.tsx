@@ -18,6 +18,7 @@ import { AddTableDialog } from "@/components/seating/add-table-dialog";
 import { AddVenueBlockDialog } from "@/components/seating/add-venue-block-dialog";
 import { AssignGuestsDialog } from "@/components/seating/assign-guests-dialog";
 import { EditTableDialog } from "@/components/seating/edit-table-dialog";
+import { PageFadeIn } from "@/components/shared/page-fade-in";
 
 // Lazy load the heavy TableFloorPlan component (~1302 lines, ~90KB with @dnd-kit)
 const TableFloorPlan = dynamic(
@@ -189,7 +190,7 @@ export default function SeatingPage({ params }: SeatingPageProps) {
   }
 
   return (
-    <>
+    <PageFadeIn>
       <DashboardHeader heading={t("title")} text={t("description")}>
         <div className="flex flex-row flex-wrap gap-2">
           <Button variant="outline" asChild>
@@ -272,6 +273,6 @@ export default function SeatingPage({ params }: SeatingPageProps) {
         onOpenChange={setEditDialogOpen}
         table={selectedTableForEdit}
       />
-    </>
+    </PageFadeIn>
   );
 }

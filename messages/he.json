@@ -964,6 +964,7 @@
   "seating": {
     "title": "סידורי ישיבה",
     "description": "ניהול שיבוץ אורחים לשולחנות החתונה",
+    "selectEventDescription": "בחר אירוע לניהול סידורי ישיבה",
     "addTable": "הוסף שולחן",
     "editTable": "ערוך שולחן",
     "deleteTable": "מחק שולחן",
@@ -1093,6 +1094,7 @@
   "invitations": {
     "title": "שליחת הזמנות",
     "description": "שלח תמונת הזמנה לחתונה לאורחים בוואטסאפ",
+    "selectEventDescription": "בחר אירוע לשליחת הזמנות",
     "uploadImage": "העלה תמונת הזמנה",
     "uploadDescription": "העלה את תמונת ההזמנה לחתונה (JPG, PNG, עד 5MB)",
     "currentImage": "תמונת הזמנה נוכחית",

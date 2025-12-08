@@ -5,6 +5,7 @@ import { UserRole } from "@prisma/client";
 import { getCurrentUser } from "@/lib/session";
 import { getEventsForInvitationsSelector } from "@/actions/event-selector";
 import { InvitationsEventSelector } from "@/components/events/invitations-event-selector";
+import { PageFadeIn } from "@/components/shared/page-fade-in";
 
 export default async function InvitationsPage() {
   const user = await getCurrentUser();
@@ -26,11 +27,13 @@ export default async function InvitationsPage() {
   }
 
   return (
-    <InvitationsEventSelector
-      events={result.events}
-      title={t("title")}
-      description={t("selectEventDescription")}
-      locale={locale}
-    />
+    <PageFadeIn>
+      <InvitationsEventSelector
+        events={result.events}
+        title={t("title")}
+        description={t("selectEventDescription")}
+        locale={locale}
+      />
+    </PageFadeIn>
   );
 }

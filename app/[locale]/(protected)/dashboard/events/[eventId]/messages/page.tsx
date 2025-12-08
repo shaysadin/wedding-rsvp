@@ -9,6 +9,7 @@ import { DashboardHeader } from "@/components/dashboard/header";
 import { MessageTemplateList } from "@/components/dashboard/message-template-list";
 import { Button } from "@/components/ui/button";
 import { Icons } from "@/components/shared/icons";
+import { PageFadeIn } from "@/components/shared/page-fade-in";
 
 interface MessagesPageProps {
   params: Promise<{ eventId: string }>;
@@ -34,7 +35,7 @@ export default async function MessagesPage({ params }: MessagesPageProps) {
   }
 
   return (
-    <>
+    <PageFadeIn>
       <div className="flex items-center gap-4 mb-6">
         <Button variant="outline" size="icon" asChild className="h-9 w-9 shrink-0">
           <Link href={`/${locale}/dashboard/events/${eventId}`}>
@@ -55,6 +56,6 @@ export default async function MessagesPage({ params }: MessagesPageProps) {
         locale={locale}
         smsSenderId={result.event.smsSenderId}
       />
-    </>
+    </PageFadeIn>
   );
 }

@@ -964,6 +964,7 @@
   "seating": {
     "title": "Table Seating",
     "description": "Manage table assignments for your wedding guests",
+    "selectEventDescription": "Choose an event to manage table seating arrangements",
     "addTable": "Add Table",
     "editTable": "Edit Table",
     "deleteTable": "Delete Table",
@@ -1093,6 +1094,7 @@
   "invitations": {
     "title": "Send Invitations",
     "description": "Send wedding invitation images to your guests via WhatsApp",
+    "selectEventDescription": "Choose an event to send invitations",
     "uploadImage": "Upload Invitation Image",
     "uploadDescription": "Upload your wedding invitation image (JPG, PNG, max 5MB)",
     "currentImage": "Current Invitation Image",

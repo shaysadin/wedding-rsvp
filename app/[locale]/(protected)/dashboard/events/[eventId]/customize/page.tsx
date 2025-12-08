@@ -6,6 +6,7 @@ import { getRsvpPageSettings, getTemplates } from "@/actions/rsvp-settings";
 import { getCurrentUser } from "@/lib/session";
 import { DashboardHeader } from "@/components/dashboard/header";
 import { RsvpCustomizerSkeleton } from "@/components/skeletons";
+import { PageFadeIn } from "@/components/shared/page-fade-in";
 
 // Lazy load the heavy RsvpCustomizer component (~1900 lines, ~120KB)
 const RsvpCustomizer = dynamic(
@@ -40,11 +41,7 @@ export default async function CustomizePage({ params }: CustomizePageProps) {
   const templates = templatesResult.templates || [];
 
   return (
-    <>
-      {/* <DashboardHeader
-        heading={t("title")}
-        text={event.title}
-      /> */}
+    <PageFadeIn>
       <RsvpCustomizer
         eventId={eventId}
         event={event}
@@ -52,6 +49,6 @@ export default async function CustomizePage({ params }: CustomizePageProps) {
         templates={templates}
         locale={locale}
       />
-    </>
+    </PageFadeIn>
   );
 }

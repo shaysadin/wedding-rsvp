@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Icons } from "@/components/shared/icons";
 import { InvitationImageUpload } from "@/components/invitations/invitation-image-upload";
 import { InvitationsGuestTable } from "@/components/invitations/invitations-guest-table";
+import { PageFadeIn } from "@/components/shared/page-fade-in";
 
 interface GuestForInvitation {
   id: string;
@@ -107,7 +108,7 @@ export default function InvitationsPage({ params }: InvitationsPageProps) {
   }
 
   return (
-    <>
+    <PageFadeIn>
       <DashboardHeader heading={t("title")} text={t("description")}>
         <Button variant="outline" asChild>
           <Link href={`/${locale}/dashboard/events/${eventId}`}>
@@ -140,6 +141,6 @@ export default function InvitationsPage({ params }: InvitationsPageProps) {
           </div>
         </div>
       )}
-    </>
+    </PageFadeIn>
   );
 }
