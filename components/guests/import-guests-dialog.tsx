@@ -18,6 +18,14 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Icons } from "@/components/shared/icons";
+import { DuplicateErrorDialog } from "./duplicate-error-dialog";
+
+interface DuplicateInfo {
+  name: string;
+  phone: string;
+  existingName?: string;
+  existingGuestId?: string;
+}
 
 interface ImportGuestsDialogProps {
   eventId: string;
@@ -41,6 +49,11 @@ export function ImportGuestsDialog({ eventId }: ImportGuestsDialogProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [parsedGuests, setParsedGuests] = useState<ParsedGuest[]>([]);
   const [fileName, setFileName] = useState("");
+
+  // Duplicate error dialog state
+  const [duplicateDialogOpen, setDuplicateDialogOpen] = useState(false);
+  const [duplicatesWithExisting, setDuplicatesWithExisting] = useState<DuplicateInfo[]>([]);
+  const [duplicatesWithinBatch, setDuplicatesWithinBatch] = useState<DuplicateInfo[]>([]);
 
   const downloadTemplate = useCallback(() => {
     // Create template data with example rows
@@ -174,7 +187,19 @@ export function ImportGuestsDialog({ eventId }: ImportGuestsDialogProps) {
       });
 
       if (result.error) {
-        toast.error(result.error);
+        if (result.error === "DUPLICATE_PHONES_IN_IMPORT") {
+          // Extract duplicate info from result
+          const typedResult = result as {
+            error: string;
+            duplicatesWithExisting?: { name: string; phone: string; existingName: string; existingGuestId?: string }[];
+            duplicatesWithinBatch?: { name: string; phone: string }[];
+          };
+          setDuplicatesWithExisting(typedResult.duplicatesWithExisting || []);
+          setDuplicatesWithinBatch(typedResult.duplicatesWithinBatch || []);
+          setDuplicateDialogOpen(true);
+        } else {
+          toast.error(result.error);
+        }
         return;
       }
 
@@ -182,6 +207,8 @@ export function ImportGuestsDialog({ eventId }: ImportGuestsDialogProps) {
       setParsedGuests([]);
       setFileName("");
       setOpen(false);
+      // Dispatch event to refresh duplicate warning
+      window.dispatchEvent(new CustomEvent("guests-data-changed"));
     } catch (error) {
       toast.error(te("generic"));
     } finally {
@@ -190,6 +217,7 @@ export function ImportGuestsDialog({ eventId }: ImportGuestsDialogProps) {
   };
 
   return (
+    <>
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button variant="outline">
@@ -309,5 +337,20 @@ export function ImportGuestsDialog({ eventId }: ImportGuestsDialogProps) {
         </div>
       </DialogContent>
     </Dialog>
+
+      <DuplicateErrorDialog
+        open={duplicateDialogOpen}
+        onOpenChange={setDuplicateDialogOpen}
+        duplicatesWithExisting={duplicatesWithExisting}
+        duplicatesWithinBatch={duplicatesWithinBatch}
+        onSkipDuplicate={(phone) => {
+          // Remove the duplicate from both lists by phone number
+          setDuplicatesWithExisting(prev => prev.filter(d => d.phone !== phone));
+          setDuplicatesWithinBatch(prev => prev.filter(d => d.phone !== phone));
+          // Also remove from parsed guests so it won't be imported
+          setParsedGuests(prev => prev.filter(g => g.phoneNumber !== phone));
+        }}
+      />
+    </>
   );
 }

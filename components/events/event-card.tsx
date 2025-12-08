@@ -3,11 +3,10 @@
 import Link from "next/link";
 import { WeddingEvent, Guest, GuestRsvp } from "@prisma/client";
 import { useTranslations } from "next-intl";
+import { Heart, MapPin } from "lucide-react";
 
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
-import { Icons } from "@/components/shared/icons";
+import { cn } from "@/lib/utils";
+import { Card, CardContent } from "@/components/ui/card";
 
 type EventWithStats = WeddingEvent & {
   guests?: (Guest & { rsvp: GuestRsvp | null })[];
@@ -28,86 +27,142 @@ interface EventCardProps {
 
 export function EventCard({ event, locale }: EventCardProps) {
   const t = useTranslations("events");
-  const tc = useTranslations("common");
-  const ts = useTranslations("status");
-  const responseRate = event.stats.total > 0
-    ? ((event.stats.accepted + event.stats.declined) / event.stats.total) * 100
+  const isRTL = locale === "he";
+
+  const eventDate = new Date(event.dateTime);
+  const isUpcoming = eventDate > new Date();
+  const daysUntil = Math.ceil((eventDate.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
+
+  const formattedDate = eventDate.toLocaleDateString(isRTL ? "he-IL" : "en-US", {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+  });
+
+  const formattedTime = eventDate.toLocaleTimeString(isRTL ? "he-IL" : "en-US", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+
+  const acceptanceRate = event.stats.total > 0
+    ? Math.round((event.stats.accepted / event.stats.total) * 100)
     : 0;
 
   return (
-    <Card className="flex flex-col">
-      <CardHeader>
-        <CardTitle className="flex items-start justify-between gap-2">
-          <span className="line-clamp-2">{event.title}</span>
-          {event.isActive ? (
-            <span className="shrink-0 rounded-full bg-green-500/10 px-2 py-1 text-xs text-green-500">
-              {tc("active")}
-            </span>
-          ) : (
-            <span className="shrink-0 rounded-full bg-gray-500/10 px-2 py-1 text-xs text-gray-500">
-              {tc("inactive")}
-            </span>
-          )}
-        </CardTitle>
-      </CardHeader>
+    <Link href={`/${locale}/dashboard/events/${event.id}`}>
+      <Card className="group relative overflow-hidden transition-all hover:shadow-lg hover:-translate-y-1 duration-200">
+        {/* Decorative top gradient */}
+        <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-pink-500 via-rose-500 to-red-500" />
 
-      <CardContent className="flex-1 space-y-4">
-        <div className="space-y-2 text-sm">
-          <div className="flex items-center gap-2 text-muted-foreground">
-            <Icons.calendar className="h-4 w-4" />
-            <span>
-              {new Date(event.dateTime).toLocaleDateString(locale === "he" ? "he-IL" : "en-US", {
-                weekday: "short",
-                year: "numeric",
-                month: "short",
-                day: "numeric",
-              })}
-            </span>
+        <CardContent className="p-5">
+          {/* Header */}
+          <div className={cn(
+            "flex items-start justify-between gap-3",
+            isRTL && "flex-row-reverse"
+          )}>
+            <div className={cn("flex-1 min-w-0", isRTL && "text-right")}>
+              <h3 className="font-semibold truncate group-hover:text-primary transition-colors">
+                {event.title}
+              </h3>
+              {event.venue && (
+                <p className={cn(
+                  "mt-1 flex items-center gap-1 text-xs text-muted-foreground truncate",
+                  isRTL && "flex-row-reverse justify-end"
+                )}>
+                  <MapPin className="h-3 w-3 shrink-0" />
+                  <span className="truncate">{event.venue}</span>
+                </p>
+              )}
+            </div>
+            <div className="shrink-0">
+              <div className="rounded-full bg-gradient-to-br from-pink-100 to-rose-100 p-2 dark:from-pink-900/30 dark:to-rose-900/30 transition-transform duration-150 group-hover:rotate-12">
+                <Heart className="h-4 w-4 text-rose-500" />
+              </div>
+            </div>
           </div>
-          <div className="flex items-center gap-2 text-muted-foreground">
-            <Icons.mapPin className="h-4 w-4" />
-            <span className="line-clamp-1">{event.location}</span>
-          </div>
-          <div className="flex items-center gap-2 text-muted-foreground">
-            <Icons.users className="h-4 w-4" />
-            <span>{event.stats.total} {t("guestCount")}</span>
-          </div>
-        </div>
 
-        <div className="space-y-2">
-          <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">{t("rsvpStats")}</span>
-            <span className="font-medium">{Math.round(responseRate)}%</span>
+          {/* Date & Time */}
+          <div className={cn(
+            "mt-4 flex items-center gap-2 rounded-lg bg-muted/50 p-2.5",
+            isRTL && "flex-row-reverse"
+          )}>
+            <div className="flex h-10 w-10 flex-col items-center justify-center rounded-md bg-background shadow-sm">
+              <span className="text-[10px] font-medium uppercase text-muted-foreground">
+                {eventDate.toLocaleDateString(isRTL ? "he-IL" : "en-US", { month: "short" })}
+              </span>
+              <span className="text-lg font-bold leading-none">
+                {eventDate.getDate()}
+              </span>
+            </div>
+            <div className={cn("flex-1", isRTL && "text-right")}>
+              <p className="text-sm font-medium">{formattedDate}</p>
+              <p className="text-xs text-muted-foreground">{formattedTime}</p>
+            </div>
+            {isUpcoming && daysUntil <= 30 && (
+              <span className={cn(
+                "rounded-full px-2 py-0.5 text-[10px] font-medium",
+                daysUntil <= 7
+                  ? "bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400"
+                  : "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
+              )}>
+                {daysUntil === 0
+                  ? (isRTL ? "היום!" : "Today!")
+                  : daysUntil === 1
+                    ? (isRTL ? "מחר" : "Tomorrow")
+                    : (isRTL ? `עוד ${daysUntil} ימים` : `${daysUntil} days`)}
+              </span>
+            )}
           </div>
-          <Progress value={responseRate} className="h-2" />
-          <div className="flex justify-between text-xs text-muted-foreground">
-            <span className="text-green-500">{event.stats.accepted} {ts("accepted").toLowerCase()}</span>
-            <span className="text-yellow-500">{event.stats.pending} {ts("pending").toLowerCase()}</span>
-            <span className="text-red-500">{event.stats.declined} {ts("declined").toLowerCase()}</span>
-          </div>
-        </div>
 
-        {event.stats.totalGuestCount > 0 && (
-          <div className="rounded-lg bg-muted/50 p-3 text-center">
-            <p className="text-2xl font-bold">{event.stats.totalGuestCount}</p>
-            <p className="text-xs text-muted-foreground">{tc("total")} {tc("attending")}</p>
+          {/* Stats */}
+          <div className={cn(
+            "mt-4 grid grid-cols-3 gap-2 text-center",
+            isRTL && "direction-rtl"
+          )}>
+            <div className="rounded-md bg-muted/30 p-2">
+              <p className="text-lg font-semibold">{event.stats.total}</p>
+              <p className="text-[10px] text-muted-foreground">
+                {isRTL ? "אורחים" : "Guests"}
+              </p>
+            </div>
+            <div className="rounded-md bg-emerald-50 p-2 dark:bg-emerald-900/20">
+              <p className="text-lg font-semibold text-emerald-600 dark:text-emerald-400">
+                {event.stats.accepted}
+              </p>
+              <p className="text-[10px] text-emerald-600/70 dark:text-emerald-400/70">
+                {isRTL ? "מאושר" : "Confirmed"}
+              </p>
+            </div>
+            <div className="rounded-md bg-amber-50 p-2 dark:bg-amber-900/20">
+              <p className="text-lg font-semibold text-amber-600 dark:text-amber-400">
+                {event.stats.pending}
+              </p>
+              <p className="text-[10px] text-amber-600/70 dark:text-amber-400/70">
+                {isRTL ? "ממתין" : "Pending"}
+              </p>
+            </div>
           </div>
-        )}
-      </CardContent>
 
-      <CardFooter className="flex gap-2">
-        <Button asChild variant="outline" className="flex-1">
-          <Link href={`/${locale}/dashboard/events/${event.id}`}>
-            <Icons.users className="me-2 h-4 w-4" />
-            {t("manageGuests")}
-          </Link>
-        </Button>
-        <Button asChild variant="ghost" size="icon">
-          <Link href={`/${locale}/dashboard/events/${event.id}/customize`}>
-            <Icons.pencil className="h-4 w-4" />
-          </Link>
-        </Button>
-      </CardFooter>
-    </Card>
+          {/* Progress bar */}
+          <div className="mt-4">
+            <div className={cn(
+              "mb-1 flex items-center justify-between text-xs",
+              isRTL && "flex-row-reverse"
+            )}>
+              <span className="text-muted-foreground">
+                {isRTL ? "אחוז אישורים" : "Response rate"}
+              </span>
+              <span className="font-medium">{acceptanceRate}%</span>
+            </div>
+            <div className="h-1.5 overflow-hidden rounded-full bg-muted">
+              <div
+                className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-green-500 transition-all duration-500"
+                style={{ width: `${acceptanceRate}%` }}
+              />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </Link>
   );
 }

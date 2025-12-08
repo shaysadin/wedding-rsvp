@@ -32,6 +32,7 @@ import {
 } from "@/components/ui/table";
 import { Icons } from "@/components/shared/icons";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { DuplicateErrorDialog } from "./duplicate-error-dialog";
 
 interface BulkAddGuestsDialogProps {
   eventId: string;
@@ -68,6 +69,10 @@ export function BulkAddGuestsDialog({ eventId }: BulkAddGuestsDialogProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [rows, setRows] = useState<GuestRow[]>([createEmptyRow(), createEmptyRow(), createEmptyRow()]);
 
+  // Duplicate error dialog state
+  const [duplicateDialogOpen, setDuplicateDialogOpen] = useState(false);
+  const [duplicatesWithExisting, setDuplicatesWithExisting] = useState<{ name: string; phone: string; existingName?: string; existingGuestId?: string }[]>([]);
+
   const updateRow = (id: string, field: keyof GuestRow, value: string | number) => {
     setRows(rows.map(row =>
       row.id === id ? { ...row, [field]: value } : row
@@ -100,6 +105,8 @@ export function BulkAddGuestsDialog({ eventId }: BulkAddGuestsDialogProps) {
     let successCount = 0;
     let errorCount = 0;
 
+    const collectedDuplicates: { name: string; phone: string; existingName?: string; existingGuestId?: string }[] = [];
+
     for (const guest of validGuests) {
       try {
         const result = await createGuest({
@@ -114,6 +121,19 @@ export function BulkAddGuestsDialog({ eventId }: BulkAddGuestsDialogProps) {
 
         if (result.error) {
           errorCount++;
+          if (result.error === "DUPLICATE_PHONE" && "duplicateNames" in result) {
+            const typedResult = result as {
+              error: string;
+              duplicateNames: string[];
+              duplicateGuestIds?: string[]
+            };
+            collectedDuplicates.push({
+              name: guest.name,
+              phone: guest.phoneNumber,
+              existingName: typedResult.duplicateNames.join(", "),
+              existingGuestId: typedResult.duplicateGuestIds?.[0],
+            });
+          }
         } else {
           successCount++;
         }
@@ -127,13 +147,19 @@ export function BulkAddGuestsDialog({ eventId }: BulkAddGuestsDialogProps) {
     if (successCount > 0) {
       toast.success(t("bulkAddSuccess", { count: successCount }));
     }
-    if (errorCount > 0) {
+    if (collectedDuplicates.length > 0) {
+      // Show duplicate phone errors in modal
+      setDuplicatesWithExisting(collectedDuplicates);
+      setDuplicateDialogOpen(true);
+    } else if (errorCount > 0) {
       toast.error(t("bulkAddErrors", { count: errorCount }));
     }
 
     if (successCount > 0) {
       setRows([createEmptyRow(), createEmptyRow(), createEmptyRow()]);
       setOpen(false);
+      // Dispatch event to refresh duplicate warning
+      window.dispatchEvent(new CustomEvent("guests-data-changed"));
     }
   };
 
@@ -147,6 +173,7 @@ export function BulkAddGuestsDialog({ eventId }: BulkAddGuestsDialogProps) {
   const validCount = getValidGuests().length;
 
   return (
+    <>
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         <Button variant="outline">
@@ -351,5 +378,16 @@ export function BulkAddGuestsDialog({ eventId }: BulkAddGuestsDialogProps) {
         </div>
       </DialogContent>
     </Dialog>
+
+      <DuplicateErrorDialog
+        open={duplicateDialogOpen}
+        onOpenChange={setDuplicateDialogOpen}
+        duplicatesWithExisting={duplicatesWithExisting}
+        onSkipDuplicate={(phone) => {
+          // Remove the duplicate from the list by phone number
+          setDuplicatesWithExisting(prev => prev.filter(d => d.phone !== phone));
+        }}
+      />
+    </>
   );
 }

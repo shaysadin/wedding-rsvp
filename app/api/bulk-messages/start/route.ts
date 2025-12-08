@@ -4,8 +4,13 @@ import { UserRole, NotificationType } from "@prisma/client";
 import { getCurrentUser } from "@/lib/session";
 import { prisma } from "@/lib/db";
 import { createBulkJob, processJobChunk } from "@/lib/bulk-messaging/job-processor";
+import { withRateLimit, RATE_LIMIT_PRESETS } from "@/lib/rate-limit";
 
 export async function POST(req: NextRequest) {
+  // Rate limit bulk operations
+  const rateLimitResult = withRateLimit(req, RATE_LIMIT_PRESETS.bulk);
+  if (rateLimitResult) return rateLimitResult;
+
   try {
     const user = await getCurrentUser();
 

@@ -5,6 +5,7 @@ import { RsvpStatus } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { submitRsvpSchema, type SubmitRsvpInput } from "@/lib/validations/rsvp";
 import { notificationService } from "@/lib/notifications/mock-service";
+import { isRateLimited, RATE_LIMIT_PRESETS } from "@/lib/rate-limit";
 
 export async function getGuestBySlug(slug: string) {
   try {
@@ -38,6 +39,11 @@ export async function getGuestBySlug(slug: string) {
 export async function submitRsvp(input: SubmitRsvpInput) {
   try {
     const validatedData = submitRsvpSchema.parse(input);
+
+    // Rate limit by guest slug (30 requests per minute per guest)
+    if (isRateLimited("submitRsvp", validatedData.slug, RATE_LIMIT_PRESETS.rsvp)) {
+      return { error: "Too many requests. Please try again later." };
+    }
 
     // Get guest
     const guest = await prisma.guest.findUnique({

@@ -34,6 +34,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Icons } from "@/components/shared/icons";
+import { DuplicateErrorDialog } from "./duplicate-error-dialog";
 
 const PREDEFINED_GROUPS = ["family", "friends", "work", "other"] as const;
 
@@ -54,6 +55,13 @@ export function AddGuestDialog({ eventId }: AddGuestDialogProps) {
   const [customGroupValue, setCustomGroupValue] = useState("");
   const [showCustomSide, setShowCustomSide] = useState(false);
   const [customSideValue, setCustomSideValue] = useState("");
+
+  // Duplicate error dialog state
+  const [duplicateDialogOpen, setDuplicateDialogOpen] = useState(false);
+  const [duplicateNames, setDuplicateNames] = useState<string[]>([]);
+  const [duplicateGuestIds, setDuplicateGuestIds] = useState<string[]>([]);
+  const [duplicateGuestName, setDuplicateGuestName] = useState("");
+  const [duplicatePhone, setDuplicatePhone] = useState("");
 
   const form = useForm<CreateGuestInput>({
     resolver: zodResolver(createGuestSchema),
@@ -85,7 +93,20 @@ export function AddGuestDialog({ eventId }: AddGuestDialogProps) {
       const result = await createGuest(data);
 
       if (result.error) {
-        toast.error(result.error);
+        if (result.error === "DUPLICATE_PHONE" && "duplicateNames" in result) {
+          const typedResult = result as {
+            error: string;
+            duplicateNames: string[];
+            duplicateGuestIds?: string[]
+          };
+          setDuplicateNames(typedResult.duplicateNames);
+          setDuplicateGuestIds(typedResult.duplicateGuestIds || []);
+          setDuplicateGuestName(data.name);
+          setDuplicatePhone(data.phoneNumber || "");
+          setDuplicateDialogOpen(true);
+        } else {
+          toast.error(result.error);
+        }
         return;
       }
 
@@ -104,6 +125,7 @@ export function AddGuestDialog({ eventId }: AddGuestDialogProps) {
   };
 
   return (
+    <>
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button>
@@ -322,5 +344,20 @@ export function AddGuestDialog({ eventId }: AddGuestDialogProps) {
         </Form>
       </DialogContent>
     </Dialog>
+
+      <DuplicateErrorDialog
+        open={duplicateDialogOpen}
+        onOpenChange={setDuplicateDialogOpen}
+        singleDuplicateNames={duplicateNames}
+        singleDuplicateGuestIds={duplicateGuestIds}
+        guestName={duplicateGuestName}
+        phoneNumber={duplicatePhone}
+        onExistingGuestDeleted={() => {
+          // When the existing guest is deleted, close the dialog so user can retry adding the new guest
+          setDuplicateNames([]);
+          setDuplicateGuestIds([]);
+        }}
+      />
+    </>
   );
 }

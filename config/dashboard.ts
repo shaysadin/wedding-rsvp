@@ -49,14 +49,34 @@ export const sidebarLinks: SidebarNavItem[] = [
         title: "Events",
         authorizeOnly: UserRole.ROLE_WEDDING_OWNER,
       },
-      // {
-      //   href: "/dashboard/charts",
-      //   icon: "lineChart",
-      //   titleKey: "common.analytics",
-      //   title: "Analytics",
-      //   authorizeOnly: UserRole.ROLE_WEDDING_OWNER,
-      // },
-   
+      {
+        href: "/dashboard/seating",
+        icon: "layoutGrid",
+        titleKey: "navigation.seating",
+        title: "Table Seating",
+        authorizeOnly: UserRole.ROLE_WEDDING_OWNER,
+      },
+      {
+        href: "/dashboard/invitations",
+        icon: "mail",
+        titleKey: "navigation.invitations",
+        title: "Send Invitations",
+        authorizeOnly: UserRole.ROLE_WEDDING_OWNER,
+      },
+      {
+        href: "/dashboard/messages",
+        icon: "messageSquare",
+        titleKey: "navigation.messages",
+        title: "Message Templates",
+        authorizeOnly: UserRole.ROLE_WEDDING_OWNER,
+      },
+      {
+        href: "/dashboard/customize",
+        icon: "palette",
+        titleKey: "navigation.customize",
+        title: "Customize RSVP",
+        authorizeOnly: UserRole.ROLE_WEDDING_OWNER,
+      },
     ],
   },
   {

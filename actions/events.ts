@@ -30,7 +30,8 @@ export async function createEvent(input: CreateEventInput) {
     });
 
     const planLimits = PLAN_LIMITS[user.plan];
-    if (eventCount >= planLimits.maxEvents) {
+    // -1 means unlimited (BUSINESS tier)
+    if (planLimits.maxEvents !== -1 && eventCount >= planLimits.maxEvents) {
       return {
         error: `You have reached the limit of ${planLimits.maxEvents} event(s) for your plan. Please upgrade to create more events.`,
         limitReached: true,
@@ -229,6 +230,76 @@ export async function getUserEvents() {
     return { success: true, events: eventsWithStats };
   } catch (error) {
     console.error("Error fetching events:", error);
+    return { error: "Failed to fetch events" };
+  }
+}
+
+// Version for event selector - includes stats for card display
+export async function getEventsForSelector() {
+  try {
+    const user = await getCurrentUser();
+
+    if (!user || user.role !== UserRole.ROLE_WEDDING_OWNER) {
+      return { error: "Unauthorized" };
+    }
+
+    const events = await prisma.weddingEvent.findMany({
+      where: { ownerId: user.id },
+      select: {
+        id: true,
+        title: true,
+        dateTime: true,
+        location: true,
+        isActive: true,
+        guests: {
+          select: {
+            id: true,
+            rsvp: {
+              select: {
+                status: true,
+                guestCount: true,
+              },
+            },
+          },
+        },
+      },
+      orderBy: { dateTime: "asc" },
+    });
+
+    const eventsForSelector = events.map((event) => {
+      // Calculate RSVP stats
+      const stats = {
+        total: event.guests.length,
+        pending: 0,
+        accepted: 0,
+        declined: 0,
+        totalGuestCount: 0,
+      };
+
+      event.guests.forEach((guest) => {
+        if (!guest.rsvp || guest.rsvp.status === "PENDING") {
+          stats.pending++;
+        } else if (guest.rsvp.status === "ACCEPTED") {
+          stats.accepted++;
+          stats.totalGuestCount += guest.rsvp.guestCount;
+        } else {
+          stats.declined++;
+        }
+      });
+
+      return {
+        id: event.id,
+        title: event.title,
+        dateTime: event.dateTime,
+        location: event.location,
+        isActive: event.isActive,
+        stats,
+      };
+    });
+
+    return { success: true, events: eventsForSelector };
+  } catch (error) {
+    console.error("Error fetching events for selector:", error);
     return { error: "Failed to fetch events" };
   }
 }

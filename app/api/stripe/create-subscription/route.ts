@@ -1,16 +1,21 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
 import { stripe, getPriceId } from "@/lib/stripe";
 import { prisma } from "@/lib/db";
 import { getCurrentUser } from "@/lib/session";
+import { withRateLimit, RATE_LIMIT_PRESETS } from "@/lib/rate-limit";
 
 const createSubscriptionSchema = z.object({
   plan: z.enum(["BASIC", "ADVANCED", "PREMIUM"]),
   interval: z.enum(["monthly", "yearly"]),
 });
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
+  // Rate limit subscription creation
+  const rateLimitResult = withRateLimit(request, RATE_LIMIT_PRESETS.api);
+  if (rateLimitResult) return rateLimitResult;
+
   try {
     const user = await getCurrentUser();
 

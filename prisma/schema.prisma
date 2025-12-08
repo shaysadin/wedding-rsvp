@@ -41,6 +41,7 @@ enum NotificationType {
   INVITE
   REMINDER
   CONFIRMATION
+  IMAGE_INVITE
 }
 
 enum NotificationChannel {
@@ -221,11 +222,16 @@ model WeddingEvent {
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @default(now()) @updatedAt @map("updated_at")
 
+  // Invitation image for WhatsApp image invitations
+  invitationImageUrl      String? @map("invitation_image_url")
+  invitationImagePublicId String? @map("invitation_image_public_id")
+
   owner            User              @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   guests           Guest[]
   rsvpPageSettings RsvpPageSettings?
   messageTemplates MessageTemplate[]
   bulkMessageJobs  BulkMessageJob[]
+  tables           WeddingTable[]
 
   @@index([ownerId])
   @@map("wedding_events")
@@ -249,6 +255,7 @@ model Guest {
   rsvp                GuestRsvp?
   notificationLogs    NotificationLog[]
   bulkMessageJobItems BulkMessageJobItem[]
+  tableAssignment     TableAssignment?
 
   @@index([weddingEventId])
   @@index([slug])
@@ -587,9 +594,10 @@ model MessagingProviderSettings {
   // WhatsApp Content Templates (Twilio Content API)
   // These are pre-approved template SIDs from Twilio Content API
   // Required for WhatsApp Business API - free-form messages only work within 24h window
-  whatsappInviteContentSid      String?  @map("whatsapp_invite_content_sid")      // Template SID for invitation messages
-  whatsappReminderContentSid    String?  @map("whatsapp_reminder_content_sid")    // Template SID for reminder messages
-  whatsappConfirmationContentSid String? @map("whatsapp_confirmation_content_sid") // Template SID for confirmation messages
+  whatsappInviteContentSid       String?  @map("whatsapp_invite_content_sid")       // Template SID for invitation messages
+  whatsappReminderContentSid     String?  @map("whatsapp_reminder_content_sid")     // Template SID for reminder messages
+  whatsappConfirmationContentSid String?  @map("whatsapp_confirmation_content_sid") // Template SID for confirmation messages
+  whatsappImageInviteContentSid  String?  @map("whatsapp_image_invite_content_sid") // Template SID for image invitation messages
 
   // WhatsApp Template Text (for display to users - read-only)
   // The admin enters the actual template text here so wedding owners can see what will be sent
@@ -687,6 +695,41 @@ model BulkMessageJobItem {
   @@index([guestId])
   @@index([status])
   @@map("bulk_message_job_items")
+}
+
+// ============ SEATING ARRANGEMENT ============
+
+model WeddingTable {
+  id             String   @id @default(cuid())
+  weddingEventId String   @map("wedding_event_id")
+  name           String
+  capacity       Int      @default(10)
+  positionX      Int?     @map("position_x")
+  positionY      Int?     @map("position_y")
+  shape          String?  @default("round") // round, rectangular, oval
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @default(now()) @updatedAt @map("updated_at")
+
+  weddingEvent WeddingEvent      @relation(fields: [weddingEventId], references: [id], onDelete: Cascade)
+  assignments  TableAssignment[]
+
+  @@index([weddingEventId])
+  @@map("wedding_tables")
+}
+
+model TableAssignment {
+  id        String   @id @default(cuid())
+  tableId   String   @map("table_id")
+  guestId   String   @unique @map("guest_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  table WeddingTable @relation(fields: [tableId], references: [id], onDelete: Cascade)
+  guest Guest        @relation(fields: [guestId], references: [id], onDelete: Cascade)
+
+  @@unique([tableId, guestId])
+  @@index([tableId])
+  @@index([guestId])
+  @@map("table_assignments")
 }
 
 // ============ CRON JOB LOGS ============

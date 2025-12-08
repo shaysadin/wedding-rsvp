@@ -18,6 +18,7 @@ export interface OneTimePackage {
 }
 
 // Monthly subscription plans
+// Event limits: FREE=1, BASIC=2, ADVANCED=3, PREMIUM=4, BUSINESS=unlimited
 export const PLAN_LIMITS: Record<PlanTier, PlanLimits> = {
   [PlanTier.FREE]: {
     maxEvents: 1,  // Free tier can create 1 event to try the platform
@@ -27,21 +28,21 @@ export const PLAN_LIMITS: Record<PlanTier, PlanLimits> = {
     currency: "USD",
   },
   [PlanTier.BASIC]: {
-    maxEvents: 1,
+    maxEvents: 2,
     maxWhatsappMessages: 650,
     maxSmsMessages: 0,
     price: 14.90,
     currency: "USD",
   },
   [PlanTier.ADVANCED]: {
-    maxEvents: 1,
+    maxEvents: 3,
     maxWhatsappMessages: 750,
     maxSmsMessages: 30,
     price: 24.90,
     currency: "USD",
   },
   [PlanTier.PREMIUM]: {
-    maxEvents: 2,
+    maxEvents: 4,
     maxWhatsappMessages: 1000,
     maxSmsMessages: 50,
     price: 49.90,

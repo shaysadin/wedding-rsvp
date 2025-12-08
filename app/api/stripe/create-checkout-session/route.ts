@@ -1,9 +1,10 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
 import { getStripe, getPriceId } from "@/lib/stripe";
 import { prisma } from "@/lib/db";
 import { getCurrentUser } from "@/lib/session";
+import { withRateLimit, RATE_LIMIT_PRESETS } from "@/lib/rate-limit";
 
 const createCheckoutSchema = z.object({
   plan: z.enum(["BASIC", "ADVANCED", "PREMIUM"]),
@@ -11,7 +12,11 @@ const createCheckoutSchema = z.object({
   locale: z.enum(["he", "en", "auto"]).optional().default("auto"),
 });
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
+  // Rate limit checkout session creation
+  const rateLimitResult = withRateLimit(request, RATE_LIMIT_PRESETS.api);
+  if (rateLimitResult) return rateLimitResult;
+
   try {
     const user = await getCurrentUser();
 

@@ -1,11 +1,15 @@
 import { headers } from "next/headers";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 
 import { stripe, getPlanFromPriceId } from "@/lib/stripe";
 import { prisma } from "@/lib/db";
+import { withRateLimit, RATE_LIMIT_PRESETS } from "@/lib/rate-limit";
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
+  // Rate limit webhook requests
+  const rateLimitResult = withRateLimit(request, RATE_LIMIT_PRESETS.webhook);
+  if (rateLimitResult) return rateLimitResult;
   const body = await request.text();
   const headersList = await headers();
   const signature = headersList.get("Stripe-Signature") as string;

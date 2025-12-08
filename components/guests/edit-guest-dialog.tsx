@@ -104,7 +104,12 @@ export function EditGuestDialog({ guest, open, onOpenChange }: EditGuestDialogPr
       const result = await updateGuest(data);
 
       if (result.error) {
-        toast.error(result.error);
+        if (result.error === "DUPLICATE_PHONE" && "duplicateNames" in result) {
+          const names = (result as { error: string; duplicateNames: string[] }).duplicateNames.join(", ");
+          toast.error(t("duplicates.phoneExists", { names }));
+        } else {
+          toast.error(result.error);
+        }
         return;
       }
 

@@ -14,6 +14,7 @@ import { BulkAddGuestsDialog } from "@/components/guests/bulk-add-guests-dialog"
 import { ImportGuestsDialog } from "@/components/guests/import-guests-dialog";
 import { CopyLinkButton } from "@/components/events/copy-link-button";
 import { EventStatsCards } from "@/components/events/event-stats-cards";
+import { DuplicatePhoneWarning } from "@/components/guests/duplicate-phone-warning";
 
 interface EventPageProps {
   params: Promise<{ eventId: string }>;
@@ -27,6 +28,8 @@ export default async function EventPage({ params, searchParams }: EventPageProps
   const locale = await getLocale();
   const t = await getTranslations("events");
   const tGuests = await getTranslations("guests");
+  const tSeating = await getTranslations("seating");
+  const tInvitations = await getTranslations("invitations");
 
   if (!user || user.role !== UserRole.ROLE_WEDDING_OWNER) {
     redirect(`/${locale}/dashboard`);
@@ -58,8 +61,20 @@ export default async function EventPage({ params, searchParams }: EventPageProps
   return (
     <>
       <DashboardHeader heading={event.title} text={event.location}>
-        <div className="flex flex-row gap-2">
+        <div className="flex flex-row flex-wrap gap-2">
           <CopyLinkButton eventId={event.id} />
+          <Button variant="outline" className="text-accent-foreground shadow-md flex flex-row" asChild>
+            <Link href={`/${locale}/dashboard/events/${event.id}/seating`}>
+              <Icons.layoutGrid className="mr-2 h-4 w-4" />
+              {tSeating("title")}
+            </Link>
+          </Button>
+          <Button variant="outline" className="text-accent-foreground shadow-md flex flex-row" asChild>
+            <Link href={`/${locale}/dashboard/events/${event.id}/invitations`}>
+              <Icons.mail className="mr-2 h-4 w-4" />
+              {tInvitations("title")}
+            </Link>
+          </Button>
           <Button variant="outline" className="text-accent-foreground shadow-md flex flex-row" asChild>
             <Link href={`/${locale}/dashboard/events/${event.id}/messages`}>
               <Icons.settings className="mr-2 h-4 w-4" />
@@ -81,6 +96,9 @@ export default async function EventPage({ params, searchParams }: EventPageProps
         eventId={event.id}
         activeFilter={activeFilter}
       />
+
+      {/* Duplicate Phone Warning */}
+      <DuplicatePhoneWarning eventId={event.id} />
 
       {/* Guest Management */}
       <div className="space-y-4">
