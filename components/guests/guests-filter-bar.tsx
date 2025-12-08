@@ -57,11 +57,12 @@ export function GuestsFilterBar({
   const tMsg = useTranslations("messageStatus");
 
   return (
-    <div className="flex flex-wrap items-center gap-2">
+    <div className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:overflow-visible sm:px-0">
+      <div className="flex items-center gap-2 pb-2 sm:flex-wrap sm:pb-0">
       {/* Side Filter */}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="outline" size="sm" className="h-8 gap-1">
+          <Button variant="outline" size="sm" className="h-8 shrink-0 gap-1">
             <Icons.users className="h-3.5 w-3.5" />
             {t("side")}
             {sideFilter !== "all" && (
@@ -120,7 +121,7 @@ export function GuestsFilterBar({
       {/* Group Filter */}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="outline" size="sm" className="h-8 gap-1">
+          <Button variant="outline" size="sm" className="h-8 shrink-0 gap-1">
             <Icons.folder className="h-3.5 w-3.5" />
             {t("group")}
             {groupFilter !== "all" && (
@@ -185,7 +186,7 @@ export function GuestsFilterBar({
       {/* RSVP Status Filter */}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="outline" size="sm" className="h-8 gap-1">
+          <Button variant="outline" size="sm" className="h-8 shrink-0 gap-1">
             <Icons.check className="h-3.5 w-3.5" />
             {t("status")}
             {rsvpStatusFilter !== "all" && (
@@ -228,7 +229,7 @@ export function GuestsFilterBar({
       {/* Message Status Filter */}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="outline" size="sm" className="h-8 gap-1">
+          <Button variant="outline" size="sm" className="h-8 shrink-0 gap-1">
             <Icons.messageSquare className="h-3.5 w-3.5" />
             {t("messageSent")}
             {messageStatusFilter !== "all" && (
@@ -275,7 +276,7 @@ export function GuestsFilterBar({
         <Button
           variant="ghost"
           size="sm"
-          className="h-8 gap-1 text-muted-foreground"
+          className="h-8 shrink-0 gap-1 text-muted-foreground"
           onClick={onClearFilters}
         >
           <Icons.x className="h-3.5 w-3.5" />
@@ -285,6 +286,7 @@ export function GuestsFilterBar({
           </Badge>
         </Button>
       )}
+      </div>
     </div>
   );
 }

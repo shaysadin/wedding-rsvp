@@ -69,34 +69,36 @@ export default async function EventPage({ params, searchParams }: EventPageProps
   const activeFilter = filter && validFilters.includes(filter) ? filter : "all";
 
   return (
-    <PageFadeIn>
+    <PageFadeIn className="md:h-full">
       <DashboardHeader heading={event.title} text={event.location}>
-        <div className="flex flex-row flex-wrap gap-2">
-          <CopyLinkButton eventId={event.id} />
-          <Button variant="outline" className="text-accent-foreground shadow-md flex flex-row" asChild>
-            <Link href={`/${locale}/dashboard/events/${event.id}/seating`}>
-              <Icons.layoutGrid className="mr-2 h-4 w-4" />
-              {tSeating("title")}
-            </Link>
-          </Button>
-          <Button variant="outline" className="text-accent-foreground shadow-md flex flex-row" asChild>
-            <Link href={`/${locale}/dashboard/events/${event.id}/invitations`}>
-              <Icons.mail className="mr-2 h-4 w-4" />
-              {tInvitations("title")}
-            </Link>
-          </Button>
-          <Button variant="outline" className="text-accent-foreground shadow-md flex flex-row" asChild>
-            <Link href={`/${locale}/dashboard/events/${event.id}/messages`}>
-              <Icons.settings className="mr-2 h-4 w-4" />
-              {t("messageTemplates")}
-            </Link>
-          </Button>
-          <Button variant="outline" className="text-accent-foreground shadow-md flex flex-row" asChild>
-            <Link href={`/${locale}/dashboard/events/${event.id}/customize`}>
-              <Icons.palette className="mr-2 h-4 w-4" />
-              {t("customizeRsvp")}
-            </Link>
-          </Button>
+        <div className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:overflow-visible sm:px-0">
+          <div className="flex flex-row gap-2 pb-1 sm:flex-wrap sm:pb-0">
+            <CopyLinkButton eventId={event.id} />
+            <Button variant="outline" size="sm" className="h-8 shrink-0 gap-1.5 px-2.5 text-xs sm:h-9 sm:gap-2 sm:px-3 sm:text-sm" asChild>
+              <Link href={`/${locale}/dashboard/events/${event.id}/seating`}>
+                <Icons.layoutGrid className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                {tSeating("title")}
+              </Link>
+            </Button>
+            <Button variant="outline" size="sm" className="h-8 shrink-0 gap-1.5 px-2.5 text-xs sm:h-9 sm:gap-2 sm:px-3 sm:text-sm" asChild>
+              <Link href={`/${locale}/dashboard/events/${event.id}/invitations`}>
+                <Icons.mail className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                {tInvitations("title")}
+              </Link>
+            </Button>
+            <Button variant="outline" size="sm" className="h-8 shrink-0 gap-1.5 px-2.5 text-xs sm:h-9 sm:gap-2 sm:px-3 sm:text-sm" asChild>
+              <Link href={`/${locale}/dashboard/events/${event.id}/messages`}>
+                <Icons.messageSquare className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                {t("messageTemplates")}
+              </Link>
+            </Button>
+            <Button variant="outline" size="sm" className="h-8 shrink-0 gap-1.5 px-2.5 text-xs sm:h-9 sm:gap-2 sm:px-3 sm:text-sm" asChild>
+              <Link href={`/${locale}/dashboard/events/${event.id}/customize`}>
+                <Icons.palette className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                {t("customizeRsvp")}
+              </Link>
+            </Button>
+          </div>
         </div>
       </DashboardHeader>
 
@@ -110,17 +112,19 @@ export default async function EventPage({ params, searchParams }: EventPageProps
       {/* Duplicate Phone Warning */}
       <DuplicatePhoneWarning eventId={event.id} />
 
-      {/* Guest Management */}
-      <div className="space-y-4">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <h2 className="text-xl font-semibold">{tGuests("title")}</h2>
-          <div className="flex flex-wrap gap-2">
+      {/* Guest Management - flex-1 and min-h-0 to allow table to take remaining space and scroll on desktop */}
+      <div className="flex flex-col gap-3 sm:gap-4 md:min-h-0 md:flex-1 md:overflow-hidden">
+        <div className="flex shrink-0 flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+          <h2 className="text-lg font-semibold sm:text-xl">{tGuests("title")}</h2>
+          <div className="flex flex-wrap gap-1.5 sm:gap-2">
             <BulkAddGuestsDialog eventId={event.id} />
             <ImportGuestsDialog eventId={event.id} />
             <AddGuestDialog eventId={event.id} />
           </div>
         </div>
-        <GuestsTable guests={event.guests} eventId={event.id} initialFilter={activeFilter} />
+        <div className="md:min-h-0 md:flex-1 md:overflow-hidden">
+          <GuestsTable guests={event.guests} eventId={event.id} initialFilter={activeFilter} />
+        </div>
       </div>
     </PageFadeIn>
   );

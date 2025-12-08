@@ -134,12 +134,12 @@ export function AddGuestDialog({ eventId }: AddGuestDialogProps) {
         </Button>
       </DialogTrigger>
       <DialogContent dir={isRTL ? "rtl" : "ltr"}>
-        <DialogHeader>
+        <DialogHeader className="shrink-0">
           <DialogTitle>{t("add")}</DialogTitle>
         </DialogHeader>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="flex min-h-0 flex-1 flex-col gap-4">
             <FormField
               control={form.control}
               name="name"
@@ -168,7 +168,9 @@ export function AddGuestDialog({ eventId }: AddGuestDialogProps) {
               )}
             />
 
-            <div className="grid grid-cols-2 gap-4">
+            {/* Scrollable content */}
+            <div className="min-h-0 flex-1 space-y-4 overflow-y-auto">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
               <FormField
                 control={form.control}
                 name="side"
@@ -326,8 +328,10 @@ export function AddGuestDialog({ eventId }: AddGuestDialogProps) {
                 </FormItem>
               )}
             />
+            </div>
 
-            <div className="flex justify-end gap-2">
+            {/* Footer */}
+            <div className="flex shrink-0 justify-end gap-2 border-t pt-4 sm:border-0 sm:pt-0">
               <Button
                 type="button"
                 variant="outline"

@@ -420,7 +420,7 @@ export function GuestsTable({ guests, eventId, initialFilter = "all" }: GuestsTa
   }
 
   return (
-    <div className="space-y-4">
+    <div className="flex flex-col gap-4 md:h-full md:overflow-hidden">
       {/* Edit Guest Dialog */}
       {editingGuest && (
         <EditGuestDialog
@@ -442,7 +442,7 @@ export function GuestsTable({ guests, eventId, initialFilter = "all" }: GuestsTa
       />
 
       {/* Search and Filter Bar */}
-      <div className="space-y-3">
+      <div className="shrink-0 space-y-3">
         <div className="relative">
           <Icons.search className="absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
@@ -510,7 +510,7 @@ export function GuestsTable({ guests, eventId, initialFilter = "all" }: GuestsTa
 
       {/* Bulk Actions Bar */}
       {selectedIds.size > 0 && (
-        <div className="flex flex-col gap-3 rounded-lg border-2 border-primary/20 bg-primary/5 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex shrink-0 flex-col gap-3 rounded-lg border-2 border-primary/20 bg-primary/5 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-2">
             <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground">
               {selectedIds.size}
@@ -551,7 +551,7 @@ export function GuestsTable({ guests, eventId, initialFilter = "all" }: GuestsTa
       )}
 
       {/* Table */}
-      <div className="w-full overflow-auto rounded-lg border">
+      <div className="w-full overflow-auto rounded-lg border md:min-h-0 md:flex-1">
         <Table>
           <TableHeader>
             <TableRow className="bg-muted/50">

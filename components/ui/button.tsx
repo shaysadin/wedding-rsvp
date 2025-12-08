@@ -9,17 +9,17 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground shadow-sm hover:bg-primary/90 hover:shadow-md",
+        default: "bg-primary text-primary-foreground shadow-md hover:bg-primary/90 hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 active:shadow-md",
         destructive:
-          "bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/90",
+          "bg-destructive text-destructive-foreground shadow-md hover:bg-destructive/90 hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 active:shadow-md",
         outline:
-          "border border-input bg-card hover:bg-muted/50 hover:border-border",
+          "border border-input bg-card shadow-sm hover:bg-muted/50 hover:border-border hover:shadow-md hover:-translate-y-0.5 active:translate-y-0 active:shadow-sm",
         secondary:
-          "bg-muted text-secondary-foreground hover:bg-muted/80",
+          "bg-muted text-secondary-foreground shadow-sm hover:bg-muted/80 hover:shadow-md hover:-translate-y-0.5 active:translate-y-0 active:shadow-sm",
         ghost: "hover:bg-muted/50 hover:text-accent-foreground",
         link: "text-primary underline-offset-4 hover:underline",
         disable: "bg-muted text-muted-foreground cursor-not-allowed",
-        success: "bg-success text-success-foreground shadow-sm hover:bg-success/90",
+        success: "bg-success text-success-foreground shadow-md hover:bg-success/90 hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 active:shadow-md",
       },
       size: {
         default: "h-10 px-4 py-2",

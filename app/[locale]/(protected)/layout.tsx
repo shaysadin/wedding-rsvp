@@ -95,8 +95,8 @@ export default async function ProtectedLayout({ children }: ProtectedLayoutProps
           </MaxWidthWrapper>
         </header>
 
-        <main className="min-h-0 flex-1 overflow-y-auto p-4 xl:px-8">
-          <MaxWidthWrapper className="flex max-w-7xl flex-col gap-4 px-0 lg:gap-6">
+        <main className="flex min-h-0 flex-1 flex-col overflow-y-auto p-4 md:overflow-hidden xl:px-8">
+          <MaxWidthWrapper className="flex min-h-0 max-w-7xl flex-1 flex-col gap-4 px-0 lg:gap-6">
             {children}
           </MaxWidthWrapper>
         </main>

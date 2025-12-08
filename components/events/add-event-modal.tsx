@@ -88,13 +88,13 @@ export function AddEventModal({ open, onOpenChange }: AddEventModalProps) {
   return (
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-[600px]">
-        <DialogHeader>
-          <DialogTitle className="text-xl font-semibold">
+        <DialogHeader className="shrink-0">
+          <DialogTitle className="text-lg font-semibold sm:text-xl">
             {isHebrew ? "הוספת אירוע חדש" : "Add New Event"}
           </DialogTitle>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+        <form onSubmit={handleSubmit(onSubmit)} className="flex min-h-0 flex-1 flex-col gap-4 sm:gap-6">
           {/* Event Information Section */}
           <div className="space-y-1">
             <p className="text-sm text-muted-foreground">
@@ -102,8 +102,10 @@ export function AddEventModal({ open, onOpenChange }: AddEventModalProps) {
             </p>
           </div>
 
+          {/* Scrollable content area */}
+          <div className="min-h-0 flex-1 space-y-4 overflow-y-auto sm:space-y-6">
           {/* Two Column Layout */}
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
             {/* Event Title */}
             <div className="space-y-2">
               <Label htmlFor="title">
@@ -209,8 +211,10 @@ export function AddEventModal({ open, onOpenChange }: AddEventModalProps) {
               <p className="text-xs text-red-600">{errors.notes.message}</p>
             )}
           </div>
+          </div>
 
-          <DialogFooter className="gap-2 sm:gap-0">
+          {/* Footer - sticky at bottom */}
+          <DialogFooter className="shrink-0 gap-2 border-t pt-4 sm:gap-0 sm:border-0 sm:pt-0">
             <Button
               type="button"
               variant="ghost"
@@ -222,7 +226,6 @@ export function AddEventModal({ open, onOpenChange }: AddEventModalProps) {
             <Button
               type="submit"
               disabled={isLoading}
-              className="bg-gray-900 hover:bg-gray-800 text-white"
             >
               {isLoading && <Icons.spinner className="me-2 h-4 w-4 animate-spin" />}
               {isHebrew ? "שמור אירוע" : "Save Event"}
