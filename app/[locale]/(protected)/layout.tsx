@@ -75,9 +75,9 @@ export default async function ProtectedLayout({ children }: ProtectedLayoutProps
         availableRoles={userRoles}
       />
 
-      <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border bg-background shadow-md m-3">
-        <header className="shrink-0 flex h-14 items-center border-b px-4 lg:h-[60px] xl:px-8">
-          <MaxWidthWrapper className="flex max-w-7xl items-center gap-x-3 px-0">
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border bg-background shadow-md p-2 m-3">
+        <header className="shrink-0 flex h-14 items-center border-b px-3 lg:h-[60px] xl:px-3">
+          <MaxWidthWrapper className="flex max-w-[1320px] items-center gap-x-3 px-0">
             <MobileSheetSidebar
               links={filteredLinks}
               userEvents={userEvents}
@@ -95,8 +95,8 @@ export default async function ProtectedLayout({ children }: ProtectedLayoutProps
           </MaxWidthWrapper>
         </header>
 
-        <main className="flex min-h-0 flex-1 flex-col overflow-y-auto p-4 md:overflow-hidden xl:px-8">
-          <MaxWidthWrapper className="flex min-h-0 max-w-7xl flex-1 flex-col gap-4 px-0 lg:gap-6">
+        <main className="flex min-h-0 flex-1 p-3 flex-col overflow-y-auto md:overflow-hidden">
+          <MaxWidthWrapper className="flex min-h-0 max-w-[1320px] flex-1 flex-col gap-4 px-0 lg:gap-6">
             {children}
           </MaxWidthWrapper>
         </main>
