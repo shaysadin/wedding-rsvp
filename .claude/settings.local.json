@@ -3,7 +3,8 @@
     "allow": [
       "Bash(npm run build:*)",
       "Bash(npx prisma generate:*)",
-      "Bash(cat:*)"
+      "Bash(cat:*)",
+      "Bash(npx prisma migrate dev:*)"
     ],
     "deny": [],
     "ask": []

@@ -7,6 +7,7 @@ import {
   useState,
 } from "react";
 
+import { AppLogo } from "@/components/shared/app-logo";
 import { Icons } from "@/components/shared/icons";
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
@@ -26,7 +27,7 @@ function SignInModal({
       <div className="w-full">
         <div className="flex flex-col items-center justify-center space-y-3 border-b bg-background px-4 py-6 pt-8 text-center md:px-16">
           <a href={siteConfig.url}>
-            <Icons.logo className="size-10" />
+            <AppLogo size="lg" className="h-10 w-10" />
           </a>
           <h3 className="font-urban text-2xl font-bold">Sign In</h3>
           <p className="text-sm text-gray-500">

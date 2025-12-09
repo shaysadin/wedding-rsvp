@@ -7,7 +7,7 @@ import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 
 import { UserAuthForm } from "@/components/forms/user-auth-form";
-import { Icons } from "@/components/shared/icons";
+import { AppLogo } from "@/components/shared/app-logo";
 import { LanguageSwitcher } from "@/components/layout/language-switcher";
 import { ModeToggle } from "@/components/layout/mode-toggle";
 
@@ -86,9 +86,7 @@ export function UnifiedAuthPage({
         <div className="mx-auto w-full max-w-[400px]">
           {/* Logo */}
           <div className="mb-8">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-pink-100 to-orange-100">
-              <Icons.heart className="h-5 w-5 text-pink-500" />
-            </div>
+            <AppLogo size="lg" className="h-10 w-10" />
           </div>
 
           {/* Welcome text with animation */}

@@ -6,7 +6,7 @@ export const BLOG_CATEGORIES: {
   {
     title: "News",
     slug: "news",
-    description: "Updates and announcements from Go Approval.",
+    description: "Updates and announcements from Wedinex.",
   },
   {
     title: "Education",
@@ -16,10 +16,10 @@ export const BLOG_CATEGORIES: {
 ];
 
 export const BLOG_AUTHORS = {
-  goapproval: {
-    name: "Go Approval Team",
+  wedinex: {
+    name: "Wedinex Team",
     image: "/_static/avatars/default.png",
-    twitter: "goapproval",
+    twitter: "wedinex",
   },
   mickasmt: {
     name: "mickasmt",

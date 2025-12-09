@@ -4,7 +4,7 @@ export const infos: InfoLdg[] = [
   {
     title: "Streamline Your Wedding Planning",
     description:
-      "Go Approval takes the stress out of managing wedding RSVPs. From sending invitations to tracking responses, everything is handled in one beautiful dashboard.",
+      "Wedinex takes the stress out of managing wedding RSVPs. From sending invitations to tracking responses, everything is handled in one beautiful dashboard.",
     image: "/_static/illustrations/work-from-home.jpg",
     list: [
       {
@@ -27,7 +27,7 @@ export const infos: InfoLdg[] = [
   {
     title: "Everything You Need in One Place",
     description:
-      "Import your guest list, customize your messages, and let Go Approval handle the rest. Track responses, send reminders, and export reports effortlessly.",
+      "Import your guest list, customize your messages, and let Wedinex handle the rest. Track responses, send reminders, and export reports effortlessly.",
     image: "/_static/illustrations/work-from-home.jpg",
     list: [
       {
@@ -100,14 +100,14 @@ export const testimonials: TestimonialType[] = [
     job: "Married June 2024",
     image: "https://randomuser.me/api/portraits/women/1.jpg",
     review:
-      "Go Approval saved us so much time! We had 300 guests and tracking RSVPs was a nightmare before. The WhatsApp integration is genius - everyone responded within days.",
+      "Wedinex saved us so much time! We had 300 guests and tracking RSVPs was a nightmare before. The WhatsApp integration is genius - everyone responded within days.",
   },
   {
     name: "Rachel Cohen",
     job: "Mother of the Bride",
     image: "https://randomuser.me/api/portraits/women/2.jpg",
     review:
-      "As a mom helping plan my daughter's wedding, I was worried about the technology. But Go Approval is so easy to use. Even my husband figured it out!",
+      "As a mom helping plan my daughter's wedding, I was worried about the technology. But Wedinex is so easy to use. Even my husband figured it out!",
   },
   {
     name: "Michael & Noa",
@@ -121,7 +121,7 @@ export const testimonials: TestimonialType[] = [
     job: "Wedding Planner",
     image: "https://randomuser.me/api/portraits/women/4.jpg",
     review:
-      "I recommend Go Approval to all my clients now. It's professional, reliable, and makes my job so much easier. The reporting features are excellent.",
+      "I recommend Wedinex to all my clients now. It's professional, reliable, and makes my job so much easier. The reporting features are excellent.",
   },
   {
     name: "Daniel & Maya",
@@ -135,13 +135,13 @@ export const testimonials: TestimonialType[] = [
     job: "Event Venue Manager",
     image: "https://randomuser.me/api/portraits/men/6.jpg",
     review:
-      "Couples who use Go Approval always have accurate guest counts. The export feature makes our catering planning seamless. Great product!",
+      "Couples who use Wedinex always have accurate guest counts. The export feature makes our catering planning seamless. Great product!",
   },
   {
     name: "Shira & Oren",
     job: "Married October 2024",
     image: "https://randomuser.me/api/portraits/women/7.jpg",
     review:
-      "Managing RSVPs for our wedding of 400 guests was effortless with Go Approval. The SMS feature was perfect for reaching our grandparents.",
+      "Managing RSVPs for our wedding of 400 guests was effortless with Wedinex. The SMS feature was perfect for reaching our grandparents.",
   },
 ];

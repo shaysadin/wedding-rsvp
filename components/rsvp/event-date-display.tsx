@@ -3,9 +3,45 @@
 import { useState, useEffect } from "react";
 import { format, differenceInDays, differenceInHours, differenceInMinutes, differenceInSeconds } from "date-fns";
 import { he, enUS } from "date-fns/locale";
-import { Clock, MapPin } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
+
+// Beautiful SVG icons for time and location
+function ClockIcon({ color, size = 24 }: { color?: string; size?: number }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke={color || "currentColor"}
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <circle cx="12" cy="12" r="10" />
+      <polyline points="12 6 12 12 16 14" />
+    </svg>
+  );
+}
+
+function LocationIcon({ color, size = 24 }: { color?: string; size?: number }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke={color || "currentColor"}
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" />
+      <circle cx="12" cy="9" r="2.5" />
+    </svg>
+  );
+}
 
 type DateDisplayStyle = "CARD" | "CALENDAR" | "MINIMAL";
 
@@ -37,6 +73,11 @@ interface EventDateDisplayProps {
   dateDayFontSize?: number;
   dateMonthFontSize?: number;
   dateYearFontSize?: number;
+  // Individual Date Text Colors
+  dateDayOfWeekColor?: string;
+  dateDayOfWeekFontSize?: number;
+  dateDayNumberColor?: string;
+  dateMonthYearColor?: string;
   // Time Section Styling
   timeSectionBackground?: string;
   timeSectionTextColor?: string;
@@ -45,6 +86,7 @@ interface EventDateDisplayProps {
   timeSectionBorderColor?: string;
   timeSectionPadding?: number;
   timeFontSize?: number;
+  timeIconColor?: string;
   // Address Section Styling
   addressSectionBackground?: string;
   addressSectionTextColor?: string;
@@ -53,6 +95,7 @@ interface EventDateDisplayProps {
   addressSectionBorderColor?: string;
   addressSectionPadding?: number;
   addressFontSize?: number;
+  addressIconColor?: string;
   // Countdown Section Styling
   countdownSectionBackground?: string;
   countdownSectionTextColor?: string;
@@ -102,20 +145,30 @@ export function EventDateDisplay({
   dateDayFontSize = 56,
   dateMonthFontSize = 16,
   dateYearFontSize,
+  // Individual Date Text Colors
+  dateDayOfWeekColor,
+  dateDayOfWeekFontSize = 11,
+  dateDayNumberColor,
+  dateMonthYearColor,
+  // Time Section
   timeSectionBackground,
   timeSectionTextColor,
   timeSectionBorderRadius = 12,
   timeSectionBorderWidth,
   timeSectionBorderColor,
   timeSectionPadding,
-  timeFontSize = 14,
+  timeFontSize = 20,
+  timeIconColor,
+  // Address Section
   addressSectionBackground,
   addressSectionTextColor,
   addressSectionBorderRadius = 12,
   addressSectionBorderWidth,
   addressSectionBorderColor,
   addressSectionPadding,
-  addressFontSize = 13,
+  addressFontSize = 16,
+  addressIconColor,
+  // Countdown
   countdownSectionBackground,
   countdownSectionTextColor,
   countdownSectionBorderRadius = 12,
@@ -159,62 +212,94 @@ export function EventDateDisplay({
     return () => clearInterval(interval);
   }, [eventDate]);
 
-  // MINIMAL style
+  // Build the full address string
+  const fullAddress = venue ? `${venue}, ${location}` : location;
+
+  // MINIMAL style - Clean, elegant, stacked layout
   if (displayStyle === "MINIMAL") {
     return (
       <div className="flex flex-col" style={{ gap: `${internalGap}px` }} dir={isRTL ? "rtl" : "ltr"}>
-        {/* Date Display */}
+        {/* Date Display - Elegant card style */}
         <div
-          className="flex flex-col items-center gap-1 text-center"
+          className={cn(
+            "flex flex-col items-center gap-2 text-center",
+            shadow && "shadow-sm"
+          )}
           style={{
-            backgroundColor: backgroundColor || undefined,
+            backgroundColor: backgroundColor || "rgba(255, 255, 255, 0.8)",
             color: textColor || undefined,
-            borderRadius: borderRadius ? `${borderRadius}px` : undefined,
-            borderWidth: borderWidth ? `${borderWidth}px` : undefined,
-            borderColor: borderColor || undefined,
-            borderStyle: borderWidth ? "solid" : undefined,
-            padding: padding ? `${padding}px` : undefined,
+            borderRadius: borderRadius ? `${borderRadius}px` : "16px",
+            borderWidth: borderWidth ? `${borderWidth}px` : "1px",
+            borderColor: borderColor || "rgba(0, 0, 0, 0.08)",
+            borderStyle: "solid",
+            padding: padding ? `${padding}px` : "24px",
           }}
         >
+          {/* Day of Week */}
           <div
-            className="font-bold leading-none"
+            className="font-medium uppercase tracking-widest"
             style={{
-              color: accentColor,
-              fontSize: dateDayFontSize ? `${dateDayFontSize}px` : "48px",
+              color: dateDayOfWeekColor || undefined,
+              fontSize: dateDayOfWeekFontSize ? `${dateDayOfWeekFontSize}px` : "11px",
+              opacity: dateDayOfWeekColor ? 1 : 0.6,
+            }}
+          >
+            {format(eventDate, "EEEE", { locale: dateLocale })}
+          </div>
+
+          {/* Date Number */}
+          <div
+            className="font-bold leading-none tracking-tight"
+            style={{
+              color: dateDayNumberColor || accentColor,
+              fontSize: dateDayFontSize ? `${dateDayFontSize}px` : "56px",
             }}
           >
             {format(eventDate, "d", { locale: dateLocale })}
           </div>
+
+          {/* Month & Year */}
           <div
-            className="font-medium opacity-80"
-            style={{ fontSize: dateMonthFontSize ? `${dateMonthFontSize}px` : "16px" }}
+            className="font-medium"
+            style={{
+              color: dateMonthYearColor || undefined,
+              fontSize: dateMonthFontSize ? `${dateMonthFontSize}px` : "16px",
+              opacity: dateMonthYearColor ? 1 : 0.8,
+            }}
           >
             {format(eventDate, "MMMM yyyy", { locale: dateLocale })}
           </div>
-          <div className="text-sm opacity-60">
-            {format(eventDate, "EEEE", { locale: dateLocale })}
-          </div>
         </div>
 
-        {/* Time & Address in same row */}
+        {/* Time & Address - Clean, minimal design without backgrounds */}
         {(showTimeSection || showAddressSection) && (
-          <div className="flex items-center justify-center gap-4 text-sm text-muted-foreground">
+          <div className="flex flex-col items-center gap-4 py-2">
             {showTimeSection && (
-              <div className="flex items-center gap-1.5">
-                <Clock className="h-4 w-4" style={{ color: accentColor }} />
-                <span style={{ fontSize: timeFontSize ? `${timeFontSize}px` : undefined }}>
+              <div className="flex items-center gap-3">
+                <ClockIcon color={timeIconColor || accentColor} size={22} />
+                <span
+                  className="font-semibold tracking-wide"
+                  style={{
+                    fontSize: timeFontSize ? `${timeFontSize}px` : "20px",
+                    color: timeSectionTextColor || undefined,
+                  }}
+                >
                   {format(eventDate, "HH:mm")}
                 </span>
               </div>
             )}
-            {showTimeSection && showAddressSection && (venue || location) && (
-              <span className="opacity-30">|</span>
-            )}
+
             {showAddressSection && (venue || location) && (
-              <div className="flex items-center gap-1.5">
-                <MapPin className="h-4 w-4" style={{ color: accentColor }} />
-                <span style={{ fontSize: addressFontSize ? `${addressFontSize}px` : undefined }}>
-                  {venue ? `${venue}` : location}
+              <div className="flex items-center gap-3 text-center">
+                <LocationIcon color={addressIconColor || accentColor} size={22} />
+                <span
+                  className="font-medium leading-snug"
+                  style={{
+                    fontSize: addressFontSize ? `${addressFontSize}px` : "16px",
+                    color: addressSectionTextColor || undefined,
+                  }}
+                >
+                  {fullAddress}
                 </span>
               </div>
             )}
@@ -246,7 +331,7 @@ export function EventDateDisplay({
   if (displayStyle === "CALENDAR") {
     return (
       <div className="flex flex-col items-center w-full" style={{ gap: `${internalGap}px` }} dir={isRTL ? "rtl" : "ltr"}>
-        {/* Calendar Card - clean, no background */}
+        {/* Calendar Card */}
         <div
           className={cn(
             "overflow-hidden border p-4 w-full",
@@ -286,25 +371,35 @@ export function EventDateDisplay({
           </div>
         </div>
 
-        {/* Time & Address in same row */}
+        {/* Time & Address - Clean, minimal design without backgrounds */}
         {(showTimeSection || showAddressSection) && (
-          <div className="flex items-center justify-center gap-4 text-sm text-muted-foreground">
+          <div className="flex flex-col items-center gap-4 py-2" style={{ maxWidth: "320px" }}>
             {showTimeSection && (
-              <div className="flex items-center gap-1.5">
-                <Clock className="h-4 w-4" style={{ color: accentColor }} />
-                <span className="font-medium text-accent-foreground" style={{ fontSize: timeFontSize ? `${timeFontSize}px` : undefined }}>
+              <div className="flex items-center gap-3">
+                <ClockIcon color={timeIconColor || accentColor} size={22} />
+                <span
+                  className="font-semibold tracking-wide"
+                  style={{
+                    fontSize: timeFontSize ? `${timeFontSize}px` : "20px",
+                    color: timeSectionTextColor || undefined,
+                  }}
+                >
                   {format(eventDate, "HH:mm")}
                 </span>
               </div>
             )}
-            {showTimeSection && showAddressSection && (venue || location) && (
-              <span className="opacity-30">|</span>
-            )}
+
             {showAddressSection && (venue || location) && (
-              <div className="flex items-center gap-1.5">
-                <MapPin className="h-4 w-4" style={{ color: accentColor }} />
-                <span className="text-accent-foreground" style={{ fontSize: addressFontSize ? `${addressFontSize}px ` : undefined }}>
-                  {venue ? `${venue}` : location}
+              <div className="flex items-center gap-3 text-center">
+                <LocationIcon color={addressIconColor || accentColor} size={22} />
+                <span
+                  className="font-medium leading-snug"
+                  style={{
+                    fontSize: addressFontSize ? `${addressFontSize}px` : "16px",
+                    color: addressSectionTextColor || undefined,
+                  }}
+                >
+                  {fullAddress}
                 </span>
               </div>
             )}
@@ -332,8 +427,7 @@ export function EventDateDisplay({
     );
   }
 
-  // CARD style (default) - Date card with time/address/countdown below
-  // For white backgrounds, we use a light card with accent-colored text
+  // CARD style (default) - Beautiful date card with time/address/countdown below
   const hasBackgroundImage = backgroundImage && backgroundImage.length > 0;
   const useColoredBackground = hasBackgroundImage || backgroundColor;
   const cardTextColor = useColoredBackground ? (textColor || "white") : (accentColor || "#1a1a1a");
@@ -344,11 +438,11 @@ export function EventDateDisplay({
       <div
         className={cn(
           "relative overflow-hidden",
-          shadow && "shadow-md",
+          shadow && "shadow-lg",
           !useColoredBackground && "border"
         )}
         style={{
-          borderRadius: borderRadius ? `${borderRadius}px` : undefined,
+          borderRadius: borderRadius ? `${borderRadius}px` : "20px",
           borderWidth: useColoredBackground && borderWidth ? `${borderWidth}px` : undefined,
           borderColor: useColoredBackground ? borderColor : "#e5e7eb",
           borderStyle: (useColoredBackground && borderWidth) ? "solid" : undefined,
@@ -384,22 +478,29 @@ export function EventDateDisplay({
         <div
           className="relative text-center"
           style={{
-            padding: padding ? `${padding}px` : "24px",
+            padding: padding ? `${padding}px` : "28px",
             color: cardTextColor,
           }}
         >
           {/* Day of Week */}
           <div
             className="text-xs font-medium uppercase tracking-widest"
-            style={{ opacity: useColoredBackground ? 0.8 : 0.6 }}
+            style={{
+              color: dateDayOfWeekColor || undefined,
+              fontSize: dateDayOfWeekFontSize ? `${dateDayOfWeekFontSize}px` : undefined,
+              opacity: dateDayOfWeekColor ? 1 : (useColoredBackground ? 0.8 : 0.6),
+            }}
           >
             {format(eventDate, "EEEE", { locale: dateLocale })}
           </div>
 
           {/* Date Number */}
           <div
-            className="my-1 font-bold leading-none tracking-tight"
-            style={{ fontSize: dateDayFontSize ? `${dateDayFontSize}px` : "56px" }}
+            className="my-2 font-bold leading-none tracking-tight"
+            style={{
+              color: dateDayNumberColor || undefined,
+              fontSize: dateDayFontSize ? `${dateDayFontSize}px` : "64px",
+            }}
           >
             {format(eventDate, "d", { locale: dateLocale })}
           </div>
@@ -408,8 +509,9 @@ export function EventDateDisplay({
           <div
             className="font-medium tracking-wide"
             style={{
-              fontSize: dateMonthFontSize ? `${dateMonthFontSize}px` : "16px",
-              opacity: useColoredBackground ? 1 : 0.8,
+              color: dateMonthYearColor || undefined,
+              fontSize: dateMonthFontSize ? `${dateMonthFontSize}px` : "18px",
+              opacity: dateMonthYearColor ? 1 : (useColoredBackground ? 1 : 0.8),
             }}
           >
             {format(eventDate, "MMMM yyyy", { locale: dateLocale })}
@@ -417,32 +519,42 @@ export function EventDateDisplay({
         </div>
       </div>
 
-      {/* Time & Address in same row - no background */}
+      {/* Time & Address - Clean, minimal design without backgrounds */}
       {(showTimeSection || showAddressSection) && (
-        <div className="flex items-center justify-center gap-4 text-sm text-muted-foreground">
+        <div className="flex flex-col items-center gap-4 py-2">
           {showTimeSection && (
-            <div className="flex items-center gap-1.5">
-              <Clock className="h-4 w-4" style={{ color: accentColor || "#1a1a1a" }} />
-              <span className="font-medium" style={{ fontSize: timeFontSize ? `${timeFontSize}px` : undefined }}>
+            <div className="flex items-center gap-3">
+              <ClockIcon color={timeIconColor || accentColor} size={22} />
+              <span
+                className="font-semibold tracking-wide"
+                style={{
+                  fontSize: timeFontSize ? `${timeFontSize}px` : "20px",
+                  color: timeSectionTextColor || undefined,
+                }}
+              >
                 {format(eventDate, "HH:mm")}
               </span>
             </div>
           )}
-          {showTimeSection && showAddressSection && (venue || location) && (
-            <span className="opacity-30">|</span>
-          )}
+
           {showAddressSection && (venue || location) && (
-            <div className="flex items-center gap-1.5">
-              <MapPin className="h-4 w-4" style={{ color: accentColor || "#1a1a1a" }} />
-              <span style={{ fontSize: addressFontSize ? `${addressFontSize}px` : undefined }}>
-                {venue ? `${venue}` : location}
+            <div className="flex items-center gap-3 text-center">
+              <LocationIcon color={addressIconColor || accentColor} size={22} />
+              <span
+                className="font-medium leading-snug"
+                style={{
+                  fontSize: addressFontSize ? `${addressFontSize}px` : "16px",
+                  color: addressSectionTextColor || undefined,
+                }}
+              >
+                {fullAddress}
               </span>
             </div>
           )}
         </div>
       )}
 
-      {/* Countdown Section - no section background, just boxes */}
+      {/* Countdown Section */}
       {showCountdown && mounted && countdown && (
         <CountdownDisplay
           countdown={countdown}
@@ -496,7 +608,7 @@ function CountdownDisplay({
     ? { days: "ימים", hours: "שעות", minutes: "דקות", seconds: "שניות" }
     : { days: "Days", hours: "Hrs", minutes: "Min", seconds: "Sec" };
 
-  const size = boxSize || 44;
+  const size = boxSize || 48;
 
   // Convert hex color to rgba with opacity for better browser support
   const getColorWithOpacity = (hex: string, opacity: number) => {
@@ -507,10 +619,10 @@ function CountdownDisplay({
     return `rgba(${r}, ${g}, ${b}, ${opacity})`;
   };
 
-  const defaultBoxBg = accentColor ? getColorWithOpacity(accentColor, 0.15) : "#f3f4f6";
+  const defaultBoxBg = accentColor ? getColorWithOpacity(accentColor, 0.1) : "#f3f4f6";
 
   return (
-    <div className="flex items-center justify-center mt-4 gap-2">
+    <div className="flex items-center justify-center mt-2 gap-2">
       <CountdownUnit
         value={countdown.seconds}
         label={labels.seconds}

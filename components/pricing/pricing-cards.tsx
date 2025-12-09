@@ -182,9 +182,9 @@ export function PricingCards({ userId, subscriptionPlan }: PricingCardsProps) {
           {t("questions")}{" "}
           <a
             className="font-medium text-primary hover:underline"
-            href="mailto:support@goapproval.com"
+            href="mailto:support@wedinex.com"
           >
-            support@goapproval.com
+            support@wedinex.com
           </a>{" "}
           {t("happyToHelp")}
         </p>

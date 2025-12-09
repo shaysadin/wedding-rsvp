@@ -185,13 +185,25 @@ export function RsvpFormPreview({ settings, event, locale }: RsvpFormPreviewProp
               shadow={settings.dateCardShadow !== false}
               dateDayFontSize={settings.dateDayFontSize || 56}
               dateMonthFontSize={settings.dateMonthFontSize || 16}
+              // Individual Date Text Colors
+              dateDayOfWeekColor={settings.dateDayOfWeekColor || undefined}
+              dateDayOfWeekFontSize={settings.dateDayOfWeekFontSize || 11}
+              dateDayNumberColor={settings.dateDayNumberColor || undefined}
+              dateMonthYearColor={settings.dateMonthYearColor || undefined}
+              // Time Section
               timeFontSize={settings.timeFontSize || 14}
+              timeSectionTextColor={settings.timeSectionTextColor || undefined}
+              timeIconColor={settings.timeIconColor || undefined}
+              // Address Section
               addressFontSize={settings.addressFontSize || 13}
+              addressSectionTextColor={settings.addressSectionTextColor || undefined}
+              addressIconColor={settings.addressIconColor || undefined}
+              // Countdown
               countdownBoxBackground={settings.countdownBoxBackground || undefined}
               countdownBoxTextColor={settings.countdownBoxTextColor || accentColor}
               countdownLabelColor={settings.countdownLabelColor || undefined}
               countdownNumberFontSize={settings.countdownNumberFontSize || 18}
-              countdownLabelFontSize={9}
+              countdownLabelFontSize={settings.countdownLabelFontSize || 9}
               countdownBoxSize={44}
             />
 
@@ -294,7 +306,7 @@ export function RsvpFormPreview({ settings, event, locale }: RsvpFormPreviewProp
                     type="button"
                     className="group relative flex flex-col items-center justify-center gap-3 rounded-2xl p-5 transition-all duration-300 overflow-hidden shadow-md"
                     style={{
-                      backgroundColor: accentColor,
+                      backgroundColor: settings.rsvpAcceptBackground || accentColor,
                     }}
                   >
                     <div className="relative z-10 flex flex-col items-center gap-3">
@@ -304,9 +316,18 @@ export function RsvpFormPreview({ settings, event, locale }: RsvpFormPreviewProp
                           backgroundColor: "rgba(255, 255, 255, 0.2)",
                         }}
                       >
-                        <Icons.heart className="h-6 w-6 text-white transition-transform duration-300" />
+                        <Icons.heart
+                          className="h-6 w-6 transition-transform duration-300"
+                          style={{ color: settings.rsvpAcceptTextColor || "#ffffff" }}
+                        />
                       </div>
-                      <span className="text-sm font-semibold text-white">
+                      <span
+                        className="font-semibold"
+                        style={{
+                          color: settings.rsvpAcceptTextColor || "#ffffff",
+                          fontSize: settings.rsvpButtonFontSize ? `${settings.rsvpButtonFontSize}px` : "14px",
+                        }}
+                      >
                         {isRTL ? "בשמחה!" : "Count me in!"}
                       </span>
                     </div>
@@ -315,13 +336,31 @@ export function RsvpFormPreview({ settings, event, locale }: RsvpFormPreviewProp
                   {/* Decline Button - Unselected state */}
                   <button
                     type="button"
-                    className="group relative flex flex-col items-center justify-center gap-3 rounded-2xl border border-gray-200 p-5 transition-all duration-300 overflow-hidden bg-gray-50/50 hover:bg-gray-100/80"
+                    className="group relative flex flex-col items-center justify-center gap-3 rounded-2xl border p-5 transition-all duration-300 overflow-hidden"
+                    style={{
+                      backgroundColor: settings.rsvpDeclineBackground || "#f9fafb",
+                      borderColor: settings.inputBorderColor || "#e5e7eb",
+                    }}
                   >
                     <div className="relative z-10 flex flex-col items-center gap-3">
-                      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gray-200/80 text-gray-400 transition-all duration-300 group-hover:bg-gray-300/80 group-hover:text-gray-500">
-                        <Icons.calendarX className="h-5 w-5 transition-transform duration-300 group-hover:scale-110" />
+                      <div
+                        className="flex h-12 w-12 items-center justify-center rounded-full transition-all duration-300"
+                        style={{
+                          backgroundColor: settings.rsvpDeclineBackground ? "rgba(0,0,0,0.1)" : "#e5e7eb",
+                        }}
+                      >
+                        <Icons.calendarX
+                          className="h-5 w-5 transition-transform duration-300 group-hover:scale-110"
+                          style={{ color: settings.rsvpDeclineTextColor || "#9ca3af" }}
+                        />
                       </div>
-                      <span className="text-sm font-medium text-gray-400 transition-colors duration-300 group-hover:text-gray-500">
+                      <span
+                        className="font-medium transition-colors duration-300"
+                        style={{
+                          color: settings.rsvpDeclineTextColor || "#9ca3af",
+                          fontSize: settings.rsvpButtonFontSize ? `${settings.rsvpButtonFontSize}px` : "14px",
+                        }}
+                      >
                         {isRTL ? "לא הפעם" : "Not this time"}
                       </span>
                     </div>

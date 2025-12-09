@@ -72,7 +72,7 @@ export function BillingFormButton({
         className="w-full"
         asChild
       >
-        <a href="mailto:sales@goapproval.com">
+        <a href="mailto:sales@wedinex.com">
           {t?.("contactSales") || "Contact Sales"}
         </a>
       </Button>

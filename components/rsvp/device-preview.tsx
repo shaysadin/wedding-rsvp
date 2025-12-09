@@ -73,18 +73,18 @@ export function DevicePreview({ children, previewUrl, isRTL }: DevicePreviewProp
       </div>
 
       {/* Preview Area */}
-      <div className="flex-1 overflow-auto bg-muted/20 p-4">
+      <div className="flex-1 min-h-0 overflow-auto bg-muted/20 p-4">
         <div
           className={cn(
-            "mx-auto transition-all duration-300",
+            "mx-auto h-full transition-all duration-300",
             device === "desktop" ? "w-full max-w-full" : "w-[375px]"
           )}
         >
           {device === "desktop" ? (
             // Browser Frame
-            <div className="rounded-lg border bg-background shadow-lg overflow-hidden">
+            <div className="flex flex-col rounded-lg border bg-background shadow-lg overflow-hidden max-h-full">
               {/* Browser Chrome */}
-              <div className="flex items-center gap-2 px-3 py-2 bg-muted/50 border-b">
+              <div className="flex shrink-0 items-center gap-2 px-3 py-2 bg-muted/50 border-b">
                 {/* Traffic Lights */}
                 <div className="flex items-center gap-1.5">
                   <div className="w-3 h-3 rounded-full bg-red-400" />
@@ -101,7 +101,7 @@ export function DevicePreview({ children, previewUrl, isRTL }: DevicePreviewProp
                 </div>
               </div>
               {/* Browser Content */}
-              <div key={key} className="h-full overflow-auto">
+              <div key={key} className="flex-1 min-h-0 overflow-auto">
                 {children}
               </div>
             </div>

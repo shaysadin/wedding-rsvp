@@ -28,6 +28,7 @@ import {
 } from "@/components/ui/collapsible";
 import { RoleSwitcher } from "@/components/dashboard/role-switcher";
 import { UpgradeCard } from "@/components/dashboard/upgrade-card";
+import { AppLogo } from "@/components/shared/app-logo";
 import { Icons } from "@/components/shared/icons";
 
 interface UserEvent {
@@ -114,9 +115,7 @@ export function DashboardSidebar({ links, userEvents = [], currentRole, availabl
                       isRTL && "flex-row-reverse"
                     )}
                   >
-                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-pink-500 to-rose-500">
-                      <Icons.heart className="h-4 w-4 text-white" />
-                    </div>
+                    <AppLogo size="md" />
                     <span className="font-semibold text-foreground">
                       {siteConfig.name}
                     </span>
@@ -126,9 +125,7 @@ export function DashboardSidebar({ links, userEvents = [], currentRole, availabl
                     href={`/${locale}/dashboard`}
                     className="flex items-center justify-center"
                   >
-                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-pink-500 to-rose-500">
-                      <Icons.heart className="h-4 w-4 text-white" />
-                    </div>
+                    <AppLogo size="md" />
                   </Link>
                 )}
 
@@ -379,9 +376,7 @@ export function MobileSheetSidebar({ links, userEvents = [], currentRole, availa
                     isRTL && "flex-row-reverse"
                   )}
                 >
-                  <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-pink-500 to-rose-500">
-                    <Icons.heart className="h-5 w-5 text-white" />
-                  </div>
+                  <AppLogo size="lg" />
                   <span className="font-urban text-xl font-bold">
                     {siteConfig.name}
                   </span>

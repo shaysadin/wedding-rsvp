@@ -20,7 +20,9 @@ import { AnimatePresence, motion } from "framer-motion";
 import {
   Calendar,
   Check,
+  ChevronDown,
   ChevronLeft,
+  ChevronUp,
   Eye,
   Image,
   LayoutGrid,
@@ -42,6 +44,11 @@ import { toast } from "sonner";
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import {
   Dialog,
   DialogContent,
@@ -275,6 +282,40 @@ function ToggleSwitch({
       <span className="text-sm">{label}</span>
       <Switch checked={checked} onCheckedChange={onCheckedChange} />
     </div>
+  );
+}
+
+// Collapsible Section Component for Advanced Mode
+function SettingsSection({
+  title,
+  icon: Icon,
+  children,
+  defaultOpen = false,
+}: {
+  title: string;
+  icon?: typeof Palette;
+  children: React.ReactNode;
+  defaultOpen?: boolean;
+}) {
+  const [isOpen, setIsOpen] = useState(defaultOpen);
+
+  return (
+    <Collapsible open={isOpen} onOpenChange={setIsOpen}>
+      <CollapsibleTrigger className="flex w-full items-center justify-between rounded-lg bg-muted/50 px-3 py-2.5 hover:bg-muted/70 transition-colors">
+        <span className="flex items-center gap-2 font-medium text-sm">
+          {Icon && <Icon className="h-4 w-4" />}
+          {title}
+        </span>
+        {isOpen ? (
+          <ChevronUp className="h-4 w-4 text-muted-foreground" />
+        ) : (
+          <ChevronDown className="h-4 w-4 text-muted-foreground" />
+        )}
+      </CollapsibleTrigger>
+      <CollapsibleContent className="pt-3 space-y-3">
+        {children}
+      </CollapsibleContent>
+    </Collapsible>
   );
 }
 
@@ -518,7 +559,7 @@ export function RsvpCustomizer({
 
   return (
     <div
-      className="-m-4 flex h-[calc(100%_+_2rem)] flex-col overflow-hidden lg:-mx-8 xl:-mx-8"
+      className="-m-4 flex min-h-0 flex-1 flex-col overflow-hidden lg:-mx-8 xl:-mx-8"
       dir={isRTL ? "rtl" : "ltr"}
     >
       {/* Header */}
@@ -679,7 +720,7 @@ export function RsvpCustomizer({
       </header>
 
       {/* Main Content */}
-      <div className="grid min-h-0 flex-1 lg:grid-cols-[380px_1fr]">
+      <div className="grid min-h-0 flex-1 overflow-hidden lg:grid-cols-[380px_1fr]">
         {/* Settings Panel */}
         <div className="flex min-h-0 flex-col overflow-hidden border-e bg-background" dir={isRTL ? "rtl" : "ltr"}>
           {/* Animated Tabs */}
@@ -731,8 +772,7 @@ export function RsvpCustomizer({
           </div>
 
           {/* Tab Content with Animation */}
-          <div className="min-h-0 flex-1 overflow-hidden" dir={isRTL ? "rtl" : "ltr"}>
-            <ScrollArea className="h-full" dir={isRTL ? "rtl" : "ltr"}>
+          <div className="min-h-0 flex-1 overflow-auto" dir={isRTL ? "rtl" : "ltr"}>
               <AnimatePresence mode="wait">
                 <motion.div
                   key={activeTab}
@@ -745,22 +785,16 @@ export function RsvpCustomizer({
                   {/* Style Tab */}
                   {activeTab === "style" && (
                     <>
-                      {/* ===== SIMPLE MODE CONTROLS ===== */}
-
-                      {/* Background */}
+                      {/* Background Section */}
                       <div className="space-y-4">
                         <h3 className="flex items-center gap-2 font-medium">
                           <Image className="h-4 w-4" />
                           {isRTL ? "רקע" : "Background"}
                         </h3>
                         <OptionPills
-                          options={
-                            ["COLOR", "IMAGE", "GRADIENT"] as BackgroundType[]
-                          }
+                          options={["COLOR", "IMAGE", "GRADIENT"] as BackgroundType[]}
                           value={settings.backgroundType || "IMAGE"}
-                          onChange={(value) =>
-                            updateSetting("backgroundType", value)
-                          }
+                          onChange={(value) => updateSetting("backgroundType", value)}
                           labels={bgTypeLabels}
                         />
 
@@ -768,9 +802,7 @@ export function RsvpCustomizer({
                           <CompactColorPicker
                             label={isRTL ? "צבע רקע" : "Background Color"}
                             value={settings.backgroundColor || "#f5f5f5"}
-                            onChange={(value) =>
-                              updateSetting("backgroundColor", value)
-                            }
+                            onChange={(value) => updateSetting("backgroundColor", value)}
                           />
                         )}
 
@@ -787,9 +819,7 @@ export function RsvpCustomizer({
                                   variant="destructive"
                                   size="icon"
                                   className="absolute end-2 top-2 h-8 w-8"
-                                  onClick={() =>
-                                    updateSetting("backgroundImage", "")
-                                  }
+                                  onClick={() => updateSetting("backgroundImage", "")}
                                 >
                                   <Trash2 className="h-4 w-4" />
                                 </Button>
@@ -818,23 +848,19 @@ export function RsvpCustomizer({
                                 </Button>
                               </>
                             )}
-                            <ModernSlider isRTL={isRTL}
+                            <ModernSlider
+                              isRTL={isRTL}
                               label={isRTL ? "שכבת כיסוי" : "Overlay"}
-                              value={Math.round(
-                                (settings.backgroundOverlay || 0) * 100,
-                              )}
-                              onChange={(v) =>
-                                updateSetting("backgroundOverlay", v / 100)
-                              }
+                              value={Math.round((settings.backgroundOverlay || 0) * 100)}
+                              onChange={(v) => updateSetting("backgroundOverlay", v / 100)}
                               max={100}
                               unit="%"
                             />
-                            <ModernSlider isRTL={isRTL}
+                            <ModernSlider
+                              isRTL={isRTL}
                               label={isRTL ? "טשטוש" : "Blur"}
                               value={settings.backgroundBlur || 0}
-                              onChange={(v) =>
-                                updateSetting("backgroundBlur", v)
-                              }
+                              onChange={(v) => updateSetting("backgroundBlur", v)}
                               max={20}
                             />
                           </div>
@@ -845,16 +871,12 @@ export function RsvpCustomizer({
                             <CompactColorPicker
                               label={isRTL ? "צבע ראשי" : "Primary"}
                               value={settings.primaryColor || "#667eea"}
-                              onChange={(value) =>
-                                updateSetting("primaryColor", value)
-                              }
+                              onChange={(value) => updateSetting("primaryColor", value)}
                             />
                             <CompactColorPicker
                               label={isRTL ? "צבע משני" : "Secondary"}
                               value={settings.secondaryColor || "#764ba2"}
-                              onChange={(value) =>
-                                updateSetting("secondaryColor", value)
-                              }
+                              onChange={(value) => updateSetting("secondaryColor", value)}
                             />
                           </div>
                         )}
@@ -862,7 +884,43 @@ export function RsvpCustomizer({
 
                       <Separator />
 
-                      {/* Theme Color */}
+                      {/* Header & Title Section */}
+                      <div className="space-y-4">
+                        <h3 className="flex items-center gap-2 font-medium">
+                          <Type className="h-4 w-4" />
+                          {isRTL ? "כותרת" : "Header"}
+                        </h3>
+                        <CompactColorPicker
+                          label={isRTL ? "צבע כותרת" : "Title Color"}
+                          value={settings.titleTextColor || "#1a1a1a"}
+                          onChange={(value) => updateSetting("titleTextColor", value)}
+                        />
+                        <ModernSlider
+                          isRTL={isRTL}
+                          label={isRTL ? "גודל כותרת" : "Title Size"}
+                          value={settings.titleFontSize || 24}
+                          onChange={(v) => updateSetting("titleFontSize", v)}
+                          min={16}
+                          max={48}
+                        />
+                        <CompactColorPicker
+                          label={isRTL ? "צבע תת-כותרת" : "Subtitle Color"}
+                          value={settings.subtitleTextColor || "#6b7280"}
+                          onChange={(value) => updateSetting("subtitleTextColor", value)}
+                        />
+                        <ModernSlider
+                          isRTL={isRTL}
+                          label={isRTL ? "גודל תת-כותרת" : "Subtitle Size"}
+                          value={settings.subtitleFontSize || 14}
+                          onChange={(v) => updateSetting("subtitleFontSize", v)}
+                          min={10}
+                          max={24}
+                        />
+                      </div>
+
+                      <Separator />
+
+                      {/* Theme Color Section */}
                       <div className="space-y-4">
                         <h3 className="flex items-center gap-2 font-medium">
                           <Palette className="h-4 w-4" />
@@ -873,7 +931,6 @@ export function RsvpCustomizer({
                           value={settings.accentColor || "#1a1a1a"}
                           onChange={(value) => {
                             updateSetting("accentColor", value);
-                            // Also update dateCardAccentColor to sync with theme
                             updateSetting("dateCardAccentColor", value);
                           }}
                         />
@@ -881,257 +938,372 @@ export function RsvpCustomizer({
 
                       <Separator />
 
-                      {/* Card Style (Simple) - Only background, opacity, blur */}
+                      {/* Card Style Section */}
                       <div className="space-y-4">
                         <h3 className="flex items-center gap-2 font-medium">
                           <Square className="h-4 w-4" />
                           {isRTL ? "כרטיס" : "Card"}
                         </h3>
                         <CompactColorPicker
-                          label={isRTL ? "רקע כרטיס" : "Card Background"}
+                          label={isRTL ? "רקע" : "Background"}
                           value={settings.cardBackground || "#ffffff"}
-                          onChange={(value) =>
-                            updateSetting("cardBackground", value)
-                          }
+                          onChange={(value) => updateSetting("cardBackground", value)}
                         />
-                        <ModernSlider isRTL={isRTL}
-                          label={isRTL ? "טשטוש" : "Blur"}
+                        <ModernSlider
+                          isRTL={isRTL}
+                          label={isRTL ? "טשטוש (זכוכית)" : "Blur (Glass)"}
                           value={settings.cardBlur || 0}
                           onChange={(v) => updateSetting("cardBlur", v)}
                           max={20}
                         />
-                        <CompactColorPicker
-                          label={isRTL ? "צבע גבול" : "Border Color"}
-                          value={settings.cardBorderColor || "#e5e7eb"}
-                          onChange={(value) =>
-                            updateSetting("cardBorderColor", value)
-                          }
-                        />
-                        <ModernSlider isRTL={isRTL}
-                          label={isRTL ? "עובי גבול" : "Border Width"}
-                          value={settings.cardBorderWidth || 0}
-                          onChange={(v) => updateSetting("cardBorderWidth", v)}
-                          max={5}
+                        <ModernSlider
+                          isRTL={isRTL}
+                          label={isRTL ? "עיגול פינות" : "Border Radius"}
+                          value={settings.cardBorderRadius || 16}
+                          onChange={(v) => updateSetting("cardBorderRadius", v)}
+                          max={32}
                         />
                         <ToggleSwitch
                           label={isRTL ? "צל" : "Shadow"}
                           checked={settings.cardShadow !== false}
-                          onCheckedChange={(checked) =>
-                            updateSetting("cardShadow", checked)
-                          }
-                        />
-                        <ModernSlider isRTL={isRTL}
-                          label={isRTL ? "רוחב מקסימלי" : "Max Width"}
-                          value={settings.cardMaxWidth || 600}
-                          onChange={(v) => updateSetting("cardMaxWidth", v)}
-                          min={320}
-                          max={800}
-                          step={10}
-                          unit="px"
+                          onCheckedChange={(checked) => updateSetting("cardShadow", checked)}
                         />
                       </div>
 
                       <Separator />
 
-                      {/* Date Display Style */}
+                      {/* Date Display Section */}
                       <div className="space-y-4">
                         <h3 className="flex items-center gap-2 font-medium">
                           <Calendar className="h-4 w-4" />
                           {isRTL ? "תצוגת תאריך" : "Date Display"}
                         </h3>
                         <OptionPills
-                          options={
-                            [
-                              "CARD",
-                              "CALENDAR",
-                              "MINIMAL",
-                            ] as DateDisplayStyle[]
-                          }
-                          value={
-                            (settings.dateDisplayStyle as DateDisplayStyle) ||
-                            "CALENDAR"
-                          }
-                          onChange={(value) =>
-                            updateSetting("dateDisplayStyle", value)
-                          }
+                          options={["CARD", "CALENDAR", "MINIMAL"] as DateDisplayStyle[]}
+                          value={(settings.dateDisplayStyle as DateDisplayStyle) || "CALENDAR"}
+                          onChange={(value) => updateSetting("dateDisplayStyle", value)}
                           labels={dateStyleLabels}
                         />
-                        <ToggleSwitch
-                          label={isRTL ? "ספירה לאחור" : "Show Countdown"}
-                          checked={settings.showCountdown !== false}
-                          onCheckedChange={(checked) =>
-                            updateSetting("showCountdown", checked)
-                          }
+                        <CompactColorPicker
+                          label={isRTL ? "רקע תאריך" : "Date Background"}
+                          value={settings.dateCardBackground || "#1a1a1a"}
+                          onChange={(value) => updateSetting("dateCardBackground", value)}
+                        />
+
+                        {/* Individual Date Text Colors */}
+                        <div className="pt-2 border-t space-y-3">
+                          <Label className="text-xs text-muted-foreground">
+                            {isRTL ? "צבעי טקסט" : "Text Colors"}
+                          </Label>
+                          <CompactColorPicker
+                            label={isRTL ? "יום בשבוע" : "Day of Week"}
+                            value={settings.dateDayOfWeekColor || "#9ca3af"}
+                            onChange={(value) => updateSetting("dateDayOfWeekColor", value)}
+                          />
+                          <CompactColorPicker
+                            label={isRTL ? "מספר יום" : "Day Number"}
+                            value={settings.dateDayNumberColor || "#ffffff"}
+                            onChange={(value) => updateSetting("dateDayNumberColor", value)}
+                          />
+                          <CompactColorPicker
+                            label={isRTL ? "חודש ושנה" : "Month & Year"}
+                            value={settings.dateMonthYearColor || "#ffffff"}
+                            onChange={(value) => updateSetting("dateMonthYearColor", value)}
+                          />
+                        </div>
+
+                        {/* Date Font Sizes */}
+                        <div className="pt-2 border-t space-y-3">
+                          <Label className="text-xs text-muted-foreground">
+                            {isRTL ? "גודל טקסט" : "Font Sizes"}
+                          </Label>
+                          <ModernSlider
+                            isRTL={isRTL}
+                            label={isRTL ? "יום בשבוע" : "Day of Week"}
+                            value={settings.dateDayOfWeekFontSize || 11}
+                            onChange={(v) => updateSetting("dateDayOfWeekFontSize", v)}
+                            min={8}
+                            max={18}
+                          />
+                          <ModernSlider
+                            isRTL={isRTL}
+                            label={isRTL ? "מספר יום" : "Day Number"}
+                            value={settings.dateDayFontSize || 56}
+                            onChange={(v) => updateSetting("dateDayFontSize", v)}
+                            min={24}
+                            max={80}
+                          />
+                          <ModernSlider
+                            isRTL={isRTL}
+                            label={isRTL ? "חודש ושנה" : "Month & Year"}
+                            value={settings.dateMonthFontSize || 16}
+                            onChange={(v) => updateSetting("dateMonthFontSize", v)}
+                            min={10}
+                            max={28}
+                          />
+                        </div>
+                      </div>
+
+                      <Separator />
+
+                      {/* Time & Address Section */}
+                      <div className="space-y-4">
+                        <h3 className="flex items-center gap-2 font-medium">
+                          <MapPin className="h-4 w-4" />
+                          {isRTL ? "שעה וכתובת" : "Time & Address"}
+                        </h3>
+                        <CompactColorPicker
+                          label={isRTL ? "צבע שעה" : "Time Text"}
+                          value={settings.timeSectionTextColor || "#374151"}
+                          onChange={(value) => updateSetting("timeSectionTextColor", value)}
+                        />
+                        <CompactColorPicker
+                          label={isRTL ? "אייקון שעה" : "Time Icon"}
+                          value={settings.timeIconColor || settings.accentColor || "#1a1a1a"}
+                          onChange={(value) => updateSetting("timeIconColor", value)}
+                        />
+                        <ModernSlider
+                          isRTL={isRTL}
+                          label={isRTL ? "גודל שעה" : "Time Size"}
+                          value={settings.timeFontSize || 20}
+                          onChange={(v) => updateSetting("timeFontSize", v)}
+                          min={12}
+                          max={32}
+                        />
+                        <CompactColorPicker
+                          label={isRTL ? "צבע כתובת" : "Address Text"}
+                          value={settings.addressSectionTextColor || "#374151"}
+                          onChange={(value) => updateSetting("addressSectionTextColor", value)}
+                        />
+                        <CompactColorPicker
+                          label={isRTL ? "אייקון כתובת" : "Address Icon"}
+                          value={settings.addressIconColor || settings.accentColor || "#1a1a1a"}
+                          onChange={(value) => updateSetting("addressIconColor", value)}
+                        />
+                        <ModernSlider
+                          isRTL={isRTL}
+                          label={isRTL ? "גודל כתובת" : "Address Size"}
+                          value={settings.addressFontSize || 16}
+                          onChange={(v) => updateSetting("addressFontSize", v)}
+                          min={10}
+                          max={24}
                         />
                       </div>
 
                       <Separator />
 
-                      {/* Visibility Toggles */}
+                      {/* Countdown Section */}
+                      <div className="space-y-4">
+                        <h3 className="flex items-center gap-2 font-medium">
+                          <Calendar className="h-4 w-4" />
+                          {isRTL ? "ספירה לאחור" : "Countdown"}
+                        </h3>
+                        <CompactColorPicker
+                          label={isRTL ? "רקע קופסאות" : "Box Background"}
+                          value={settings.countdownBoxBackground || "#f3f4f6"}
+                          onChange={(value) => updateSetting("countdownBoxBackground", value)}
+                        />
+                        <CompactColorPicker
+                          label={isRTL ? "מספרים" : "Numbers"}
+                          value={settings.countdownBoxTextColor || "#111827"}
+                          onChange={(value) => updateSetting("countdownBoxTextColor", value)}
+                        />
+                        <CompactColorPicker
+                          label={isRTL ? "תוויות" : "Labels"}
+                          value={settings.countdownLabelColor || "#6b7280"}
+                          onChange={(value) => updateSetting("countdownLabelColor", value)}
+                        />
+                        <ModernSlider
+                          isRTL={isRTL}
+                          label={isRTL ? "גודל מספרים" : "Number Size"}
+                          value={settings.countdownNumberFontSize || 18}
+                          onChange={(v) => updateSetting("countdownNumberFontSize", v)}
+                          min={12}
+                          max={32}
+                        />
+                        <ModernSlider
+                          isRTL={isRTL}
+                          label={isRTL ? "גודל תוויות" : "Label Size"}
+                          value={settings.countdownLabelFontSize || 9}
+                          onChange={(v) => updateSetting("countdownLabelFontSize", v)}
+                          min={6}
+                          max={16}
+                        />
+                      </div>
+
+                      <Separator />
+
+                      {/* Input Fields Section */}
+                      <div className="space-y-4">
+                        <h3 className="flex items-center gap-2 font-medium">
+                          <Square className="h-4 w-4" />
+                          {isRTL ? "שדות קלט" : "Input Fields"}
+                        </h3>
+                        <CompactColorPicker
+                          label={isRTL ? "רקע" : "Background"}
+                          value={settings.inputBackgroundColor || "#f9fafb"}
+                          onChange={(value) => updateSetting("inputBackgroundColor", value)}
+                        />
+                        <CompactColorPicker
+                          label={isRTL ? "טקסט" : "Text"}
+                          value={settings.inputTextColor || "#000000"}
+                          onChange={(value) => updateSetting("inputTextColor", value)}
+                        />
+                        <CompactColorPicker
+                          label={isRTL ? "מסגרת" : "Border"}
+                          value={settings.inputBorderColor || "#e5e7eb"}
+                          onChange={(value) => updateSetting("inputBorderColor", value)}
+                        />
+                        <CompactColorPicker
+                          label={isRTL ? "צבע תוויות" : "Label Color"}
+                          value={settings.labelTextColor || "#374151"}
+                          onChange={(value) => updateSetting("labelTextColor", value)}
+                        />
+                        <ModernSlider
+                          isRTL={isRTL}
+                          label={isRTL ? "גודל תוויות" : "Label Size"}
+                          value={settings.labelFontSize || 14}
+                          onChange={(v) => updateSetting("labelFontSize", v)}
+                          min={10}
+                          max={20}
+                        />
+                      </div>
+
+                      <Separator />
+
+                      {/* Guest Counter Section */}
+                      <div className="space-y-4">
+                        <h3 className="flex items-center gap-2 font-medium">
+                          <Users className="h-4 w-4" />
+                          {isRTL ? "בורר אורחים" : "Guest Counter"}
+                        </h3>
+                        <CompactColorPicker
+                          label={isRTL ? "רקע" : "Background"}
+                          value={settings.guestCounterBackground || "#f9fafb"}
+                          onChange={(value) => updateSetting("guestCounterBackground", value)}
+                        />
+                        <CompactColorPicker
+                          label={isRTL ? "טקסט/מספרים" : "Text/Numbers"}
+                          value={settings.guestCounterTextColor || "#1a1a1a"}
+                          onChange={(value) => updateSetting("guestCounterTextColor", value)}
+                        />
+                        <CompactColorPicker
+                          label={isRTL ? "צבע כפתורים" : "Button Color"}
+                          value={settings.guestCounterButtonColor || settings.accentColor || "#1a1a1a"}
+                          onChange={(value) => updateSetting("guestCounterButtonColor", value)}
+                        />
+                      </div>
+
+                      <Separator />
+
+                      {/* RSVP Options Section */}
+                      <div className="space-y-4">
+                        <h3 className="flex items-center gap-2 font-medium">
+                          <Check className="h-4 w-4" />
+                          {isRTL ? "כפתורי אישור" : "RSVP Options"}
+                        </h3>
+                        <CompactColorPicker
+                          label={isRTL ? "רקע מגיע" : "Attending BG"}
+                          value={settings.rsvpAcceptBackground || "#dcfce7"}
+                          onChange={(value) => updateSetting("rsvpAcceptBackground", value)}
+                        />
+                        <CompactColorPicker
+                          label={isRTL ? "טקסט מגיע" : "Attending Text"}
+                          value={settings.rsvpAcceptTextColor || "#166534"}
+                          onChange={(value) => updateSetting("rsvpAcceptTextColor", value)}
+                        />
+                        <CompactColorPicker
+                          label={isRTL ? "רקע לא מגיע" : "Not Attending BG"}
+                          value={settings.rsvpDeclineBackground || "#fee2e2"}
+                          onChange={(value) => updateSetting("rsvpDeclineBackground", value)}
+                        />
+                        <CompactColorPicker
+                          label={isRTL ? "טקסט לא מגיע" : "Not Attending Text"}
+                          value={settings.rsvpDeclineTextColor || "#991b1b"}
+                          onChange={(value) => updateSetting("rsvpDeclineTextColor", value)}
+                        />
+                        <ModernSlider
+                          label={isRTL ? "גודל טקסט כפתורים" : "Button Font Size"}
+                          value={settings.rsvpButtonFontSize || 14}
+                          onChange={(value) => updateSetting("rsvpButtonFontSize", value)}
+                          min={10}
+                          max={24}
+                          step={1}
+                          unit="px"
+                          isRTL={isRTL}
+                        />
+                      </div>
+
+                      <Separator />
+
+                      {/* Visibility Section */}
                       <div className="space-y-4">
                         <h3 className="flex items-center gap-2 font-medium">
                           <Eye className="h-4 w-4" />
                           {isRTL ? "תצוגה" : "Display"}
                         </h3>
                         <ToggleSwitch
-                          label={isRTL ? "הצג שעה" : "Show Time"}
-                          checked={settings.showTimeSection !== false}
-                          onCheckedChange={(checked) =>
-                            updateSetting("showTimeSection", checked)
-                          }
+                          label={isRTL ? "ספירה לאחור" : "Countdown"}
+                          checked={settings.showCountdown !== false}
+                          onCheckedChange={(checked) => updateSetting("showCountdown", checked)}
                         />
                         <ToggleSwitch
-                          label={isRTL ? "הצג כתובת" : "Show Address"}
+                          label={isRTL ? "שעה" : "Time"}
+                          checked={settings.showTimeSection !== false}
+                          onCheckedChange={(checked) => updateSetting("showTimeSection", checked)}
+                        />
+                        <ToggleSwitch
+                          label={isRTL ? "כתובת" : "Address"}
                           checked={settings.showAddressSection !== false}
-                          onCheckedChange={(checked) =>
-                            updateSetting("showAddressSection", checked)
-                          }
+                          onCheckedChange={(checked) => updateSetting("showAddressSection", checked)}
                         />
                         <ToggleSwitch
                           label="Google Maps"
                           checked={settings.showGoogleMaps !== false}
-                          onCheckedChange={(checked) =>
-                            updateSetting("showGoogleMaps", checked)
-                          }
+                          onCheckedChange={(checked) => updateSetting("showGoogleMaps", checked)}
                         />
                         <ToggleSwitch
                           label="Waze"
                           checked={settings.showWaze !== false}
-                          onCheckedChange={(checked) =>
-                            updateSetting("showWaze", checked)
-                          }
+                          onCheckedChange={(checked) => updateSetting("showWaze", checked)}
                         />
                       </div>
 
-                      {/* ===== ADVANCED MODE CONTROLS ===== */}
-                      {settings.advancedMode && (
-                        <>
-                          <Separator />
+                      <Separator />
 
-                          {/* Advanced: Card Detailed Settings */}
-                          <div className="space-y-4">
-                            <h3 className="flex items-center gap-2 font-medium text-muted-foreground">
-                              <Wand2 className="h-4 w-4" />
-                              {isRTL ? "כרטיס - מתקדם" : "Card - Advanced"}
-                            </h3>
-                            <CompactColorPicker
-                              label={isRTL ? "רקע כרטיס" : "Card Background"}
-                              value={settings.cardBackground || "#ffffff"}
-                              onChange={(value) =>
-                                updateSetting("cardBackground", value)
-                              }
-                            />
-                            <ModernSlider isRTL={isRTL}
-                              label={isRTL ? "עיגול פינות" : "Border Radius"}
-                              value={settings.cardBorderRadius || 16}
-                              onChange={(v) => updateSetting("cardBorderRadius", v)}
-                              max={32}
-                            />
-                            <ModernSlider isRTL={isRTL}
-                              label={isRTL ? "ריווח פנימי" : "Padding"}
-                              value={settings.cardPadding || 24}
-                              onChange={(v) => updateSetting("cardPadding", v)}
-                              max={48}
-                            />
-                          </div>
-
-                          <Separator />
-
-                          {/* Advanced: Text Colors */}
-                          <div className="space-y-4">
-                            <h3 className="flex items-center gap-2 font-medium text-muted-foreground">
-                              <Type className="h-4 w-4" />
-                              {isRTL ? "צבעי טקסט - מתקדם" : "Text Colors - Advanced"}
-                            </h3>
-                            <CompactColorPicker
-                              label={isRTL ? "טקסט ראשי" : "Text Color"}
-                              value={settings.textColor || "#000000"}
-                              onChange={(value) =>
-                                updateSetting("textColor", value)
-                              }
-                            />
-                            <CompactColorPicker
-                              label={isRTL ? "טקסט משני" : "Subtitle Color"}
-                              value={settings.subtitleTextColor || "#666666"}
-                              onChange={(value) =>
-                                updateSetting("subtitleTextColor", value)
-                              }
-                            />
-                            <CompactColorPicker
-                              label={isRTL ? "תוויות" : "Label Color"}
-                              value={settings.labelTextColor || "#374151"}
-                              onChange={(value) =>
-                                updateSetting("labelTextColor", value)
-                              }
-                            />
-                          </div>
-
-                          <Separator />
-
-                          {/* Advanced: Input Fields */}
-                          <div className="space-y-4">
-                            <h3 className="font-medium text-muted-foreground">
-                              {isRTL ? "שדות קלט - מתקדם" : "Input Fields - Advanced"}
-                            </h3>
-                            <CompactColorPicker
-                              label={isRTL ? "רקע" : "Background"}
-                              value={settings.inputBackgroundColor || "#ffffff"}
-                              onChange={(value) =>
-                                updateSetting("inputBackgroundColor", value)
-                              }
-                            />
-                            <CompactColorPicker
-                              label={isRTL ? "טקסט" : "Text"}
-                              value={settings.inputTextColor || "#000000"}
-                              onChange={(value) =>
-                                updateSetting("inputTextColor", value)
-                              }
-                            />
-                            <CompactColorPicker
-                              label={isRTL ? "מסגרת" : "Border"}
-                              value={settings.inputBorderColor || "#e5e7eb"}
-                              onChange={(value) =>
-                                updateSetting("inputBorderColor", value)
-                              }
-                            />
-                          </div>
-
-                          <Separator />
-
-                          {/* Advanced: Guest Counter */}
-                          <div className="space-y-4">
-                            <h3 className="flex items-center gap-2 font-medium text-muted-foreground">
-                              <Users className="h-4 w-4" />
-                              {isRTL ? "בורר אורחים - מתקדם" : "Guest Counter - Advanced"}
-                            </h3>
-                            <CompactColorPicker
-                              label={isRTL ? "רקע" : "Background"}
-                              value={settings.guestCounterBackground || "#ffffff"}
-                              onChange={(value) =>
-                                updateSetting("guestCounterBackground", value)
-                              }
-                            />
-                            <CompactColorPicker
-                              label={isRTL ? "טקסט" : "Text"}
-                              value={settings.guestCounterTextColor || "#000000"}
-                              onChange={(value) =>
-                                updateSetting("guestCounterTextColor", value)
-                              }
-                            />
-                            <CompactColorPicker
-                              label={isRTL ? "כפתורים" : "Buttons"}
-                              value={settings.guestCounterAccent || "#6366f1"}
-                              onChange={(value) =>
-                                updateSetting("guestCounterAccent", value)
-                              }
-                            />
-                          </div>
-                        </>
-                      )}
+                      {/* Button Style Section */}
+                      <div className="space-y-4">
+                        <h3 className="flex items-center gap-2 font-medium">
+                          <MousePointer className="h-4 w-4" />
+                          {isRTL ? "כפתור שליחה" : "Submit Button"}
+                        </h3>
+                        <CompactColorPicker
+                          label={isRTL ? "צבע רקע" : "Background"}
+                          value={settings.buttonColor || settings.accentColor || "#1a1a1a"}
+                          onChange={(value) => updateSetting("buttonColor", value)}
+                        />
+                        <CompactColorPicker
+                          label={isRTL ? "צבע טקסט" : "Text"}
+                          value={settings.buttonTextColor || "#ffffff"}
+                          onChange={(value) => updateSetting("buttonTextColor", value)}
+                        />
+                        <ModernSlider
+                          isRTL={isRTL}
+                          label={isRTL ? "עיגול פינות" : "Border Radius"}
+                          value={settings.buttonBorderRadius || 16}
+                          onChange={(v) => updateSetting("buttonBorderRadius", v)}
+                          max={24}
+                        />
+                        <ToggleSwitch
+                          label={isRTL ? "צל" : "Shadow"}
+                          checked={settings.buttonShadow !== false}
+                          onCheckedChange={(checked) => updateSetting("buttonShadow", checked)}
+                        />
+                      </div>
                     </>
                   )}
 
-                  {/* Layout Tab - Only shown in Advanced Mode */}
+                  {/* Layout Tab - Advanced Mode Only */}
                   {activeTab === "layout" && (
                     <>
                       {!settings.advancedMode ? (
@@ -1154,338 +1326,336 @@ export function RsvpCustomizer({
                           </Button>
                         </div>
                       ) : (
-                        <>
-                          {/* Date Card Styling */}
-                          <div className="space-y-4">
-                            <h3 className="flex items-center gap-2 font-medium">
-                              <Calendar className="h-4 w-4" />
-                              {isRTL ? "כרטיס תאריך" : "Date Card"}
-                            </h3>
-                            <CompactColorPicker
-                              label={isRTL ? "רקע" : "Background"}
-                              value={settings.dateCardBackground || "#667eea"}
-                              onChange={(value) =>
-                                updateSetting("dateCardBackground", value)
-                              }
+                        <div className="space-y-3">
+                          {/* Card Layout */}
+                          <SettingsSection
+                            title={isRTL ? "כרטיס ראשי" : "Main Card"}
+                            icon={Square}
+                            defaultOpen
+                          >
+                            <ModernSlider
+                              isRTL={isRTL}
+                              label={isRTL ? "ריווח פנימי" : "Padding"}
+                              value={settings.cardPadding || 24}
+                              onChange={(v) => updateSetting("cardPadding", v)}
+                              max={48}
+                            />
+                            <ModernSlider
+                              isRTL={isRTL}
+                              label={isRTL ? "רוחב מקסימלי" : "Max Width"}
+                              value={settings.cardMaxWidth || 600}
+                              onChange={(v) => updateSetting("cardMaxWidth", v)}
+                              min={320}
+                              max={800}
+                              step={10}
                             />
                             <CompactColorPicker
-                              label={isRTL ? "טקסט" : "Text"}
-                              value={settings.dateCardTextColor || "#ffffff"}
-                              onChange={(value) =>
-                                updateSetting("dateCardTextColor", value)
-                              }
+                              label={isRTL ? "צבע גבול" : "Border Color"}
+                              value={settings.cardBorderColor || "#e5e7eb"}
+                              onChange={(value) => updateSetting("cardBorderColor", value)}
                             />
+                            <ModernSlider
+                              isRTL={isRTL}
+                              label={isRTL ? "עובי גבול" : "Border Width"}
+                              value={settings.cardBorderWidth || 0}
+                              onChange={(v) => updateSetting("cardBorderWidth", v)}
+                              max={5}
+                            />
+                          </SettingsSection>
+
+                          {/* Date Card Details */}
+                          <SettingsSection
+                            title={isRTL ? "כרטיס תאריך" : "Date Card"}
+                            icon={Calendar}
+                          >
                             <CompactColorPicker
                               label={isRTL ? "הדגשה" : "Accent"}
                               value={settings.dateCardAccentColor || "#ffffff"}
-                              onChange={(value) =>
-                                updateSetting("dateCardAccentColor", value)
-                              }
+                              onChange={(value) => updateSetting("dateCardAccentColor", value)}
                             />
                             <ModernSlider
                               isRTL={isRTL}
                               label={isRTL ? "עיגול פינות" : "Border Radius"}
                               value={settings.dateCardBorderRadius || 12}
-                              onChange={(v) =>
-                                updateSetting("dateCardBorderRadius", v)
-                              }
+                              onChange={(v) => updateSetting("dateCardBorderRadius", v)}
                               max={32}
                             />
                             <ModernSlider
                               isRTL={isRTL}
                               label={isRTL ? "ריווח פנימי" : "Padding"}
                               value={settings.dateCardPadding || 16}
-                              onChange={(v) =>
-                                updateSetting("dateCardPadding", v)
-                              }
+                              onChange={(v) => updateSetting("dateCardPadding", v)}
                               max={48}
                             />
                             <ToggleSwitch
                               label={isRTL ? "צל" : "Shadow"}
                               checked={settings.dateCardShadow !== false}
-                              onCheckedChange={(checked) =>
-                                updateSetting("dateCardShadow", checked)
-                              }
+                              onCheckedChange={(checked) => updateSetting("dateCardShadow", checked)}
                             />
 
-                            {/* Date Font Sizes */}
-                            <div className="mt-2 border-t pt-3">
-                              <Label className="text-xs font-medium text-muted-foreground">
-                                {isRTL ? "גודל טקסט תאריך" : "Date Font Sizes"}
+                            {/* Individual Date Text Colors */}
+                            <div className="pt-2 border-t">
+                              <Label className="text-xs text-muted-foreground mb-2 block">
+                                {isRTL ? "צבעי טקסט" : "Text Colors"}
                               </Label>
+                              <div className="space-y-3">
+                                <CompactColorPicker
+                                  label={isRTL ? "יום בשבוע" : "Day of Week"}
+                                  value={settings.dateDayOfWeekColor || "#6b7280"}
+                                  onChange={(value) => updateSetting("dateDayOfWeekColor", value)}
+                                />
+                                <CompactColorPicker
+                                  label={isRTL ? "מספר יום" : "Day Number"}
+                                  value={settings.dateDayNumberColor || settings.accentColor || "#1a1a1a"}
+                                  onChange={(value) => updateSetting("dateDayNumberColor", value)}
+                                />
+                                <CompactColorPicker
+                                  label={isRTL ? "חודש ושנה" : "Month & Year"}
+                                  value={settings.dateMonthYearColor || "#374151"}
+                                  onChange={(value) => updateSetting("dateMonthYearColor", value)}
+                                />
+                              </div>
                             </div>
-                            <ModernSlider
-                              isRTL={isRTL}
-                              label={isRTL ? "יום" : "Day"}
-                              value={settings.dateDayFontSize || 48}
-                              onChange={(v) =>
-                                updateSetting("dateDayFontSize", v)
-                              }
-                              min={24}
-                              max={72}
-                            />
-                            <ModernSlider
-                              isRTL={isRTL}
-                              label={isRTL ? "חודש" : "Month"}
-                              value={settings.dateMonthFontSize || 14}
-                              onChange={(v) =>
-                                updateSetting("dateMonthFontSize", v)
-                              }
-                              min={10}
-                              max={24}
-                            />
-                            <ModernSlider
-                              isRTL={isRTL}
-                              label={isRTL ? "שנה" : "Year"}
-                              value={settings.dateYearFontSize || 14}
-                              onChange={(v) =>
-                                updateSetting("dateYearFontSize", v)
-                              }
-                              min={10}
-                              max={24}
-                            />
-                          </div>
 
-                          <Separator />
-
-                          {/* Time Section Styling */}
-                          {settings.showTimeSection !== false && (
-                            <>
-                              <div className="space-y-4">
-                                <h3 className="font-medium">
-                                  {isRTL ? "אזור שעה" : "Time Section"}
-                                </h3>
-                                <CompactColorPicker
-                                  label={isRTL ? "רקע" : "Background"}
-                                  value={settings.timeSectionBackground || "#f3f4f6"}
-                                  onChange={(value) =>
-                                    updateSetting("timeSectionBackground", value)
-                                  }
-                                />
-                                <CompactColorPicker
-                                  label={isRTL ? "טקסט" : "Text"}
-                                  value={settings.timeSectionTextColor || "#374151"}
-                                  onChange={(value) =>
-                                    updateSetting("timeSectionTextColor", value)
-                                  }
+                            <div className="pt-2 border-t">
+                              <Label className="text-xs text-muted-foreground mb-2 block">
+                                {isRTL ? "גודל טקסט" : "Font Sizes"}
+                              </Label>
+                              <div className="space-y-3">
+                                <ModernSlider
+                                  isRTL={isRTL}
+                                  label={isRTL ? "יום בשבוע" : "Day of Week"}
+                                  value={settings.dateDayOfWeekFontSize || 11}
+                                  onChange={(v) => updateSetting("dateDayOfWeekFontSize", v)}
+                                  min={8}
+                                  max={18}
                                 />
                                 <ModernSlider
                                   isRTL={isRTL}
-                                  label={isRTL ? "עיגול פינות" : "Border Radius"}
-                                  value={settings.timeSectionBorderRadius || 8}
-                                  onChange={(v) =>
-                                    updateSetting("timeSectionBorderRadius", v)
-                                  }
+                                  label={isRTL ? "יום" : "Day"}
+                                  value={settings.dateDayFontSize || 48}
+                                  onChange={(v) => updateSetting("dateDayFontSize", v)}
+                                  min={24}
+                                  max={72}
+                                />
+                                <ModernSlider
+                                  isRTL={isRTL}
+                                  label={isRTL ? "חודש" : "Month"}
+                                  value={settings.dateMonthFontSize || 14}
+                                  onChange={(v) => updateSetting("dateMonthFontSize", v)}
+                                  min={10}
                                   max={24}
                                 />
                                 <ModernSlider
                                   isRTL={isRTL}
-                                  label={isRTL ? "גודל טקסט" : "Font Size"}
-                                  value={settings.timeFontSize || 14}
-                                  onChange={(v) =>
-                                    updateSetting("timeFontSize", v)
-                                  }
+                                  label={isRTL ? "שנה" : "Year"}
+                                  value={settings.dateYearFontSize || 14}
+                                  onChange={(v) => updateSetting("dateYearFontSize", v)}
                                   min={10}
                                   max={24}
                                 />
                               </div>
-                              <Separator />
-                            </>
-                          )}
+                            </div>
+                          </SettingsSection>
 
-                          {/* Address Section Styling */}
-                          {settings.showAddressSection !== false && (
-                            <>
-                              <div className="space-y-4">
-                                <h3 className="font-medium">
-                                  {isRTL ? "אזור כתובת" : "Address Section"}
-                                </h3>
-                                <CompactColorPicker
-                                  label={isRTL ? "רקע" : "Background"}
-                                  value={settings.addressSectionBackground || "#f3f4f6"}
-                                  onChange={(value) =>
-                                    updateSetting("addressSectionBackground", value)
-                                  }
-                                />
-                                <CompactColorPicker
-                                  label={isRTL ? "טקסט" : "Text"}
-                                  value={settings.addressSectionTextColor || "#374151"}
-                                  onChange={(value) =>
-                                    updateSetting("addressSectionTextColor", value)
-                                  }
-                                />
-                                <ModernSlider
-                                  isRTL={isRTL}
-                                  label={isRTL ? "עיגול פינות" : "Border Radius"}
-                                  value={settings.addressSectionBorderRadius || 8}
-                                  onChange={(v) =>
-                                    updateSetting("addressSectionBorderRadius", v)
-                                  }
-                                  max={24}
-                                />
-                                <ModernSlider
-                                  isRTL={isRTL}
-                                  label={isRTL ? "גודל טקסט" : "Font Size"}
-                                  value={settings.addressFontSize || 12}
-                                  onChange={(v) =>
-                                    updateSetting("addressFontSize", v)
-                                  }
-                                  min={10}
-                                  max={20}
-                                />
-                              </div>
-                              <Separator />
-                            </>
-                          )}
-
-                          {/* Countdown Section Styling */}
+                          {/* Countdown Section */}
                           {settings.showCountdown !== false && (
-                            <>
-                              <div className="space-y-4">
-                                <h3 className="font-medium">
-                                  {isRTL ? "ספירה לאחור" : "Countdown Section"}
-                                </h3>
-                                <CompactColorPicker
-                                  label={isRTL ? "רקע אזור" : "Section Background"}
-                                  value={settings.countdownSectionBackground || "transparent"}
-                                  onChange={(value) =>
-                                    updateSetting("countdownSectionBackground", value)
-                                  }
-                                />
-                                <CompactColorPicker
-                                  label={isRTL ? "רקע קופסאות" : "Box Background"}
-                                  value={settings.countdownBoxBackground || "#f3f4f6"}
-                                  onChange={(value) =>
-                                    updateSetting("countdownBoxBackground", value)
-                                  }
-                                />
-                                <CompactColorPicker
-                                  label={isRTL ? "מספרים" : "Numbers"}
-                                  value={settings.countdownBoxTextColor || "#111827"}
-                                  onChange={(value) =>
-                                    updateSetting("countdownBoxTextColor", value)
-                                  }
-                                />
-                                <CompactColorPicker
-                                  label={isRTL ? "תוויות" : "Labels"}
-                                  value={settings.countdownLabelColor || "#6b7280"}
-                                  onChange={(value) =>
-                                    updateSetting("countdownLabelColor", value)
-                                  }
-                                />
-                                <ModernSlider
-                                  isRTL={isRTL}
-                                  label={isRTL ? "עיגול פינות" : "Border Radius"}
-                                  value={settings.countdownSectionBorderRadius || 8}
-                                  onChange={(v) =>
-                                    updateSetting("countdownSectionBorderRadius", v)
-                                  }
-                                  max={24}
-                                />
-                                <ModernSlider
-                                  isRTL={isRTL}
-                                  label={isRTL ? "גודל מספרים" : "Number Size"}
-                                  value={settings.countdownNumberFontSize || 24}
-                                  onChange={(v) =>
-                                    updateSetting("countdownNumberFontSize", v)
-                                  }
-                                  min={16}
-                                  max={48}
-                                />
-                              </div>
-                              <Separator />
-                            </>
+                            <SettingsSection
+                              title={isRTL ? "ספירה לאחור" : "Countdown"}
+                            >
+                              <CompactColorPicker
+                                label={isRTL ? "רקע קופסאות" : "Box Background"}
+                                value={settings.countdownBoxBackground || "#f3f4f6"}
+                                onChange={(value) => updateSetting("countdownBoxBackground", value)}
+                              />
+                              <CompactColorPicker
+                                label={isRTL ? "מספרים" : "Numbers"}
+                                value={settings.countdownBoxTextColor || "#111827"}
+                                onChange={(value) => updateSetting("countdownBoxTextColor", value)}
+                              />
+                              <CompactColorPicker
+                                label={isRTL ? "תוויות" : "Labels"}
+                                value={settings.countdownLabelColor || "#6b7280"}
+                                onChange={(value) => updateSetting("countdownLabelColor", value)}
+                              />
+                              <ModernSlider
+                                isRTL={isRTL}
+                                label={isRTL ? "עיגול פינות" : "Border Radius"}
+                                value={settings.countdownSectionBorderRadius || 8}
+                                onChange={(v) => updateSetting("countdownSectionBorderRadius", v)}
+                                max={24}
+                              />
+                              <ModernSlider
+                                isRTL={isRTL}
+                                label={isRTL ? "גודל מספרים" : "Number Size"}
+                                value={settings.countdownNumberFontSize || 24}
+                                onChange={(v) => updateSetting("countdownNumberFontSize", v)}
+                                min={16}
+                                max={48}
+                              />
+                            </SettingsSection>
                           )}
 
-                          {/* RSVP Question Section */}
-                          <div className="space-y-4">
-                            <h3 className="font-medium">
-                              {isRTL ? "שאלת אישור הגעה" : "RSVP Question"}
-                            </h3>
-                            <CompactColorPicker
-                              label={isRTL ? "רקע אזור" : "Section Background"}
-                              value={settings.questionSectionBackground || "transparent"}
-                              onChange={(value) =>
-                                updateSetting("questionSectionBackground", value)
-                              }
-                            />
-                            <CompactColorPicker
-                              label={isRTL ? "צבע שאלה" : "Question Text"}
-                              value={settings.questionTextColor || "#374151"}
-                              onChange={(value) =>
-                                updateSetting("questionTextColor", value)
-                              }
-                            />
-                            <ModernSlider
-                              isRTL={isRTL}
-                              label={isRTL ? "עיגול פינות" : "Border Radius"}
-                              value={settings.questionSectionBorderRadius || 8}
-                              onChange={(v) =>
-                                updateSetting("questionSectionBorderRadius", v)
-                              }
-                              max={24}
-                            />
-                            <ModernSlider
-                              isRTL={isRTL}
-                              label={isRTL ? "גודל טקסט" : "Font Size"}
-                              value={settings.questionFontSize || 14}
-                              onChange={(v) =>
-                                updateSetting("questionFontSize", v)
-                              }
-                              min={10}
-                              max={24}
-                            />
+                          {/* Time Section */}
+                          {settings.showTimeSection !== false && (
+                            <SettingsSection
+                              title={isRTL ? "אזור שעה" : "Time Section"}
+                            >
+                              <CompactColorPicker
+                                label={isRTL ? "רקע" : "Background"}
+                                value={settings.timeSectionBackground || "#f3f4f6"}
+                                onChange={(value) => updateSetting("timeSectionBackground", value)}
+                              />
+                              <CompactColorPicker
+                                label={isRTL ? "טקסט" : "Text"}
+                                value={settings.timeSectionTextColor || "#374151"}
+                                onChange={(value) => updateSetting("timeSectionTextColor", value)}
+                              />
+                              <CompactColorPicker
+                                label={isRTL ? "צבע אייקון" : "Icon Color"}
+                                value={settings.timeIconColor || settings.accentColor || "#1a1a1a"}
+                                onChange={(value) => updateSetting("timeIconColor", value)}
+                              />
+                              <ModernSlider
+                                isRTL={isRTL}
+                                label={isRTL ? "עיגול פינות" : "Border Radius"}
+                                value={settings.timeSectionBorderRadius || 8}
+                                onChange={(v) => updateSetting("timeSectionBorderRadius", v)}
+                                max={24}
+                              />
+                              <ModernSlider
+                                isRTL={isRTL}
+                                label={isRTL ? "גודל טקסט" : "Font Size"}
+                                value={settings.timeFontSize || 14}
+                                onChange={(v) => updateSetting("timeFontSize", v)}
+                                min={10}
+                                max={24}
+                              />
+                            </SettingsSection>
+                          )}
 
-                            {/* Accept/Decline Buttons */}
-                            <div className="mt-2 border-t pt-3">
-                              <Label className="text-xs font-medium text-muted-foreground">
+                          {/* Address Section */}
+                          {settings.showAddressSection !== false && (
+                            <SettingsSection
+                              title={isRTL ? "אזור כתובת" : "Address Section"}
+                            >
+                              <CompactColorPicker
+                                label={isRTL ? "רקע" : "Background"}
+                                value={settings.addressSectionBackground || "#f3f4f6"}
+                                onChange={(value) => updateSetting("addressSectionBackground", value)}
+                              />
+                              <CompactColorPicker
+                                label={isRTL ? "טקסט" : "Text"}
+                                value={settings.addressSectionTextColor || "#374151"}
+                                onChange={(value) => updateSetting("addressSectionTextColor", value)}
+                              />
+                              <CompactColorPicker
+                                label={isRTL ? "צבע אייקון" : "Icon Color"}
+                                value={settings.addressIconColor || settings.accentColor || "#1a1a1a"}
+                                onChange={(value) => updateSetting("addressIconColor", value)}
+                              />
+                              <ModernSlider
+                                isRTL={isRTL}
+                                label={isRTL ? "עיגול פינות" : "Border Radius"}
+                                value={settings.addressSectionBorderRadius || 8}
+                                onChange={(v) => updateSetting("addressSectionBorderRadius", v)}
+                                max={24}
+                              />
+                              <ModernSlider
+                                isRTL={isRTL}
+                                label={isRTL ? "גודל טקסט" : "Font Size"}
+                                value={settings.addressFontSize || 12}
+                                onChange={(v) => updateSetting("addressFontSize", v)}
+                                min={10}
+                                max={20}
+                              />
+                            </SettingsSection>
+                          )}
+
+                          {/* Input Fields */}
+                          <SettingsSection
+                            title={isRTL ? "שדות קלט" : "Input Fields"}
+                          >
+                            <CompactColorPicker
+                              label={isRTL ? "רקע" : "Background"}
+                              value={settings.inputBackgroundColor || "#f9fafb"}
+                              onChange={(value) => updateSetting("inputBackgroundColor", value)}
+                            />
+                            <CompactColorPicker
+                              label={isRTL ? "טקסט" : "Text"}
+                              value={settings.inputTextColor || "#000000"}
+                              onChange={(value) => updateSetting("inputTextColor", value)}
+                            />
+                            <CompactColorPicker
+                              label={isRTL ? "מסגרת" : "Border"}
+                              value={settings.inputBorderColor || "#e5e7eb"}
+                              onChange={(value) => updateSetting("inputBorderColor", value)}
+                            />
+                          </SettingsSection>
+
+                          {/* Guest Counter */}
+                          <SettingsSection
+                            title={isRTL ? "בורר אורחים" : "Guest Counter"}
+                            icon={Users}
+                          >
+                            <CompactColorPicker
+                              label={isRTL ? "רקע" : "Background"}
+                              value={settings.guestCounterBackground || "#f9fafb"}
+                              onChange={(value) => updateSetting("guestCounterBackground", value)}
+                            />
+                            <CompactColorPicker
+                              label={isRTL ? "טקסט" : "Text"}
+                              value={settings.guestCounterTextColor || "#000000"}
+                              onChange={(value) => updateSetting("guestCounterTextColor", value)}
+                            />
+                            <CompactColorPicker
+                              label={isRTL ? "כפתורים" : "Buttons"}
+                              value={settings.guestCounterAccent || "#1a1a1a"}
+                              onChange={(value) => updateSetting("guestCounterAccent", value)}
+                            />
+                          </SettingsSection>
+
+                          {/* RSVP Buttons */}
+                          <SettingsSection
+                            title={isRTL ? "כפתורי תשובה" : "RSVP Buttons"}
+                          >
+                            <div className="pb-2">
+                              <Label className="text-xs text-muted-foreground">
                                 {isRTL ? "כפתור אישור" : "Accept Button"}
                               </Label>
                             </div>
                             <CompactColorPicker
                               label={isRTL ? "צבע" : "Color"}
                               value={settings.acceptButtonColor || "#22c55e"}
-                              onChange={(value) =>
-                                updateSetting("acceptButtonColor", value)
-                              }
+                              onChange={(value) => updateSetting("acceptButtonColor", value)}
                             />
                             <CompactColorPicker
                               label={isRTL ? "טקסט" : "Text"}
                               value={settings.acceptButtonTextColor || "#166534"}
-                              onChange={(value) =>
-                                updateSetting("acceptButtonTextColor", value)
-                              }
+                              onChange={(value) => updateSetting("acceptButtonTextColor", value)}
                             />
-
-                            <div className="mt-2 border-t pt-3">
-                              <Label className="text-xs font-medium text-muted-foreground">
+                            <div className="pt-3 pb-2 border-t">
+                              <Label className="text-xs text-muted-foreground">
                                 {isRTL ? "כפתור סירוב" : "Decline Button"}
                               </Label>
                             </div>
                             <CompactColorPicker
                               label={isRTL ? "צבע" : "Color"}
                               value={settings.declineButtonColor || "#ef4444"}
-                              onChange={(value) =>
-                                updateSetting("declineButtonColor", value)
-                              }
+                              onChange={(value) => updateSetting("declineButtonColor", value)}
                             />
                             <CompactColorPicker
                               label={isRTL ? "טקסט" : "Text"}
                               value={settings.declineButtonTextColor || "#991b1b"}
-                              onChange={(value) =>
-                                updateSetting("declineButtonTextColor", value)
-                              }
+                              onChange={(value) => updateSetting("declineButtonTextColor", value)}
                             />
-                          </div>
+                          </SettingsSection>
 
-                          <Separator />
-
-                          {/* Button Style */}
-                          <div className="space-y-4">
-                            <h3 className="flex items-center gap-2 font-medium">
-                              <MousePointer className="h-4 w-4" />
-                              {isRTL ? "כפתור שליחה" : "Submit Button"}
-                            </h3>
+                          {/* Submit Button Advanced */}
+                          <SettingsSection
+                            title={isRTL ? "כפתור שליחה - מתקדם" : "Submit Button - Advanced"}
+                            icon={MousePointer}
+                          >
                             <div className="space-y-2">
                               <Label className="text-sm">
                                 {isRTL ? "סגנון" : "Style"}
@@ -1493,9 +1663,7 @@ export function RsvpCustomizer({
                               <OptionPills
                                 options={["solid", "outline", "ghost"]}
                                 value={(settings.buttonStyle as string) || "solid"}
-                                onChange={(value) =>
-                                  updateSetting("buttonStyle", value)
-                                }
+                                onChange={(value) => updateSetting("buttonStyle", value)}
                                 labels={buttonStyleLabels}
                               />
                             </div>
@@ -1506,88 +1674,61 @@ export function RsvpCustomizer({
                               <OptionPills
                                 options={["sm", "md", "lg"]}
                                 value={(settings.buttonSize as string) || "md"}
-                                onChange={(value) =>
-                                  updateSetting("buttonSize", value)
-                                }
+                                onChange={(value) => updateSetting("buttonSize", value)}
                                 labels={buttonSizeLabels}
                               />
                             </div>
                             <CompactColorPicker
-                              label={isRTL ? "צבע רקע" : "Background"}
-                              value={settings.buttonColor || "#000000"}
-                              onChange={(value) =>
-                                updateSetting("buttonColor", value)
-                              }
-                            />
-                            <CompactColorPicker
-                              label={isRTL ? "צבע טקסט" : "Text"}
-                              value={settings.buttonTextColor || "#ffffff"}
-                              onChange={(value) =>
-                                updateSetting("buttonTextColor", value)
-                              }
-                            />
-                            <CompactColorPicker
                               label={isRTL ? "מסגרת" : "Border"}
                               value={settings.buttonBorderColor || "#000000"}
-                              onChange={(value) =>
-                                updateSetting("buttonBorderColor", value)
-                              }
+                              onChange={(value) => updateSetting("buttonBorderColor", value)}
                             />
-                            <ModernSlider isRTL={isRTL}
-                              label={isRTL ? "עיגול פינות" : "Border Radius"}
-                              value={settings.buttonBorderRadius || 8}
-                              onChange={(v) =>
-                                updateSetting("buttonBorderRadius", v)
-                              }
+                            <ModernSlider
+                              isRTL={isRTL}
+                              label={isRTL ? "גודל טקסט" : "Font Size"}
+                              value={settings.buttonFontSize || 16}
+                              onChange={(v) => updateSetting("buttonFontSize", v)}
+                              min={12}
                               max={24}
                             />
-                            <ToggleSwitch
-                              label={isRTL ? "צל" : "Shadow"}
-                              checked={settings.buttonShadow !== false}
-                              onCheckedChange={(checked) =>
-                                updateSetting("buttonShadow", checked)
-                              }
+                          </SettingsSection>
+
+                          {/* Labels & Text Advanced */}
+                          <SettingsSection
+                            title={isRTL ? "תוויות וטקסט" : "Labels & Text"}
+                            icon={Type}
+                          >
+                            <CompactColorPicker
+                              label={isRTL ? "צבע תוויות" : "Label Color"}
+                              value={settings.labelTextColor || "#374151"}
+                              onChange={(value) => updateSetting("labelTextColor", value)}
                             />
-                          </div>
-
-                          <Separator />
-
-                          {/* Navigation URLs */}
-                          <div className="space-y-4">
-                            <h3 className="flex items-center gap-2 font-medium">
-                              <MapPin className="h-4 w-4" />
-                              {isRTL ? "כתובות ניווט" : "Navigation URLs"}
-                            </h3>
-                            {settings.showGoogleMaps !== false && (
-                              <div className="space-y-2">
-                                <Label className="text-sm">Google Maps URL</Label>
-                                <Input
-                                  value={settings.googleMapsUrl || ""}
-                                  onChange={(e) =>
-                                    updateSetting("googleMapsUrl", e.target.value)
-                                  }
-                                  placeholder="https://maps.google.com/..."
-                                  className="text-sm"
-                                  dir="ltr"
-                                />
-                              </div>
-                            )}
-                            {settings.showWaze !== false && (
-                              <div className="space-y-2">
-                                <Label className="text-sm">Waze URL</Label>
-                                <Input
-                                  value={settings.wazeUrl || ""}
-                                  onChange={(e) =>
-                                    updateSetting("wazeUrl", e.target.value)
-                                  }
-                                  placeholder="https://waze.com/ul/..."
-                                  className="text-sm"
-                                  dir="ltr"
-                                />
-                              </div>
-                            )}
-                          </div>
-                        </>
+                            <ModernSlider
+                              isRTL={isRTL}
+                              label={isRTL ? "גודל כותרת" : "Title Size"}
+                              value={settings.titleFontSize || 28}
+                              onChange={(v) => updateSetting("titleFontSize", v)}
+                              min={18}
+                              max={48}
+                            />
+                            <ModernSlider
+                              isRTL={isRTL}
+                              label={isRTL ? "גודל תת-כותרת" : "Subtitle Size"}
+                              value={settings.subtitleFontSize || 16}
+                              onChange={(v) => updateSetting("subtitleFontSize", v)}
+                              min={12}
+                              max={24}
+                            />
+                            <ModernSlider
+                              isRTL={isRTL}
+                              label={isRTL ? "גודל תוויות" : "Label Size"}
+                              value={settings.labelFontSize || 14}
+                              onChange={(v) => updateSetting("labelFontSize", v)}
+                              min={10}
+                              max={20}
+                            />
+                          </SettingsSection>
+                        </div>
                       )}
                     </>
                   )}
@@ -1817,70 +1958,19 @@ export function RsvpCustomizer({
                         </Select>
                       </div>
 
-                      {/* Advanced: Card Width */}
                       {settings.advancedMode && (
-                        <>
-                          <Separator />
-
-                          <div className="space-y-4">
-                            <h3 className="font-medium text-muted-foreground">
-                              {isRTL ? "רוחב כרטיס" : "Card Width"}
-                            </h3>
-                            <ModernSlider isRTL={isRTL}
-                              label={isRTL ? "רוחב מקסימלי" : "Max Width"}
-                              value={settings.cardMaxWidth || 600}
-                              onChange={(v) => updateSetting("cardMaxWidth", v)}
-                              min={320}
-                              max={800}
-                              step={10}
-                              unit="px"
-                            />
-                          </div>
-
-                          <Separator />
-
-                          {/* Font Sizes */}
-                          <div className="space-y-4">
-                            <h3 className="flex items-center gap-2 font-medium text-muted-foreground">
-                              <Type className="h-4 w-4" />
-                              {isRTL ? "גודל טקסט" : "Font Sizes"}
-                            </h3>
-                            <ModernSlider isRTL={isRTL}
-                              label={isRTL ? "כותרת" : "Title"}
-                              value={settings.titleFontSize || 28}
-                              onChange={(v) => updateSetting("titleFontSize", v)}
-                              min={18}
-                              max={48}
-                            />
-                            <ModernSlider isRTL={isRTL}
-                              label={isRTL ? "תת-כותרת" : "Subtitle"}
-                              value={settings.subtitleFontSize || 16}
-                              onChange={(v) => updateSetting("subtitleFontSize", v)}
-                              min={12}
-                              max={24}
-                            />
-                            <ModernSlider isRTL={isRTL}
-                              label={isRTL ? "תוויות" : "Labels"}
-                              value={settings.labelFontSize || 14}
-                              onChange={(v) => updateSetting("labelFontSize", v)}
-                              min={10}
-                              max={20}
-                            />
-                            <ModernSlider isRTL={isRTL}
-                              label={isRTL ? "כפתור" : "Button"}
-                              value={settings.buttonFontSize || 16}
-                              onChange={(v) => updateSetting("buttonFontSize", v)}
-                              min={12}
-                              max={24}
-                            />
-                          </div>
-                        </>
+                        <div className="mt-4 rounded-lg border border-dashed border-muted-foreground/30 p-3 text-center">
+                          <p className="text-xs text-muted-foreground">
+                            {isRTL
+                              ? "אפשרויות מתקדמות זמינות בלשונית פריסה"
+                              : "Advanced options available in Layout tab"}
+                          </p>
+                        </div>
                       )}
                     </>
                   )}
                 </motion.div>
               </AnimatePresence>
-            </ScrollArea>
           </div>
         </div>
 

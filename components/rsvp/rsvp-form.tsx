@@ -172,7 +172,7 @@ export function RsvpForm({ guest, event, existingRsvp, settings, locale = "he" }
           {settings?.welcomeTitle || event.title}
         </h1>
         <p
-          className="mt-2 text-muted-foreground"
+          className="mt-2 text-muted"
           style={{ color: settings?.subtitleTextColor || undefined }}
         >
           {settings?.welcomeMessage || (isRTL
@@ -200,12 +200,25 @@ export function RsvpForm({ guest, event, existingRsvp, settings, locale = "he" }
         shadow={settings?.dateCardShadow !== false}
         dateDayFontSize={settings?.dateDayFontSize || 56}
         dateMonthFontSize={settings?.dateMonthFontSize || 16}
+        // Individual Date Text Colors
+        dateDayOfWeekColor={settings?.dateDayOfWeekColor || undefined}
+        dateDayOfWeekFontSize={settings?.dateDayOfWeekFontSize || 11}
+        dateDayNumberColor={settings?.dateDayNumberColor || undefined}
+        dateMonthYearColor={settings?.dateMonthYearColor || undefined}
+        // Time Section
         timeFontSize={settings?.timeFontSize || 14}
+        timeSectionTextColor={settings?.timeSectionTextColor || undefined}
+        timeIconColor={settings?.timeIconColor || undefined}
+        // Address Section
         addressFontSize={settings?.addressFontSize || 13}
+        addressSectionTextColor={settings?.addressSectionTextColor || undefined}
+        addressIconColor={settings?.addressIconColor || undefined}
+        // Countdown
         countdownBoxBackground={settings?.countdownBoxBackground || undefined}
         countdownBoxTextColor={settings?.countdownBoxTextColor || settings?.accentColor || "#1a1a1a"}
+        countdownLabelColor={settings?.countdownLabelColor || undefined}
         countdownNumberFontSize={settings?.countdownNumberFontSize || 18}
-        countdownLabelFontSize={9}
+        countdownLabelFontSize={settings?.countdownLabelFontSize || 9}
         countdownBoxSize={44}
       />
 
@@ -302,7 +315,7 @@ export function RsvpForm({ guest, event, existingRsvp, settings, locale = "he" }
                 : "border border-gray-200 bg-gray-50/50 hover:bg-gray-100/80 dark:border-gray-700 dark:bg-gray-800/50 dark:hover:bg-gray-700/80"
             )}
             style={status === "ACCEPTED" ? {
-              backgroundColor: settings?.accentColor || "#1a1a1a",
+              backgroundColor: settings?.rsvpAcceptBackground || settings?.accentColor || "#1a1a1a",
             } : undefined}
           >
             <div className="relative z-10 flex flex-col items-center gap-3">
@@ -318,18 +331,20 @@ export function RsvpForm({ guest, event, existingRsvp, settings, locale = "he" }
                 <Icons.heart
                   className={cn(
                     "h-6 w-6 transition-transform duration-300",
-                    status === "ACCEPTED" ? "text-white" : "",
                     status !== "ACCEPTED" && "h-5 w-5 group-hover:scale-110"
                   )}
+                  style={status === "ACCEPTED" ? { color: settings?.rsvpAcceptTextColor || "#ffffff" } : undefined}
                 />
               </div>
               <span
                 className={cn(
-                  "text-sm font-semibold transition-colors duration-300",
-                  status === "ACCEPTED"
-                    ? "text-white"
-                    : "text-gray-400 group-hover:text-gray-500 dark:text-gray-400"
+                  "font-semibold transition-colors duration-300",
+                  status !== "ACCEPTED" && "text-gray-400 group-hover:text-gray-500 dark:text-gray-400"
                 )}
+                style={{
+                  color: status === "ACCEPTED" ? (settings?.rsvpAcceptTextColor || "#ffffff") : undefined,
+                  fontSize: settings?.rsvpButtonFontSize ? `${settings.rsvpButtonFontSize}px` : "14px",
+                }}
               >
                 {isRTL ? "בשמחה!" : "Count me in!"}
               </span>
@@ -343,33 +358,40 @@ export function RsvpForm({ guest, event, existingRsvp, settings, locale = "he" }
             className={cn(
               "group relative flex flex-col items-center justify-center gap-3 rounded-2xl p-5 transition-all duration-300 overflow-hidden",
               status === "DECLINED"
-                ? "bg-gray-500 shadow-md dark:bg-gray-600"
+                ? "shadow-md"
                 : "border border-gray-200 bg-gray-50/50 hover:bg-gray-100/80 dark:border-gray-700 dark:bg-gray-800/50 dark:hover:bg-gray-700/80"
             )}
+            style={status === "DECLINED" ? {
+              backgroundColor: settings?.rsvpDeclineBackground || "#6b7280",
+            } : undefined}
           >
             <div className="relative z-10 flex flex-col items-center gap-3">
               <div
                 className={cn(
                   "flex h-12 w-12 items-center justify-center rounded-full transition-all duration-300",
-                  status === "DECLINED"
-                    ? "bg-white/20"
-                    : "bg-gray-200/80 text-gray-400 group-hover:bg-gray-300/80 group-hover:text-gray-500 dark:bg-gray-700 dark:text-gray-500"
+                  status !== "DECLINED" && "bg-gray-200/80 text-gray-400 group-hover:bg-gray-300/80 group-hover:text-gray-500 dark:bg-gray-700 dark:text-gray-500"
                 )}
+                style={status === "DECLINED" ? {
+                  backgroundColor: "rgba(255, 255, 255, 0.2)",
+                } : undefined}
               >
                 <Icons.calendarX
                   className={cn(
                     "transition-transform duration-300",
-                    status === "DECLINED" ? "h-6 w-6 text-white" : "h-5 w-5 group-hover:scale-110"
+                    status !== "DECLINED" && "h-5 w-5 group-hover:scale-110"
                   )}
+                  style={status === "DECLINED" ? { color: settings?.rsvpDeclineTextColor || "#ffffff" } : undefined}
                 />
               </div>
               <span
                 className={cn(
-                  "text-sm font-semibold transition-colors duration-300",
-                  status === "DECLINED"
-                    ? "text-white"
-                    : "text-gray-400 group-hover:text-gray-500 dark:text-gray-400"
+                  "font-semibold transition-colors duration-300",
+                  status !== "DECLINED" && "text-gray-400 group-hover:text-gray-500 dark:text-gray-400"
                 )}
+                style={{
+                  color: status === "DECLINED" ? (settings?.rsvpDeclineTextColor || "#ffffff") : undefined,
+                  fontSize: settings?.rsvpButtonFontSize ? `${settings.rsvpButtonFontSize}px` : "14px",
+                }}
               >
                 {isRTL ? "לא הפעם" : "Not this time"}
               </span>

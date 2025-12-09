@@ -6,7 +6,7 @@ import { PricingCards } from "@/components/pricing/pricing-cards";
 import { PricingFaq } from "@/components/pricing/pricing-faq";
 
 export const metadata: Metadata = {
-  title: "Pricing - Go Approval",
+  title: "Pricing - Wedinex",
   description: "Simple, transparent pricing for wedding RSVP management. Start free and upgrade as you grow.",
 };
 

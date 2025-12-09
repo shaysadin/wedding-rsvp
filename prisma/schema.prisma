@@ -373,13 +373,22 @@ model RsvpPageSettings {
   inputBorderColor     String? @map("input_border_color")
 
   // Text Colors (Advanced)
+  titleTextColor    String? @map("title_text_color")
   subtitleTextColor String? @map("subtitle_text_color")
   labelTextColor    String? @map("label_text_color")
 
   // Guest Counter (Advanced)
-  guestCounterBackground String? @map("guest_counter_background")
-  guestCounterTextColor  String? @map("guest_counter_text_color")
-  guestCounterAccent     String? @map("guest_counter_accent")
+  guestCounterBackground  String? @map("guest_counter_background")
+  guestCounterTextColor   String? @map("guest_counter_text_color")
+  guestCounterAccent      String? @map("guest_counter_accent")
+  guestCounterButtonColor String? @map("guest_counter_button_color")
+
+  // RSVP Option Buttons
+  rsvpAcceptBackground  String? @map("rsvp_accept_background")
+  rsvpAcceptTextColor   String? @map("rsvp_accept_text_color")
+  rsvpDeclineBackground String? @map("rsvp_decline_background")
+  rsvpDeclineTextColor  String? @map("rsvp_decline_text_color")
+  rsvpButtonFontSize    Int?    @map("rsvp_button_font_size")
 
   // Font Sizes (Advanced)
   titleFontSize    Int? @map("title_font_size")
@@ -402,6 +411,24 @@ model RsvpPageSettings {
   dateDayFontSize         Int?     @map("date_day_font_size")
   dateMonthFontSize       Int?     @map("date_month_font_size")
   dateYearFontSize        Int?     @map("date_year_font_size")
+  // Individual Date Text Colors
+  dateDayOfWeekColor      String?  @map("date_day_of_week_color")
+  dateDayOfWeekFontSize   Int?     @map("date_day_of_week_font_size")
+  dateDayNumberColor      String?  @map("date_day_number_color")
+  dateMonthYearColor      String?  @map("date_month_year_color")
+
+  // Welcome Section Text
+  welcomeTitleColor       String?  @map("welcome_title_color")
+  welcomeTitleFontSize    Int?     @map("welcome_title_font_size")
+  welcomeMessageColor     String?  @map("welcome_message_color")
+  welcomeMessageFontSize  Int?     @map("welcome_message_font_size")
+
+  // Icon Colors
+  timeIconColor           String?  @map("time_icon_color")
+  addressIconColor        String?  @map("address_icon_color")
+
+  // Countdown Label Font Size
+  countdownLabelFontSize  Int?     @map("countdown_label_font_size")
 
   // Time Section (Advanced)
   showTimeSection         Boolean @default(true) @map("show_time_section")
@@ -540,6 +567,21 @@ model RsvpTemplate {
   dateDayFontSize         Int?     @map("date_day_font_size")
   dateMonthFontSize       Int?     @map("date_month_font_size")
   dateYearFontSize        Int?     @map("date_year_font_size")
+  // Individual Date Text Colors (Template)
+  dateDayOfWeekColor      String?  @map("date_day_of_week_color")
+  dateDayOfWeekFontSize   Int?     @map("date_day_of_week_font_size")
+  dateDayNumberColor      String?  @map("date_day_number_color")
+  dateMonthYearColor      String?  @map("date_month_year_color")
+  // Welcome Section Text (Template)
+  welcomeTitleColor       String?  @map("welcome_title_color")
+  welcomeTitleFontSize    Int?     @map("welcome_title_font_size")
+  welcomeMessageColor     String?  @map("welcome_message_color")
+  welcomeMessageFontSize  Int?     @map("welcome_message_font_size")
+  // Icon Colors (Template)
+  timeIconColor           String?  @map("time_icon_color")
+  addressIconColor        String?  @map("address_icon_color")
+  // Countdown Label Font Size (Template)
+  countdownLabelFontSize  Int?     @map("countdown_label_font_size")
 
   showTimeSection         Boolean @default(true) @map("show_time_section")
   timeSectionBackground   String? @map("time_section_background")

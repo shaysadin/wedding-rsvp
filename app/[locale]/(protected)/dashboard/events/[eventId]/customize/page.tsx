@@ -41,7 +41,7 @@ export default async function CustomizePage({ params }: CustomizePageProps) {
   const templates = templatesResult.templates || [];
 
   return (
-    <PageFadeIn>
+    <PageFadeIn className="min-h-0 flex-1">
       <RsvpCustomizer
         eventId={eventId}
         event={event}
