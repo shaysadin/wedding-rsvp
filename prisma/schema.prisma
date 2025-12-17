@@ -177,6 +177,7 @@ model User {
   bulkMessageJobs       BulkMessageJob[]
   usageTracking         UsageTracking?
   emailVerificationTokens EmailVerificationToken[]
+  vapiCallJobs          VapiCallJob[]
 
   @@map("users")
 }
@@ -190,10 +191,12 @@ model UsageTracking {
   // Current billing period usage
   whatsappSent     Int @default(0) @map("whatsapp_sent")
   smsSent          Int @default(0) @map("sms_sent")
+  voiceCallsMade   Int @default(0) @map("voice_calls_made")
 
   // One-time package additions (purchased separately)
   whatsappBonus    Int @default(0) @map("whatsapp_bonus")
   smsBonus         Int @default(0) @map("sms_bonus")
+  voiceCallsBonus  Int @default(0) @map("voice_calls_bonus")
 
   // Period tracking
   periodStart      DateTime @default(now()) @map("period_start")
@@ -233,6 +236,7 @@ model WeddingEvent {
   bulkMessageJobs  BulkMessageJob[]
   tables           WeddingTable[]
   venueBlocks      VenueBlock[]
+  vapiSettings     VapiEventSettings?
 
   @@index([ownerId])
   @@map("wedding_events")
@@ -257,6 +261,7 @@ model Guest {
   notificationLogs    NotificationLog[]
   bulkMessageJobItems BulkMessageJobItem[]
   tableAssignment     TableAssignment?
+  vapiCallLogs        VapiCallLog[]
 
   @@index([weddingEventId])
   @@index([slug])
@@ -656,6 +661,23 @@ model MessagingProviderSettings {
   smsMessagingServiceSid String? @map("sms_messaging_service_sid") // Twilio Messaging Service SID (optional, takes priority over phone number)
   smsEnabled            Boolean  @default(false) @map("sms_enabled")
 
+  // ============ VAPI Voice Agent Config ============
+  vapiApiKey            String?  @map("vapi_api_key")
+  vapiPhoneNumberId     String?  @map("vapi_phone_number_id")  // VAPI phone number resource ID
+  vapiPhoneNumber       String?  @map("vapi_phone_number")     // Display number for reference
+  vapiAssistantId       String?  @map("vapi_assistant_id")     // Default assistant ID from VAPI dashboard
+  vapiWebhookSecret     String?  @map("vapi_webhook_secret")   // For verifying webhook requests
+  vapiEnabled           Boolean  @default(false) @map("vapi_enabled")
+
+  // Azure Speech (for VAPI voice provider)
+  azureSpeechKey        String?  @map("azure_speech_key")
+  azureSpeechRegion     String?  @map("azure_speech_region")  // e.g., "westeurope"
+
+  // Default Voice Agent Settings
+  vapiDefaultSystemPrompt String? @db.Text @map("vapi_default_system_prompt")
+  vapiDefaultFirstMessage String? @map("vapi_default_first_message")
+  vapiDefaultVoiceId      String? @default("he-IL-AvriNeural") @map("vapi_default_voice_id")
+
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
 
@@ -841,4 +863,149 @@ model CronJobLog {
   @@index([userId])
   @@index([executedAt])
   @@map("cron_job_logs")
+}
+
+// ============ VAPI VOICE AGENT ============
+
+enum VapiCallStatus {
+  PENDING
+  CALLING
+  COMPLETED
+  FAILED
+  NO_ANSWER
+  BUSY
+  CANCELLED
+}
+
+enum VapiJobStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  CANCELLED
+  FAILED
+}
+
+// Per-Event VAPI Settings (Wedding Owner Customization)
+model VapiEventSettings {
+  id             String   @id @default(cuid())
+  weddingEventId String   @unique @map("wedding_event_id")
+
+  // Override system prompt (optional - uses platform default if null)
+  customSystemPrompt  String? @db.Text @map("custom_system_prompt")
+  customFirstMessage  String? @map("custom_first_message")
+
+  // Voice preference (uses platform default if null)
+  voiceId             String? @map("voice_id")  // he-IL-AvriNeural or he-IL-HilaNeural
+
+  // Feature toggles
+  isEnabled           Boolean @default(true) @map("is_enabled")
+  canUpdateRsvp       Boolean @default(true) @map("can_update_rsvp")
+
+  // Sync status for embeddings
+  lastSyncAt          DateTime? @map("last_sync_at")
+  syncStatus          String?   @map("sync_status")  // "pending", "synced", "error"
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
+
+  weddingEvent WeddingEvent  @relation(fields: [weddingEventId], references: [id], onDelete: Cascade)
+  embeddings   VapiEmbedding[]
+  callJobs     VapiCallJob[]
+
+  @@map("vapi_event_settings")
+}
+
+// Embeddings for RAG - stores pre-synced wedding data for voice agent
+model VapiEmbedding {
+  id               String   @id @default(cuid())
+  vapiSettingsId   String   @map("vapi_settings_id")
+
+  // Content type: "wedding_details", "guest_summary", "faq"
+  contentType      String   @map("content_type")
+
+  // Structured JSON content
+  content          String   @db.Text
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
+
+  vapiSettings VapiEventSettings @relation(fields: [vapiSettingsId], references: [id], onDelete: Cascade)
+
+  @@index([vapiSettingsId])
+  @@index([contentType])
+  @@map("vapi_embeddings")
+}
+
+// Bulk Voice Call Jobs (similar to BulkMessageJob)
+model VapiCallJob {
+  id               String        @id @default(cuid())
+  weddingEventId   String        @map("wedding_event_id")
+  vapiSettingsId   String        @map("vapi_settings_id")
+  createdBy        String        @map("created_by")
+
+  // Job status
+  status           VapiJobStatus @default(PENDING)
+  totalGuests      Int           @map("total_guests")
+  processedCount   Int           @default(0) @map("processed_count")
+  successCount     Int           @default(0) @map("success_count")
+  failedCount      Int           @default(0) @map("failed_count")
+
+  // Timing
+  scheduledFor     DateTime? @map("scheduled_for")
+  startedAt        DateTime? @map("started_at")
+  completedAt      DateTime? @map("completed_at")
+  createdAt        DateTime  @default(now()) @map("created_at")
+
+  // Error info
+  errorMessage     String?   @db.Text @map("error_message")
+
+  vapiSettings VapiEventSettings @relation(fields: [vapiSettingsId], references: [id], onDelete: Cascade)
+  creator      User              @relation(fields: [createdBy], references: [id])
+  callLogs     VapiCallLog[]
+
+  @@index([weddingEventId])
+  @@index([vapiSettingsId])
+  @@index([createdBy])
+  @@index([status])
+  @@map("vapi_call_jobs")
+}
+
+// Individual Voice Call Logs
+model VapiCallLog {
+  id             String         @id @default(cuid())
+  callJobId      String?        @map("call_job_id")
+  guestId        String         @map("guest_id")
+  weddingEventId String         @map("wedding_event_id")
+
+  // VAPI identifiers
+  vapiCallId     String?        @unique @map("vapi_call_id")
+
+  // Call details
+  phoneNumber    String         @map("phone_number")
+  status         VapiCallStatus @default(PENDING)
+  duration       Int?           // seconds
+
+  // RSVP result (if updated during call)
+  rsvpUpdated    Boolean        @default(false) @map("rsvp_updated")
+  rsvpStatus     String?        @map("rsvp_status")  // ACCEPTED, DECLINED
+  guestCount     Int?           @map("guest_count")
+
+  // Transcript (optional)
+  transcript     String?        @db.Text
+
+  // Timestamps
+  scheduledAt    DateTime? @map("scheduled_at")
+  startedAt      DateTime? @map("started_at")
+  endedAt        DateTime? @map("ended_at")
+  createdAt      DateTime  @default(now()) @map("created_at")
+
+  callJob VapiCallJob? @relation(fields: [callJobId], references: [id], onDelete: SetNull)
+  guest   Guest        @relation(fields: [guestId], references: [id], onDelete: Cascade)
+
+  @@index([callJobId])
+  @@index([guestId])
+  @@index([weddingEventId])
+  @@index([vapiCallId])
+  @@index([status])
+  @@map("vapi_call_logs")
 }

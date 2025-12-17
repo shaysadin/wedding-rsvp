@@ -2,13 +2,14 @@
 
 import { useState, useEffect } from "react";
 import { useLocale, useTranslations } from "next-intl";
-import { useForm, useWatch } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
-import { Guest, GuestRsvp } from "@prisma/client";
+import { Guest, GuestRsvp, RsvpStatus } from "@prisma/client";
 
 const PREDEFINED_GROUPS = ["family", "friends", "work", "other"] as const;
 const PREDEFINED_SIDES = ["bride", "groom", "both"] as const;
+const RSVP_STATUSES = ["PENDING", "ACCEPTED", "DECLINED"] as const;
 
 import { updateGuest } from "@/actions/guests";
 import { updateGuestSchema, type UpdateGuestInput } from "@/lib/validations/guest";
@@ -71,6 +72,8 @@ export function EditGuestDialog({ guest, open, onOpenChange }: EditGuestDialogPr
       groupName: guest.groupName || "",
       expectedGuests: guest.expectedGuests || 1,
       notes: guest.notes || "",
+      rsvpStatus: guest.rsvp?.status as RsvpStatus | undefined,
+      rsvpGuestCount: guest.rsvp?.guestCount || 1,
     },
   });
 
@@ -93,6 +96,8 @@ export function EditGuestDialog({ guest, open, onOpenChange }: EditGuestDialogPr
         groupName: guest.groupName || "",
         expectedGuests: guest.expectedGuests || 1,
         notes: guest.notes || "",
+        rsvpStatus: guest.rsvp?.status as RsvpStatus | undefined,
+        rsvpGuestCount: guest.rsvp?.guestCount || 1,
       });
     }
   }, [guest, open, form]);
@@ -306,6 +311,58 @@ export function EditGuestDialog({ guest, open, onOpenChange }: EditGuestDialogPr
                 </FormItem>
               )}
             />
+
+            {/* RSVP Status */}
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
+              <FormField
+                control={form.control}
+                name="rsvpStatus"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t("rsvpStatus")}</FormLabel>
+                    <Select
+                      onValueChange={(value) => field.onChange(value as RsvpStatus)}
+                      value={field.value || ""}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder={t("selectStatus")} />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="PENDING">{t("statuses.pending")}</SelectItem>
+                        <SelectItem value="ACCEPTED">{t("statuses.accepted")}</SelectItem>
+                        <SelectItem value="DECLINED">{t("statuses.declined")}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {form.watch("rsvpStatus") === "ACCEPTED" && (
+                <FormField
+                  control={form.control}
+                  name="rsvpGuestCount"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t("confirmedGuests")}</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          min={1}
+                          max={20}
+                          {...field}
+                          value={field.value || 1}
+                          onChange={(e) => field.onChange(parseInt(e.target.value) || 1)}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
+            </div>
 
             <FormField
               control={form.control}

@@ -30,6 +30,13 @@ export const sidebarLinks: SidebarNavItem[] = [
         authorizeOnly: UserRole.ROLE_PLATFORM_OWNER,
       },
       {
+        href: "/admin/vapi",
+        icon: "phone",
+        titleKey: "navigation.vapi",
+        title: "Voice Agent",
+        authorizeOnly: UserRole.ROLE_PLATFORM_OWNER,
+      },
+      {
         href: "/admin/cron-logs",
         icon: "clock",
         titleKey: "navigation.cronLogs",
@@ -75,6 +82,13 @@ export const sidebarLinks: SidebarNavItem[] = [
         icon: "palette",
         titleKey: "navigation.customize",
         title: "Customize RSVP",
+        authorizeOnly: UserRole.ROLE_WEDDING_OWNER,
+      },
+      {
+        href: "/dashboard/voice-agent",
+        icon: "phone",
+        titleKey: "navigation.voiceAgent",
+        title: "Voice Agent",
         authorizeOnly: UserRole.ROLE_WEDDING_OWNER,
       },
     ],

@@ -76,8 +76,8 @@ export default async function ProtectedLayout({ children }: ProtectedLayoutProps
       />
 
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border bg-background shadow-md p-2 m-3">
-        <header className="shrink-0 flex h-14 items-center border-b px-3 lg:h-[60px] xl:px-3">
-          <MaxWidthWrapper className="flex max-w-[1320px] items-center gap-x-3 px-0">
+        <header className="shrink-0 flex h-14 justify-between items-center border-b px-3 lg:h-[60px] xl:px-3">
+          <MaxWidthWrapper className="flex justify-between w-full items-center gap-x-3 px-0">
             <MobileSheetSidebar
               links={filteredLinks}
               userEvents={userEvents}
@@ -89,14 +89,16 @@ export default async function ProtectedLayout({ children }: ProtectedLayoutProps
               <SearchCommand links={filteredLinks} />
             </div>
 
+            <div className="flex items-center flex-row-reverse">
             <LanguageSwitcher />
             <ModeToggle />
             <UserAccountNav />
+            </div>
           </MaxWidthWrapper>
         </header>
 
         <main className="flex min-h-0 flex-1 p-3 flex-col overflow-y-auto md:overflow-hidden">
-          <MaxWidthWrapper className="flex min-h-0 max-w-[1320px] flex-1 flex-col gap-4 px-0 lg:gap-6">
+          <MaxWidthWrapper className="flex w-full min-h-0 flex-1 flex-col gap-4 px-0 lg:gap-6">
             {children}
           </MaxWidthWrapper>
         </main>

@@ -450,3 +450,111 @@ export async function getEventsForCustomizeSelector(): Promise<{
     return { error: "Failed to fetch events" };
   }
 }
+
+// ============ VOICE AGENT SELECTOR ============
+
+export interface VoiceAgentEventData {
+  id: string;
+  title: string;
+  dateTime: Date;
+  location: string;
+  venue?: string | null;
+  voiceAgentStats: {
+    totalGuests: number;
+    guestsWithPhone: number;
+    callsMade: number;
+    callsCompleted: number;
+    rsvpFromCalls: number;
+    isEnabled: boolean;
+    hasSyncedData: boolean;
+  };
+}
+
+export async function getEventsForVoiceAgentSelector(): Promise<{
+  success?: boolean;
+  events?: VoiceAgentEventData[];
+  error?: string;
+}> {
+  try {
+    const user = await getCurrentUser();
+
+    if (!user || user.role !== UserRole.ROLE_WEDDING_OWNER) {
+      return { error: "Unauthorized" };
+    }
+
+    // Fetch events with voice agent stats
+    const events = await prisma.weddingEvent.findMany({
+      where: { ownerId: user.id },
+      select: {
+        id: true,
+        title: true,
+        dateTime: true,
+        location: true,
+        venue: true,
+        vapiSettings: {
+          select: {
+            isEnabled: true,
+            lastSyncAt: true,
+          },
+        },
+        guests: {
+          select: {
+            id: true,
+            phoneNumber: true,
+            vapiCallLogs: {
+              select: {
+                status: true,
+                rsvpUpdated: true,
+              },
+            },
+          },
+        },
+      },
+      orderBy: { dateTime: "asc" },
+    });
+
+    const eventsWithStats: VoiceAgentEventData[] = events.map((event) => {
+      const totalGuests = event.guests.length;
+      const guestsWithPhone = event.guests.filter((g) => g.phoneNumber).length;
+
+      // Aggregate call stats
+      let callsMade = 0;
+      let callsCompleted = 0;
+      let rsvpFromCalls = 0;
+
+      event.guests.forEach((guest) => {
+        guest.vapiCallLogs.forEach((log) => {
+          callsMade++;
+          if (log.status === "COMPLETED") {
+            callsCompleted++;
+          }
+          if (log.rsvpUpdated) {
+            rsvpFromCalls++;
+          }
+        });
+      });
+
+      return {
+        id: event.id,
+        title: event.title,
+        dateTime: event.dateTime,
+        location: event.location,
+        venue: event.venue,
+        voiceAgentStats: {
+          totalGuests,
+          guestsWithPhone,
+          callsMade,
+          callsCompleted,
+          rsvpFromCalls,
+          isEnabled: event.vapiSettings?.isEnabled ?? false,
+          hasSyncedData: !!event.vapiSettings?.lastSyncAt,
+        },
+      };
+    });
+
+    return { success: true, events: eventsWithStats };
+  } catch (error) {
+    console.error("Error fetching events for voice agent selector:", error);
+    return { error: "Failed to fetch events" };
+  }
+}

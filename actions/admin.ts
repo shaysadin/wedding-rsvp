@@ -272,11 +272,13 @@ export async function resetUserUsage(userId: string) {
         userId,
         whatsappSent: 0,
         smsSent: 0,
+        voiceCallsMade: 0,
         periodStart: new Date(),
       },
       update: {
         whatsappSent: 0,
         smsSent: 0,
+        voiceCallsMade: 0,
         periodStart: new Date(),
       },
     });
@@ -330,7 +332,8 @@ export async function addBonusMessages(
 export async function adjustCredits(
   userId: string,
   whatsappAdjustment: number = 0,
-  smsAdjustment: number = 0
+  smsAdjustment: number = 0,
+  voiceCallsAdjustment: number = 0
 ) {
   try {
     const currentUser = await requirePlatformOwner();
@@ -346,10 +349,12 @@ export async function adjustCredits(
 
     const currentWhatsappBonus = currentUsage?.whatsappBonus || 0;
     const currentSmsBonus = currentUsage?.smsBonus || 0;
+    const currentVoiceCallsBonus = currentUsage?.voiceCallsBonus || 0;
 
     // Calculate new bonus values (ensure they don't go below 0)
     const newWhatsappBonus = Math.max(0, currentWhatsappBonus + whatsappAdjustment);
     const newSmsBonus = Math.max(0, currentSmsBonus + smsAdjustment);
+    const newVoiceCallsBonus = Math.max(0, currentVoiceCallsBonus + voiceCallsAdjustment);
 
     const usage = await prisma.usageTracking.upsert({
       where: { userId },
@@ -357,11 +362,13 @@ export async function adjustCredits(
         userId,
         whatsappBonus: Math.max(0, whatsappAdjustment),
         smsBonus: Math.max(0, smsAdjustment),
+        voiceCallsBonus: Math.max(0, voiceCallsAdjustment),
         periodStart: new Date(),
       },
       update: {
         whatsappBonus: newWhatsappBonus,
         smsBonus: newSmsBonus,
+        voiceCallsBonus: newVoiceCallsBonus,
       },
     });
 

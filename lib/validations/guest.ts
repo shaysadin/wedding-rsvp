@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { RsvpStatus } from "@prisma/client";
 
 export const createGuestSchema = z.object({
   weddingEventId: z.string(),
@@ -13,6 +14,9 @@ export const createGuestSchema = z.object({
 
 export const updateGuestSchema = createGuestSchema.partial().extend({
   id: z.string(),
+  // RSVP fields (optional - only used when editing RSVP status)
+  rsvpStatus: z.nativeEnum(RsvpStatus).optional(),
+  rsvpGuestCount: z.number().int().min(0).max(20).optional(),
 });
 
 export const bulkImportGuestSchema = z.object({

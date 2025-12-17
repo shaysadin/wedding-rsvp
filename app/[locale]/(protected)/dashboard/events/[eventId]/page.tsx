@@ -40,6 +40,7 @@ export default async function EventPage({ params, searchParams }: EventPageProps
   const tGuests = await getTranslations("guests");
   const tSeating = await getTranslations("seating");
   const tInvitations = await getTranslations("invitations");
+  const tVoiceAgent = await getTranslations("voiceAgent");
 
   if (!user || user.role !== UserRole.ROLE_WEDDING_OWNER) {
     redirect(`/${locale}/dashboard`);
@@ -96,6 +97,12 @@ export default async function EventPage({ params, searchParams }: EventPageProps
               <Link href={`/${locale}/dashboard/events/${event.id}/customize`}>
                 <Icons.palette className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                 {t("customizeRsvp")}
+              </Link>
+            </Button>
+            <Button variant="outline" size="sm" className="h-8 shrink-0 gap-1.5 px-2.5 text-xs sm:h-9 sm:gap-2 sm:px-3 sm:text-sm" asChild>
+              <Link href={`/${locale}/dashboard/events/${event.id}/voice-agent`}>
+                <Icons.phone className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                {tVoiceAgent("title")}
               </Link>
             </Button>
           </div>

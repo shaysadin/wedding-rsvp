@@ -94,15 +94,18 @@ export function AdminUsersTable({ users }: AdminUsersTableProps) {
     userName: string;
     currentWhatsappBonus: number;
     currentSmsBonus: number;
+    currentVoiceCallsBonus: number;
   }>({
     open: false,
     userId: "",
     userName: "",
     currentWhatsappBonus: 0,
     currentSmsBonus: 0,
+    currentVoiceCallsBonus: 0,
   });
   const [creditsWhatsapp, setCreditsWhatsapp] = useState("");
   const [creditsSms, setCreditsSms] = useState("");
+  const [creditsVoiceCalls, setCreditsVoiceCalls] = useState("");
   const [isRemoveMode, setIsRemoveMode] = useState(false);
 
   const handleStatusChange = async (userId: string, action: "reactivate" | "suspend") => {
@@ -148,16 +151,19 @@ export function AdminUsersTable({ users }: AdminUsersTableProps) {
 
     const whatsappValue = parseInt(creditsWhatsapp) || 0;
     const smsValue = parseInt(creditsSms) || 0;
+    const voiceCallsValue = parseInt(creditsVoiceCalls) || 0;
 
     // Apply the adjustment (negative if remove mode)
     const whatsappAdjustment = isRemoveMode ? -whatsappValue : whatsappValue;
     const smsAdjustment = isRemoveMode ? -smsValue : smsValue;
+    const voiceCallsAdjustment = isRemoveMode ? -voiceCallsValue : voiceCallsValue;
 
     setLoading(creditsDialog.userId);
     const result = await adjustCredits(
       creditsDialog.userId,
       whatsappAdjustment,
-      smsAdjustment
+      smsAdjustment,
+      voiceCallsAdjustment
     );
     setLoading(null);
 
@@ -170,22 +176,25 @@ export function AdminUsersTable({ users }: AdminUsersTableProps) {
   };
 
   const closeCreditsDialog = () => {
-    setCreditsDialog({ open: false, userId: "", userName: "", currentWhatsappBonus: 0, currentSmsBonus: 0 });
+    setCreditsDialog({ open: false, userId: "", userName: "", currentWhatsappBonus: 0, currentSmsBonus: 0, currentVoiceCallsBonus: 0 });
     setCreditsWhatsapp("");
     setCreditsSms("");
+    setCreditsVoiceCalls("");
     setIsRemoveMode(false);
   };
 
-  const openCreditsDialog = (userId: string, userName: string, whatsappBonus: number, smsBonus: number) => {
+  const openCreditsDialog = (userId: string, userName: string, whatsappBonus: number, smsBonus: number, voiceCallsBonus: number) => {
     setCreditsDialog({
       open: true,
       userId,
       userName,
       currentWhatsappBonus: whatsappBonus,
       currentSmsBonus: smsBonus,
+      currentVoiceCallsBonus: voiceCallsBonus,
     });
     setCreditsWhatsapp("");
     setCreditsSms("");
+    setCreditsVoiceCalls("");
     setIsRemoveMode(false);
   };
 
@@ -193,16 +202,19 @@ export function AdminUsersTable({ users }: AdminUsersTableProps) {
   const getNewBonusValues = () => {
     const whatsappValue = parseInt(creditsWhatsapp) || 0;
     const smsValue = parseInt(creditsSms) || 0;
+    const voiceCallsValue = parseInt(creditsVoiceCalls) || 0;
 
     if (isRemoveMode) {
       return {
         whatsapp: Math.max(0, creditsDialog.currentWhatsappBonus - whatsappValue),
         sms: Math.max(0, creditsDialog.currentSmsBonus - smsValue),
+        voiceCalls: Math.max(0, creditsDialog.currentVoiceCallsBonus - voiceCallsValue),
       };
     } else {
       return {
         whatsapp: creditsDialog.currentWhatsappBonus + whatsappValue,
         sms: creditsDialog.currentSmsBonus + smsValue,
+        voiceCalls: creditsDialog.currentVoiceCallsBonus + voiceCallsValue,
       };
     }
   };
@@ -253,10 +265,13 @@ export function AdminUsersTable({ users }: AdminUsersTableProps) {
               const usage = user.usageTracking;
               const whatsappSent = usage?.whatsappSent || 0;
               const smsSent = usage?.smsSent || 0;
+              const voiceCallsMade = usage?.voiceCallsMade || 0;
               const whatsappBonus = usage?.whatsappBonus || 0;
               const smsBonus = usage?.smsBonus || 0;
+              const voiceCallsBonus = usage?.voiceCallsBonus || 0;
               const whatsappTotal = user.planLimits.maxWhatsappMessages + whatsappBonus;
               const smsTotal = user.planLimits.maxSmsMessages + smsBonus;
+              const voiceCallsTotal = user.planLimits.maxVoiceCalls + voiceCallsBonus;
 
               return (
                 <TableRow key={user.id}>
@@ -362,6 +377,27 @@ export function AdminUsersTable({ users }: AdminUsersTableProps) {
                           </TooltipContent>
                         </Tooltip>
                       )}
+
+                      {voiceCallsTotal > 0 && (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <div className="space-y-1">
+                              <div className="flex items-center justify-between text-xs">
+                                <span className="flex items-center gap-1">
+                                  <Icons.phone className="h-3 w-3 text-purple-500" />
+                                  {t("voiceCalls")}
+                                </span>
+                                <span>{voiceCallsMade}/{voiceCallsTotal}</span>
+                              </div>
+                              <Progress value={getUsagePercent(voiceCallsMade, user.planLimits.maxVoiceCalls, voiceCallsBonus)} className="h-1.5" />
+                            </div>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>{t("voiceCallsUsage")}: {voiceCallsMade}/{voiceCallsTotal}</p>
+                            {voiceCallsBonus > 0 && <p className="text-xs text-muted-foreground">(+{voiceCallsBonus} {t("bonus")})</p>}
+                          </TooltipContent>
+                        </Tooltip>
+                      )}
                     </div>
                   </TableCell>
                   <TableCell className="text-end">
@@ -445,7 +481,7 @@ export function AdminUsersTable({ users }: AdminUsersTableProps) {
                         <DropdownMenuLabel>{t("usageActions")}</DropdownMenuLabel>
 
                         <DropdownMenuItem
-                          onClick={() => openCreditsDialog(user.id, user.name || "", whatsappBonus, smsBonus)}
+                          onClick={() => openCreditsDialog(user.id, user.name || "", whatsappBonus, smsBonus, voiceCallsBonus)}
                         >
                           <Icons.creditCard className="me-2 h-4 w-4" />
                           {t("manageCredits")}
@@ -478,9 +514,10 @@ export function AdminUsersTable({ users }: AdminUsersTableProps) {
             {/* Current Bonus Display */}
             <div className="rounded-md bg-muted p-3 text-sm">
               <p className="font-medium mb-2">{t("currentBonus")}:</p>
-              <div className="flex gap-4">
+              <div className="flex flex-wrap gap-4">
                 <span>WhatsApp: {creditsDialog.currentWhatsappBonus}</span>
                 <span>SMS: {creditsDialog.currentSmsBonus}</span>
+                <span>{t("voiceCalls")}: {creditsDialog.currentVoiceCallsBonus}</span>
               </div>
             </div>
 
@@ -528,13 +565,30 @@ export function AdminUsersTable({ users }: AdminUsersTableProps) {
               />
             </div>
 
+            {/* Voice Calls Input */}
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="voice-calls-credits" className="text-end">
+                {t("voiceCalls")}
+              </Label>
+              <Input
+                id="voice-calls-credits"
+                type="number"
+                min="0"
+                value={creditsVoiceCalls}
+                onChange={(e) => setCreditsVoiceCalls(e.target.value)}
+                className="col-span-3"
+                placeholder="0"
+              />
+            </div>
+
             {/* Preview of new values */}
-            {(parseInt(creditsWhatsapp) || parseInt(creditsSms)) ? (
+            {(parseInt(creditsWhatsapp) || parseInt(creditsSms) || parseInt(creditsVoiceCalls)) ? (
               <div className={`rounded-md p-3 text-sm border ${isRemoveMode ? 'bg-red-500/10 border-red-500/20' : 'bg-green-500/10 border-green-500/20'}`}>
                 <p className="font-medium mb-1">{t("newBonus")}:</p>
-                <div className="flex gap-4">
+                <div className="flex flex-wrap gap-4">
                   <span>WhatsApp: {getNewBonusValues().whatsapp}</span>
                   <span>SMS: {getNewBonusValues().sms}</span>
+                  <span>{t("voiceCalls")}: {getNewBonusValues().voiceCalls}</span>
                 </div>
               </div>
             ) : null}

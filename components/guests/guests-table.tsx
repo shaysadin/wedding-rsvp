@@ -7,6 +7,8 @@ import { toast } from "sonner";
 
 import { deleteGuest, deleteGuests } from "@/actions/guests";
 import { sendInvite, sendReminder } from "@/actions/notifications";
+import { callGuest, startBulkCalling } from "@/actions/vapi/calls";
+import { getVapiAvailability } from "@/actions/vapi/settings";
 import {
   Table,
   TableBody,
@@ -29,6 +31,15 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Icons } from "@/components/shared/icons";
 import { EmptyPlaceholder } from "@/components/shared/empty-placeholder";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { EditGuestDialog } from "./edit-guest-dialog";
 import { SendMessageDialog } from "./send-message-dialog";
 import {
@@ -120,6 +131,21 @@ export function GuestsTable({ guests, eventId, initialFilter = "all" }: GuestsTa
     statuses: ("PENDING" | "ACCEPTED" | "DECLINED" | "MAYBE")[];
   }>({ ids: [], names: [], statuses: [] });
   const [sendMessageMode, setSendMessageMode] = useState<"single" | "bulk">("single");
+
+  // Voice calling state
+  const [callingGuestId, setCallingGuestId] = useState<string | null>(null);
+  const [vapiAvailable, setVapiAvailable] = useState(false);
+  const [showBulkCallModal, setShowBulkCallModal] = useState(false);
+  const [isBulkCalling, setIsBulkCalling] = useState(false);
+
+  // Check VAPI availability on mount
+  useEffect(() => {
+    getVapiAvailability().then((result) => {
+      if (result.success && result.available) {
+        setVapiAvailable(true);
+      }
+    });
+  }, []);
 
   // Sync rsvpStatusFilter when initialFilter prop changes (URL navigation)
   useEffect(() => {
@@ -284,6 +310,18 @@ export function GuestsTable({ guests, eventId, initialFilter = "all" }: GuestsTa
     }
   };
 
+  const handleCallGuest = async (guestId: string) => {
+    setCallingGuestId(guestId);
+    const result = await callGuest(guestId, eventId);
+    setCallingGuestId(null);
+
+    if (result.error) {
+      toast.error(result.error);
+    } else {
+      toast.success(t("callStarted"));
+    }
+  };
+
   const handleCopyLink = async (guestSlug: string) => {
     const baseUrl = window.location.origin;
     const rsvpUrl = `${baseUrl}/rsvp/${guestSlug}`;
@@ -407,6 +445,34 @@ export function GuestsTable({ guests, eventId, initialFilter = "all" }: GuestsTa
     }
   };
 
+  // Get selected guests with phone numbers for calling
+  const selectedGuestsWithPhone = useMemo(() => {
+    return guests.filter((g) => selectedIds.has(g.id) && g.phoneNumber);
+  }, [guests, selectedIds]);
+
+  const handleBulkCall = async () => {
+    if (selectedGuestsWithPhone.length === 0) return;
+
+    setIsBulkCalling(true);
+    try {
+      const guestIds = selectedGuestsWithPhone.map((g) => g.id);
+      const result = await startBulkCalling(eventId, guestIds);
+
+      if (result.error) {
+        toast.error(result.error);
+      } else {
+        toast.success(t("bulkCallStarted", { count: result.totalGuests || 0 }));
+        setShowBulkCallModal(false);
+        setSelectedIds(new Set());
+        window.dispatchEvent(new CustomEvent("voice-agent-data-changed"));
+      }
+    } catch {
+      toast.error(tc("error"));
+    } finally {
+      setIsBulkCalling(false);
+    }
+  };
+
   if (guests.length === 0) {
     return (
       <EmptyPlaceholder>
@@ -440,6 +506,81 @@ export function GuestsTable({ guests, eventId, initialFilter = "all" }: GuestsTa
         eventId={eventId}
         mode={sendMessageMode}
       />
+
+      {/* Bulk Call Modal */}
+      <Dialog open={showBulkCallModal} onOpenChange={setShowBulkCallModal}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <div className="h-8 w-8 rounded-full bg-emerald-100 dark:bg-emerald-500/20 flex items-center justify-center">
+                <Icons.phone className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+              </div>
+              {t("bulkCallTitle")}
+            </DialogTitle>
+            <DialogDescription>
+              {t("bulkCallDescription", { count: selectedGuestsWithPhone.length })}
+            </DialogDescription>
+          </DialogHeader>
+
+          {/* Selected Guests List */}
+          <div className="py-4">
+            <p className="text-sm font-medium mb-3">{t("guestsToCall")}</p>
+            <ScrollArea className="h-[200px] rounded-lg border bg-muted/30 p-3">
+              <div className="space-y-2">
+                {selectedGuestsWithPhone.map((guest) => (
+                  <div
+                    key={guest.id}
+                    className="flex items-center justify-between rounded-md border bg-card p-3"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="h-8 w-8 rounded-full bg-violet-100 dark:bg-violet-500/20 flex items-center justify-center">
+                        <Icons.user className="h-4 w-4 text-violet-600 dark:text-violet-400" />
+                      </div>
+                      <div>
+                        <p className="font-medium text-sm">{guest.name}</p>
+                        <p className="text-xs text-muted-foreground font-mono">
+                          {guest.phoneNumber}
+                        </p>
+                      </div>
+                    </div>
+                    <Badge
+                      variant={
+                        guest.rsvp?.status === "ACCEPTED"
+                          ? "default"
+                          : guest.rsvp?.status === "DECLINED"
+                            ? "destructive"
+                            : "secondary"
+                      }
+                      className="text-xs"
+                    >
+                      {guest.rsvp?.status || "PENDING"}
+                    </Badge>
+                  </div>
+                ))}
+              </div>
+            </ScrollArea>
+          </div>
+
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="outline" onClick={() => setShowBulkCallModal(false)}>
+              {tc("cancel")}
+            </Button>
+            <Button onClick={handleBulkCall} disabled={isBulkCalling}>
+              {isBulkCalling ? (
+                <>
+                  <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
+                  {t("calling")}
+                </>
+              ) : (
+                <>
+                  <Icons.phone className="mr-2 h-4 w-4" />
+                  {t("startCalling")}
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Search and Filter Bar */}
       <div className="shrink-0 space-y-3">
@@ -528,6 +669,18 @@ export function GuestsTable({ guests, eventId, initialFilter = "all" }: GuestsTa
               <Icons.messageSquare className="h-4 w-4" />
               {t("sendMessage")}
             </Button>
+            {vapiAvailable && selectedGuestsWithPhone.length > 0 && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setShowBulkCallModal(true)}
+                disabled={bulkLoading}
+                className="gap-2"
+              >
+                <Icons.phone className="h-4 w-4" />
+                {t("callSelected")} ({selectedGuestsWithPhone.length})
+              </Button>
+            )}
             <Button
               variant="outline"
               size="sm"
@@ -695,6 +848,20 @@ export function GuestsTable({ guests, eventId, initialFilter = "all" }: GuestsTa
                               <Icons.messageSquare className="me-2 h-4 w-4" />
                               {t("sendMessage")}
                             </DropdownMenuItem>
+
+                            {vapiAvailable && guest.phoneNumber && (
+                              <DropdownMenuItem
+                                onClick={() => handleCallGuest(guest.id)}
+                                disabled={callingGuestId === guest.id}
+                              >
+                                {callingGuestId === guest.id ? (
+                                  <Icons.spinner className="me-2 h-4 w-4 animate-spin" />
+                                ) : (
+                                  <Icons.phone className="me-2 h-4 w-4" />
+                                )}
+                                {t("callGuest")}
+                              </DropdownMenuItem>
+                            )}
 
                             <DropdownMenuSeparator />
 

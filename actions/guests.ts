@@ -124,12 +124,12 @@ export async function updateGuest(input: UpdateGuestInput) {
     }
 
     const validatedData = updateGuestSchema.parse(input);
-    const { id, ...updateData } = validatedData;
+    const { id, rsvpStatus, rsvpGuestCount, ...updateData } = validatedData;
 
     // Verify ownership through event
     const existingGuest = await prisma.guest.findFirst({
       where: { id },
-      include: { weddingEvent: true },
+      include: { weddingEvent: true, rsvp: true },
     });
 
     if (!existingGuest || existingGuest.weddingEvent.ownerId !== user.id) {
@@ -161,10 +161,34 @@ export async function updateGuest(input: UpdateGuestInput) {
       }
     }
 
+    // Update guest data
     const guest = await prisma.guest.update({
       where: { id },
       data: updateData,
     });
+
+    // Handle RSVP status update if provided
+    if (rsvpStatus !== undefined) {
+      const rsvpData = {
+        status: rsvpStatus,
+        guestCount: rsvpStatus === "ACCEPTED" ? (rsvpGuestCount ?? 1) : 0,
+        respondedAt: new Date(),
+      };
+
+      if (existingGuest.rsvp) {
+        await prisma.guestRsvp.update({
+          where: { id: existingGuest.rsvp.id },
+          data: rsvpData,
+        });
+      } else {
+        await prisma.guestRsvp.create({
+          data: {
+            guestId: id,
+            ...rsvpData,
+          },
+        });
+      }
+    }
 
     revalidatePath(`/dashboard/events/${existingGuest.weddingEventId}`);
 

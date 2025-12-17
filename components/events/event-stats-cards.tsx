@@ -76,8 +76,8 @@ export function EventStatsCards({ stats, eventId, activeFilter }: EventStatsCard
   ];
 
   return (
-    <div className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:overflow-visible sm:px-0">
-      <div className="flex gap-3 pb-2 sm:grid sm:grid-cols-2 sm:gap-4 sm:pb-0 lg:grid-cols-5">
+    <div className="mx-4 overflow-x-auto px-4 sm:mx-0 sm:overflow-visible sm:px-0">
+      <div className="flex gap-3 px-1 pb-2 sm:grid sm:grid-cols-2 sm:gap-4 sm:pb-0 lg:grid-cols-5">
         {cards.map((card, index) => (
           <motion.div
             key={card.key}

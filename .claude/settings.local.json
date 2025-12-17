@@ -4,7 +4,12 @@
       "Bash(npm run build:*)",
       "Bash(npx prisma generate:*)",
       "Bash(cat:*)",
-      "Bash(npx prisma migrate dev:*)"
+      "Bash(npx prisma migrate dev:*)",
+      "Bash(dir \"C:\\Users\\Multiply\\Desktop\\Projects\\wedding rsvp\\next-saas-stripe-starter\")",
+      "Bash(wc:*)",
+      "WebSearch",
+      "WebFetch(domain:docs.vapi.ai)",
+      "Bash(npx prisma db push)"
     ],
     "deny": [],
     "ask": []
