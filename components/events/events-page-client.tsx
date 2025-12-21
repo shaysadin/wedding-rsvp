@@ -26,6 +26,7 @@ interface EventWithStats {
   ownerId: string;
   invitationImageUrl: string | null;
   invitationImagePublicId: string | null;
+  totalBudget: any;
   stats: {
     total: number;
     pending: number;

@@ -158,6 +158,13 @@ export async function getEventById(eventId: string) {
               },
               orderBy: { createdAt: "desc" },
             },
+            vapiCallLogs: {
+              where: {
+                status: "COMPLETED",
+              },
+              orderBy: { createdAt: "desc" },
+              take: 1,
+            },
           },
         },
         _count: {

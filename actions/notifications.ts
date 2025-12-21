@@ -133,7 +133,12 @@ export async function getCurrentUserUsage() {
 
     const dbUser = await prisma.user.findUnique({
       where: { id: user.id },
-      include: { usageTracking: true },
+      include: {
+        usageTracking: true,
+        weddingEvents: {
+          select: { id: true },
+        },
+      },
     });
 
     if (!dbUser) {
@@ -143,12 +148,49 @@ export async function getCurrentUserUsage() {
     const planLimits = PLAN_LIMITS[dbUser.plan];
     const usage = dbUser.usageTracking;
 
-    const whatsappSent = usage?.whatsappSent || 0;
-    const smsSent = usage?.smsSent || 0;
+    // Get actual message counts from NotificationLog for accuracy
+    const eventIds = dbUser.weddingEvents.map(e => e.id);
+
+    // Count actual sent messages from NotificationLog and VapiCallLog
+    const [whatsappCount, smsCount, callsCount] = await Promise.all([
+      prisma.notificationLog.count({
+        where: {
+          guest: {
+            weddingEventId: { in: eventIds },
+          },
+          channel: NotificationChannel.WHATSAPP,
+          status: { in: ["SENT", "DELIVERED"] },
+        },
+      }),
+      prisma.notificationLog.count({
+        where: {
+          guest: {
+            weddingEventId: { in: eventIds },
+          },
+          channel: NotificationChannel.SMS,
+          status: { in: ["SENT", "DELIVERED"] },
+        },
+      }),
+      prisma.vapiCallLog.count({
+        where: {
+          weddingEventId: { in: eventIds },
+          status: { in: ["COMPLETED", "NO_ANSWER", "BUSY"] }, // Count all attempted calls
+        },
+      }),
+    ]);
+
+    // Use actual counts from NotificationLog and VapiCallLog
+    const whatsappSent = whatsappCount;
+    const smsSent = smsCount;
     const whatsappBonus = usage?.whatsappBonus || 0;
     const smsBonus = usage?.smsBonus || 0;
-    const whatsappTotal = planLimits.maxWhatsappMessages + whatsappBonus;
-    const smsTotal = planLimits.maxSmsMessages + smsBonus;
+    const voiceCallsMade = callsCount;
+    const voiceCallsBonus = usage?.voiceCallsBonus || 0;
+
+    // Handle unlimited (-1) cases
+    const whatsappTotal = planLimits.maxWhatsappMessages === -1 ? -1 : planLimits.maxWhatsappMessages + whatsappBonus;
+    const smsTotal = planLimits.maxSmsMessages === -1 ? -1 : planLimits.maxSmsMessages + smsBonus;
+    const voiceCallsTotal = planLimits.maxVoiceCalls === -1 ? -1 : planLimits.maxVoiceCalls + voiceCallsBonus;
 
     return {
       success: true,
@@ -158,18 +200,25 @@ export async function getCurrentUserUsage() {
           sent: whatsappSent,
           limit: planLimits.maxWhatsappMessages,
           bonus: whatsappBonus,
-          total: whatsappTotal,
-          remaining: Math.max(0, whatsappTotal - whatsappSent),
+          total: whatsappTotal === -1 ? 999999 : whatsappTotal,
+          remaining: whatsappTotal === -1 ? 999999 : Math.max(0, whatsappTotal - whatsappSent),
         },
         sms: {
           sent: smsSent,
           limit: planLimits.maxSmsMessages,
           bonus: smsBonus,
-          total: smsTotal,
-          remaining: Math.max(0, smsTotal - smsSent),
+          total: smsTotal === -1 ? 999999 : smsTotal,
+          remaining: smsTotal === -1 ? 999999 : Math.max(0, smsTotal - smsSent),
+        },
+        calls: {
+          made: voiceCallsMade,
+          limit: planLimits.maxVoiceCalls,
+          bonus: voiceCallsBonus,
+          total: voiceCallsTotal === -1 ? 999999 : voiceCallsTotal,
+          remaining: voiceCallsTotal === -1 ? 999999 : Math.max(0, voiceCallsTotal - voiceCallsMade),
         },
       },
-      canSendMessages: whatsappTotal > 0 || smsTotal > 0,
+      canSendMessages: (whatsappTotal === -1 || whatsappTotal > 0) || (smsTotal === -1 || smsTotal > 0),
     };
   } catch (error) {
     console.error("Error fetching user usage:", error);

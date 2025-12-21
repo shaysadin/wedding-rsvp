@@ -69,12 +69,15 @@ export default async function EventPage({ params, searchParams }: EventPageProps
   const validFilters = ["all", "pending", "accepted", "declined"];
   const activeFilter = filter && validFilters.includes(filter) ? filter : "all";
 
+  // Get the first guest's slug for RSVP preview
+  const firstGuestSlug = event.guests[0]?.slug || null;
+
   return (
     <PageFadeIn className="md:h-full">
       <DashboardHeader heading={event.title} text={event.location}>
         <div className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:overflow-visible sm:px-0">
           <div className="flex flex-row gap-2 pb-1 sm:flex-wrap sm:pb-0">
-            <CopyLinkButton eventId={event.id} />
+            <CopyLinkButton eventId={event.id} firstGuestSlug={firstGuestSlug} />
             <Button variant="outline" size="sm" className="h-8 shrink-0 gap-1.5 px-2.5 text-xs sm:h-9 sm:gap-2 sm:px-3 sm:text-sm" asChild>
               <Link href={`/${locale}/dashboard/events/${event.id}/seating`}>
                 <Icons.layoutGrid className="h-3.5 w-3.5 sm:h-4 sm:w-4" />

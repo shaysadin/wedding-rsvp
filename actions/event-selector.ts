@@ -558,3 +558,106 @@ export async function getEventsForVoiceAgentSelector(): Promise<{
     return { error: "Failed to fetch events" };
   }
 }
+
+// ============ SUPPLIERS SELECTOR ============
+
+export interface SuppliersEventData {
+  id: string;
+  title: string;
+  dateTime: Date;
+  location: string;
+  venue?: string | null;
+  supplierStats: {
+    totalBudget: number;
+    totalAgreed: number;
+    totalPaid: number;
+    supplierCount: number;
+    overdueCount: number;
+  };
+}
+
+export async function getEventsForSuppliersSelector(): Promise<{
+  success?: boolean;
+  events?: SuppliersEventData[];
+  error?: string;
+}> {
+  try {
+    const user = await getCurrentUser();
+
+    if (!user || user.role !== UserRole.ROLE_WEDDING_OWNER) {
+      return { error: "Unauthorized" };
+    }
+
+    // Fetch events with supplier stats
+    const events = await prisma.weddingEvent.findMany({
+      where: { ownerId: user.id },
+      select: {
+        id: true,
+        title: true,
+        dateTime: true,
+        location: true,
+        venue: true,
+        totalBudget: true,
+        suppliers: {
+          select: {
+            id: true,
+            agreedPrice: true,
+            payments: {
+              select: {
+                amount: true,
+                dueDate: true,
+                paidAt: true,
+              },
+            },
+          },
+        },
+      },
+      orderBy: { dateTime: "asc" },
+    });
+
+    const now = new Date();
+
+    const eventsWithStats: SuppliersEventData[] = events.map((event) => {
+      const supplierCount = event.suppliers.length;
+      const totalBudget = event.totalBudget ? Number(event.totalBudget) : 0;
+
+      let totalAgreed = 0;
+      let totalPaid = 0;
+      let overdueCount = 0;
+
+      event.suppliers.forEach((supplier) => {
+        if (supplier.agreedPrice) {
+          totalAgreed += Number(supplier.agreedPrice);
+        }
+
+        supplier.payments.forEach((payment) => {
+          totalPaid += Number(payment.amount);
+          // Count overdue payments (due date passed but payment not yet made relative to due date)
+          if (payment.dueDate && new Date(payment.dueDate) < now) {
+            overdueCount++;
+          }
+        });
+      });
+
+      return {
+        id: event.id,
+        title: event.title,
+        dateTime: event.dateTime,
+        location: event.location,
+        venue: event.venue,
+        supplierStats: {
+          totalBudget,
+          totalAgreed,
+          totalPaid,
+          supplierCount,
+          overdueCount,
+        },
+      };
+    });
+
+    return { success: true, events: eventsWithStats };
+  } catch (error) {
+    console.error("Error fetching events for suppliers selector:", error);
+    return { error: "Failed to fetch events" };
+  }
+}

@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
-import { Guest, GuestRsvp, NotificationLog, RsvpStatus, NotificationType, NotificationStatus } from "@prisma/client";
+import { Guest, GuestRsvp, NotificationLog, RsvpStatus, NotificationType, NotificationStatus, VapiCallLog } from "@prisma/client";
 import { useLocale, useTranslations } from "next-intl";
 import { toast } from "sonner";
+import { Maximize2, Minimize2 } from "lucide-react";
 
 import { deleteGuest, deleteGuests } from "@/actions/guests";
 import { sendInvite, sendReminder } from "@/actions/notifications";
@@ -56,6 +57,7 @@ const PREDEFINED_SIDES = ["bride", "groom", "both"] as const;
 type GuestWithRsvp = Guest & {
   rsvp: GuestRsvp | null;
   notificationLogs: NotificationLog[];
+  vapiCallLogs?: VapiCallLog[];
 };
 
 
@@ -71,16 +73,24 @@ const statusColors: Record<RsvpStatus, string> = {
   DECLINED: "bg-red-500/10 text-red-500",
 };
 
-// Helper to get message status from notification logs
-type MessageStatus = "not_sent" | "invite_sent" | "reminder_1" | "reminder_2_plus";
+// Helper to get message status from notification logs and call logs
+type MessageStatus = "not_sent" | "invite_sent" | "reminder_1" | "reminder_2_plus" | "called";
 
-function getMessageStatus(notificationLogs: NotificationLog[]): MessageStatus {
+function getMessageStatus(notificationLogs: NotificationLog[], vapiCallLogs?: VapiCallLog[]): MessageStatus {
+  // Check if guest has been called (completed call)
+  const hasBeenCalled = vapiCallLogs && vapiCallLogs.length > 0;
+
   const sentLogs = notificationLogs.filter(log =>
     log.status === NotificationStatus.SENT || log.status === NotificationStatus.DELIVERED
   );
 
   const inviteSent = sentLogs.some(log => log.type === NotificationType.INVITE);
   const reminderCount = sentLogs.filter(log => log.type === NotificationType.REMINDER).length;
+
+  // If called, show that status (highest priority for contact)
+  if (hasBeenCalled) {
+    return "called";
+  }
 
   if (!inviteSent && reminderCount === 0) {
     return "not_sent";
@@ -99,6 +109,7 @@ const messageStatusConfig: Record<MessageStatus, { label: string; className: str
   invite_sent: { label: "inviteSent", className: "bg-blue-500/10 text-blue-500" },
   reminder_1: { label: "reminder1", className: "bg-purple-500/10 text-purple-500" },
   reminder_2_plus: { label: "reminder2Plus", className: "bg-orange-500/10 text-orange-500" },
+  called: { label: "called", className: "bg-green-500/10 text-green-500" },
 };
 
 export function GuestsTable({ guests, eventId, initialFilter = "all" }: GuestsTableProps) {
@@ -114,6 +125,7 @@ export function GuestsTable({ guests, eventId, initialFilter = "all" }: GuestsTa
   const [bulkLoading, setBulkLoading] = useState(false);
   const [editingGuest, setEditingGuest] = useState<GuestWithRsvp | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [isTableExpanded, setIsTableExpanded] = useState(false);
 
   // Filter states
   const [sideFilter, setSideFilter] = useState<SideFilter>("all");
@@ -180,7 +192,7 @@ export function GuestsTable({ guests, eventId, initialFilter = "all" }: GuestsTa
 
   // Count guests who haven't received an invite
   const notSentCount = useMemo(() => {
-    return guests.filter((guest) => getMessageStatus(guest.notificationLogs) === "not_sent").length;
+    return guests.filter((guest) => getMessageStatus(guest.notificationLogs, guest.vapiCallLogs) === "not_sent").length;
   }, [guests]);
 
   // Count pending guests (for reminders)
@@ -224,7 +236,7 @@ export function GuestsTable({ guests, eventId, initialFilter = "all" }: GuestsTa
     // Apply message status filter
     if (messageStatusFilter !== "all") {
       filtered = filtered.filter((guest) => {
-        const msgStatus = getMessageStatus(guest.notificationLogs);
+        const msgStatus = getMessageStatus(guest.notificationLogs, guest.vapiCallLogs);
         if (messageStatusFilter === "not_sent") {
           return msgStatus === "not_sent";
         }
@@ -359,7 +371,7 @@ export function GuestsTable({ guests, eventId, initialFilter = "all" }: GuestsTa
 
   // Select all guests who haven't received an invite and open send message modal
   const handleSelectNotSentGuests = () => {
-    const notSentGuests = guests.filter((guest) => getMessageStatus(guest.notificationLogs) === "not_sent");
+    const notSentGuests = guests.filter((guest) => getMessageStatus(guest.notificationLogs, guest.vapiCallLogs) === "not_sent");
     if (notSentGuests.length === 0) return;
 
     // Select these guests
@@ -704,7 +716,16 @@ export function GuestsTable({ guests, eventId, initialFilter = "all" }: GuestsTa
       )}
 
       {/* Table */}
-      <div className="w-full overflow-auto rounded-lg border md:min-h-0 md:flex-1">
+      <div className="relative w-full overflow-auto rounded-lg border md:min-h-0 md:flex-1">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="absolute end-2 top-2 z-10 h-8 w-8 rounded-md bg-background/80 backdrop-blur-sm hover:bg-muted"
+          onClick={() => setIsTableExpanded(true)}
+          title={tc("expand")}
+        >
+          <Maximize2 className="h-4 w-4" />
+        </Button>
         <Table>
           <TableHeader>
             <TableRow className="bg-muted/50">
@@ -739,7 +760,7 @@ export function GuestsTable({ guests, eventId, initialFilter = "all" }: GuestsTa
               filteredGuests.map((guest) => {
                 const status = guest.rsvp?.status || "PENDING";
                 const isSelected = selectedIds.has(guest.id);
-                const msgStatus = getMessageStatus(guest.notificationLogs);
+                const msgStatus = getMessageStatus(guest.notificationLogs, guest.vapiCallLogs);
                 const msgConfig = messageStatusConfig[msgStatus];
 
                 return (
@@ -793,7 +814,7 @@ export function GuestsTable({ guests, eventId, initialFilter = "all" }: GuestsTa
                     </TableCell>
                     <TableCell className="text-center">
                       <Badge className={msgConfig.className} variant="secondary">
-                        {tMsg(msgConfig.label as "notSent" | "inviteSent" | "reminder1" | "reminder2Plus")}
+                        {tMsg(msgConfig.label as "notSent" | "inviteSent" | "reminder1" | "reminder2Plus" | "called")}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-center">
@@ -883,6 +904,179 @@ export function GuestsTable({ guests, eventId, initialFilter = "all" }: GuestsTa
           </TableBody>
         </Table>
       </div>
+
+      {/* Expanded Table Modal */}
+      <Dialog open={isTableExpanded} onOpenChange={setIsTableExpanded}>
+        <DialogContent className="flex h-[90vh] max-h-[90vh] w-[95vw] max-w-[95vw] flex-col gap-0 p-0">
+          <DialogHeader className="flex shrink-0 flex-row items-center justify-between border-b px-6 py-4">
+            <DialogTitle>{t("title")}</DialogTitle>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+              onClick={() => setIsTableExpanded(false)}
+            >
+              <Minimize2 className="h-4 w-4" />
+            </Button>
+          </DialogHeader>
+          <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-hidden p-6">
+            {/* Bulk Actions Bar in Modal */}
+            {selectedIds.size > 0 && (
+              <div className="flex shrink-0 flex-col gap-3 rounded-lg border-2 border-primary/20 bg-primary/5 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground">
+                    {selectedIds.size}
+                  </div>
+                  <p className="text-sm font-medium">
+                    {t("selectedCount", { count: selectedIds.size })}
+                  </p>
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <Button size="sm" onClick={openBulkSendMessage} className="gap-2">
+                    <Icons.messageSquare className="h-4 w-4" />
+                    {t("sendMessage")}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleBulkCopyLinks}
+                    className="gap-2"
+                  >
+                    <Icons.copy className="h-4 w-4" />
+                    {t("copyLinks")}
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={handleBulkDelete}
+                    disabled={bulkLoading}
+                  >
+                    <Icons.trash className="h-4 w-4" />
+                    {t("deleteSelected")}
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* Table in Modal */}
+            <div className="min-h-0 flex-1 overflow-auto rounded-lg border">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-muted/50">
+                    <TableHead className="w-12">
+                      <Checkbox
+                        checked={allSelected}
+                        ref={(el) => {
+                          if (el) (el as HTMLButtonElement).dataset.state = someSelected ? "indeterminate" : allSelected ? "checked" : "unchecked";
+                        }}
+                        onCheckedChange={toggleSelectAll}
+                        aria-label="Select all"
+                      />
+                    </TableHead>
+                    <TableHead>{t("name")}</TableHead>
+                    <TableHead>{t("phone")}</TableHead>
+                    <TableHead className="text-center">{t("side")}</TableHead>
+                    <TableHead className="text-center">{t("group")}</TableHead>
+                    <TableHead className="text-center">{t("status")}</TableHead>
+                    <TableHead className="text-center">{t("messageSent")}</TableHead>
+                    <TableHead className="text-center">{t("guestCount")}</TableHead>
+                    <TableHead className="w-24">{tc("actions")}</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredGuests.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={9} className="h-24 text-center">
+                        {tc("noResults")}
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    filteredGuests.map((guest) => {
+                      const status = guest.rsvp?.status || "PENDING";
+                      const isSelected = selectedIds.has(guest.id);
+                      const msgStatus = getMessageStatus(guest.notificationLogs, guest.vapiCallLogs);
+                      const msgConfig = messageStatusConfig[msgStatus];
+
+                      return (
+                        <TableRow
+                          key={guest.id}
+                          className={isSelected ? "bg-muted/30" : undefined}
+                        >
+                          <TableCell className="w-12">
+                            <Checkbox
+                              checked={isSelected}
+                              onCheckedChange={() => toggleSelect(guest.id)}
+                              aria-label={`Select ${guest.name}`}
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <button
+                              type="button"
+                              className="font-medium hover:underline cursor-pointer text-start"
+                              onClick={() => toggleSelect(guest.id)}
+                            >
+                              {guest.name}
+                            </button>
+                          </TableCell>
+                          <TableCell className="text-start">{guest.phoneNumber || "-"}</TableCell>
+                          <TableCell className="text-center">
+                            {guest.side ? (
+                              <Badge variant="outline" className="text-xs">
+                                {PREDEFINED_SIDES.includes(guest.side as typeof PREDEFINED_SIDES[number])
+                                  ? t(`sides.${guest.side}`)
+                                  : guest.side}
+                              </Badge>
+                            ) : "-"}
+                          </TableCell>
+                          <TableCell className="text-center">
+                            {guest.groupName ? (
+                              <Badge variant="secondary" className="text-xs">
+                                {PREDEFINED_GROUPS.includes(guest.groupName as typeof PREDEFINED_GROUPS[number])
+                                  ? t(`groups.${guest.groupName}`)
+                                  : guest.groupName}
+                              </Badge>
+                            ) : "-"}
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <Badge className={statusColors[status]} variant="secondary">
+                              {tStatus(status.toLowerCase() as "pending" | "accepted" | "declined")}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <Badge className={msgConfig.className} variant="secondary">
+                              {tMsg(msgConfig.label as "notSent" | "inviteSent" | "reminder1" | "reminder2Plus" | "called")}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-center">
+                            {status === "ACCEPTED" ? (
+                              <span title={t("confirmedGuests")}>
+                                {guest.rsvp?.guestCount || 1}
+                              </span>
+                            ) : "-"}
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center justify-end gap-1">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8"
+                                onClick={() => setEditingGuest(guest)}
+                                title={t("edit")}
+                              >
+                                <Icons.pencil className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -75,6 +75,11 @@ export default async function DashboardPage() {
         plan: usageData.plan,
         whatsapp: usageData.usage.whatsapp,
         sms: usageData.usage.sms,
+        calls: usageData.usage.calls && usageData.usage.calls.limit > 0 ? {
+          made: usageData.usage.calls.made,
+          limit: usageData.usage.calls.total,
+          remaining: usageData.usage.calls.remaining,
+        } : undefined,
         canSendMessages: usageData.canSendMessages,
       } : undefined}
     />

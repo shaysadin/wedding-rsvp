@@ -57,6 +57,13 @@ export const sidebarLinks: SidebarNavItem[] = [
         authorizeOnly: UserRole.ROLE_WEDDING_OWNER,
       },
       {
+        href: "/dashboard/suppliers",
+        icon: "suppliers",
+        titleKey: "navigation.suppliers",
+        title: "Suppliers",
+        authorizeOnly: UserRole.ROLE_WEDDING_OWNER,
+      },
+      {
         href: "/dashboard/seating",
         icon: "layoutGrid",
         titleKey: "navigation.seating",

@@ -62,6 +62,11 @@ interface UsageData {
     total: number;
     remaining: number;
   };
+  calls?: {
+    made: number;
+    limit: number;
+    remaining: number;
+  };
   canSendMessages: boolean;
 }
 
@@ -227,7 +232,7 @@ export function DashboardContent({ userName, events, stats, locale, usageData }:
         ))}
       </motion.div>
 
-      {/* Messaging Quota Card */}
+      {/* Usage Tracking Card */}
       {usageData && (
         <motion.div variants={itemVariants}>
           <Card className={cn(
@@ -246,7 +251,7 @@ export function DashboardContent({ userName, events, stats, locale, usageData }:
                   <div className={cn("flex items-center gap-3", isRTL && "flex-row-reverse")}>
                     <div>
                       <h3 className="font-semibold">
-                        {isRTL ? "מכסת הודעות" : "Message Quota"}
+                        {isRTL ? "מעקב שימוש" : "Usage Tracking"}
                       </h3>
                       <p className="text-sm text-muted-foreground">
                         {isRTL ? "סטטוס השימוש החודשי שלך" : "Your monthly usage status"}
@@ -262,7 +267,10 @@ export function DashboardContent({ userName, events, stats, locale, usageData }:
                 </div>
 
                 {/* Usage Bars */}
-                <div className="grid gap-4 sm:grid-cols-2">
+                <div className={cn(
+                  "grid gap-4",
+                  usageData.calls ? "sm:grid-cols-3" : "sm:grid-cols-2"
+                )}>
                   {/* WhatsApp Usage */}
                   <div className="space-y-2">
                     <div className={cn(
@@ -298,7 +306,7 @@ export function DashboardContent({ userName, events, stats, locale, usageData }:
                       isRTL && "flex-row-reverse"
                     )}>
                       <span className={cn("flex items-center gap-2", isRTL && "flex-row-reverse")}>
-                        <Phone className="h-4 w-4 text-blue-500" />
+                        <Send className="h-4 w-4 text-blue-500" />
                         SMS
                       </span>
                       <span className="font-medium">
@@ -318,6 +326,34 @@ export function DashboardContent({ userName, events, stats, locale, usageData }:
                       </p>
                     )}
                   </div>
+
+                  {/* Phone Calls Usage */}
+                  {usageData.calls && (
+                    <div className="space-y-2">
+                      <div className={cn(
+                        "flex items-center justify-between text-sm",
+                        isRTL && "flex-row-reverse"
+                      )}>
+                        <span className={cn("flex items-center gap-2", isRTL && "flex-row-reverse")}>
+                          <Phone className="h-4 w-4 text-purple-500" />
+                          {isRTL ? "שיחות" : "Calls"}
+                        </span>
+                        <span className="font-medium">
+                          {usageData.calls.remaining}/{usageData.calls.limit}
+                          <span className="text-muted-foreground ms-1">
+                            {isRTL ? "נותרו" : "left"}
+                          </span>
+                        </span>
+                      </div>
+                      <Progress
+                        value={getUsagePercent(usageData.calls.made, usageData.calls.limit)}
+                        className="h-2"
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        {usageData.calls.made} {isRTL ? "שיחות בוצעו" : "calls made"}
+                      </p>
+                    </div>
+                  )}
                 </div>
 
                 {/* Upgrade Banner for Free Users */}

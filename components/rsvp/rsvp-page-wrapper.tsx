@@ -100,10 +100,10 @@ export function RsvpPageWrapper({ settings, children }: RsvpPageWrapperProps) {
   const showShadow = settings?.cardShadow !== false;
 
   return (
-    <div className="relative min-h-screen min-h-[100dvh] w-full">
+    <div className="relative min-h-[100dvh] w-full">
       {/* Background Layer - fixed position for mobile compatibility */}
       <div
-        className="fixed inset-0 -z-20 h-screen h-[100dvh] w-screen"
+        className="fixed inset-0 -z-20 h-[100dvh] w-screen"
         style={{
           ...backgroundStyle,
           // Ensure image fills viewport on all devices
@@ -116,7 +116,7 @@ export function RsvpPageWrapper({ settings, children }: RsvpPageWrapperProps) {
       {/* Overlay for background images */}
       {settings?.backgroundType === "IMAGE" && settings.backgroundOverlay && settings.backgroundOverlay > 0 && (
         <div
-          className="fixed inset-0 -z-10 h-screen h-[100dvh] w-screen"
+          className="fixed inset-0 -z-10  h-[100dvh] w-screen"
           style={overlayStyle}
           aria-hidden="true"
         />
@@ -124,7 +124,7 @@ export function RsvpPageWrapper({ settings, children }: RsvpPageWrapperProps) {
 
       {/* Content */}
       <div
-        className="relative flex min-h-screen min-h-[100dvh] items-center justify-center p-4 py-8"
+        className="relative flex min-h-[100dvh] items-center justify-center p-4 py-8"
       >
         <div
           className={cn(

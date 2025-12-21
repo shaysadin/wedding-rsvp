@@ -559,7 +559,7 @@ export function RsvpCustomizer({
 
   return (
     <div
-      className="-m-4 flex min-h-0 flex-1 flex-col overflow-hidden lg:-mx-8 xl:-mx-8"
+      className="flex min-h-0 flex-1 flex-col overflow-hidden"
       dir={isRTL ? "rtl" : "ltr"}
     >
       {/* Header */}
