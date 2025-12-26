@@ -4,7 +4,7 @@ import { getTranslations } from "next-intl/server";
 import { HeaderSection } from "@/components/shared/header-section";
 
 export const metadata: Metadata = {
-  title: "Blog - Wedinex",
+  title: "Blog - OtakuVerse",
   description: "Tips, guides and insights for managing your wedding RSVPs and guest lists.",
 };
 

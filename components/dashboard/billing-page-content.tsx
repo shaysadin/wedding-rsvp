@@ -295,7 +295,7 @@ export function BillingPageContent({ userId, subscriptionPlan }: BillingPageCont
           className="w-full"
           asChild
         >
-          <a href="mailto:sales@wedinex.com">
+          <a href="mailto:sales@otakuverse.com">
             {tBilling("contactSales")}
           </a>
         </Button>

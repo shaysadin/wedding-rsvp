@@ -182,9 +182,9 @@ export function PricingCards({ userId, subscriptionPlan }: PricingCardsProps) {
           {t("questions")}{" "}
           <a
             className="font-medium text-primary hover:underline"
-            href="mailto:support@wedinex.com"
+            href="mailto:support@otakuverse.com"
           >
-            support@wedinex.com
+            support@otakuverse.com
           </a>{" "}
           {t("happyToHelp")}
         </p>

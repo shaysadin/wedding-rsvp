@@ -4,16 +4,16 @@ import { env } from "@/env.mjs";
 const site_url = env.NEXT_PUBLIC_APP_URL;
 
 export const siteConfig: SiteConfig = {
-  name: "Wedinex",
+  name: "OtakuVerse",
   description:
     "The smartest way to manage wedding RSVPs. Send invitations via WhatsApp & SMS, track responses in real-time, and create beautiful RSVP pages.",
   url: site_url,
   ogImage: `${site_url}/_static/og.jpg`,
   links: {
-    twitter: "https://twitter.com/wedinex",
+    twitter: "https://twitter.com/otakuverse",
     github: "",
   },
-  mailSupport: "support@wedinex.com",
+  mailSupport: "support@otakuverse.com",
 };
 
 export const footerLinks: SidebarNavItem[] = [
