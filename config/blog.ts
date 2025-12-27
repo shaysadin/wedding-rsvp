@@ -6,7 +6,7 @@ export const BLOG_CATEGORIES: {
   {
     title: "News",
     slug: "news",
-    description: "Updates and announcements from OtakuVerse.",
+    description: "Updates and announcements from Wedinex.",
   },
   {
     title: "Education",
@@ -17,7 +17,7 @@ export const BLOG_CATEGORIES: {
 
 export const BLOG_AUTHORS = {
   otakuverse: {
-    name: "OtakuVerse Team",
+    name: "Wedinex Team",
     image: "/_static/avatars/default.png",
     twitter: "otakuverse",
   },
