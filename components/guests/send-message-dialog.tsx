@@ -20,6 +20,7 @@ import { Icons } from "@/components/shared/icons";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { sendInvite, sendReminder, sendInteractiveInvite, sendInteractiveReminder, ChannelType, getCurrentUserUsage } from "@/actions/notifications";
+import { sendBulkMessages } from "@/actions/bulk-notifications";
 import { getAvailableChannels } from "@/actions/messaging-settings";
 import { Checkbox } from "@/components/ui/checkbox";
 
@@ -175,16 +176,58 @@ export function SendMessageDialog({
     setResults(null);
     setShowConfirmation(false);
 
-    let successCount = 0;
-    let failedCount = 0;
-    const errors: string[] = [];
     const total = guestIds.length;
 
-    for (let i = 0; i < guestIds.length; i++) {
-      const guestId = guestIds[i];
+    // Use bulk messaging for multiple guests (optimized for 20-800+ messages)
+    if (guestIds.length > 1) {
+      try {
+        // Show initial progress
+        setProgress(10);
+
+        const result = await sendBulkMessages({
+          eventId,
+          guestIds,
+          messageType,
+          messageFormat,
+          channel,
+          includeImage,
+        });
+
+        setProgress(100);
+
+        if (result.error && result.sent === 0) {
+          setResults({ success: 0, failed: total, errors: result.errors || [result.error] });
+          toast.error(t("messageSentFailed"));
+        } else {
+          setResults({
+            success: result.sent,
+            failed: result.failed + result.skippedLimit,
+            errors: result.errors,
+          });
+
+          if (result.sent > 0 && result.failed === 0 && result.skippedLimit === 0) {
+            toast.success(t("messageSentSuccess", { count: result.sent }));
+          } else if (result.sent > 0) {
+            toast.warning(t("messageSentPartial", { success: result.sent, failed: result.failed + result.skippedLimit }));
+          } else {
+            toast.error(t("messageSentFailed"));
+          }
+        }
+      } catch (error) {
+        setProgress(100);
+        setResults({ success: 0, failed: total, errors: ["Unexpected error occurred"] });
+        toast.error(t("messageSentFailed"));
+      }
+    } else {
+      // Single guest - use direct messaging for immediate feedback
+      let successCount = 0;
+      let failedCount = 0;
+      const errors: string[] = [];
 
       try {
         let result;
+        const guestId = guestIds[0];
+
         if (messageFormat === "INTERACTIVE") {
           // Interactive button messages (WhatsApp only)
           if (messageType === "INVITE") {
@@ -203,9 +246,7 @@ export function SendMessageDialog({
 
         if (result.error) {
           failedCount++;
-          if (!errors.includes(result.error)) {
-            errors.push(result.error);
-          }
+          errors.push(result.error);
         } else {
           successCount++;
         }
@@ -214,19 +255,17 @@ export function SendMessageDialog({
         errors.push("Unexpected error");
       }
 
-      setProgress(Math.round(((i + 1) / total) * 100));
+      setProgress(100);
+      setResults({ success: successCount, failed: failedCount, errors });
+
+      if (successCount > 0) {
+        toast.success(t("messageSentSuccess", { count: successCount }));
+      } else {
+        toast.error(t("messageSentFailed"));
+      }
     }
 
-    setResults({ success: successCount, failed: failedCount, errors });
     setSending(false);
-
-    if (successCount > 0 && failedCount === 0) {
-      toast.success(t("messageSentSuccess", { count: successCount }));
-    } else if (successCount > 0 && failedCount > 0) {
-      toast.warning(t("messageSentPartial", { success: successCount, failed: failedCount }));
-    } else {
-      toast.error(t("messageSentFailed"));
-    }
   };
 
   const handleClose = () => {
@@ -533,9 +572,22 @@ export function SendMessageDialog({
                 <div className="space-y-2">
                   <div className="flex items-center justify-between text-sm">
                     <span>{t("sending")}</span>
-                    <span>{progress}%</span>
+                    <span>
+                      {guestIds.length > 1
+                        ? (progress < 100 ? (isRTL ? "מעבד..." : "Processing...") : `${progress}%`)
+                        : `${progress}%`
+                      }
+                    </span>
                   </div>
-                  <Progress value={progress} className="h-2" />
+                  <Progress value={progress} className={`h-2 ${progress < 100 && guestIds.length > 1 ? "animate-pulse" : ""}`} />
+                  {guestIds.length > 10 && progress < 100 && (
+                    <p className="text-xs text-muted-foreground text-center">
+                      {isRTL
+                        ? `שולח ${guestIds.length} הודעות באצווה...`
+                        : `Sending ${guestIds.length} messages in batches...`
+                      }
+                    </p>
+                  )}
                 </div>
               )}
             </div>

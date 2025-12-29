@@ -455,7 +455,13 @@ export async function getEventGuests(eventId: string) {
         rsvp: true,
         notificationLogs: {
           where: {
-            type: { in: ["INVITE", "REMINDER"] },
+            type: { in: ["INVITE", "REMINDER", "INTERACTIVE_INVITE", "INTERACTIVE_REMINDER"] },
+          },
+          orderBy: { createdAt: "desc" },
+        },
+        vapiCallLogs: {
+          where: {
+            status: { in: ["COMPLETED", "NO_ANSWER", "BUSY"] },
           },
           orderBy: { createdAt: "desc" },
         },

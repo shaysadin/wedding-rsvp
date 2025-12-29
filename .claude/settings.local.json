@@ -13,7 +13,8 @@
       "Bash(npx prisma:*)",
       "Bash(nslookup:*)",
       "Bash(powershell:*)",
-      "Bash(node -e:*)"
+      "Bash(node -e:*)",
+      "Bash(dir /b \"C:\\\\Users\\\\Multiply\\\\Desktop\\\\Projects\\\\wedding rsvp\\\\next-saas-stripe-starter\\\\app\\\\[locale]\\\\\\(protected\\)\\\\dashboard\\\\events\\\\[eventId]\")"
     ],
     "deny": [],
     "ask": []
