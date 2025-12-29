@@ -151,7 +151,7 @@ async function validateTwilioSignature(
 /**
  * Handle button click response
  * Button IDs: "accept", "decline", "maybe"
- * Guest is identified by phone number
+ * Guest is identified by the original message SID (the message the user is responding to)
  */
 async function handleButtonResponse(
   buttonPayload: string,
@@ -176,18 +176,73 @@ async function handleButtonResponse(
   const phoneVariations = buildPhoneVariations(fromNumber);
   console.log("Looking up guest with phone variations:", phoneVariations);
 
-  // Find the guest by phone number (try multiple formats)
-  const guest = await prisma.guest.findFirst({
-    where: {
-      OR: phoneVariations.map(phone => ({ phoneNumber: phone })),
-    },
-    include: { rsvp: true, weddingEvent: true },
-  });
+  // Get the original message SID that the user is responding to
+  // Twilio sends this as OriginalRepliedMessageSid when responding to interactive messages
+  const originalMessageSid = rawPayload.OriginalRepliedMessageSid;
+  console.log("Original message SID:", originalMessageSid);
+
+  // Method 1: Find by original message SID (most accurate)
+  let guest: Awaited<ReturnType<typeof prisma.guest.findFirst<{ include: { rsvp: true; weddingEvent: true } }>>> = null;
+
+  if (originalMessageSid) {
+    // Look up the notification log that has this message SID in providerResponse
+    const notificationByMessageSid = await prisma.notificationLog.findFirst({
+      where: {
+        type: { in: ["INTERACTIVE_INVITE", "INTERACTIVE_REMINDER"] },
+        status: "SENT",
+        providerResponse: { contains: originalMessageSid },
+      },
+      include: {
+        guest: {
+          include: { rsvp: true, weddingEvent: true },
+        },
+      },
+    });
+
+    if (notificationByMessageSid?.guest) {
+      guest = notificationByMessageSid.guest;
+      console.log(`Found guest by message SID: ${guest.name} for event: ${guest.weddingEvent?.title}`);
+    }
+  }
+
+  // Method 2: Fallback - find the most recent interactive message sent to this phone
+  if (!guest) {
+    console.log("Message SID lookup failed, falling back to recent notification lookup");
+    const recentNotification = await prisma.notificationLog.findFirst({
+      where: {
+        type: { in: ["INTERACTIVE_INVITE", "INTERACTIVE_REMINDER"] },
+        status: "SENT",
+        guest: {
+          OR: phoneVariations.map(phone => ({ phoneNumber: phone })),
+        },
+      },
+      orderBy: { createdAt: "desc" },
+      include: {
+        guest: {
+          include: { rsvp: true, weddingEvent: true },
+        },
+      },
+    });
+    guest = recentNotification?.guest ?? null;
+  }
+
+  // Method 3: Last resort - direct guest lookup (for backwards compatibility)
+  if (!guest) {
+    console.log("No notification found, falling back to direct guest lookup");
+    guest = await prisma.guest.findFirst({
+      where: {
+        OR: phoneVariations.map(phone => ({ phoneNumber: phone })),
+      },
+      include: { rsvp: true, weddingEvent: true },
+    });
+  }
 
   if (!guest) {
     console.error("Guest not found for phone number:", fromNumber, "- tried variations:", phoneVariations);
     return;
   }
+
+  console.log(`Found guest: ${guest.name} for event: ${guest.weddingEvent?.title}`);
 
   // Determine RSVP status based on action
   let rsvpStatus: RsvpStatus | null = null;
@@ -260,7 +315,7 @@ async function handleButtonResponse(
 /**
  * Handle list picker selection
  * List Item IDs: "1", "2", "3", ... "10" (for 10+)
- * Guest is identified by phone number
+ * Guest is identified by the original message SID (the message the user is responding to)
  */
 async function handleListResponse(
   listId: string,
@@ -284,18 +339,71 @@ async function handleListResponse(
   // Build multiple phone number format variations for lookup
   const phoneVariations = buildPhoneVariations(fromNumber);
 
-  // Find the guest by phone number (try multiple formats)
-  const guest = await prisma.guest.findFirst({
-    where: {
-      OR: phoneVariations.map(phone => ({ phoneNumber: phone })),
-    },
-    include: { rsvp: true },
-  });
+  // Get the original message SID that the user is responding to
+  const originalMessageSid = rawPayload.OriginalRepliedMessageSid;
+  console.log("Original message SID for list response:", originalMessageSid);
+
+  // Method 1: Find by original message SID (most accurate)
+  let guest: Awaited<ReturnType<typeof prisma.guest.findFirst<{ include: { rsvp: true; weddingEvent: true } }>>> = null;
+
+  if (originalMessageSid) {
+    const notificationByMessageSid = await prisma.notificationLog.findFirst({
+      where: {
+        type: { in: ["INTERACTIVE_INVITE", "INTERACTIVE_REMINDER", "GUEST_COUNT_REQUEST"] },
+        status: "SENT",
+        providerResponse: { contains: originalMessageSid },
+      },
+      include: {
+        guest: {
+          include: { rsvp: true, weddingEvent: true },
+        },
+      },
+    });
+
+    if (notificationByMessageSid?.guest) {
+      guest = notificationByMessageSid.guest;
+      console.log(`Found guest by message SID: ${guest.name} for event: ${guest.weddingEvent?.title}`);
+    }
+  }
+
+  // Method 2: Fallback - find the most recent interactive/count request sent to this phone
+  if (!guest) {
+    console.log("Message SID lookup failed, falling back to recent notification lookup");
+    const recentNotification = await prisma.notificationLog.findFirst({
+      where: {
+        type: { in: ["INTERACTIVE_INVITE", "INTERACTIVE_REMINDER", "GUEST_COUNT_REQUEST"] },
+        status: "SENT",
+        guest: {
+          OR: phoneVariations.map(phone => ({ phoneNumber: phone })),
+        },
+      },
+      orderBy: { createdAt: "desc" },
+      include: {
+        guest: {
+          include: { rsvp: true, weddingEvent: true },
+        },
+      },
+    });
+    guest = recentNotification?.guest ?? null;
+  }
+
+  // Method 3: Last resort - direct guest lookup
+  if (!guest) {
+    console.log("No notification found, falling back to direct guest lookup");
+    guest = await prisma.guest.findFirst({
+      where: {
+        OR: phoneVariations.map(phone => ({ phoneNumber: phone })),
+      },
+      include: { rsvp: true, weddingEvent: true },
+    });
+  }
 
   if (!guest) {
     console.error("Guest not found for phone number:", fromNumber, "- tried variations:", phoneVariations);
     return;
   }
+
+  console.log(`Found guest for count update: ${guest.name} for event: ${guest.weddingEvent?.title}`);
 
   // Log the response
   await prisma.whatsAppButtonResponse.create({

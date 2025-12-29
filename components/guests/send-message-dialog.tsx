@@ -180,10 +180,20 @@ export function SendMessageDialog({
 
     // Use bulk messaging for multiple guests (optimized for 20-800+ messages)
     if (guestIds.length > 1) {
-      try {
-        // Show initial progress
-        setProgress(10);
+      // Animate progress smoothly during bulk send
+      const estimatedDuration = Math.max(2000, total * 150); // At least 2s, ~150ms per message
+      const progressInterval = setInterval(() => {
+        setProgress((prev) => {
+          // Smoothly increase up to 90%, leaving 10% for completion
+          if (prev < 90) {
+            const increment = (90 - prev) * 0.1; // Ease-out effect
+            return Math.min(90, prev + Math.max(1, increment));
+          }
+          return prev;
+        });
+      }, 100);
 
+      try {
         const result = await sendBulkMessages({
           eventId,
           guestIds,
@@ -193,6 +203,8 @@ export function SendMessageDialog({
           includeImage,
         });
 
+        // Stop the progress animation and complete
+        clearInterval(progressInterval);
         setProgress(100);
 
         if (result.error && result.sent === 0) {
@@ -214,6 +226,7 @@ export function SendMessageDialog({
           }
         }
       } catch (error) {
+        clearInterval(progressInterval);
         setProgress(100);
         setResults({ success: 0, failed: total, errors: ["Unexpected error occurred"] });
         toast.error(t("messageSentFailed"));
