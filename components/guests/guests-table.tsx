@@ -75,37 +75,76 @@ const statusColors: Record<RsvpStatus, string> = {
 };
 
 // Helper to get message status from notification logs and call logs
+// Status is based on the MOST RECENT interaction
 type MessageStatus = "not_sent" | "invite_sent" | "reminder_1" | "reminder_2_plus" | "called";
 
 function getMessageStatus(notificationLogs: NotificationLog[], vapiCallLogs?: VapiCallLog[]): MessageStatus {
-  // Check if guest has been called (completed call)
-  const hasBeenCalled = vapiCallLogs && vapiCallLogs.length > 0;
-
+  // Get successfully sent message logs
   const sentLogs = notificationLogs.filter(log =>
     log.status === NotificationStatus.SENT || log.status === NotificationStatus.DELIVERED
   );
 
-  // Check for both regular and interactive invites/reminders
-  const inviteSent = sentLogs.some(log =>
-    log.type === NotificationType.INVITE ||
-    log.type === NotificationType.INTERACTIVE_INVITE
+  // Get completed calls
+  const completedCalls = (vapiCallLogs || []).filter(call =>
+    call.status === "COMPLETED" || call.status === "NO_ANSWER" || call.status === "BUSY"
   );
-  const reminderCount = sentLogs.filter(log =>
-    log.type === NotificationType.REMINDER ||
-    log.type === NotificationType.INTERACTIVE_REMINDER
-  ).length;
 
-  // If called, show that status (highest priority for contact)
-  if (hasBeenCalled) {
+  // If no interactions at all, return not_sent
+  if (sentLogs.length === 0 && completedCalls.length === 0) {
+    return "not_sent";
+  }
+
+  // Find the most recent interaction
+  type Interaction = {
+    type: "invite" | "reminder" | "call";
+    timestamp: Date;
+  };
+
+  const interactions: Interaction[] = [];
+
+  // Add message interactions
+  for (const log of sentLogs) {
+    const timestamp = log.sentAt || log.createdAt;
+    if (timestamp) {
+      const isInvite = log.type === NotificationType.INVITE || log.type === NotificationType.INTERACTIVE_INVITE;
+      const isReminder = log.type === NotificationType.REMINDER || log.type === NotificationType.INTERACTIVE_REMINDER;
+
+      if (isInvite) {
+        interactions.push({ type: "invite", timestamp: new Date(timestamp) });
+      } else if (isReminder) {
+        interactions.push({ type: "reminder", timestamp: new Date(timestamp) });
+      }
+    }
+  }
+
+  // Add call interactions
+  for (const call of completedCalls) {
+    const timestamp = call.endedAt || call.startedAt || call.createdAt;
+    if (timestamp) {
+      interactions.push({ type: "call", timestamp: new Date(timestamp) });
+    }
+  }
+
+  // Sort by timestamp descending (most recent first)
+  interactions.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+
+  // Get the most recent interaction type
+  const mostRecent = interactions[0];
+  if (!mostRecent) {
+    return "not_sent";
+  }
+
+  // Return status based on most recent interaction
+  if (mostRecent.type === "call") {
     return "called";
   }
 
-  if (!inviteSent && reminderCount === 0) {
-    return "not_sent";
-  }
-  if (inviteSent && reminderCount === 0) {
+  if (mostRecent.type === "invite") {
     return "invite_sent";
   }
+
+  // For reminders, count total reminders sent
+  const reminderCount = interactions.filter(i => i.type === "reminder").length;
   if (reminderCount === 1) {
     return "reminder_1";
   }
