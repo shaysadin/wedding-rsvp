@@ -101,10 +101,9 @@ export function SendMessageDialog({
   const [usageStatus, setUsageStatus] = useState<UsageStatus | null>(null);
   const [loadingChannels, setLoadingChannels] = useState(true);
   const [showConfirmation, setShowConfirmation] = useState(false);
-  const [includeImage, setIncludeImage] = useState(false);
-
   // Check if interactive buttons are configured (WhatsApp only)
   const hasInvitationImage = !!invitationImageUrl;
+  const [includeImage, setIncludeImage] = useState(hasInvitationImage);
 
   // Count guests who already accepted
   const acceptedGuestsCount = guestStatuses?.filter(s => s === "ACCEPTED").length || 0;
@@ -119,7 +118,7 @@ export function SendMessageDialog({
       setLoadingChannels(true);
       setShowConfirmation(false);
       setMessageFormat("STANDARD");
-      setIncludeImage(false);
+      setIncludeImage(hasInvitationImage);
 
       // Fetch channels and usage in parallel
       Promise.all([
@@ -158,7 +157,7 @@ export function SendMessageDialog({
         setLoadingChannels(false);
       });
     }
-  }, [open]);
+  }, [open, hasInvitationImage]);
 
   const handleSendClick = () => {
     // If there are accepted guests, show confirmation first

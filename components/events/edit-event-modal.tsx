@@ -29,9 +29,10 @@ import { DateTimePicker } from "@/components/ui/date-time-picker";
 
 interface EditEventModalProps {
   event: WeddingEvent;
+  variant?: "button" | "card";
 }
 
-export function EditEventModal({ event }: EditEventModalProps) {
+export function EditEventModal({ event, variant = "button" }: EditEventModalProps) {
   const router = useRouter();
   const locale = useLocale();
   const t = useTranslations("events");
@@ -166,14 +167,23 @@ export function EditEventModal({ event }: EditEventModalProps) {
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
-        <Button
-          variant="outline"
-          size="sm"
-          className="h-8 shrink-0 gap-1.5 px-2.5 text-xs sm:h-9 sm:gap-2 sm:px-3 sm:text-sm"
-        >
-          <Icons.settings className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-          {isHebrew ? "ערוך פרטי אירוע" : "Edit Event Info"}
-        </Button>
+        {variant === "card" ? (
+          <button className="group flex h-16 w-16 shrink-0 flex-col items-center justify-center gap-1 rounded-xl border bg-card p-2 text-center transition-all hover:border-primary/50 hover:bg-accent sm:h-20 sm:w-20">
+            <Icons.settings className="h-5 w-5 text-muted-foreground transition-colors group-hover:text-primary sm:h-6 sm:w-6" />
+            <span className="text-[10px] font-medium leading-tight text-muted-foreground transition-colors group-hover:text-foreground sm:text-xs">
+              {isHebrew ? "ערוך אירוע" : "Edit Event"}
+            </span>
+          </button>
+        ) : (
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-8 shrink-0 gap-1.5 px-2.5 text-xs sm:h-9 sm:gap-2 sm:px-3 sm:text-sm"
+          >
+            <Icons.settings className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+            {isHebrew ? "ערוך פרטי אירוע" : "Edit Event Info"}
+          </Button>
+        )}
       </DialogTrigger>
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-[600px]">
         <DialogHeader className="shrink-0">

@@ -7,7 +7,6 @@ import { UserRole } from "@prisma/client";
 import { getCurrentUser } from "@/lib/session";
 import { getEventById } from "@/actions/events";
 import { DashboardHeader } from "@/components/dashboard/header";
-import { Button } from "@/components/ui/button";
 import { Icons } from "@/components/shared/icons";
 import { GuestsTableSkeleton } from "@/components/skeletons";
 import { AddGuestDialog } from "@/components/guests/add-guest-dialog";
@@ -40,9 +39,6 @@ export default async function EventPage({ params, searchParams }: EventPageProps
   const locale = await getLocale();
   const t = await getTranslations("events");
   const tGuests = await getTranslations("guests");
-  const tSeating = await getTranslations("seating");
-  const tInvitations = await getTranslations("invitations");
-  const tVoiceAgent = await getTranslations("voiceAgent");
 
   if (!user || user.role !== UserRole.ROLE_WEDDING_OWNER) {
     redirect(`/${locale}/dashboard`);
@@ -76,44 +72,73 @@ export default async function EventPage({ params, searchParams }: EventPageProps
 
   return (
     <PageFadeIn className="md:h-full">
-      <DashboardHeader heading={event.title} text={event.location}>
-        <div className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:overflow-visible sm:px-0">
-          <div className="flex flex-row gap-2 pb-1 sm:flex-wrap sm:pb-0">
-            <EditEventModal event={event} />
-            <CopyLinkButton eventId={event.id} firstGuestSlug={firstGuestSlug} />
-            <Button variant="outline" size="sm" className="h-8 shrink-0 gap-1.5 px-2.5 text-xs sm:h-9 sm:gap-2 sm:px-3 sm:text-sm" asChild>
-              <Link href={`/${locale}/dashboard/events/${event.id}/seating`}>
-                <Icons.layoutGrid className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                {tSeating("title")}
-              </Link>
-            </Button>
-            <Button variant="outline" size="sm" className="h-8 shrink-0 gap-1.5 px-2.5 text-xs sm:h-9 sm:gap-2 sm:px-3 sm:text-sm" asChild>
-              <Link href={`/${locale}/dashboard/events/${event.id}/invitations`}>
-                <Icons.mail className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                {tInvitations("title")}
-              </Link>
-            </Button>
-            <Button variant="outline" size="sm" className="h-8 shrink-0 gap-1.5 px-2.5 text-xs sm:h-9 sm:gap-2 sm:px-3 sm:text-sm" asChild>
-              <Link href={`/${locale}/dashboard/events/${event.id}/messages`}>
-                <Icons.messageSquare className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                {t("messageTemplates")}
-              </Link>
-            </Button>
-            <Button variant="outline" size="sm" className="h-8 shrink-0 gap-1.5 px-2.5 text-xs sm:h-9 sm:gap-2 sm:px-3 sm:text-sm" asChild>
-              <Link href={`/${locale}/dashboard/events/${event.id}/customize`}>
-                <Icons.palette className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                {t("customizeRsvp")}
-              </Link>
-            </Button>
-            <Button variant="outline" size="sm" className="h-8 shrink-0 gap-1.5 px-2.5 text-xs sm:h-9 sm:gap-2 sm:px-3 sm:text-sm" asChild>
-              <Link href={`/${locale}/dashboard/events/${event.id}/voice-agent`}>
-                <Icons.phone className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                {tVoiceAgent("title")}
-              </Link>
-            </Button>
-          </div>
+      <DashboardHeader heading={event.title} text={event.location} />
+
+      {/* Action Cards Grid */}
+      <div className="-mx-1 overflow-x-auto px-1 pb-1 sm:mx-0 sm:overflow-visible sm:px-0 sm:pb-0">
+        <div className="flex gap-2 sm:gap-3">
+          {/* Edit Event Modal Card */}
+          <EditEventModal event={event} variant="card" />
+
+          {/* Copy Link / View RSVP Card */}
+          <CopyLinkButton eventId={event.id} firstGuestSlug={firstGuestSlug} variant="card" />
+
+          {/* Seating Card */}
+          <Link
+            href={`/${locale}/dashboard/events/${event.id}/seating`}
+            className="group flex h-16 w-16 shrink-0 flex-col items-center justify-center gap-1 rounded-xl border bg-card p-2 text-center transition-all hover:border-primary/50 hover:bg-accent sm:h-20 sm:w-20"
+          >
+            <Icons.layoutGrid className="h-5 w-5 text-muted-foreground transition-colors group-hover:text-primary sm:h-6 sm:w-6" />
+            <span className="text-[10px] font-medium leading-tight text-muted-foreground transition-colors group-hover:text-foreground sm:text-xs">
+              {locale === "he" ? "סידורי ישיבה" : "Seating"}
+            </span>
+          </Link>
+
+          {/* Invitations Card */}
+          <Link
+            href={`/${locale}/dashboard/events/${event.id}/invitations`}
+            className="group flex h-16 w-16 shrink-0 flex-col items-center justify-center gap-1 rounded-xl border bg-card p-2 text-center transition-all hover:border-primary/50 hover:bg-accent sm:h-20 sm:w-20"
+          >
+            <Icons.mail className="h-5 w-5 text-muted-foreground transition-colors group-hover:text-primary sm:h-6 sm:w-6" />
+            <span className="text-[10px] font-medium leading-tight text-muted-foreground transition-colors group-hover:text-foreground sm:text-xs">
+              {locale === "he" ? "הזמנות" : "Invitations"}
+            </span>
+          </Link>
+
+          {/* Message Templates Card */}
+          <Link
+            href={`/${locale}/dashboard/events/${event.id}/messages`}
+            className="group flex h-16 w-16 shrink-0 flex-col items-center justify-center gap-1 rounded-xl border bg-card p-2 text-center transition-all hover:border-primary/50 hover:bg-accent sm:h-20 sm:w-20"
+          >
+            <Icons.messageSquare className="h-5 w-5 text-muted-foreground transition-colors group-hover:text-primary sm:h-6 sm:w-6" />
+            <span className="text-[10px] font-medium leading-tight text-muted-foreground transition-colors group-hover:text-foreground sm:text-xs">
+              {locale === "he" ? "הודעות" : "Messages"}
+            </span>
+          </Link>
+
+          {/* Customize RSVP Card */}
+          <Link
+            href={`/${locale}/dashboard/events/${event.id}/customize`}
+            className="group flex h-16 w-16 shrink-0 flex-col items-center justify-center gap-1 rounded-xl border bg-card p-2 text-center transition-all hover:border-primary/50 hover:bg-accent sm:h-20 sm:w-20"
+          >
+            <Icons.palette className="h-5 w-5 text-muted-foreground transition-colors group-hover:text-primary sm:h-6 sm:w-6" />
+            <span className="text-[10px] font-medium leading-tight text-muted-foreground transition-colors group-hover:text-foreground sm:text-xs">
+              {locale === "he" ? "עיצוב" : "Design"}
+            </span>
+          </Link>
+
+          {/* Voice Agent Card */}
+          <Link
+            href={`/${locale}/dashboard/events/${event.id}/voice-agent`}
+            className="group flex h-16 w-16 shrink-0 flex-col items-center justify-center gap-1 rounded-xl border bg-card p-2 text-center transition-all hover:border-primary/50 hover:bg-accent sm:h-20 sm:w-20"
+          >
+            <Icons.phone className="h-5 w-5 text-muted-foreground transition-colors group-hover:text-primary sm:h-6 sm:w-6" />
+            <span className="text-[10px] font-medium leading-tight text-muted-foreground transition-colors group-hover:text-foreground sm:text-xs">
+              {locale === "he" ? "סוכן קולי" : "Voice"}
+            </span>
+          </Link>
         </div>
-      </DashboardHeader>
+      </div>
 
       {/* Event Stats - Clickable Filters */}
       <EventStatsCards
