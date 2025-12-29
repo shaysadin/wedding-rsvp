@@ -6,7 +6,6 @@ import { UserRole } from "@prisma/client";
 
 import { getCurrentUser } from "@/lib/session";
 import { getEventById } from "@/actions/events";
-import { DashboardHeader } from "@/components/dashboard/header";
 import { Icons } from "@/components/shared/icons";
 import { GuestsTableSkeleton } from "@/components/skeletons";
 import { AddGuestDialog } from "@/components/guests/add-guest-dialog";
@@ -37,7 +36,6 @@ export default async function EventPage({ params, searchParams }: EventPageProps
   const { filter } = await searchParams;
   const user = await getCurrentUser();
   const locale = await getLocale();
-  const t = await getTranslations("events");
   const tGuests = await getTranslations("guests");
 
   if (!user || user.role !== UserRole.ROLE_WEDDING_OWNER) {
@@ -70,73 +68,64 @@ export default async function EventPage({ params, searchParams }: EventPageProps
   // Get the first guest's slug for RSVP preview
   const firstGuestSlug = event.guests[0]?.slug || null;
 
+  // Shared card styles with glow effect
+  const cardClassName = "group relative flex h-14 w-14 shrink-0 flex-col items-center justify-center gap-0.5 rounded-xl border border-border/50 bg-card/80 backdrop-blur-sm p-1.5 text-center transition-all duration-300 hover:border-purple-500/60 hover:shadow-[0_0_20px_rgba(168,85,247,0.35)] dark:hover:shadow-[0_0_20px_rgba(168,85,247,0.25)] sm:h-16 sm:w-16 sm:gap-1 sm:p-2";
+
   return (
     <PageFadeIn className="md:h-full">
-      <DashboardHeader heading={event.title} text={event.location} />
+      {/* Header with Title and Action Cards on same row */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        {/* Title Section */}
+        <div className="min-w-0 shrink-0">
+          <h1 className="font-heading text-xl font-semibold sm:text-2xl whitespace-nowrap overflow-hidden text-ellipsis">
+            {event.title}
+          </h1>
+          <p className="text-sm text-muted-foreground sm:text-base whitespace-nowrap overflow-hidden text-ellipsis">
+            {event.location}
+          </p>
+        </div>
 
-      {/* Action Cards Grid */}
-      <div className="-mx-1 overflow-x-auto px-1 pb-1 sm:mx-0 sm:overflow-visible sm:px-0 sm:pb-0">
-        <div className="flex gap-2 sm:gap-3">
-          {/* Edit Event Modal Card */}
-          <EditEventModal event={event} variant="card" />
+        {/* Action Cards - Scrollable on mobile */}
+        <div className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:overflow-visible sm:px-0">
+          <div className="flex gap-2">
+            <EditEventModal event={event} variant="card" />
+            <CopyLinkButton eventId={event.id} firstGuestSlug={firstGuestSlug} variant="card" />
 
-          {/* Copy Link / View RSVP Card */}
-          <CopyLinkButton eventId={event.id} firstGuestSlug={firstGuestSlug} variant="card" />
+            <Link href={`/${locale}/dashboard/events/${event.id}/seating`} className={cardClassName}>
+              <Icons.layoutGrid className="h-4 w-4 text-muted-foreground transition-colors group-hover:text-purple-500 sm:h-5 sm:w-5" />
+              <span className="text-[9px] font-medium leading-tight text-muted-foreground transition-colors group-hover:text-foreground sm:text-[10px]">
+                {locale === "he" ? "ישיבה" : "Seating"}
+              </span>
+            </Link>
 
-          {/* Seating Card */}
-          <Link
-            href={`/${locale}/dashboard/events/${event.id}/seating`}
-            className="group flex h-16 w-16 shrink-0 flex-col items-center justify-center gap-1 rounded-xl border bg-card p-2 text-center transition-all hover:border-primary/50 hover:bg-accent sm:h-20 sm:w-20"
-          >
-            <Icons.layoutGrid className="h-5 w-5 text-muted-foreground transition-colors group-hover:text-primary sm:h-6 sm:w-6" />
-            <span className="text-[10px] font-medium leading-tight text-muted-foreground transition-colors group-hover:text-foreground sm:text-xs">
-              {locale === "he" ? "סידורי ישיבה" : "Seating"}
-            </span>
-          </Link>
+            <Link href={`/${locale}/dashboard/events/${event.id}/invitations`} className={cardClassName}>
+              <Icons.mail className="h-4 w-4 text-muted-foreground transition-colors group-hover:text-purple-500 sm:h-5 sm:w-5" />
+              <span className="text-[9px] font-medium leading-tight text-muted-foreground transition-colors group-hover:text-foreground sm:text-[10px]">
+                {locale === "he" ? "הזמנות" : "Invites"}
+              </span>
+            </Link>
 
-          {/* Invitations Card */}
-          <Link
-            href={`/${locale}/dashboard/events/${event.id}/invitations`}
-            className="group flex h-16 w-16 shrink-0 flex-col items-center justify-center gap-1 rounded-xl border bg-card p-2 text-center transition-all hover:border-primary/50 hover:bg-accent sm:h-20 sm:w-20"
-          >
-            <Icons.mail className="h-5 w-5 text-muted-foreground transition-colors group-hover:text-primary sm:h-6 sm:w-6" />
-            <span className="text-[10px] font-medium leading-tight text-muted-foreground transition-colors group-hover:text-foreground sm:text-xs">
-              {locale === "he" ? "הזמנות" : "Invitations"}
-            </span>
-          </Link>
+            <Link href={`/${locale}/dashboard/events/${event.id}/messages`} className={cardClassName}>
+              <Icons.messageSquare className="h-4 w-4 text-muted-foreground transition-colors group-hover:text-purple-500 sm:h-5 sm:w-5" />
+              <span className="text-[9px] font-medium leading-tight text-muted-foreground transition-colors group-hover:text-foreground sm:text-[10px]">
+                {locale === "he" ? "הודעות" : "Messages"}
+              </span>
+            </Link>
 
-          {/* Message Templates Card */}
-          <Link
-            href={`/${locale}/dashboard/events/${event.id}/messages`}
-            className="group flex h-16 w-16 shrink-0 flex-col items-center justify-center gap-1 rounded-xl border bg-card p-2 text-center transition-all hover:border-primary/50 hover:bg-accent sm:h-20 sm:w-20"
-          >
-            <Icons.messageSquare className="h-5 w-5 text-muted-foreground transition-colors group-hover:text-primary sm:h-6 sm:w-6" />
-            <span className="text-[10px] font-medium leading-tight text-muted-foreground transition-colors group-hover:text-foreground sm:text-xs">
-              {locale === "he" ? "הודעות" : "Messages"}
-            </span>
-          </Link>
+            <Link href={`/${locale}/dashboard/events/${event.id}/customize`} className={cardClassName}>
+              <Icons.palette className="h-4 w-4 text-muted-foreground transition-colors group-hover:text-purple-500 sm:h-5 sm:w-5" />
+              <span className="text-[9px] font-medium leading-tight text-muted-foreground transition-colors group-hover:text-foreground sm:text-[10px]">
+                {locale === "he" ? "עיצוב" : "Design"}
+              </span>
+            </Link>
 
-          {/* Customize RSVP Card */}
-          <Link
-            href={`/${locale}/dashboard/events/${event.id}/customize`}
-            className="group flex h-16 w-16 shrink-0 flex-col items-center justify-center gap-1 rounded-xl border bg-card p-2 text-center transition-all hover:border-primary/50 hover:bg-accent sm:h-20 sm:w-20"
-          >
-            <Icons.palette className="h-5 w-5 text-muted-foreground transition-colors group-hover:text-primary sm:h-6 sm:w-6" />
-            <span className="text-[10px] font-medium leading-tight text-muted-foreground transition-colors group-hover:text-foreground sm:text-xs">
-              {locale === "he" ? "עיצוב" : "Design"}
-            </span>
-          </Link>
-
-          {/* Voice Agent Card */}
-          <Link
-            href={`/${locale}/dashboard/events/${event.id}/voice-agent`}
-            className="group flex h-16 w-16 shrink-0 flex-col items-center justify-center gap-1 rounded-xl border bg-card p-2 text-center transition-all hover:border-primary/50 hover:bg-accent sm:h-20 sm:w-20"
-          >
-            <Icons.phone className="h-5 w-5 text-muted-foreground transition-colors group-hover:text-primary sm:h-6 sm:w-6" />
-            <span className="text-[10px] font-medium leading-tight text-muted-foreground transition-colors group-hover:text-foreground sm:text-xs">
-              {locale === "he" ? "סוכן קולי" : "Voice"}
-            </span>
-          </Link>
+            <Link href={`/${locale}/dashboard/events/${event.id}/voice-agent`} className={cardClassName}>
+              <Icons.phone className="h-4 w-4 text-muted-foreground transition-colors group-hover:text-purple-500 sm:h-5 sm:w-5" />
+              <span className="text-[9px] font-medium leading-tight text-muted-foreground transition-colors group-hover:text-foreground sm:text-[10px]">
+                {locale === "he" ? "קולי" : "Voice"}
+              </span>
+            </Link>
+          </div>
         </div>
       </div>
 

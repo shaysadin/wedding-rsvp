@@ -29,11 +29,11 @@ export function CopyLinkButton({ eventId, firstGuestSlug, variant = "button" }: 
     return (
       <button
         onClick={handlePreview}
-        className="group flex h-16 w-16 shrink-0 flex-col items-center justify-center gap-1 rounded-xl border bg-card p-2 text-center transition-all hover:border-primary/50 hover:bg-accent sm:h-20 sm:w-20"
+        className="group relative flex h-14 w-14 shrink-0 flex-col items-center justify-center gap-0.5 rounded-xl border border-border/50 bg-card/80 backdrop-blur-sm p-1.5 text-center transition-all duration-300 hover:border-purple-500/60 hover:shadow-[0_0_20px_rgba(168,85,247,0.35)] dark:hover:shadow-[0_0_20px_rgba(168,85,247,0.25)] sm:h-16 sm:w-16 sm:gap-1 sm:p-2"
       >
-        <Icons.eye className="h-5 w-5 text-muted-foreground transition-colors group-hover:text-primary sm:h-6 sm:w-6" />
-        <span className="text-[10px] font-medium leading-tight text-muted-foreground transition-colors group-hover:text-foreground sm:text-xs">
-          {isHebrew ? "צפה בדף" : "View Page"}
+        <Icons.eye className="h-4 w-4 text-muted-foreground transition-colors group-hover:text-purple-500 sm:h-5 sm:w-5" />
+        <span className="text-[9px] font-medium leading-tight text-muted-foreground transition-colors group-hover:text-foreground sm:text-[10px]">
+          {isHebrew ? "צפייה" : "View"}
         </span>
       </button>
     );
