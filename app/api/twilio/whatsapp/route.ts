@@ -440,9 +440,14 @@ async function sendConfirmationMessage(
     const eventDate = event.dateTime.toLocaleDateString("he-IL");
     const guestCount = guest.rsvp?.guestCount || 1;
 
+    // Build location string with venue if available
+    const locationString = event.venue
+      ? `${event.venue}, ${event.location}`
+      : event.location;
+
     let message: string;
     if (status === "ACCEPTED") {
-      message = `תודה ${guest.name}! 🎉\n\nאישור ההגעה שלך ל${event.title} התקבל בהצלחה.\n\n📅 תאריך: ${eventDate}\n📍 מיקום: ${event.location}\n👥 מספר אורחים: ${guestCount}\n\nמחכים לראותכם! 💕`;
+      message = `תודה ${guest.name}! 🎉\n\nאישור ההגעה שלך ל${event.title} התקבל בהצלחה.\n\n📅 תאריך: ${eventDate}\n📍 מיקום: ${locationString}\n👥 מספר אורחים: ${guestCount}\n\nמחכים לראותכם! 💕`;
     } else {
       message = `תודה ${guest.name} על התשובה.\n\nקיבלנו את ההודעה שלא תוכל/י להגיע ל${event.title}.\n\nמקווים לראותך באירוע אחר! 💕`;
     }
