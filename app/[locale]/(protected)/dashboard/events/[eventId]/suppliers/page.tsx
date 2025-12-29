@@ -36,6 +36,17 @@ interface SupplierStats {
   remainingPayments: number;
   supplierCount: number;
   overdueCount: number;
+  // Guest statistics
+  totalInvited?: number;
+  approvedGuestCount?: number;
+  acceptedInvitations?: number;
+  declinedCount?: number;
+  pendingCount?: number;
+  // Cost per guest metrics
+  costPerApprovedGuest?: number;
+  costPerInvited?: number;
+  budgetPerApprovedGuest?: number;
+  budgetPerInvited?: number;
   byCategory: {
     category: string;
     count: number;

@@ -23,6 +23,7 @@ import { SupplierCategory } from "@prisma/client";
 
 /**
  * Create a new supplier
+ * If status is COMPLETED and agreedPrice is set, automatically creates a full payment
  */
 export async function createSupplier(input: CreateSupplierInput) {
   try {
@@ -65,6 +66,19 @@ export async function createSupplier(input: CreateSupplierInput) {
       },
     });
 
+    // If status is COMPLETED and agreedPrice is set, create a full payment automatically
+    if (validatedData.status === "COMPLETED" && validatedData.agreedPrice && validatedData.agreedPrice > 0) {
+      await prisma.supplierPayment.create({
+        data: {
+          supplierId: supplier.id,
+          amount: new Decimal(validatedData.agreedPrice),
+          method: "BANK_TRANSFER",
+          description: "Full payment (auto-created on completion)",
+          paidAt: new Date(),
+        },
+      });
+    }
+
     revalidatePath(`/dashboard/events/${validatedData.weddingEventId}/suppliers`);
 
     return { success: true, supplier };
@@ -76,6 +90,7 @@ export async function createSupplier(input: CreateSupplierInput) {
 
 /**
  * Update an existing supplier
+ * If status changes to COMPLETED and there's remaining payment, automatically creates a payment for the remaining amount
  */
 export async function updateSupplier(input: UpdateSupplierInput) {
   try {
@@ -86,11 +101,16 @@ export async function updateSupplier(input: UpdateSupplierInput) {
 
     const validatedData = updateSupplierSchema.parse(input);
 
-    // Verify supplier belongs to user's event
+    // Verify supplier belongs to user's event and get existing payments
     const existingSupplier = await prisma.supplier.findFirst({
       where: {
         id: validatedData.id,
         weddingEvent: { ownerId: user.id },
+      },
+      include: {
+        payments: {
+          select: { amount: true },
+        },
       },
     });
 
@@ -122,6 +142,45 @@ export async function updateSupplier(input: UpdateSupplierInput) {
         bookedAt: validatedData.bookedAt,
       },
     });
+
+    // If status is changing to COMPLETED, create a payment for any remaining amount
+    if (
+      validatedData.status === "COMPLETED" &&
+      existingSupplier.status !== "COMPLETED"
+    ) {
+      // Use the new agreedPrice if provided, otherwise use existing
+      const agreedPrice = validatedData.agreedPrice !== undefined
+        ? validatedData.agreedPrice
+        : existingSupplier.agreedPrice
+          ? Number(existingSupplier.agreedPrice)
+          : 0;
+
+      if (agreedPrice > 0) {
+        // Calculate total already paid
+        const totalPaid = existingSupplier.payments.reduce(
+          (sum, p) => sum + Number(p.amount),
+          0
+        );
+
+        // Calculate remaining amount
+        const remainingAmount = agreedPrice - totalPaid;
+
+        // Create payment for remaining amount if there's any
+        if (remainingAmount > 0) {
+          await prisma.supplierPayment.create({
+            data: {
+              supplierId: supplier.id,
+              amount: new Decimal(remainingAmount),
+              method: "BANK_TRANSFER",
+              description: remainingAmount === agreedPrice
+                ? "Full payment (auto-created on completion)"
+                : "Final payment (auto-created on completion)",
+              paidAt: new Date(),
+            },
+          });
+        }
+      }
+    }
 
     revalidatePath(`/dashboard/events/${existingSupplier.weddingEventId}/suppliers`);
 
@@ -428,15 +487,35 @@ export async function getSupplierStats(eventId: string) {
       return { error: "Unauthorized" };
     }
 
-    // Verify event belongs to user and get budget
+    // Verify event belongs to user and get budget + guests
     const event = await prisma.weddingEvent.findFirst({
       where: { id: eventId, ownerId: user.id },
-      select: { totalBudget: true },
+      select: {
+        totalBudget: true,
+        guests: {
+          select: {
+            id: true,
+            rsvp: {
+              select: {
+                status: true,
+                guestCount: true,
+              },
+            },
+          },
+        },
+      },
     });
 
     if (!event) {
       return { error: "Event not found or unauthorized" };
     }
+
+    // Calculate guest statistics
+    const totalInvited = event.guests.length;
+    const acceptedGuests = event.guests.filter(g => g.rsvp?.status === "ACCEPTED");
+    const approvedGuestCount = acceptedGuests.reduce((sum, g) => sum + (g.rsvp?.guestCount || 1), 0);
+    const declinedCount = event.guests.filter(g => g.rsvp?.status === "DECLINED").length;
+    const pendingCount = event.guests.filter(g => !g.rsvp || g.rsvp.status === "PENDING").length;
 
     // Get all suppliers with payments
     const suppliers = await prisma.supplier.findMany({
@@ -511,6 +590,12 @@ export async function getSupplierStats(eventId: string) {
 
     const totalBudget = event.totalBudget ? Number(event.totalBudget) : 0;
 
+    // Calculate cost per guest metrics
+    const costPerApprovedGuest = approvedGuestCount > 0 ? totalAgreed / approvedGuestCount : 0;
+    const costPerInvited = totalInvited > 0 ? totalAgreed / totalInvited : 0;
+    const budgetPerApprovedGuest = approvedGuestCount > 0 && totalBudget > 0 ? totalBudget / approvedGuestCount : 0;
+    const budgetPerInvited = totalInvited > 0 && totalBudget > 0 ? totalBudget / totalInvited : 0;
+
     return {
       success: true,
       stats: {
@@ -521,6 +606,17 @@ export async function getSupplierStats(eventId: string) {
         remainingPayments: totalAgreed - totalPaid,
         supplierCount: suppliers.length,
         overdueCount,
+        // Guest statistics
+        totalInvited,
+        approvedGuestCount,
+        acceptedInvitations: acceptedGuests.length,
+        declinedCount,
+        pendingCount,
+        // Cost per guest metrics
+        costPerApprovedGuest,
+        costPerInvited,
+        budgetPerApprovedGuest,
+        budgetPerInvited,
         byCategory: Object.entries(byCategory).map(([category, data]) => ({
           category: category as SupplierCategory,
           ...data,

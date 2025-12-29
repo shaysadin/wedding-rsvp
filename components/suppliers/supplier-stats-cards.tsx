@@ -8,7 +8,10 @@ import {
   PiggyBank,
   Users,
   AlertTriangle,
-  TrendingUp
+  TrendingUp,
+  UserCheck,
+  Calculator,
+  Target
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -23,6 +26,17 @@ interface SupplierStatsCardsProps {
     remainingPayments: number;
     supplierCount: number;
     overdueCount: number;
+    // Guest statistics
+    totalInvited?: number;
+    approvedGuestCount?: number;
+    acceptedInvitations?: number;
+    declinedCount?: number;
+    pendingCount?: number;
+    // Cost per guest metrics
+    costPerApprovedGuest?: number;
+    costPerInvited?: number;
+    budgetPerApprovedGuest?: number;
+    budgetPerInvited?: number;
   };
   currency?: string;
 }
@@ -48,7 +62,8 @@ export function SupplierStatsCards({ stats, currency = "ILS" }: SupplierStatsCar
     ? Math.round((stats.totalPaid / stats.totalAgreed) * 100)
     : 0;
 
-  const cards = [
+  // Main budget cards
+  const budgetCards = [
     {
       key: "budget",
       label: isRTL ? "תקציב כולל" : "Total Budget",
@@ -114,62 +129,124 @@ export function SupplierStatsCards({ stats, currency = "ILS" }: SupplierStatsCar
     },
   ];
 
-  return (
-    <div className="mx-4 overflow-x-auto px-4 sm:mx-0 sm:overflow-visible sm:px-0">
-      <div className="flex gap-3 px-1 pb-2 sm:grid sm:grid-cols-2 sm:gap-4 sm:pb-0 lg:grid-cols-5">
-        {cards.map((card, index) => (
-          <motion.div
-            key={card.key}
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.03, duration: 0.15, ease: "easeOut" }}
-            whileHover={{ y: -2, transition: { duration: 0.15 } }}
-            style={{ willChange: "transform" }}
-            className="shrink-0 sm:shrink"
-          >
-            <Card
+  // Guest cost analytics cards
+  const guestCostCards = [
+    {
+      key: "costPerApproved",
+      label: isRTL ? "עלות לאורח מאושר" : "Cost per Approved",
+      value: formatCurrency(stats.costPerApprovedGuest || 0),
+      subLabel: stats.approvedGuestCount
+        ? `${stats.approvedGuestCount} ${isRTL ? "אורחים מאושרים" : "approved guests"}`
+        : isRTL ? "אין אישורים" : "No approvals yet",
+      icon: UserCheck,
+      iconBg: "bg-indigo-500",
+      cardBg: "bg-indigo-50 dark:bg-indigo-950/40",
+      borderColor: "border-indigo-200/50 dark:border-indigo-800/30",
+    },
+    {
+      key: "costPerInvited",
+      label: isRTL ? "עלות למוזמן" : "Cost per Invited",
+      value: formatCurrency(stats.costPerInvited || 0),
+      subLabel: stats.totalInvited
+        ? `${stats.totalInvited} ${isRTL ? "מוזמנים" : "total invited"}`
+        : isRTL ? "אין מוזמנים" : "No guests yet",
+      icon: Calculator,
+      iconBg: "bg-orange-500",
+      cardBg: "bg-orange-50 dark:bg-orange-950/40",
+      borderColor: "border-orange-200/50 dark:border-orange-800/30",
+    },
+    {
+      key: "budgetPerApproved",
+      label: isRTL ? "תקציב לאורח מאושר" : "Budget per Approved",
+      value: stats.budgetPerApprovedGuest ? formatCurrency(stats.budgetPerApprovedGuest) : "-",
+      subLabel: stats.totalBudget > 0 && stats.approvedGuestCount
+        ? `${isRTL ? "מתוך תקציב" : "from budget"} ${formatCurrency(stats.totalBudget)}`
+        : isRTL ? "הגדר תקציב" : "Set budget first",
+      icon: Target,
+      iconBg: "bg-teal-500",
+      cardBg: "bg-teal-50 dark:bg-teal-950/40",
+      borderColor: "border-teal-200/50 dark:border-teal-800/30",
+    },
+  ];
+
+  const renderCard = (card: typeof budgetCards[0], index: number, baseDelay: number = 0) => (
+    <motion.div
+      key={card.key}
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: (baseDelay + index) * 0.03, duration: 0.15, ease: "easeOut" }}
+      whileHover={{ y: -2, transition: { duration: 0.15 } }}
+      style={{ willChange: "transform" }}
+      className="shrink-0 sm:shrink"
+    >
+      <Card
+        className={cn(
+          "relative w-[160px] overflow-hidden border transition-all duration-300 hover:shadow-md sm:w-auto",
+          card.cardBg,
+          card.borderColor
+        )}
+      >
+        <CardContent className="p-4 sm:p-5">
+          <div className={cn(
+            "flex items-center gap-3 sm:gap-4",
+            isRTL && "flex-row-reverse"
+          )}>
+            {/* Icon */}
+            <div
               className={cn(
-                "relative w-[160px] overflow-hidden border transition-all duration-300 hover:shadow-md sm:w-auto",
-                card.cardBg,
-                card.borderColor
+                "flex h-9 w-9 shrink-0 items-center justify-center rounded-xl transition-transform duration-150 hover:scale-105 sm:h-11 sm:w-11",
+                card.iconBg
               )}
             >
-              <CardContent className="p-4 sm:p-5">
-                <div className={cn(
-                  "flex items-center gap-3 sm:gap-4",
-                  isRTL && "flex-row-reverse"
-                )}>
-                  {/* Icon */}
-                  <div
-                    className={cn(
-                      "flex h-9 w-9 shrink-0 items-center justify-center rounded-xl transition-transform duration-150 hover:scale-105 sm:h-11 sm:w-11",
-                      card.iconBg
-                    )}
-                  >
-                    <card.icon className="h-4 w-4 text-white sm:h-5 sm:w-5" />
-                  </div>
+              <card.icon className="h-4 w-4 text-white sm:h-5 sm:w-5" />
+            </div>
 
-                  {/* Content */}
-                  <div className={cn("flex-1 min-w-0", isRTL && "text-right")}>
-                    <p className="text-xs font-medium text-muted-foreground truncate sm:text-sm">
-                      {card.label}
-                    </p>
-                    <p className="mt-0.5 text-lg font-bold tracking-tight sm:text-xl">
-                      {card.value}
-                    </p>
-                    <p className={cn(
-                      "text-[10px] text-muted-foreground/80 truncate sm:text-xs",
-                      card.alert && "text-amber-600 dark:text-amber-400 font-medium"
-                    )}>
-                      {card.subLabel}
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
-        ))}
+            {/* Content */}
+            <div className={cn("flex-1 min-w-0", isRTL && "text-right")}>
+              <p className="text-xs font-medium text-muted-foreground truncate sm:text-sm">
+                {card.label}
+              </p>
+              <p className="mt-0.5 text-lg font-bold tracking-tight sm:text-xl">
+                {card.value}
+              </p>
+              <p className={cn(
+                "text-[10px] text-muted-foreground/80 truncate sm:text-xs",
+                card.alert && "text-amber-600 dark:text-amber-400 font-medium"
+              )}>
+                {card.subLabel}
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </motion.div>
+  );
+
+  return (
+    <div className="space-y-4">
+      {/* Budget Stats Row */}
+      <div className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:overflow-visible sm:px-0">
+        <div className="flex gap-3 px-1 pb-2 sm:grid sm:grid-cols-2 sm:gap-4 sm:pb-0 lg:grid-cols-5">
+          {budgetCards.map((card, index) => renderCard(card, index))}
+        </div>
       </div>
+
+      {/* Guest Cost Analytics Row */}
+      {(stats.totalInvited !== undefined && stats.totalInvited > 0) && (
+        <div className="space-y-2">
+          <h3 className={cn(
+            "text-sm font-medium text-muted-foreground px-1",
+            isRTL && "text-right"
+          )}>
+            {isRTL ? "ניתוח עלות לאורח" : "Guest Cost Analysis"}
+          </h3>
+          <div className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:overflow-visible sm:px-0">
+            <div className="flex gap-3 px-1 pb-2 sm:grid sm:grid-cols-3 sm:gap-4 sm:pb-0">
+              {guestCostCards.map((card, index) => renderCard(card, index, budgetCards.length))}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -211,7 +211,7 @@ export function SuppliersTable({
 
   // Table content component to avoid duplication
   const tableContent = (inModal = false) => (
-    <div className="rounded-lg border overflow-auto">
+    <div className="rounded-lg border overflow-auto" dir={isRTL ? "rtl" : "ltr"}>
       <Table>
         <TableHeader>
           <TableRow className="bg-muted/50">
@@ -224,7 +224,7 @@ export function SuppliersTable({
             <TableHead className={cn(isRTL && "text-right")}>
               {isRTL ? "סטטוס" : "Status"}
             </TableHead>
-            <TableHead className={cn("text-center", isRTL && "text-right")}>
+            <TableHead className={cn(isRTL ? "text-right" : "text-center")}>
               {isRTL ? "מחיר סגור" : "Agreed Price"}
             </TableHead>
             <TableHead className={cn(isRTL && "text-right")}>
@@ -272,7 +272,7 @@ export function SuppliersTable({
                 <TableCell>
                   <SupplierStatusBadge status={supplier.status} locale={locale} />
                 </TableCell>
-                <TableCell className="text-center">
+                <TableCell className={cn(isRTL ? "text-right" : "text-center")}>
                   {supplier.agreedPrice ? (
                     <span className="font-medium">
                       {formatCurrency(Number(supplier.agreedPrice))}
@@ -283,9 +283,15 @@ export function SuppliersTable({
                 </TableCell>
                 <TableCell>
                   {supplier.agreedPrice ? (
-                    <div className="flex items-center gap-3 min-w-[180px]">
-                      <Progress value={supplier.paidPercent} className="h-2 flex-1" />
-                      <span className="text-xs text-muted-foreground w-20 text-end">
+                    <div className={cn(
+                      "flex items-center gap-3 min-w-[180px]",
+                      isRTL && "flex-row-reverse"
+                    )}>
+                      <Progress value={supplier.paidPercent} className={cn("h-2 flex-1", isRTL && "rotate-180")} />
+                      <span className={cn(
+                        "text-xs text-muted-foreground w-24 whitespace-nowrap",
+                        isRTL ? "text-start" : "text-end"
+                      )}>
                         {formatCurrency(supplier.totalPaid)} / {formatCurrency(Number(supplier.agreedPrice))}
                       </span>
                     </div>
@@ -308,19 +314,19 @@ export function SuppliersTable({
                           <MoreHorizontal className="h-4 w-4" />
                         </Button>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent align={isRTL ? "start" : "end"}>
-                        <DropdownMenuLabel>
+                      <DropdownMenuContent align={isRTL ? "start" : "end"} className={cn(isRTL && "text-right")}>
+                        <DropdownMenuLabel className={cn(isRTL && "text-right")}>
                           {isRTL ? "פעולות" : "Actions"}
                         </DropdownMenuLabel>
                         <DropdownMenuSeparator />
 
-                        <DropdownMenuItem onClick={() => onViewDetails(supplier)}>
-                          <ChevronRight className="me-2 h-4 w-4" />
+                        <DropdownMenuItem onClick={() => onViewDetails(supplier)} className={cn(isRTL && "flex-row-reverse")}>
+                          <ChevronRight className={cn("h-4 w-4", isRTL ? "ms-2 rotate-180" : "me-2")} />
                           {isRTL ? "פרטים" : "View Details"}
                         </DropdownMenuItem>
 
-                        <DropdownMenuItem onClick={() => onEdit(supplier)}>
-                          <Edit className="me-2 h-4 w-4" />
+                        <DropdownMenuItem onClick={() => onEdit(supplier)} className={cn(isRTL && "flex-row-reverse")}>
+                          <Edit className={cn("h-4 w-4", isRTL ? "ms-2" : "me-2")} />
                           {isRTL ? "עריכה" : "Edit"}
                         </DropdownMenuItem>
 
@@ -329,8 +335,9 @@ export function SuppliersTable({
                             onClick={() =>
                               window.open(`tel:${supplier.phoneNumber}`, "_self")
                             }
+                            className={cn(isRTL && "flex-row-reverse")}
                           >
-                            <Phone className="me-2 h-4 w-4" />
+                            <Phone className={cn("h-4 w-4", isRTL ? "ms-2" : "me-2")} />
                             {isRTL ? "התקשר" : "Call"}
                           </DropdownMenuItem>
                         )}
@@ -340,8 +347,9 @@ export function SuppliersTable({
                             onClick={() =>
                               window.open(`mailto:${supplier.email}`, "_blank")
                             }
+                            className={cn(isRTL && "flex-row-reverse")}
                           >
-                            <Mail className="me-2 h-4 w-4" />
+                            <Mail className={cn("h-4 w-4", isRTL ? "ms-2" : "me-2")} />
                             {isRTL ? "שלח מייל" : "Send Email"}
                           </DropdownMenuItem>
                         )}
@@ -351,8 +359,9 @@ export function SuppliersTable({
                             onClick={() =>
                               window.open(supplier.website!, "_blank")
                             }
+                            className={cn(isRTL && "flex-row-reverse")}
                           >
-                            <ExternalLink className="me-2 h-4 w-4" />
+                            <ExternalLink className={cn("h-4 w-4", isRTL ? "ms-2" : "me-2")} />
                             {isRTL ? "אתר" : "Website"}
                           </DropdownMenuItem>
                         )}
@@ -361,9 +370,9 @@ export function SuppliersTable({
 
                         <DropdownMenuItem
                           onClick={() => handleDelete(supplier.id, supplier.name)}
-                          className="text-destructive"
+                          className={cn("text-destructive", isRTL && "flex-row-reverse")}
                         >
-                          <Trash2 className="me-2 h-4 w-4" />
+                          <Trash2 className={cn("h-4 w-4", isRTL ? "ms-2" : "me-2")} />
                           {isRTL ? "מחק" : "Delete"}
                         </DropdownMenuItem>
                       </DropdownMenuContent>
@@ -440,8 +449,11 @@ export function SuppliersTable({
 
     {/* Expanded Modal */}
     <Dialog open={isTableExpanded} onOpenChange={setIsTableExpanded}>
-      <DialogContent className="flex h-[90vh] max-h-[90vh] w-[95vw] max-w-[95vw] flex-col gap-0 p-0">
-        <DialogHeader className="flex shrink-0 flex-row items-center justify-between border-b px-6 py-4">
+      <DialogContent className="flex h-[90vh] max-h-[90vh] w-[95vw] max-w-[95vw] flex-col gap-0 p-0" dir={isRTL ? "rtl" : "ltr"}>
+        <DialogHeader className={cn(
+          "flex shrink-0 flex-row items-center justify-between border-b px-6 py-4",
+          isRTL && "flex-row-reverse"
+        )}>
           <DialogTitle>{isRTL ? "ספקים" : "Suppliers"}</DialogTitle>
           <Button
             variant="ghost"

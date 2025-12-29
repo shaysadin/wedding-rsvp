@@ -86,7 +86,7 @@ export default async function ProtectedLayout({ children }: ProtectedLayoutProps
             />
 
             <div className="w-full flex-1">
-              <SearchCommand links={filteredLinks} />
+              <SearchCommand links={filteredLinks} userEvents={userEvents} />
             </div>
 
             <div className="flex items-center flex-row-reverse">
