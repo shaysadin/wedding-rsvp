@@ -155,20 +155,21 @@ export function EditEventModal({ event }: EditEventModalProps) {
     }
   };
 
-  const handleClose = () => {
-    if (!isLoading) {
-      setOpen(false);
+  const handleOpenChange = (newOpen: boolean) => {
+    // Prevent closing while loading
+    if (!newOpen && isLoading) {
+      return;
     }
+    setOpen(newOpen);
   };
 
   return (
-    <Dialog open={open} onOpenChange={handleClose}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         <Button
           variant="outline"
           size="sm"
           className="h-8 shrink-0 gap-1.5 px-2.5 text-xs sm:h-9 sm:gap-2 sm:px-3 sm:text-sm"
-          onClick={() => setOpen(true)}
         >
           <Icons.settings className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
           {isHebrew ? "ערוך פרטי אירוע" : "Edit Event Info"}
@@ -356,7 +357,7 @@ export function EditEventModal({ event }: EditEventModalProps) {
             <Button
               type="button"
               variant="ghost"
-              onClick={handleClose}
+              onClick={() => handleOpenChange(false)}
               disabled={isLoading}
             >
               {tCommon("cancel")}
