@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import * as DialogPrimitive from "@radix-ui/react-dialog"
+import { cva, type VariantProps } from "class-variance-authority"
 import { X } from "lucide-react"
 
 import { cn } from "@/lib/utils"
@@ -29,34 +30,54 @@ const DialogOverlay = React.forwardRef<
 ))
 DialogOverlay.displayName = DialogPrimitive.Overlay.displayName
 
+const dialogContentVariants = cva(
+  cn(
+    // Mobile: full screen with safe areas
+    "fixed inset-0 z-50 flex flex-col bg-card",
+    // Desktop: centered modal
+    "sm:inset-auto sm:left-1/2 sm:top-1/2 sm:max-h-[90vh] sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-xl sm:border sm:border-border/50 sm:shadow-xl",
+    // Animations
+    "duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
+    // Mobile slide up, desktop zoom
+    "data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom sm:data-[state=closed]:slide-out-to-bottom-0 sm:data-[state=open]:slide-in-from-bottom-0 sm:data-[state=closed]:zoom-out-95 sm:data-[state=open]:zoom-in-95",
+  ),
+  {
+    variants: {
+      size: {
+        sm: "sm:max-w-sm sm:w-full",
+        default: "sm:max-w-md sm:w-full",
+        md: "sm:max-w-lg sm:w-full",
+        lg: "sm:max-w-2xl sm:w-full",
+        xl: "sm:max-w-4xl sm:w-full",
+        full: "sm:max-w-[95vw] sm:w-[95vw]",
+        auto: "sm:w-auto sm:max-w-[90vw]",
+      },
+    },
+    defaultVariants: {
+      size: "default",
+    },
+  }
+)
+
+interface DialogContentProps
+  extends React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content>,
+    VariantProps<typeof dialogContentVariants> {}
+
 const DialogContent = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Content>,
-  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content>
->(({ className, children, ...props }, ref) => (
+  DialogContentProps
+>(({ className, children, size, ...props }, ref) => (
   <DialogPortal>
     <DialogOverlay />
     <DialogPrimitive.Content
       ref={ref}
-      className={cn(
-        // Mobile: full screen with safe areas
-        "fixed inset-0 z-50 flex flex-col bg-card",
-        // Desktop: centered modal (max-w-lg is default, can be overridden by className)
-        "sm:inset-auto sm:left-1/2 sm:top-1/2 sm:max-h-[90vh] sm:w-full sm:min-w-[50vw] sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-xl sm:border sm:border-border/50 sm:shadow-xl",
-        // Animations
-        "duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
-        // Mobile slide up, desktop zoom
-        "data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom sm:data-[state=closed]:slide-out-to-bottom-0 sm:data-[state=open]:slide-in-from-bottom-0 sm:data-[state=closed]:zoom-out-95 sm:data-[state=open]:zoom-in-95",
-        // Default max-width for desktop (placed after other sm: classes so it can be overridden)
-        "sm:max-w-lg",
-        className
-      )}
+      className={cn(dialogContentVariants({ size }), className)}
       {...props}
     >
-      {/* Scrollable content wrapper */}
       <div className="flex min-h-0 flex-1 flex-col overflow-y-auto p-4 sm:p-6">
         {children}
       </div>
-      <DialogPrimitive.Close className="absolute end-3 top-3 rounded-lg p-1.5 opacity-70 ring-offset-background transition-all hover:opacity-100 hover:bg-muted focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground sm:end-4 sm:top-4 sm:p-1">
+      <DialogPrimitive.Close className="absolute end-3 top-3 rounded-lg p-1.5 opacity-70 ring-offset-background transition-all hover:opacity-100 hover:bg-muted focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground sm:end-4 sm:top-4 sm:p-1 z-10">
         <X className="size-5 sm:size-4" />
         <span className="sr-only">Close</span>
       </DialogPrimitive.Close>

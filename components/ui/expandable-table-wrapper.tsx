@@ -50,12 +50,13 @@ export function ExpandableTableWrapper({
       {/* Expanded modal view */}
       <Dialog open={isExpanded} onOpenChange={setIsExpanded}>
         <DialogContent
+          size="full"
           className={cn(
-            "flex h-[90vh] max-h-[90vh] w-[95vw] max-w-[95vw] flex-col gap-0 p-0",
+            "flex h-[90vh] max-h-[90vh] flex-col gap-0 [&>div]:p-0",
             expandedClassName
           )}
         >
-          <DialogHeader className="flex flex-row items-center justify-between border-b px-6 py-4">
+          <DialogHeader className="flex shrink-0 flex-row items-center justify-between border-b px-6 py-4">
             <div className="flex items-center gap-4">
               {title && <DialogTitle>{title}</DialogTitle>}
               {headerActions}
@@ -139,8 +140,9 @@ export function ExpandableTableContainer({
         {isExpanded && (
           <Dialog open={isExpanded} onOpenChange={setIsExpanded}>
             <DialogContent
+              size="full"
               className={cn(
-                "flex h-[90vh] max-h-[90vh] w-[95vw] max-w-[95vw] flex-col gap-0 p-0",
+                "flex h-[90vh] max-h-[90vh] flex-col gap-0 [&>div]:p-0",
                 expandedClassName
               )}
             >

@@ -484,16 +484,28 @@ export async function sendBulkInvites(eventId: string) {
       return { error: "Event not found" };
     }
 
-    // Get all guests who haven't received an invite yet
+    // Get all guests who haven't received an invite yet (including interactive invites)
     const uninvitedGuests = await prisma.guest.findMany({
       where: {
         weddingEventId: eventId,
-        notificationLogs: {
-          none: {
-            type: NotificationType.INVITE,
-            status: "SENT",
+        AND: [
+          {
+            notificationLogs: {
+              none: {
+                type: NotificationType.INVITE,
+                status: "SENT",
+              },
+            },
           },
-        },
+          {
+            notificationLogs: {
+              none: {
+                type: NotificationType.INTERACTIVE_INVITE,
+                status: "SENT",
+              },
+            },
+          },
+        ],
       },
       include: { weddingEvent: true },
     });

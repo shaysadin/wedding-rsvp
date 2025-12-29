@@ -85,8 +85,15 @@ function getMessageStatus(notificationLogs: NotificationLog[], vapiCallLogs?: Va
     log.status === NotificationStatus.SENT || log.status === NotificationStatus.DELIVERED
   );
 
-  const inviteSent = sentLogs.some(log => log.type === NotificationType.INVITE);
-  const reminderCount = sentLogs.filter(log => log.type === NotificationType.REMINDER).length;
+  // Check for both regular and interactive invites/reminders
+  const inviteSent = sentLogs.some(log =>
+    log.type === NotificationType.INVITE ||
+    log.type === NotificationType.INTERACTIVE_INVITE
+  );
+  const reminderCount = sentLogs.filter(log =>
+    log.type === NotificationType.REMINDER ||
+    log.type === NotificationType.INTERACTIVE_REMINDER
+  ).length;
 
   // If called, show that status (highest priority for contact)
   if (hasBeenCalled) {
@@ -909,7 +916,7 @@ export function GuestsTable({ guests, eventId, initialFilter = "all", invitation
 
       {/* Expanded Table Modal */}
       <Dialog open={isTableExpanded} onOpenChange={setIsTableExpanded}>
-        <DialogContent className="flex h-[90vh] max-h-[90vh] w-[95vw] max-w-[95vw] flex-col gap-0 p-0">
+        <DialogContent size="full" className="flex h-[90vh] max-h-[90vh] flex-col gap-0 [&>div]:p-0">
           <DialogHeader className="flex shrink-0 flex-row items-center justify-between border-b px-6 py-4">
             <DialogTitle>{t("title")}</DialogTitle>
             <Button

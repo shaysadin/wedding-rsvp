@@ -273,7 +273,7 @@ export function CallLogTable({ callLogs, onRefresh }: CallLogTableProps) {
 
     {/* Expanded Modal */}
     <Dialog open={isTableExpanded} onOpenChange={setIsTableExpanded}>
-      <DialogContent className="flex h-[90vh] max-h-[90vh] w-[95vw] max-w-[95vw] flex-col gap-0 p-0">
+      <DialogContent size="full" className="flex h-[90vh] max-h-[90vh] flex-col gap-0 [&>div]:p-0">
         <DialogHeader className="flex shrink-0 flex-row items-center justify-between border-b px-6 py-4">
           <div className="flex items-center gap-3">
             <div className="h-10 w-10 rounded-full bg-violet-100 dark:bg-violet-500/20 flex items-center justify-center">
