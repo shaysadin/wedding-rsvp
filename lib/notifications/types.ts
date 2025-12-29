@@ -33,6 +33,19 @@ export interface NotificationService {
     status: "ACCEPTED" | "DECLINED",
     preferredChannel?: NotificationChannel
   ): Promise<NotificationResult>;
+
+  // Interactive button messages (WhatsApp only)
+  sendInteractiveInvite(
+    guest: Guest,
+    event: WeddingEvent,
+    includeImage?: boolean
+  ): Promise<NotificationResult>;
+
+  sendInteractiveReminder(
+    guest: Guest,
+    event: WeddingEvent,
+    includeImage?: boolean
+  ): Promise<NotificationResult>;
 }
 
 export interface NotificationTemplate {

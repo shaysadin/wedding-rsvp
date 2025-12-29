@@ -26,6 +26,13 @@ export interface MessagingSettingsInput {
   whatsappReminderTemplateText?: string | null;
   whatsappConfirmationTemplateText?: string | null;
 
+  // Interactive Button Templates
+  whatsappInteractiveInviteContentSid?: string | null;
+  whatsappInteractiveReminderContentSid?: string | null;
+  whatsappGuestCountListContentSid?: string | null;
+  whatsappInteractiveInviteText?: string | null;
+  whatsappInteractiveReminderText?: string | null;
+
   // SMS Config
   smsProvider?: string | null;
   smsApiKey?: string | null;
@@ -121,6 +128,23 @@ export async function updateMessagingSettings(input: MessagingSettingsInput) {
     }
     if (input.whatsappConfirmationTemplateText !== undefined) {
       updateData.whatsappConfirmationTemplateText = input.whatsappConfirmationTemplateText;
+    }
+
+    // Interactive Button Templates
+    if (input.whatsappInteractiveInviteContentSid !== undefined) {
+      updateData.whatsappInteractiveInviteContentSid = input.whatsappInteractiveInviteContentSid;
+    }
+    if (input.whatsappInteractiveReminderContentSid !== undefined) {
+      updateData.whatsappInteractiveReminderContentSid = input.whatsappInteractiveReminderContentSid;
+    }
+    if (input.whatsappGuestCountListContentSid !== undefined) {
+      updateData.whatsappGuestCountListContentSid = input.whatsappGuestCountListContentSid;
+    }
+    if (input.whatsappInteractiveInviteText !== undefined) {
+      updateData.whatsappInteractiveInviteText = input.whatsappInteractiveInviteText;
+    }
+    if (input.whatsappInteractiveReminderText !== undefined) {
+      updateData.whatsappInteractiveReminderText = input.whatsappInteractiveReminderText;
     }
 
     // SMS fields

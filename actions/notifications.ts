@@ -572,3 +572,139 @@ export async function sendBulkInvites(eventId: string) {
     return { error: "Failed to send invites" };
   }
 }
+
+// Send interactive invite with buttons (WhatsApp only)
+export async function sendInteractiveInvite(guestId: string, includeImage: boolean = false) {
+  try {
+    const user = await getCurrentUser();
+
+    if (!user || user.role !== UserRole.ROLE_WEDDING_OWNER) {
+      return { error: "Unauthorized" };
+    }
+
+    // Get guest with event
+    const guest = await prisma.guest.findFirst({
+      where: { id: guestId },
+      include: { weddingEvent: true },
+    });
+
+    if (!guest || guest.weddingEvent.ownerId !== user.id) {
+      return { error: "Guest not found" };
+    }
+
+    // Check phone number
+    if (!guest.phoneNumber) {
+      return { error: "Guest has no phone number" };
+    }
+
+    // Check usage before sending (WhatsApp only for interactive)
+    const remaining = await getRemainingMessages(user.id);
+    if (remaining.whatsapp <= 0) {
+      return { error: "WhatsApp message limit reached", limitReached: true };
+    }
+
+    // Get notification service and send interactive message
+    const notificationService = await getNotificationService();
+    const result = await notificationService.sendInteractiveInvite(
+      guest,
+      guest.weddingEvent,
+      includeImage
+    );
+
+    // Log to database
+    await prisma.notificationLog.create({
+      data: {
+        guestId: guest.id,
+        type: NotificationType.INTERACTIVE_INVITE,
+        channel: NotificationChannel.WHATSAPP,
+        status: result.status,
+        providerResponse: result.providerResponse,
+        sentAt: result.success ? new Date() : null,
+      },
+    });
+
+    // Update usage tracking if message was sent
+    if (result.success) {
+      await checkAndUpdateUsage(user.id, NotificationChannel.WHATSAPP, 1);
+    }
+
+    revalidatePath(`/dashboard/events/${guest.weddingEventId}`);
+
+    if (!result.success && result.error) {
+      return { error: result.error, channel: "WHATSAPP" };
+    }
+
+    return { success: result.success, channel: "WHATSAPP" };
+  } catch (error) {
+    console.error("Error sending interactive invite:", error);
+    return { error: "Failed to send interactive invite" };
+  }
+}
+
+// Send interactive reminder with buttons (WhatsApp only)
+export async function sendInteractiveReminder(guestId: string, includeImage: boolean = false) {
+  try {
+    const user = await getCurrentUser();
+
+    if (!user || user.role !== UserRole.ROLE_WEDDING_OWNER) {
+      return { error: "Unauthorized" };
+    }
+
+    // Get guest with event and RSVP
+    const guest = await prisma.guest.findFirst({
+      where: { id: guestId },
+      include: { weddingEvent: true, rsvp: true },
+    });
+
+    if (!guest || guest.weddingEvent.ownerId !== user.id) {
+      return { error: "Guest not found" };
+    }
+
+    // Check phone number
+    if (!guest.phoneNumber) {
+      return { error: "Guest has no phone number" };
+    }
+
+    // Check usage before sending (WhatsApp only for interactive)
+    const remaining = await getRemainingMessages(user.id);
+    if (remaining.whatsapp <= 0) {
+      return { error: "WhatsApp message limit reached", limitReached: true };
+    }
+
+    // Get notification service and send interactive message
+    const notificationService = await getNotificationService();
+    const result = await notificationService.sendInteractiveReminder(
+      guest,
+      guest.weddingEvent,
+      includeImage
+    );
+
+    // Log to database
+    await prisma.notificationLog.create({
+      data: {
+        guestId: guest.id,
+        type: NotificationType.INTERACTIVE_REMINDER,
+        channel: NotificationChannel.WHATSAPP,
+        status: result.status,
+        providerResponse: result.providerResponse,
+        sentAt: result.success ? new Date() : null,
+      },
+    });
+
+    // Update usage tracking if message was sent
+    if (result.success) {
+      await checkAndUpdateUsage(user.id, NotificationChannel.WHATSAPP, 1);
+    }
+
+    revalidatePath(`/dashboard/events/${guest.weddingEventId}`);
+
+    if (!result.success && result.error) {
+      return { error: result.error, channel: "WHATSAPP" };
+    }
+
+    return { success: result.success, channel: "WHATSAPP" };
+  } catch (error) {
+    console.error("Error sending interactive reminder:", error);
+    return { error: "Failed to send interactive reminder" };
+  }
+}

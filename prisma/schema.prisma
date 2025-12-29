@@ -143,24 +143,25 @@ model WeddingEvent {
 }
 
 model Guest {
-  id                  String               @id @default(cuid())
-  weddingEventId      String               @map("wedding_event_id")
+  id                  String                   @id @default(cuid())
+  weddingEventId      String                   @map("wedding_event_id")
   name                String
-  phoneNumber         String?              @map("phone_number")
+  phoneNumber         String?                  @map("phone_number")
   email               String?
-  slug                String               @unique
+  slug                String                   @unique
   side                String?
-  groupName           String?              @map("group_name")
+  groupName           String?                  @map("group_name")
   notes               String?
-  createdAt           DateTime             @default(now()) @map("created_at")
-  updatedAt           DateTime             @default(now()) @updatedAt @map("updated_at")
-  expectedGuests      Int                  @default(1) @map("expected_guests")
+  createdAt           DateTime                 @default(now()) @map("created_at")
+  updatedAt           DateTime                 @default(now()) @updatedAt @map("updated_at")
+  expectedGuests      Int                      @default(1) @map("expected_guests")
   bulkMessageJobItems BulkMessageJobItem[]
   rsvp                GuestRsvp?
-  weddingEvent        WeddingEvent         @relation(fields: [weddingEventId], references: [id], onDelete: Cascade)
+  weddingEvent        WeddingEvent             @relation(fields: [weddingEventId], references: [id], onDelete: Cascade)
   notificationLogs    NotificationLog[]
   tableAssignment     TableAssignment?
   vapiCallLogs        VapiCallLog[]
+  whatsappResponses   WhatsAppButtonResponse[]
 
   @@index([weddingEventId])
   @@index([slug])
@@ -461,6 +462,18 @@ model MessagingProviderSettings {
   vapiPhoneNumberId                String?  @map("vapi_phone_number_id")
   vapiWebhookSecret                String?  @map("vapi_webhook_secret")
 
+  // Interactive Button Templates
+  whatsappInteractiveInviteContentSid   String? @map("whatsapp_interactive_invite_content_sid")
+  whatsappInteractiveReminderContentSid String? @map("whatsapp_interactive_reminder_content_sid")
+  whatsappGuestCountListContentSid      String? @map("whatsapp_guest_count_list_content_sid")
+
+  // Interactive template text for display
+  whatsappInteractiveInviteText    String? @map("whatsapp_interactive_invite_text")
+  whatsappInteractiveReminderText  String? @map("whatsapp_interactive_reminder_text")
+
+  // Related phone numbers
+  whatsappPhoneNumbers WhatsAppPhoneNumber[]
+
   @@map("messaging_provider_settings")
 }
 
@@ -731,6 +744,39 @@ model SupplierPayment {
   @@map("supplier_payments")
 }
 
+model WhatsAppPhoneNumber {
+  id                         String                    @id @default(cuid())
+  phoneNumber                String                    @unique @map("phone_number")
+  displayName                String?                   @map("display_name")
+  isActive                   Boolean                   @default(false) @map("is_active")
+  messagingProviderSettingsId String?                  @map("messaging_provider_settings_id")
+  createdAt                  DateTime                  @default(now()) @map("created_at")
+  updatedAt                  DateTime                  @default(now()) @updatedAt @map("updated_at")
+  messagingProviderSettings  MessagingProviderSettings? @relation(fields: [messagingProviderSettingsId], references: [id], onDelete: Cascade)
+
+  @@index([isActive])
+  @@map("whatsapp_phone_numbers")
+}
+
+model WhatsAppButtonResponse {
+  id                String      @id @default(cuid())
+  guestId           String      @map("guest_id")
+  notificationLogId String?     @map("notification_log_id")
+  responseType      String      @map("response_type") // "button" | "list"
+  buttonId          String      @map("button_id")
+  buttonTitle       String      @map("button_title")
+  rsvpStatusSet     RsvpStatus? @map("rsvp_status_set")
+  guestCountSet     Int?        @map("guest_count_set")
+  processedAt       DateTime?   @map("processed_at")
+  rawPayload        Json?       @map("raw_payload")
+  createdAt         DateTime    @default(now()) @map("created_at")
+
+  guest Guest @relation(fields: [guestId], references: [id], onDelete: Cascade)
+
+  @@index([guestId])
+  @@map("whatsapp_button_responses")
+}
+
 enum UserRole {
   ROLE_PLATFORM_OWNER
   ROLE_WEDDING_OWNER
@@ -761,6 +807,9 @@ enum NotificationType {
   REMINDER
   CONFIRMATION
   IMAGE_INVITE
+  INTERACTIVE_INVITE
+  INTERACTIVE_REMINDER
+  GUEST_COUNT_REQUEST
 }
 
 enum NotificationChannel {

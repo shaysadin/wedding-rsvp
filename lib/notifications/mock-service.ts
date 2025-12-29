@@ -140,6 +140,74 @@ export class MockNotificationService implements NotificationService {
       }),
     };
   }
+
+  async sendInteractiveInvite(
+    guest: Guest,
+    event: WeddingEvent,
+    includeImage: boolean = false
+  ): Promise<NotificationResult> {
+    // Log to console (mock implementation)
+    console.log("=".repeat(50));
+    console.log("📱 MOCK NOTIFICATION - INTERACTIVE INVITE");
+    console.log("=".repeat(50));
+    console.log(`Channel: WHATSAPP`);
+    console.log(`To: ${guest.phoneNumber}`);
+    console.log(`Guest: ${guest.name}`);
+    console.log(`Event: ${event.title}`);
+    console.log(`Include Image: ${includeImage}`);
+    console.log(`Image URL: ${event.invitationImageUrl || "N/A"}`);
+    console.log("-".repeat(50));
+    console.log("Buttons:");
+    console.log("  [Yes, I'll attend]");
+    console.log("  [No, I won't attend]");
+    console.log("  [Don't know yet]");
+    console.log("=".repeat(50));
+
+    return {
+      success: true,
+      channel: "WHATSAPP",
+      status: "SENT",
+      providerResponse: JSON.stringify({
+        mock: true,
+        timestamp: new Date().toISOString(),
+        message: "Mock interactive invite sent successfully",
+      }),
+    };
+  }
+
+  async sendInteractiveReminder(
+    guest: Guest,
+    event: WeddingEvent,
+    includeImage: boolean = false
+  ): Promise<NotificationResult> {
+    // Log to console (mock implementation)
+    console.log("=".repeat(50));
+    console.log("🔔 MOCK NOTIFICATION - INTERACTIVE REMINDER");
+    console.log("=".repeat(50));
+    console.log(`Channel: WHATSAPP`);
+    console.log(`To: ${guest.phoneNumber}`);
+    console.log(`Guest: ${guest.name}`);
+    console.log(`Event: ${event.title}`);
+    console.log(`Include Image: ${includeImage}`);
+    console.log(`Image URL: ${event.invitationImageUrl || "N/A"}`);
+    console.log("-".repeat(50));
+    console.log("Buttons:");
+    console.log("  [Yes, I'll attend]");
+    console.log("  [No, I won't attend]");
+    console.log("  [Don't know yet]");
+    console.log("=".repeat(50));
+
+    return {
+      success: true,
+      channel: "WHATSAPP",
+      status: "SENT",
+      providerResponse: JSON.stringify({
+        mock: true,
+        timestamp: new Date().toISOString(),
+        message: "Mock interactive reminder sent successfully",
+      }),
+    };
+  }
 }
 
 // Export singleton instance

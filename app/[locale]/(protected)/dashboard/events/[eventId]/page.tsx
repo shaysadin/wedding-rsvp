@@ -15,6 +15,8 @@ import { BulkAddGuestsDialog } from "@/components/guests/bulk-add-guests-dialog"
 import { ImportGuestsDialog } from "@/components/guests/import-guests-dialog";
 import { CopyLinkButton } from "@/components/events/copy-link-button";
 import { EventStatsCards } from "@/components/events/event-stats-cards";
+import { InvitationImageUpload } from "@/components/events/invitation-image-upload";
+import { EditEventModal } from "@/components/events/edit-event-modal";
 import { DuplicatePhoneWarning } from "@/components/guests/duplicate-phone-warning";
 import { PageFadeIn } from "@/components/shared/page-fade-in";
 
@@ -77,6 +79,7 @@ export default async function EventPage({ params, searchParams }: EventPageProps
       <DashboardHeader heading={event.title} text={event.location}>
         <div className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:overflow-visible sm:px-0">
           <div className="flex flex-row gap-2 pb-1 sm:flex-wrap sm:pb-0">
+            <EditEventModal event={event} />
             <CopyLinkButton eventId={event.id} firstGuestSlug={firstGuestSlug} />
             <Button variant="outline" size="sm" className="h-8 shrink-0 gap-1.5 px-2.5 text-xs sm:h-9 sm:gap-2 sm:px-3 sm:text-sm" asChild>
               <Link href={`/${locale}/dashboard/events/${event.id}/seating`}>
@@ -127,13 +130,14 @@ export default async function EventPage({ params, searchParams }: EventPageProps
         <div className="flex shrink-0 flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
           <h2 className="text-lg font-semibold sm:text-xl">{tGuests("title")}</h2>
           <div className="flex flex-wrap gap-1.5 sm:gap-2">
+            <InvitationImageUpload eventId={event.id} currentImageUrl={event.invitationImageUrl} />
             <BulkAddGuestsDialog eventId={event.id} />
             <ImportGuestsDialog eventId={event.id} />
             <AddGuestDialog eventId={event.id} />
           </div>
         </div>
         <div className="md:min-h-0 md:flex-1 md:overflow-hidden">
-          <GuestsTable guests={event.guests} eventId={event.id} initialFilter={activeFilter} />
+          <GuestsTable guests={event.guests} eventId={event.id} initialFilter={activeFilter} invitationImageUrl={event.invitationImageUrl} />
         </div>
       </div>
     </PageFadeIn>

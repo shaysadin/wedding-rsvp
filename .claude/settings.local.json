@@ -9,7 +9,11 @@
       "Bash(wc:*)",
       "WebSearch",
       "WebFetch(domain:docs.vapi.ai)",
-      "Bash(npx prisma db push)"
+      "Bash(npx prisma db push)",
+      "Bash(npx prisma:*)",
+      "Bash(nslookup:*)",
+      "Bash(powershell:*)",
+      "Bash(node -e:*)"
     ],
     "deny": [],
     "ask": []

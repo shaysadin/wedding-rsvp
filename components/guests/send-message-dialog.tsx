@@ -19,8 +19,9 @@ import { Label } from "@/components/ui/label";
 import { Icons } from "@/components/shared/icons";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { sendInvite, sendReminder, ChannelType, getCurrentUserUsage } from "@/actions/notifications";
+import { sendInvite, sendReminder, sendInteractiveInvite, sendInteractiveReminder, ChannelType, getCurrentUserUsage } from "@/actions/notifications";
 import { getAvailableChannels } from "@/actions/messaging-settings";
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface SendMessageDialogProps {
   open: boolean;
@@ -30,9 +31,11 @@ interface SendMessageDialogProps {
   guestStatuses?: ("PENDING" | "ACCEPTED" | "DECLINED" | "MAYBE")[];
   eventId: string;
   mode: "single" | "bulk";
+  invitationImageUrl?: string | null; // For interactive messages with image
 }
 
 type MessageType = "INVITE" | "REMINDER";
+type MessageFormat = "STANDARD" | "INTERACTIVE";
 
 const MESSAGE_TYPES: { value: MessageType; labelKey: string; icon: keyof typeof Icons; descriptionKey: string }[] = [
   {
@@ -81,6 +84,7 @@ export function SendMessageDialog({
   guestStatuses,
   eventId,
   mode,
+  invitationImageUrl,
 }: SendMessageDialogProps) {
   const t = useTranslations("guests");
   const tc = useTranslations("common");
@@ -88,7 +92,8 @@ export function SendMessageDialog({
   const locale = useLocale();
   const isRTL = locale === "he";
   const [messageType, setMessageType] = useState<MessageType>("INVITE");
-  const [channel, setChannel] = useState<ChannelType>("SMS");
+  const [messageFormat, setMessageFormat] = useState<MessageFormat>("STANDARD");
+  const [channel, setChannel] = useState<ChannelType>("WHATSAPP");
   const [sending, setSending] = useState(false);
   const [progress, setProgress] = useState(0);
   const [results, setResults] = useState<{ success: number; failed: number; errors: string[] } | null>(null);
@@ -96,6 +101,10 @@ export function SendMessageDialog({
   const [usageStatus, setUsageStatus] = useState<UsageStatus | null>(null);
   const [loadingChannels, setLoadingChannels] = useState(true);
   const [showConfirmation, setShowConfirmation] = useState(false);
+  const [includeImage, setIncludeImage] = useState(false);
+
+  // Check if interactive buttons are configured (WhatsApp only)
+  const hasInvitationImage = !!invitationImageUrl;
 
   // Count guests who already accepted
   const acceptedGuestsCount = guestStatuses?.filter(s => s === "ACCEPTED").length || 0;
@@ -109,6 +118,8 @@ export function SendMessageDialog({
       setSending(false);
       setLoadingChannels(true);
       setShowConfirmation(false);
+      setMessageFormat("STANDARD");
+      setIncludeImage(false);
 
       // Fetch channels and usage in parallel
       Promise.all([
@@ -132,15 +143,15 @@ export function SendMessageDialog({
           setUsageStatus(usage);
         }
 
-        // Auto-select first channel that is both enabled AND has quota
+        // Auto-select first channel that is both enabled AND has quota (prefer WhatsApp)
         if (channels && usage) {
           const smsAvailable = channels.sms.enabled && usage.smsRemaining > 0;
           const whatsappAvailable = channels.whatsapp.enabled && usage.whatsappRemaining > 0;
 
-          if (smsAvailable) {
-            setChannel("SMS");
-          } else if (whatsappAvailable) {
+          if (whatsappAvailable) {
             setChannel("WHATSAPP");
+          } else if (smsAvailable) {
+            setChannel("SMS");
           }
         }
 
@@ -175,10 +186,20 @@ export function SendMessageDialog({
 
       try {
         let result;
-        if (messageType === "INVITE") {
-          result = await sendInvite(guestId, channel);
+        if (messageFormat === "INTERACTIVE") {
+          // Interactive button messages (WhatsApp only)
+          if (messageType === "INVITE") {
+            result = await sendInteractiveInvite(guestId, includeImage);
+          } else {
+            result = await sendInteractiveReminder(guestId, includeImage);
+          }
         } else {
-          result = await sendReminder(guestId, channel);
+          // Standard messages with RSVP link
+          if (messageType === "INVITE") {
+            result = await sendInvite(guestId, channel);
+          } else {
+            result = await sendReminder(guestId, channel);
+          }
         }
 
         if (result.error) {
@@ -336,6 +357,119 @@ export function SendMessageDialog({
                   })}
                 </div>
               </div>
+
+              {/* Message Format Selection (Standard vs Interactive) - WhatsApp only */}
+              {channel === "WHATSAPP" && channelStatus?.whatsapp.enabled && (
+                <div className="space-y-3">
+                  <Label>{isRTL ? "פורמט הודעה" : "Message Format"}</Label>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setMessageFormat("STANDARD")}
+                      disabled={sending}
+                      className={`flex flex-1 flex-col items-center justify-center gap-1 rounded-lg border p-3 transition-colors ${
+                        messageFormat === "STANDARD"
+                          ? "border-primary bg-primary/5"
+                          : "border-border hover:border-primary/50 hover:bg-muted/50"
+                      }`}
+                    >
+                      <div className="flex items-center gap-2">
+                        <Icons.externalLink className="h-4 w-4" />
+                        <span className="font-medium text-sm">
+                          {isRTL ? "סטנדרטי (קישור)" : "Standard (Link)"}
+                        </span>
+                        {messageFormat === "STANDARD" && (
+                          <Icons.check className="h-4 w-4 text-primary" />
+                        )}
+                      </div>
+                      <span className="text-xs text-muted-foreground">
+                        {isRTL ? "עם קישור לדף אישור הגעה" : "With RSVP page link"}
+                      </span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setMessageFormat("INTERACTIVE");
+                        // Force WhatsApp channel for interactive
+                        setChannel("WHATSAPP");
+                      }}
+                      disabled={sending}
+                      className={`flex flex-1 flex-col items-center justify-center gap-1 rounded-lg border p-3 transition-colors ${
+                        messageFormat === "INTERACTIVE"
+                          ? "border-purple-500 bg-purple-50 dark:bg-purple-900/20"
+                          : "border-border hover:border-purple-500/50 hover:bg-muted/50"
+                      }`}
+                    >
+                      <div className="flex items-center gap-2">
+                        <Icons.messageSquare className="h-4 w-4 text-purple-600" />
+                        <span className="font-medium text-sm">
+                          {isRTL ? "כפתורים אינטראקטיביים" : "Interactive Buttons"}
+                        </span>
+                        {messageFormat === "INTERACTIVE" && (
+                          <Icons.check className="h-4 w-4 text-purple-600" />
+                        )}
+                      </div>
+                      <span className="text-xs text-muted-foreground">
+                        {isRTL ? "אישור ישיר בלחיצה" : "Direct RSVP via buttons"}
+                      </span>
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Interactive Options - Show when format is Interactive */}
+              {messageFormat === "INTERACTIVE" && (
+                <div className="rounded-lg border border-purple-200 dark:border-purple-800 bg-purple-50/50 dark:bg-purple-900/20 p-4 space-y-3">
+                  <div className="flex items-center gap-2">
+                    <Icons.messageSquare className="h-4 w-4 text-purple-600" />
+                    <span className="text-sm font-medium text-purple-800 dark:text-purple-200">
+                      {isRTL ? "אפשרויות הודעה אינטראקטיבית" : "Interactive Message Options"}
+                    </span>
+                  </div>
+
+                  {/* Include Image Checkbox */}
+                  {hasInvitationImage && (
+                    <div className="flex items-center space-x-2 rtl:space-x-reverse">
+                      <Checkbox
+                        id="include-image"
+                        checked={includeImage}
+                        onCheckedChange={(checked) => setIncludeImage(checked === true)}
+                        disabled={sending}
+                      />
+                      <Label
+                        htmlFor="include-image"
+                        className="text-sm font-normal cursor-pointer"
+                      >
+                        {isRTL ? "כלול תמונת הזמנה" : "Include invitation image"}
+                      </Label>
+                    </div>
+                  )}
+
+                  {/* Button Preview */}
+                  <div className="space-y-2">
+                    <span className="text-xs text-muted-foreground">
+                      {isRTL ? "תצוגה מקדימה של כפתורים:" : "Button preview:"}
+                    </span>
+                    <div className="flex flex-wrap gap-2">
+                      <Badge variant="outline" className="bg-green-50 border-green-200 text-green-700 dark:bg-green-900/30 dark:border-green-700 dark:text-green-300">
+                        {isRTL ? "כן, אגיע" : "Yes, I'll attend"}
+                      </Badge>
+                      <Badge variant="outline" className="bg-red-50 border-red-200 text-red-700 dark:bg-red-900/30 dark:border-red-700 dark:text-red-300">
+                        {isRTL ? "לא אגיע" : "No, I won't attend"}
+                      </Badge>
+                      <Badge variant="outline" className="bg-gray-50 border-gray-200 text-gray-700 dark:bg-gray-900/30 dark:border-gray-700 dark:text-gray-300">
+                        {isRTL ? "עדיין לא יודע/ת" : "Don't know yet"}
+                      </Badge>
+                    </div>
+                  </div>
+
+                  <p className="text-xs text-purple-700 dark:text-purple-300">
+                    {isRTL
+                      ? "* לאחר אישור הגעה, האורח יקבל בקשה לבחור כמה אורחים"
+                      : "* After accepting, guest will receive a request to select guest count"}
+                  </p>
+                </div>
+              )}
 
               {/* Message Type Selection */}
               <div className="space-y-3">

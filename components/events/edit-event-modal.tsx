@@ -1,15 +1,17 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import Image from "next/image";
+import { WeddingEvent } from "@prisma/client";
 
-import { createEvent } from "@/actions/events";
-import { createEventSchema, type CreateEventInput } from "@/lib/validations/event";
+import { updateEvent } from "@/actions/events";
+import { uploadInvitationImage, deleteInvitationImage } from "@/actions/upload";
+import { updateEventSchema, type UpdateEventInput } from "@/lib/validations/event";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -20,23 +22,27 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
+  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Icons } from "@/components/shared/icons";
 import { DateTimePicker } from "@/components/ui/date-time-picker";
 
-interface AddEventModalProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
+interface EditEventModalProps {
+  event: WeddingEvent;
 }
 
-export function AddEventModal({ open, onOpenChange }: AddEventModalProps) {
+export function EditEventModal({ event }: EditEventModalProps) {
   const router = useRouter();
   const locale = useLocale();
   const t = useTranslations("events");
   const tCommon = useTranslations("common");
+  const [open, setOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [invitationImagePreview, setInvitationImagePreview] = useState<string | null>(null);
-  const [invitationImageBase64, setInvitationImageBase64] = useState<string | null>(null);
+  const [invitationImagePreview, setInvitationImagePreview] = useState<string | null>(
+    event.invitationImageUrl || null
+  );
+  const [newImageBase64, setNewImageBase64] = useState<string | null>(null);
+  const [imageChanged, setImageChanged] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const isHebrew = locale === "he";
@@ -47,18 +53,38 @@ export function AddEventModal({ open, onOpenChange }: AddEventModalProps) {
     reset,
     control,
     formState: { errors },
-  } = useForm<CreateEventInput>({
-    resolver: zodResolver(createEventSchema),
+  } = useForm<UpdateEventInput>({
+    resolver: zodResolver(updateEventSchema),
     defaultValues: {
-      title: "",
-      description: "",
-      dateTime: undefined,
-      location: "",
-      venue: "",
-      notes: "",
-      imageUrl: "",
+      id: event.id,
+      title: event.title,
+      description: event.description || "",
+      dateTime: event.dateTime ? new Date(event.dateTime).toISOString() : undefined,
+      location: event.location,
+      venue: event.venue || "",
+      notes: event.notes || "",
+      imageUrl: event.imageUrl || "",
     },
   });
+
+  // Reset form when modal opens
+  useEffect(() => {
+    if (open) {
+      reset({
+        id: event.id,
+        title: event.title,
+        description: event.description || "",
+        dateTime: event.dateTime ? new Date(event.dateTime).toISOString() : undefined,
+        location: event.location,
+        venue: event.venue || "",
+        notes: event.notes || "",
+        imageUrl: event.imageUrl || "",
+      });
+      setInvitationImagePreview(event.invitationImageUrl || null);
+      setNewImageBase64(null);
+      setImageChanged(false);
+    }
+  }, [open, event, reset]);
 
   const handleInvitationImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -75,41 +101,52 @@ export function AddEventModal({ open, onOpenChange }: AddEventModalProps) {
     }
 
     const reader = new FileReader();
-    reader.onload = (event) => {
-      const base64 = event.target?.result as string;
-      setInvitationImageBase64(base64);
+    reader.onload = (evt) => {
+      const base64 = evt.target?.result as string;
+      setNewImageBase64(base64);
       setInvitationImagePreview(base64);
+      setImageChanged(true);
     };
     reader.readAsDataURL(file);
   };
 
   const removeInvitationImage = () => {
-    setInvitationImageBase64(null);
+    setNewImageBase64(null);
     setInvitationImagePreview(null);
+    setImageChanged(true);
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
   };
 
-  const onSubmit = async (data: CreateEventInput) => {
+  const onSubmit = async (data: UpdateEventInput) => {
     setIsLoading(true);
 
     try {
-      const result = await createEvent({
-        ...data,
-        invitationImageBase64: invitationImageBase64 || undefined,
-      });
+      // Handle invitation image changes
+      if (imageChanged) {
+        if (newImageBase64) {
+          // Upload new image
+          const uploadResult = await uploadInvitationImage(event.id, newImageBase64);
+          if (uploadResult.error) {
+            toast.error(uploadResult.error);
+          }
+        } else if (!invitationImagePreview && event.invitationImageUrl) {
+          // Delete existing image
+          await deleteInvitationImage(event.id);
+        }
+      }
+
+      // Update event data
+      const result = await updateEvent(data);
 
       if (result.error) {
         toast.error(result.error);
         return;
       }
 
-      toast.success(isHebrew ? "האירוע נוצר בהצלחה" : "Event created successfully");
-      reset();
-      setInvitationImageBase64(null);
-      setInvitationImagePreview(null);
-      onOpenChange(false);
+      toast.success(isHebrew ? "האירוע עודכן בהצלחה" : "Event updated successfully");
+      setOpen(false);
       router.refresh();
     } catch (error) {
       toast.error(isHebrew ? "משהו השתבש" : "Something went wrong");
@@ -120,19 +157,27 @@ export function AddEventModal({ open, onOpenChange }: AddEventModalProps) {
 
   const handleClose = () => {
     if (!isLoading) {
-      reset();
-      setInvitationImageBase64(null);
-      setInvitationImagePreview(null);
-      onOpenChange(false);
+      setOpen(false);
     }
   };
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogTrigger asChild>
+        <Button
+          variant="outline"
+          size="sm"
+          className="h-8 shrink-0 gap-1.5 px-2.5 text-xs sm:h-9 sm:gap-2 sm:px-3 sm:text-sm"
+          onClick={() => setOpen(true)}
+        >
+          <Icons.settings className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+          {isHebrew ? "ערוך פרטי אירוע" : "Edit Event Info"}
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-[600px]">
         <DialogHeader className="shrink-0">
           <DialogTitle className="text-lg font-semibold sm:text-xl">
-            {isHebrew ? "הוספת אירוע חדש" : "Add New Event"}
+            {isHebrew ? "עריכת פרטי האירוע" : "Edit Event Details"}
           </DialogTitle>
         </DialogHeader>
 
@@ -144,8 +189,6 @@ export function AddEventModal({ open, onOpenChange }: AddEventModalProps) {
             </p>
           </div>
 
-          {/* Scrollable content area */}
-          <div className="min-h-0 flex-1 space-y-4 overflow-y-auto sm:space-y-6">
           {/* Two Column Layout */}
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
             {/* Event Title */}
@@ -307,9 +350,8 @@ export function AddEventModal({ open, onOpenChange }: AddEventModalProps) {
               className="hidden"
             />
           </div>
-          </div>
 
-          {/* Footer - sticky at bottom */}
+          {/* Footer */}
           <DialogFooter className="shrink-0 gap-2 border-t pt-4 sm:gap-0 sm:border-0 sm:pt-0">
             <Button
               type="button"
@@ -324,7 +366,7 @@ export function AddEventModal({ open, onOpenChange }: AddEventModalProps) {
               disabled={isLoading}
             >
               {isLoading && <Icons.spinner className="me-2 h-4 w-4 animate-spin" />}
-              {isHebrew ? "שמור אירוע" : "Save Event"}
+              {isHebrew ? "שמור שינויים" : "Save Changes"}
             </Button>
           </DialogFooter>
         </form>

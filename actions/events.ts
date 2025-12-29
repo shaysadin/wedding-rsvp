@@ -12,6 +12,7 @@ import {
   type UpdateEventInput,
 } from "@/lib/validations/event";
 import { PLAN_LIMITS } from "@/config/plans";
+import { uploadImage } from "@/lib/cloudinary";
 
 export async function createEvent(input: CreateEventInput) {
   try {
@@ -38,6 +39,24 @@ export async function createEvent(input: CreateEventInput) {
       };
     }
 
+    // Handle invitation image upload if provided
+    let invitationImageUrl: string | null = null;
+    let invitationImagePublicId: string | null = null;
+
+    if (validatedData.invitationImageBase64 && validatedData.invitationImageBase64.startsWith("data:image/")) {
+      try {
+        const uploadResult = await uploadImage(
+          validatedData.invitationImageBase64,
+          `invitation-images/${userId}`
+        );
+        invitationImageUrl = uploadResult.url;
+        invitationImagePublicId = uploadResult.publicId;
+      } catch (uploadError) {
+        console.error("Error uploading invitation image:", uploadError);
+        // Continue without the image if upload fails
+      }
+    }
+
     const event = await prisma.weddingEvent.create({
       data: {
         title: validatedData.title,
@@ -48,6 +67,8 @@ export async function createEvent(input: CreateEventInput) {
         imageUrl: validatedData.imageUrl || null,
         dateTime: new Date(validatedData.dateTime),
         ownerId: userId,
+        invitationImageUrl,
+        invitationImagePublicId,
       },
     });
 

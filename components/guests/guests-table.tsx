@@ -65,6 +65,7 @@ interface GuestsTableProps {
   guests: GuestWithRsvp[];
   eventId: string;
   initialFilter?: string;
+  invitationImageUrl?: string | null;
 }
 
 const statusColors: Record<RsvpStatus, string> = {
@@ -112,7 +113,7 @@ const messageStatusConfig: Record<MessageStatus, { label: string; className: str
   called: { label: "called", className: "bg-green-500/10 text-green-500" },
 };
 
-export function GuestsTable({ guests, eventId, initialFilter = "all" }: GuestsTableProps) {
+export function GuestsTable({ guests, eventId, initialFilter = "all", invitationImageUrl }: GuestsTableProps) {
   const t = useTranslations("guests");
   const tc = useTranslations("common");
   const ts = useTranslations("success");
@@ -517,6 +518,7 @@ export function GuestsTable({ guests, eventId, initialFilter = "all" }: GuestsTa
         guestStatuses={sendMessageGuests.statuses}
         eventId={eventId}
         mode={sendMessageMode}
+        invitationImageUrl={invitationImageUrl}
       />
 
       {/* Bulk Call Modal */}

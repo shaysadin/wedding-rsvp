@@ -268,4 +268,194 @@ export class TwilioNotificationService implements NotificationService {
     // Pass event's SMS sender ID for SMS channel
     return this.sendMessage(guest, message, channel, event.smsSenderId, whatsappOptions);
   }
+
+  // Send interactive invite with buttons (WhatsApp only)
+  async sendInteractiveInvite(
+    guest: Guest,
+    event: WeddingEvent,
+    includeImage: boolean = false
+  ): Promise<NotificationResult> {
+    const settings = await this.getSettings();
+
+    if (!settings?.whatsappInteractiveInviteContentSid) {
+      return {
+        success: false,
+        error: "Interactive invite template not configured",
+        status: NotificationStatus.FAILED,
+        channel: NotificationChannel.WHATSAPP,
+      };
+    }
+
+    if (!settings.whatsappEnabled || !settings.whatsappApiKey || !settings.whatsappApiSecret) {
+      return {
+        success: false,
+        error: "WhatsApp not configured",
+        status: NotificationStatus.FAILED,
+        channel: NotificationChannel.WHATSAPP,
+      };
+    }
+
+    const rawPhoneNumber = guest.phoneNumber;
+    if (!rawPhoneNumber) {
+      return {
+        success: false,
+        error: "Guest does not have a phone number",
+        status: NotificationStatus.FAILED,
+        channel: NotificationChannel.WHATSAPP,
+      };
+    }
+
+    const phoneNumber = formatToE164(rawPhoneNumber, "IL");
+
+    // Get active phone number
+    const activePhone = await prisma.whatsAppPhoneNumber.findFirst({
+      where: { isActive: true },
+    });
+    const fromNumber = activePhone?.phoneNumber || settings.whatsappPhoneNumber!;
+
+    // Build content variables for template
+    const contentVariables: Record<string, string> = {
+      "1": guest.name, // {{1}} = guest name
+      "2": event.title, // {{2}} = event title
+    };
+
+    // Add image URL as {{3}} if including image
+    // Template uses https://res.cloudinary.com/{{3}} format, so we strip the base URL
+    if (includeImage && event.invitationImageUrl) {
+      contentVariables["3"] = event.invitationImageUrl.replace("https://res.cloudinary.com/", "");
+    }
+
+    // Create Twilio client
+    const client = createTwilioClient(settings.whatsappApiKey, settings.whatsappApiSecret);
+
+    try {
+      // Build message options
+      const messageOptions = {
+        from: `whatsapp:${fromNumber}`,
+        to: `whatsapp:${phoneNumber}`,
+        contentSid: settings.whatsappInteractiveInviteContentSid,
+        contentVariables: JSON.stringify(contentVariables),
+      };
+
+      // Send using Twilio API
+      const response = await client.messages.create(messageOptions);
+
+      console.log(`Interactive invite sent to ${phoneNumber}: ${response.sid}`);
+
+      return {
+        success: true,
+        status: NotificationStatus.SENT,
+        channel: NotificationChannel.WHATSAPP,
+        providerResponse: JSON.stringify({
+          messageId: response.sid,
+          status: response.status,
+        }),
+      };
+    } catch (error) {
+      console.error("Error sending interactive invite:", error);
+      const errorMessage = error instanceof Error ? error.message : "Unknown error";
+      return {
+        success: false,
+        error: errorMessage,
+        status: NotificationStatus.FAILED,
+        channel: NotificationChannel.WHATSAPP,
+        providerResponse: JSON.stringify({ error: errorMessage }),
+      };
+    }
+  }
+
+  // Send interactive reminder with buttons (WhatsApp only)
+  async sendInteractiveReminder(
+    guest: Guest,
+    event: WeddingEvent,
+    includeImage: boolean = false
+  ): Promise<NotificationResult> {
+    const settings = await this.getSettings();
+
+    if (!settings?.whatsappInteractiveReminderContentSid) {
+      return {
+        success: false,
+        error: "Interactive reminder template not configured",
+        status: NotificationStatus.FAILED,
+        channel: NotificationChannel.WHATSAPP,
+      };
+    }
+
+    if (!settings.whatsappEnabled || !settings.whatsappApiKey || !settings.whatsappApiSecret) {
+      return {
+        success: false,
+        error: "WhatsApp not configured",
+        status: NotificationStatus.FAILED,
+        channel: NotificationChannel.WHATSAPP,
+      };
+    }
+
+    const rawPhoneNumber = guest.phoneNumber;
+    if (!rawPhoneNumber) {
+      return {
+        success: false,
+        error: "Guest does not have a phone number",
+        status: NotificationStatus.FAILED,
+        channel: NotificationChannel.WHATSAPP,
+      };
+    }
+
+    const phoneNumber = formatToE164(rawPhoneNumber, "IL");
+
+    // Get active phone number
+    const activePhone = await prisma.whatsAppPhoneNumber.findFirst({
+      where: { isActive: true },
+    });
+    const fromNumber = activePhone?.phoneNumber || settings.whatsappPhoneNumber!;
+
+    // Build content variables for template
+    const contentVariables: Record<string, string> = {
+      "1": guest.name, // {{1}} = guest name
+      "2": event.title, // {{2}} = event title
+    };
+
+    // Add image URL as {{3}} if including image
+    // Template uses https://res.cloudinary.com/{{3}} format, so we strip the base URL
+    if (includeImage && event.invitationImageUrl) {
+      contentVariables["3"] = event.invitationImageUrl.replace("https://res.cloudinary.com/", "");
+    }
+
+    // Create Twilio client
+    const client = createTwilioClient(settings.whatsappApiKey, settings.whatsappApiSecret);
+
+    try {
+      // Build message options
+      const messageOptions = {
+        from: `whatsapp:${fromNumber}`,
+        to: `whatsapp:${phoneNumber}`,
+        contentSid: settings.whatsappInteractiveReminderContentSid,
+        contentVariables: JSON.stringify(contentVariables),
+      };
+
+      // Send using Twilio API
+      const response = await client.messages.create(messageOptions);
+
+      console.log(`Interactive reminder sent to ${phoneNumber}: ${response.sid}`);
+
+      return {
+        success: true,
+        status: NotificationStatus.SENT,
+        channel: NotificationChannel.WHATSAPP,
+        providerResponse: JSON.stringify({
+          messageId: response.sid,
+          status: response.status,
+        }),
+      };
+    } catch (error) {
+      console.error("Error sending interactive reminder:", error);
+      const errorMessage = error instanceof Error ? error.message : "Unknown error";
+      return {
+        success: false,
+        error: errorMessage,
+        status: NotificationStatus.FAILED,
+        channel: NotificationChannel.WHATSAPP,
+        providerResponse: JSON.stringify({ error: errorMessage }),
+      };
+    }
+  }
 }

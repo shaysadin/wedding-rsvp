@@ -8,6 +8,7 @@ export const createEventSchema = z.object({
   venue: z.string().max(255).optional(),
   notes: z.string().max(2000).optional(),
   imageUrl: z.string().url().optional().or(z.literal("")),
+  invitationImageBase64: z.string().optional(), // Base64 image data for invitation
 });
 
 export const updateEventSchema = createEventSchema.partial().extend({
