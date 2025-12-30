@@ -35,6 +35,7 @@ export async function getAllUsers() {
           },
         },
         usageTracking: true,
+        vapiPhoneNumber: true,
       },
       orderBy: { createdAt: "desc" },
     });

@@ -81,6 +81,7 @@ model User {
   stripeSubscriptionId    String?                  @unique @map("stripe_subscription_id")
   pendingPlanChange       PlanTier?                @map("pending_plan_change")
   pendingPlanChangeDate   DateTime?                @map("pending_plan_change_date")
+  vapiPhoneNumberId       String?                  @map("vapi_phone_number_id")
   accounts                Account[]
   bulkMessageJobs         BulkMessageJob[]
   emailVerificationTokens EmailVerificationToken[]
@@ -88,8 +89,10 @@ model User {
   sessions                Session[]
   usageTracking           UsageTracking?
   vapiCallJobs            VapiCallJob[]
+  vapiPhoneNumber         VapiPhoneNumber?         @relation(fields: [vapiPhoneNumberId], references: [id], onDelete: SetNull)
   weddingEvents           WeddingEvent[]
 
+  @@index([vapiPhoneNumberId])
   @@map("users")
 }
 
@@ -610,6 +613,22 @@ model CronJobLog {
   @@index([userId])
   @@index([executedAt])
   @@map("cron_job_logs")
+}
+
+model VapiPhoneNumber {
+  id              String   @id @default(cuid())
+  phoneNumber     String   @unique @map("phone_number")
+  vapiPhoneId     String   @unique @map("vapi_phone_id")
+  displayName     String?  @map("display_name")
+  isDefault       Boolean  @default(false) @map("is_default")
+  isActive        Boolean  @default(true) @map("is_active")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @default(now()) @updatedAt @map("updated_at")
+  users           User[]
+
+  @@index([isDefault])
+  @@index([isActive])
+  @@map("vapi_phone_numbers")
 }
 
 model VapiEventSettings {

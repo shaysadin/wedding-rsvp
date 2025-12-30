@@ -4,7 +4,93 @@ import { prisma } from "@/lib/db";
 import { getCurrentUser } from "@/lib/session";
 import { VapiClient } from "@/lib/vapi/client";
 import { syncCallFromVapi, syncAllActiveCalls } from "@/lib/vapi/call-sync";
-import { canMakeVoiceCalls, isVoiceCallsEnabled, getRemainingVoiceCalls } from "@/config/plans";
+import { canMakeVoiceCalls, isVoiceCallsEnabled, getRemainingVoiceCalls, PLAN_LIMITS } from "@/config/plans";
+import { getEffectivePhoneNumberId } from "./phone-numbers";
+
+// ============ Helper: Get Billing Period ============
+
+/**
+ * Get the current billing period start date for a user
+ * If user has a Stripe subscription, calculates from stripeCurrentPeriodEnd
+ * Otherwise uses the usageTracking periodStart or falls back to 30 days ago
+ */
+async function getBillingPeriodStart(userId: string): Promise<Date> {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: {
+      stripeCurrentPeriodEnd: true,
+      usageTracking: { select: { periodStart: true } },
+    },
+  });
+
+  if (!user) {
+    // Default to 30 days ago if user not found
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    return thirtyDaysAgo;
+  }
+
+  // If user has Stripe subscription, calculate period start from period end
+  if (user.stripeCurrentPeriodEnd) {
+    const periodEnd = new Date(user.stripeCurrentPeriodEnd);
+    const periodStart = new Date(periodEnd);
+    periodStart.setMonth(periodStart.getMonth() - 1); // Monthly billing
+    return periodStart;
+  }
+
+  // Use usageTracking periodStart if available
+  if (user.usageTracking?.periodStart) {
+    return new Date(user.usageTracking.periodStart);
+  }
+
+  // Default to 30 days ago for free users
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+  return thirtyDaysAgo;
+}
+
+// ============ Helper: Get Actual Voice Call Count ============
+
+/**
+ * Get actual voice call count from VapiCallLog (source of truth)
+ * Only counts calls within the current billing period
+ */
+async function getActualVoiceCallCount(userId: string): Promise<{
+  callsMade: number;
+  callsBonus: number;
+}> {
+  // Get billing period start
+  const periodStart = await getBillingPeriodStart(userId);
+
+  // Get user's events
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    include: {
+      weddingEvents: { select: { id: true } },
+      usageTracking: { select: { voiceCallsBonus: true } },
+    },
+  });
+
+  if (!user) {
+    return { callsMade: 0, callsBonus: 0 };
+  }
+
+  const eventIds = user.weddingEvents.map(e => e.id);
+
+  // Count actual calls from VapiCallLog within current billing period
+  const callsMade = await prisma.vapiCallLog.count({
+    where: {
+      weddingEventId: { in: eventIds },
+      status: { in: ["COMPLETED", "NO_ANSWER", "BUSY", "CALLING"] },
+      createdAt: { gte: periodStart },
+    },
+  });
+
+  return {
+    callsMade,
+    callsBonus: user.usageTracking?.voiceCallsBonus || 0,
+  };
+}
 
 // ============ Single Call ============
 
@@ -26,13 +112,8 @@ export async function callGuest(guestId: string, eventId: string) {
       return { error: "VOICE_CALLS_NOT_AVAILABLE", message: "Voice calls are not available on your plan. Please upgrade to use this feature." };
     }
 
-    // Get user's usage tracking for voice calls
-    const usageTracking = await prisma.usageTracking.findUnique({
-      where: { userId: user.id },
-    });
-
-    const voiceCallsMade = usageTracking?.voiceCallsMade || 0;
-    const voiceCallsBonus = usageTracking?.voiceCallsBonus || 0;
+    // Get actual voice call count from VapiCallLog (source of truth)
+    const { callsMade: voiceCallsMade, callsBonus: voiceCallsBonus } = await getActualVoiceCallCount(user.id);
 
     // Check if user can make more calls
     if (!canMakeVoiceCalls(userPlan, voiceCallsMade, voiceCallsBonus)) {
@@ -74,9 +155,17 @@ export async function callGuest(guestId: string, eventId: string) {
       return { error: "VAPI is not configured or enabled" };
     }
 
-    if (!settings.vapiPhoneNumberId || !settings.vapiAssistantId) {
-      return { error: "VAPI phone number or assistant not configured" };
+    if (!settings.vapiAssistantId) {
+      return { error: "VAPI assistant not configured" };
     }
+
+    // Get the effective phone number for this user (assigned or default)
+    const phoneNumberResult = await getEffectivePhoneNumberId(user.id);
+    if (!phoneNumberResult.success || !phoneNumberResult.vapiPhoneId) {
+      return { error: phoneNumberResult.error || "No phone number configured for voice calls" };
+    }
+
+    const effectivePhoneNumberId = phoneNumberResult.vapiPhoneId;
 
     // Get event settings (for custom prompts if any)
     const eventSettings = await prisma.vapiEventSettings.findUnique({
@@ -124,7 +213,7 @@ export async function callGuest(guestId: string, eventId: string) {
 
     try {
       const call = await client.createCall({
-        phoneNumberId: settings.vapiPhoneNumberId,
+        phoneNumberId: effectivePhoneNumberId,
         assistantId: settings.vapiAssistantId,
         customerNumber: formattedPhone,
         customerName: guest.name,
@@ -216,13 +305,8 @@ export async function startBulkCalling(
       return { error: "VOICE_CALLS_NOT_AVAILABLE", message: "Voice calls are not available on your plan. Please upgrade to use this feature." };
     }
 
-    // Get user's usage tracking for voice calls
-    const usageTracking = await prisma.usageTracking.findUnique({
-      where: { userId: user.id },
-    });
-
-    const voiceCallsMade = usageTracking?.voiceCallsMade || 0;
-    const voiceCallsBonus = usageTracking?.voiceCallsBonus || 0;
+    // Get actual voice call count from VapiCallLog (source of truth)
+    const { callsMade: voiceCallsMade, callsBonus: voiceCallsBonus } = await getActualVoiceCallCount(user.id);
     const remaining = getRemainingVoiceCalls(userPlan, voiceCallsMade, voiceCallsBonus);
 
     // Check if user can make more calls (for the requested count)
@@ -367,18 +451,29 @@ async function processCallJob(jobId: string) {
   const settings = await prisma.messagingProviderSettings.findFirst({
     select: {
       vapiApiKey: true,
-      vapiPhoneNumberId: true,
       vapiAssistantId: true,
     },
   });
 
-  if (!settings?.vapiApiKey || !settings.vapiPhoneNumberId || !settings.vapiAssistantId) {
+  if (!settings?.vapiApiKey || !settings.vapiAssistantId) {
     await prisma.vapiCallJob.update({
       where: { id: jobId },
       data: { status: "FAILED", errorMessage: "VAPI not configured" },
     });
     return;
   }
+
+  // Get the effective phone number for the user who owns this event
+  const phoneNumberResult = await getEffectivePhoneNumberId(userId);
+  if (!phoneNumberResult.success || !phoneNumberResult.vapiPhoneId) {
+    await prisma.vapiCallJob.update({
+      where: { id: jobId },
+      data: { status: "FAILED", errorMessage: phoneNumberResult.error || "No phone number configured" },
+    });
+    return;
+  }
+
+  const effectivePhoneNumberId = phoneNumberResult.vapiPhoneId;
 
   // Get event details once (not per call)
   const event = await prisma.weddingEvent.findUnique({
@@ -404,7 +499,7 @@ async function processCallJob(jobId: string) {
         }
 
         const call = await client.createCall({
-          phoneNumberId: settings.vapiPhoneNumberId!,
+          phoneNumberId: effectivePhoneNumberId,
           assistantId: settings.vapiAssistantId!,
           customerNumber: formattedPhone,
           customerName: callLog.guest.name,

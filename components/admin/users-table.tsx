@@ -1,11 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { User, UserStatus, UserRole, PlanTier, WeddingEvent, UsageTracking } from "@prisma/client";
+import { User, UserStatus, UserRole, PlanTier, WeddingEvent, UsageTracking, VapiPhoneNumber } from "@prisma/client";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 
 import { reactivateUser, suspendUser, changeUserPlan, resetUserUsage, adjustCredits, toggleUserAdminRole } from "@/actions/admin";
+import { assignPhoneNumberToUser } from "@/actions/vapi/phone-numbers";
 import { PlanLimits } from "@/config/plans";
 import {
   Table,
@@ -59,10 +60,19 @@ type UserWithStats = User & {
   roles: UserRole[];
   stripeSubscriptionId: string | null;
   stripeCustomerId: string | null;
+  vapiPhoneNumber: VapiPhoneNumber | null;
+};
+
+type PhoneNumberOption = {
+  id: string;
+  phoneNumber: string;
+  displayName: string | null;
+  isDefault: boolean;
 };
 
 interface AdminUsersTableProps {
   users: UserWithStats[];
+  phoneNumbers?: PhoneNumberOption[];
 }
 
 const statusColors: Record<UserStatus, string> = {
@@ -79,13 +89,16 @@ const planColors: Record<PlanTier, string> = {
   BUSINESS: "bg-amber-500/10 text-amber-500",
 };
 
-export function AdminUsersTable({ users }: AdminUsersTableProps) {
+export function AdminUsersTable({ users, phoneNumbers = [] }: AdminUsersTableProps) {
   const t = useTranslations("admin");
   const tc = useTranslations("common");
   const tPlans = useTranslations("plans");
   const tStatus = useTranslations("status");
   const ts = useTranslations("success");
   const [loading, setLoading] = useState<string | null>(null);
+  const [userPhoneNumbers, setUserPhoneNumbers] = useState<Record<string, string | null>>(
+    Object.fromEntries(users.map(u => [u.id, u.vapiPhoneNumberId]))
+  );
 
   // Unified credits dialog state
   const [creditsDialog, setCreditsDialog] = useState<{
@@ -228,6 +241,19 @@ export function AdminUsersTable({ users }: AdminUsersTableProps) {
       toast.error(result.error);
     } else {
       toast.success(result.hasAdminRole ? t("adminRoleGranted") : t("adminRoleRevoked"));
+    }
+  };
+
+  const handleAssignPhoneNumber = async (userId: string, phoneNumberId: string | null) => {
+    setLoading(userId);
+    const result = await assignPhoneNumberToUser(userId, phoneNumberId);
+    setLoading(null);
+
+    if (result.error) {
+      toast.error(result.error);
+    } else {
+      setUserPhoneNumbers(prev => ({ ...prev, [userId]: phoneNumberId }));
+      toast.success(phoneNumberId ? t("phoneAssigned") : t("phoneUnassigned"));
     }
   };
 
@@ -476,6 +502,49 @@ export function AdminUsersTable({ users }: AdminUsersTableProps) {
                             ? t("revokeAdminRole")
                             : t("grantAdminRole")}
                         </DropdownMenuItem>
+
+                        {phoneNumbers.length > 0 && (
+                          <>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuSub>
+                              <DropdownMenuSubTrigger>
+                                <Icons.phone className="me-2 h-4 w-4" />
+                                {t("assignPhoneNumber")}
+                              </DropdownMenuSubTrigger>
+                              <DropdownMenuPortal>
+                                <DropdownMenuSubContent>
+                                  <DropdownMenuItem
+                                    onClick={() => handleAssignPhoneNumber(user.id, null)}
+                                    disabled={!userPhoneNumbers[user.id]}
+                                  >
+                                    <span className="text-muted-foreground">{t("useDefault")}</span>
+                                  </DropdownMenuItem>
+                                  <DropdownMenuSeparator />
+                                  {phoneNumbers.map((phone) => (
+                                    <DropdownMenuItem
+                                      key={phone.id}
+                                      onClick={() => handleAssignPhoneNumber(user.id, phone.id)}
+                                      disabled={userPhoneNumbers[user.id] === phone.id}
+                                    >
+                                      <div className="flex items-center gap-2">
+                                        <span>{phone.phoneNumber}</span>
+                                        {phone.displayName && (
+                                          <span className="text-xs text-muted-foreground">({phone.displayName})</span>
+                                        )}
+                                        {phone.isDefault && (
+                                          <Badge variant="outline" className="text-xs py-0 px-1">Default</Badge>
+                                        )}
+                                        {userPhoneNumbers[user.id] === phone.id && (
+                                          <Icons.check className="h-4 w-4 text-green-500" />
+                                        )}
+                                      </div>
+                                    </DropdownMenuItem>
+                                  ))}
+                                </DropdownMenuSubContent>
+                              </DropdownMenuPortal>
+                            </DropdownMenuSub>
+                          </>
+                        )}
 
                         <DropdownMenuSeparator />
                         <DropdownMenuLabel>{t("usageActions")}</DropdownMenuLabel>

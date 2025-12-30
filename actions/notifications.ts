@@ -122,6 +122,27 @@ async function getRemainingMessages(userId: string): Promise<{
   };
 }
 
+// Helper: Get billing period start date
+function getBillingPeriodStart(stripeCurrentPeriodEnd: Date | null, usagePeriodStart: Date | null): Date {
+  // If user has Stripe subscription, calculate period start from period end
+  if (stripeCurrentPeriodEnd) {
+    const periodEnd = new Date(stripeCurrentPeriodEnd);
+    const periodStart = new Date(periodEnd);
+    periodStart.setMonth(periodStart.getMonth() - 1); // Monthly billing
+    return periodStart;
+  }
+
+  // Use usageTracking periodStart if available
+  if (usagePeriodStart) {
+    return new Date(usagePeriodStart);
+  }
+
+  // Default to 30 days ago for free users
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+  return thirtyDaysAgo;
+}
+
 // Public function to get current user's message usage and limits
 export async function getCurrentUserUsage() {
   try {
@@ -148,10 +169,16 @@ export async function getCurrentUserUsage() {
     const planLimits = PLAN_LIMITS[dbUser.plan];
     const usage = dbUser.usageTracking;
 
+    // Get billing period start for filtering
+    const periodStart = getBillingPeriodStart(
+      dbUser.stripeCurrentPeriodEnd,
+      usage?.periodStart || null
+    );
+
     // Get actual message counts from NotificationLog for accuracy
     const eventIds = dbUser.weddingEvents.map(e => e.id);
 
-    // Count actual sent messages from NotificationLog and VapiCallLog
+    // Count actual sent messages from NotificationLog and VapiCallLog within current billing period
     const [whatsappCount, smsCount, callsCount] = await Promise.all([
       prisma.notificationLog.count({
         where: {
@@ -160,6 +187,7 @@ export async function getCurrentUserUsage() {
           },
           channel: NotificationChannel.WHATSAPP,
           status: { in: ["SENT", "DELIVERED"] },
+          createdAt: { gte: periodStart },
         },
       }),
       prisma.notificationLog.count({
@@ -169,12 +197,14 @@ export async function getCurrentUserUsage() {
           },
           channel: NotificationChannel.SMS,
           status: { in: ["SENT", "DELIVERED"] },
+          createdAt: { gte: periodStart },
         },
       }),
       prisma.vapiCallLog.count({
         where: {
           weddingEventId: { in: eventIds },
-          status: { in: ["COMPLETED", "NO_ANSWER", "BUSY"] }, // Count all attempted calls
+          status: { in: ["COMPLETED", "NO_ANSWER", "BUSY", "CALLING"] },
+          createdAt: { gte: periodStart },
         },
       }),
     ]);

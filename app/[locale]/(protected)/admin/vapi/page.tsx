@@ -3,8 +3,10 @@ import { getLocale } from "next-intl/server";
 
 import { getCurrentUser } from "@/lib/session";
 import { getVapiProviderSettings } from "@/actions/vapi/settings";
+import { getVapiPhoneNumbers } from "@/actions/vapi/phone-numbers";
 import { DashboardHeader } from "@/components/dashboard/header";
 import { VapiSettingsForm } from "@/components/admin/vapi-settings-form";
+import { VapiPhoneNumbers } from "@/components/admin/vapi-phone-numbers";
 
 export default async function AdminVapiPage() {
   const user = await getCurrentUser();
@@ -15,17 +17,23 @@ export default async function AdminVapiPage() {
     redirect(`/${locale}/dashboard`);
   }
 
-  const result = await getVapiProviderSettings();
-  const settings = result.success ? result.settings : null;
+  const [settingsResult, phoneNumbersResult] = await Promise.all([
+    getVapiProviderSettings(),
+    getVapiPhoneNumbers(),
+  ]);
+
+  const settings = settingsResult.success ? settingsResult.settings : null;
+  const phoneNumbers = phoneNumbersResult.success ? phoneNumbersResult.phoneNumbers : [];
 
   return (
     <>
       <DashboardHeader
         heading="VAPI Voice Agent Settings"
-        text="Configure VAPI.ai voice agent for outbound calls to guests. Requires VAPI account with Azure voice provider."
+        text="Configure VAPI.ai voice agent for outbound calls to guests."
       />
 
       <div className="grid gap-6 overflow-auto">
+        <VapiPhoneNumbers phoneNumbers={phoneNumbers} />
         <VapiSettingsForm settings={settings} />
       </div>
     </>
