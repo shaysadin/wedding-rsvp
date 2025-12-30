@@ -82,6 +82,7 @@ model User {
   pendingPlanChange       PlanTier?                @map("pending_plan_change")
   pendingPlanChangeDate   DateTime?                @map("pending_plan_change_date")
   vapiPhoneNumberId       String?                  @map("vapi_phone_number_id")
+  whatsappPhoneNumberId   String?                  @map("whatsapp_phone_number_id")
   accounts                Account[]
   bulkMessageJobs         BulkMessageJob[]
   emailVerificationTokens EmailVerificationToken[]
@@ -90,9 +91,11 @@ model User {
   usageTracking           UsageTracking?
   vapiCallJobs            VapiCallJob[]
   vapiPhoneNumber         VapiPhoneNumber?         @relation(fields: [vapiPhoneNumberId], references: [id], onDelete: SetNull)
+  whatsappPhoneNumber     WhatsAppPhoneNumber?     @relation(fields: [whatsappPhoneNumberId], references: [id], onDelete: SetNull)
   weddingEvents           WeddingEvent[]
 
   @@index([vapiPhoneNumberId])
+  @@index([whatsappPhoneNumberId])
   @@map("users")
 }
 
@@ -769,12 +772,15 @@ model WhatsAppPhoneNumber {
   phoneNumber                String                    @unique @map("phone_number")
   displayName                String?                   @map("display_name")
   isActive                   Boolean                   @default(false) @map("is_active")
+  isDefault                  Boolean                   @default(false) @map("is_default")
   messagingProviderSettingsId String?                  @map("messaging_provider_settings_id")
   createdAt                  DateTime                  @default(now()) @map("created_at")
   updatedAt                  DateTime                  @default(now()) @updatedAt @map("updated_at")
   messagingProviderSettings  MessagingProviderSettings? @relation(fields: [messagingProviderSettingsId], references: [id], onDelete: Cascade)
+  users                      User[]
 
   @@index([isActive])
+  @@index([isDefault])
   @@map("whatsapp_phone_numbers")
 }
 

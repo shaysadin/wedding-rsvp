@@ -4,14 +4,13 @@ import { useState, useTransition } from "react";
 import { toast } from "sonner";
 import {
   Loader2,
-  Phone,
+  MessageCircle,
   Plus,
   Star,
   Trash2,
   Users,
   Pencil,
   Check,
-  X,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -55,28 +54,30 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import {
-  createVapiPhoneNumber,
-  updateVapiPhoneNumber,
-  deleteVapiPhoneNumber,
-  setDefaultVapiPhoneNumber,
-} from "@/actions/vapi/phone-numbers";
+  addWhatsAppPhoneNumber,
+  removeWhatsAppPhoneNumber,
+  setActiveWhatsAppPhoneNumber,
+  setDefaultWhatsAppPhoneNumber,
+  updateWhatsAppPhoneNumberDisplayName,
+} from "@/actions/whatsapp-phone-numbers";
 
-interface VapiPhoneNumber {
+interface WhatsAppPhoneNumber {
   id: string;
   phoneNumber: string;
-  vapiPhoneId: string;
   displayName: string | null;
   isDefault: boolean;
   isActive: boolean;
-  createdAt: Date;
+  createdAt: string;
   _count: { users: number };
 }
 
-interface VapiPhoneNumbersProps {
-  phoneNumbers: VapiPhoneNumber[];
+interface WhatsAppPhoneNumbersAdminProps {
+  phoneNumbers: WhatsAppPhoneNumber[];
 }
 
-export function VapiPhoneNumbers({ phoneNumbers: initialPhoneNumbers }: VapiPhoneNumbersProps) {
+export function WhatsAppPhoneNumbersAdmin({
+  phoneNumbers: initialPhoneNumbers,
+}: WhatsAppPhoneNumbersAdminProps) {
   const [phoneNumbers, setPhoneNumbers] = useState(initialPhoneNumbers);
   const [isPending, startTransition] = useTransition();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -85,7 +86,6 @@ export function VapiPhoneNumbers({ phoneNumbers: initialPhoneNumbers }: VapiPhon
   // Form state
   const [formData, setFormData] = useState({
     phoneNumber: "",
-    vapiPhoneId: "",
     displayName: "",
     isDefault: false,
   });
@@ -93,18 +93,16 @@ export function VapiPhoneNumbers({ phoneNumbers: initialPhoneNumbers }: VapiPhon
   const resetForm = () => {
     setFormData({
       phoneNumber: "",
-      vapiPhoneId: "",
       displayName: "",
       isDefault: false,
     });
     setEditingId(null);
   };
 
-  const handleOpenDialog = (phoneNumber?: VapiPhoneNumber) => {
+  const handleOpenDialog = (phoneNumber?: WhatsAppPhoneNumber) => {
     if (phoneNumber) {
       setFormData({
         phoneNumber: phoneNumber.phoneNumber,
-        vapiPhoneId: phoneNumber.vapiPhoneId,
         displayName: phoneNumber.displayName || "",
         isDefault: phoneNumber.isDefault,
       });
@@ -116,31 +114,57 @@ export function VapiPhoneNumbers({ phoneNumbers: initialPhoneNumbers }: VapiPhon
   };
 
   const handleSubmit = () => {
-    if (!formData.phoneNumber || !formData.vapiPhoneId) {
-      toast.error("Phone number and VAPI Phone ID are required");
+    if (!formData.phoneNumber) {
+      toast.error("Phone number is required");
       return;
     }
 
     startTransition(async () => {
-      const result = editingId
-        ? await updateVapiPhoneNumber(editingId, formData)
-        : await createVapiPhoneNumber(formData);
+      if (editingId) {
+        // Update display name
+        const result = await updateWhatsAppPhoneNumberDisplayName(
+          editingId,
+          formData.displayName || null
+        );
 
-      if (result.success) {
-        toast.success(editingId ? "Phone number updated" : "Phone number added");
-        setIsDialogOpen(false);
-        resetForm();
-        // Refresh page to get updated data
-        window.location.reload();
+        if (result.success) {
+          // If setting as default, also call setDefault
+          if (formData.isDefault) {
+            await setDefaultWhatsAppPhoneNumber(editingId);
+          }
+          toast.success("Phone number updated");
+          setIsDialogOpen(false);
+          resetForm();
+          window.location.reload();
+        } else {
+          toast.error(result.error || "Failed to update phone number");
+        }
       } else {
-        toast.error(result.error || "Failed to save phone number");
+        // Create new
+        const result = await addWhatsAppPhoneNumber(
+          formData.phoneNumber,
+          formData.displayName || null
+        );
+
+        if (result.success && result.phoneNumber) {
+          // If setting as default, also call setDefault
+          if (formData.isDefault) {
+            await setDefaultWhatsAppPhoneNumber(result.phoneNumber.id);
+          }
+          toast.success("Phone number added");
+          setIsDialogOpen(false);
+          resetForm();
+          window.location.reload();
+        } else {
+          toast.error(result.error || "Failed to add phone number");
+        }
       }
     });
   };
 
   const handleDelete = (id: string) => {
     startTransition(async () => {
-      const result = await deleteVapiPhoneNumber(id);
+      const result = await removeWhatsAppPhoneNumber(id);
 
       if (result.success) {
         toast.success("Phone number deleted");
@@ -153,7 +177,7 @@ export function VapiPhoneNumbers({ phoneNumbers: initialPhoneNumbers }: VapiPhon
 
   const handleSetDefault = (id: string) => {
     startTransition(async () => {
-      const result = await setDefaultVapiPhoneNumber(id);
+      const result = await setDefaultWhatsAppPhoneNumber(id);
 
       if (result.success) {
         toast.success("Default phone number updated");
@@ -169,21 +193,25 @@ export function VapiPhoneNumbers({ phoneNumbers: initialPhoneNumbers }: VapiPhon
     });
   };
 
-  const handleToggleActive = (id: string, isActive: boolean) => {
-    startTransition(async () => {
-      const result = await updateVapiPhoneNumber(id, { isActive });
+  const handleToggleActive = (id: string, currentlyActive: boolean) => {
+    if (!currentlyActive) {
+      // Activating this number
+      startTransition(async () => {
+        const result = await setActiveWhatsAppPhoneNumber(id);
 
-      if (result.success) {
-        toast.success(isActive ? "Phone number activated" : "Phone number deactivated");
-        setPhoneNumbers(
-          phoneNumbers.map((p) =>
-            p.id === id ? { ...p, isActive } : p
-          )
-        );
-      } else {
-        toast.error(result.error || "Failed to update status");
-      }
-    });
+        if (result.success) {
+          toast.success("Phone number activated");
+          setPhoneNumbers(
+            phoneNumbers.map((p) => ({
+              ...p,
+              isActive: p.id === id,
+            }))
+          );
+        } else {
+          toast.error(result.error || "Failed to activate");
+        }
+      });
+    }
   };
 
   return (
@@ -192,11 +220,12 @@ export function VapiPhoneNumbers({ phoneNumbers: initialPhoneNumbers }: VapiPhon
         <div className="flex items-center justify-between">
           <div>
             <CardTitle className="flex items-center gap-2">
-              <Phone className="size-5" />
-              VAPI Phone Numbers
+              <MessageCircle className="size-5" />
+              WhatsApp Phone Numbers
             </CardTitle>
             <CardDescription>
-              Manage phone numbers for voice calls. Assign numbers to users or set a default for all.
+              Manage phone numbers for WhatsApp messages. Set a default number
+              for all users or assign specific numbers to users.
             </CardDescription>
           </div>
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
@@ -212,7 +241,7 @@ export function VapiPhoneNumbers({ phoneNumbers: initialPhoneNumbers }: VapiPhon
                   {editingId ? "Edit Phone Number" : "Add Phone Number"}
                 </DialogTitle>
                 <DialogDescription>
-                  Add a Twilio phone number imported into VAPI for making voice calls.
+                  Add a Twilio WhatsApp phone number for sending messages.
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-4 py-4">
@@ -225,23 +254,10 @@ export function VapiPhoneNumbers({ phoneNumbers: initialPhoneNumbers }: VapiPhon
                     onChange={(e) =>
                       setFormData({ ...formData, phoneNumber: e.target.value })
                     }
+                    disabled={!!editingId}
                   />
                   <p className="text-xs text-muted-foreground">
-                    The actual phone number in international format
-                  </p>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="vapiPhoneId">VAPI Phone ID</Label>
-                  <Input
-                    id="vapiPhoneId"
-                    placeholder="Enter VAPI phone number ID"
-                    value={formData.vapiPhoneId}
-                    onChange={(e) =>
-                      setFormData({ ...formData, vapiPhoneId: e.target.value })
-                    }
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Found in VAPI Dashboard → Phone Numbers
+                    Phone number in international format (e.g., +972501234567)
                   </p>
                 </div>
                 <div className="space-y-2">
@@ -301,12 +317,12 @@ export function VapiPhoneNumbers({ phoneNumbers: initialPhoneNumbers }: VapiPhon
       <CardContent>
         {phoneNumbers.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-8 text-center">
-            <Phone className="mb-4 size-12 text-muted-foreground" />
+            <MessageCircle className="mb-4 size-12 text-muted-foreground" />
             <p className="text-sm text-muted-foreground">
               No phone numbers configured yet.
             </p>
             <p className="text-xs text-muted-foreground">
-              Add a phone number to enable voice calls.
+              Add a phone number to enable WhatsApp messaging.
             </p>
           </div>
         ) : (
@@ -314,7 +330,6 @@ export function VapiPhoneNumbers({ phoneNumbers: initialPhoneNumbers }: VapiPhon
             <TableHeader>
               <TableRow>
                 <TableHead>Phone Number</TableHead>
-                <TableHead>VAPI ID</TableHead>
                 <TableHead>Users</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
@@ -337,12 +352,13 @@ export function VapiPhoneNumbers({ phoneNumbers: initialPhoneNumbers }: VapiPhon
                           Default
                         </Badge>
                       )}
+                      {phone.isActive && (
+                        <Badge variant="outline" className="gap-1">
+                          <Check className="size-3" />
+                          Active
+                        </Badge>
+                      )}
                     </div>
-                  </TableCell>
-                  <TableCell>
-                    <code className="rounded bg-muted px-1 py-0.5 text-xs">
-                      {phone.vapiPhoneId.slice(0, 12)}...
-                    </code>
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-1">
@@ -353,10 +369,10 @@ export function VapiPhoneNumbers({ phoneNumbers: initialPhoneNumbers }: VapiPhon
                   <TableCell>
                     <Switch
                       checked={phone.isActive}
-                      onCheckedChange={(checked) =>
-                        handleToggleActive(phone.id, checked)
+                      onCheckedChange={() =>
+                        handleToggleActive(phone.id, phone.isActive)
                       }
-                      disabled={isPending}
+                      disabled={isPending || phone.isActive}
                     />
                   </TableCell>
                   <TableCell className="text-right">
@@ -397,9 +413,12 @@ export function VapiPhoneNumbers({ phoneNumbers: initialPhoneNumbers }: VapiPhon
                         </AlertDialogTrigger>
                         <AlertDialogContent>
                           <AlertDialogHeader>
-                            <AlertDialogTitle>Delete Phone Number</AlertDialogTitle>
+                            <AlertDialogTitle>
+                              Delete Phone Number
+                            </AlertDialogTitle>
                             <AlertDialogDescription>
-                              Are you sure you want to delete {phone.phoneNumber}? This action cannot be undone.
+                              Are you sure you want to delete {phone.phoneNumber}
+                              ? This action cannot be undone.
                             </AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>

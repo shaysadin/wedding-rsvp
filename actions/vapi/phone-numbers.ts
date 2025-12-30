@@ -1,10 +1,9 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { UserRole } from "@prisma/client";
 
 import { prisma } from "@/lib/db";
-import { getCurrentUser } from "@/lib/session";
+import { requirePlatformOwner } from "@/lib/session";
 
 // ============ PHONE NUMBER MANAGEMENT ============
 
@@ -17,9 +16,9 @@ export interface CreateVapiPhoneNumberInput {
 
 export async function createVapiPhoneNumber(input: CreateVapiPhoneNumberInput) {
   try {
-    const user = await getCurrentUser();
+    const user = await requirePlatformOwner();
 
-    if (!user || user.role !== UserRole.ROLE_PLATFORM_OWNER) {
+    if (!user) {
       return { error: "Unauthorized" };
     }
 
@@ -54,9 +53,9 @@ export async function updateVapiPhoneNumber(
   input: Partial<CreateVapiPhoneNumberInput> & { isActive?: boolean }
 ) {
   try {
-    const user = await getCurrentUser();
+    const user = await requirePlatformOwner();
 
-    if (!user || user.role !== UserRole.ROLE_PLATFORM_OWNER) {
+    if (!user) {
       return { error: "Unauthorized" };
     }
 
@@ -84,9 +83,9 @@ export async function updateVapiPhoneNumber(
 
 export async function deleteVapiPhoneNumber(id: string) {
   try {
-    const user = await getCurrentUser();
+    const user = await requirePlatformOwner();
 
-    if (!user || user.role !== UserRole.ROLE_PLATFORM_OWNER) {
+    if (!user) {
       return { error: "Unauthorized" };
     }
 
@@ -119,9 +118,9 @@ export async function deleteVapiPhoneNumber(id: string) {
 
 export async function setDefaultVapiPhoneNumber(id: string) {
   try {
-    const user = await getCurrentUser();
+    const user = await requirePlatformOwner();
 
-    if (!user || user.role !== UserRole.ROLE_PLATFORM_OWNER) {
+    if (!user) {
       return { error: "Unauthorized" };
     }
 
@@ -148,9 +147,9 @@ export async function setDefaultVapiPhoneNumber(id: string) {
 
 export async function getVapiPhoneNumbers() {
   try {
-    const user = await getCurrentUser();
+    const user = await requirePlatformOwner();
 
-    if (!user || user.role !== UserRole.ROLE_PLATFORM_OWNER) {
+    if (!user) {
       return { error: "Unauthorized" };
     }
 
@@ -161,7 +160,14 @@ export async function getVapiPhoneNumbers() {
       orderBy: [{ isDefault: "desc" }, { createdAt: "asc" }],
     });
 
-    return { success: true, phoneNumbers };
+    // Serialize dates for client components
+    const serializedPhoneNumbers = phoneNumbers.map((p) => ({
+      ...p,
+      createdAt: p.createdAt.toISOString(),
+      updatedAt: p.updatedAt.toISOString(),
+    }));
+
+    return { success: true, phoneNumbers: serializedPhoneNumbers };
   } catch (error) {
     console.error("Error fetching VAPI phone numbers:", error);
     return { error: "Failed to fetch phone numbers" };
@@ -185,9 +191,9 @@ export async function getDefaultVapiPhoneNumber() {
 
 export async function assignPhoneNumberToUser(userId: string, phoneNumberId: string | null) {
   try {
-    const user = await getCurrentUser();
+    const user = await requirePlatformOwner();
 
-    if (!user || user.role !== UserRole.ROLE_PLATFORM_OWNER) {
+    if (!user) {
       return { error: "Unauthorized" };
     }
 

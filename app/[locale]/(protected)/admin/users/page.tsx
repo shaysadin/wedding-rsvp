@@ -4,6 +4,7 @@ import { getTranslations, getLocale } from "next-intl/server";
 import { getCurrentUser } from "@/lib/session";
 import { getAllUsers } from "@/actions/admin";
 import { getVapiPhoneNumbers } from "@/actions/vapi/phone-numbers";
+import { getWhatsAppPhoneNumbersWithUsers } from "@/actions/whatsapp-phone-numbers";
 import { DashboardHeader } from "@/components/dashboard/header";
 import { AdminUsersTable } from "@/components/admin/users-table";
 
@@ -17,14 +18,23 @@ export default async function AdminUsersPage() {
     redirect(`/${locale}/dashboard`);
   }
 
-  const [usersResult, phoneNumbersResult] = await Promise.all([
+  const [usersResult, vapiPhoneNumbersResult, whatsappPhoneNumbersResult] = await Promise.all([
     getAllUsers(),
     getVapiPhoneNumbers(),
+    getWhatsAppPhoneNumbersWithUsers(),
   ]);
 
   const users = usersResult.success ? usersResult.users : [];
-  const phoneNumbers = phoneNumbersResult.success
-    ? phoneNumbersResult.phoneNumbers.map(p => ({
+  const vapiPhoneNumbers = vapiPhoneNumbersResult.success
+    ? vapiPhoneNumbersResult.phoneNumbers.map(p => ({
+        id: p.id,
+        phoneNumber: p.phoneNumber,
+        displayName: p.displayName,
+        isDefault: p.isDefault,
+      }))
+    : [];
+  const whatsappPhoneNumbers = whatsappPhoneNumbersResult.success
+    ? whatsappPhoneNumbersResult.phoneNumbers.map(p => ({
         id: p.id,
         phoneNumber: p.phoneNumber,
         displayName: p.displayName,
@@ -35,7 +45,11 @@ export default async function AdminUsersPage() {
   return (
     <>
       <DashboardHeader heading={t("users")} text={t("allUsers")} />
-      <AdminUsersTable users={users || []} phoneNumbers={phoneNumbers} />
+      <AdminUsersTable
+        users={users || []}
+        vapiPhoneNumbers={vapiPhoneNumbers}
+        whatsappPhoneNumbers={whatsappPhoneNumbers}
+      />
     </>
   );
 }

@@ -1,12 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { User, UserStatus, UserRole, PlanTier, WeddingEvent, UsageTracking, VapiPhoneNumber } from "@prisma/client";
+import { User, UserStatus, UserRole, PlanTier, UsageTracking, VapiPhoneNumber } from "@prisma/client";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 
 import { reactivateUser, suspendUser, changeUserPlan, resetUserUsage, adjustCredits, toggleUserAdminRole } from "@/actions/admin";
 import { assignPhoneNumberToUser } from "@/actions/vapi/phone-numbers";
+import { assignWhatsAppPhoneNumberToUser } from "@/actions/whatsapp-phone-numbers";
 import { PlanLimits } from "@/config/plans";
 import {
   Table,
@@ -53,7 +54,7 @@ import { Progress } from "@/components/ui/progress";
 
 type UserWithStats = User & {
   _count: { weddingEvents: number };
-  weddingEvents: (WeddingEvent & { _count: { guests: number } })[];
+  weddingEvents: { id: string; title: string; _count: { guests: number } }[];
   totalGuests: number;
   usageTracking: UsageTracking | null;
   planLimits: PlanLimits;
@@ -61,6 +62,7 @@ type UserWithStats = User & {
   stripeSubscriptionId: string | null;
   stripeCustomerId: string | null;
   vapiPhoneNumber: VapiPhoneNumber | null;
+  whatsappPhoneNumberId: string | null;
 };
 
 type PhoneNumberOption = {
@@ -72,7 +74,8 @@ type PhoneNumberOption = {
 
 interface AdminUsersTableProps {
   users: UserWithStats[];
-  phoneNumbers?: PhoneNumberOption[];
+  vapiPhoneNumbers?: PhoneNumberOption[];
+  whatsappPhoneNumbers?: PhoneNumberOption[];
 }
 
 const statusColors: Record<UserStatus, string> = {
@@ -89,15 +92,18 @@ const planColors: Record<PlanTier, string> = {
   BUSINESS: "bg-amber-500/10 text-amber-500",
 };
 
-export function AdminUsersTable({ users, phoneNumbers = [] }: AdminUsersTableProps) {
+export function AdminUsersTable({ users, vapiPhoneNumbers = [], whatsappPhoneNumbers = [] }: AdminUsersTableProps) {
   const t = useTranslations("admin");
   const tc = useTranslations("common");
   const tPlans = useTranslations("plans");
   const tStatus = useTranslations("status");
   const ts = useTranslations("success");
   const [loading, setLoading] = useState<string | null>(null);
-  const [userPhoneNumbers, setUserPhoneNumbers] = useState<Record<string, string | null>>(
+  const [userVapiPhoneNumbers, setUserVapiPhoneNumbers] = useState<Record<string, string | null>>(
     Object.fromEntries(users.map(u => [u.id, u.vapiPhoneNumberId]))
+  );
+  const [userWhatsappPhoneNumbers, setUserWhatsappPhoneNumbers] = useState<Record<string, string | null>>(
+    Object.fromEntries(users.map(u => [u.id, u.whatsappPhoneNumberId]))
   );
 
   // Unified credits dialog state
@@ -244,7 +250,7 @@ export function AdminUsersTable({ users, phoneNumbers = [] }: AdminUsersTablePro
     }
   };
 
-  const handleAssignPhoneNumber = async (userId: string, phoneNumberId: string | null) => {
+  const handleAssignVapiPhoneNumber = async (userId: string, phoneNumberId: string | null) => {
     setLoading(userId);
     const result = await assignPhoneNumberToUser(userId, phoneNumberId);
     setLoading(null);
@@ -252,7 +258,20 @@ export function AdminUsersTable({ users, phoneNumbers = [] }: AdminUsersTablePro
     if (result.error) {
       toast.error(result.error);
     } else {
-      setUserPhoneNumbers(prev => ({ ...prev, [userId]: phoneNumberId }));
+      setUserVapiPhoneNumbers(prev => ({ ...prev, [userId]: phoneNumberId }));
+      toast.success(phoneNumberId ? t("phoneAssigned") : t("phoneUnassigned"));
+    }
+  };
+
+  const handleAssignWhatsappPhoneNumber = async (userId: string, phoneNumberId: string | null) => {
+    setLoading(userId);
+    const result = await assignWhatsAppPhoneNumberToUser(userId, phoneNumberId);
+    setLoading(null);
+
+    if (result.error) {
+      toast.error(result.error);
+    } else {
+      setUserWhatsappPhoneNumbers(prev => ({ ...prev, [userId]: phoneNumberId }));
       toast.success(phoneNumberId ? t("phoneAssigned") : t("phoneUnassigned"));
     }
   };
@@ -503,28 +522,28 @@ export function AdminUsersTable({ users, phoneNumbers = [] }: AdminUsersTablePro
                             : t("grantAdminRole")}
                         </DropdownMenuItem>
 
-                        {phoneNumbers.length > 0 && (
+                        {vapiPhoneNumbers.length > 0 && (
                           <>
                             <DropdownMenuSeparator />
                             <DropdownMenuSub>
                               <DropdownMenuSubTrigger>
                                 <Icons.phone className="me-2 h-4 w-4" />
-                                {t("assignPhoneNumber")}
+                                {t("assignVapiPhone")}
                               </DropdownMenuSubTrigger>
                               <DropdownMenuPortal>
                                 <DropdownMenuSubContent>
                                   <DropdownMenuItem
-                                    onClick={() => handleAssignPhoneNumber(user.id, null)}
-                                    disabled={!userPhoneNumbers[user.id]}
+                                    onClick={() => handleAssignVapiPhoneNumber(user.id, null)}
+                                    disabled={!userVapiPhoneNumbers[user.id]}
                                   >
                                     <span className="text-muted-foreground">{t("useDefault")}</span>
                                   </DropdownMenuItem>
                                   <DropdownMenuSeparator />
-                                  {phoneNumbers.map((phone) => (
+                                  {vapiPhoneNumbers.map((phone) => (
                                     <DropdownMenuItem
                                       key={phone.id}
-                                      onClick={() => handleAssignPhoneNumber(user.id, phone.id)}
-                                      disabled={userPhoneNumbers[user.id] === phone.id}
+                                      onClick={() => handleAssignVapiPhoneNumber(user.id, phone.id)}
+                                      disabled={userVapiPhoneNumbers[user.id] === phone.id}
                                     >
                                       <div className="flex items-center gap-2">
                                         <span>{phone.phoneNumber}</span>
@@ -534,7 +553,50 @@ export function AdminUsersTable({ users, phoneNumbers = [] }: AdminUsersTablePro
                                         {phone.isDefault && (
                                           <Badge variant="outline" className="text-xs py-0 px-1">Default</Badge>
                                         )}
-                                        {userPhoneNumbers[user.id] === phone.id && (
+                                        {userVapiPhoneNumbers[user.id] === phone.id && (
+                                          <Icons.check className="h-4 w-4 text-green-500" />
+                                        )}
+                                      </div>
+                                    </DropdownMenuItem>
+                                  ))}
+                                </DropdownMenuSubContent>
+                              </DropdownMenuPortal>
+                            </DropdownMenuSub>
+                          </>
+                        )}
+
+                        {whatsappPhoneNumbers.length > 0 && (
+                          <>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuSub>
+                              <DropdownMenuSubTrigger>
+                                <Icons.messageSquare className="me-2 h-4 w-4" />
+                                {t("assignWhatsappPhone")}
+                              </DropdownMenuSubTrigger>
+                              <DropdownMenuPortal>
+                                <DropdownMenuSubContent>
+                                  <DropdownMenuItem
+                                    onClick={() => handleAssignWhatsappPhoneNumber(user.id, null)}
+                                    disabled={!userWhatsappPhoneNumbers[user.id]}
+                                  >
+                                    <span className="text-muted-foreground">{t("useDefault")}</span>
+                                  </DropdownMenuItem>
+                                  <DropdownMenuSeparator />
+                                  {whatsappPhoneNumbers.map((phone) => (
+                                    <DropdownMenuItem
+                                      key={phone.id}
+                                      onClick={() => handleAssignWhatsappPhoneNumber(user.id, phone.id)}
+                                      disabled={userWhatsappPhoneNumbers[user.id] === phone.id}
+                                    >
+                                      <div className="flex items-center gap-2">
+                                        <span>{phone.phoneNumber}</span>
+                                        {phone.displayName && (
+                                          <span className="text-xs text-muted-foreground">({phone.displayName})</span>
+                                        )}
+                                        {phone.isDefault && (
+                                          <Badge variant="outline" className="text-xs py-0 px-1">Default</Badge>
+                                        )}
+                                        {userWhatsappPhoneNumbers[user.id] === phone.id && (
                                           <Icons.check className="h-4 w-4 text-green-500" />
                                         )}
                                       </div>

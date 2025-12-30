@@ -502,7 +502,12 @@
     "pendingChangeCancelled": "Pending plan change cancelled successfully",
     "cancelPendingChangeTitle": "Cancel Pending Plan Change",
     "cancelPendingChangeDesc": "Are you sure you want to cancel the pending plan change for {email}? The user's plan will remain as {fromPlan} instead of changing to {toPlan}.",
-    "confirmCancel": "Confirm Cancel"
+    "confirmCancel": "Confirm Cancel",
+    "assignVapiPhone": "Assign Voice Phone",
+    "assignWhatsappPhone": "Assign WhatsApp Phone",
+    "useDefault": "Use Default",
+    "phoneAssigned": "Phone number assigned",
+    "phoneUnassigned": "Phone number unassigned (using default)"
   },
   "plans": {
     "free": "Free",

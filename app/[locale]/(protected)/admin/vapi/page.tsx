@@ -6,7 +6,6 @@ import { getVapiProviderSettings } from "@/actions/vapi/settings";
 import { getVapiPhoneNumbers } from "@/actions/vapi/phone-numbers";
 import { DashboardHeader } from "@/components/dashboard/header";
 import { VapiSettingsForm } from "@/components/admin/vapi-settings-form";
-import { VapiPhoneNumbers } from "@/components/admin/vapi-phone-numbers";
 
 export default async function AdminVapiPage() {
   const user = await getCurrentUser();
@@ -33,8 +32,7 @@ export default async function AdminVapiPage() {
       />
 
       <div className="grid gap-6 overflow-auto">
-        <VapiPhoneNumbers phoneNumbers={phoneNumbers} />
-        <VapiSettingsForm settings={settings} />
+        <VapiSettingsForm settings={settings} phoneNumbers={phoneNumbers} />
       </div>
     </>
   );

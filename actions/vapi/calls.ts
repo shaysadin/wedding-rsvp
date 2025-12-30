@@ -104,8 +104,18 @@ export async function callGuest(guestId: string, eventId: string) {
       return { error: "Unauthorized" };
     }
 
+    // Get the user's plan from the database (session plan can be stale after upgrades)
+    const dbUser = await prisma.user.findUnique({
+      where: { id: user.id },
+      select: { plan: true },
+    });
+
+    if (!dbUser) {
+      return { error: "User not found" };
+    }
+
     // Check plan limits for voice calls
-    const userPlan = user.plan;
+    const userPlan = dbUser.plan;
 
     // Check if voice calls are enabled for this plan
     if (!isVoiceCallsEnabled(userPlan)) {
@@ -114,6 +124,20 @@ export async function callGuest(guestId: string, eventId: string) {
 
     // Get actual voice call count from VapiCallLog (source of truth)
     const { callsMade: voiceCallsMade, callsBonus: voiceCallsBonus } = await getActualVoiceCallCount(user.id);
+
+    // Debug logging
+    const planLimits = PLAN_LIMITS[userPlan];
+    console.log("[VOICE CALL DEBUG]", {
+      userId: user.id,
+      sessionPlan: user.plan,  // Plan from session (can be stale)
+      dbPlan: userPlan,        // Plan from database (fresh)
+      voiceCallsMade,
+      voiceCallsBonus,
+      planLimit: planLimits.maxVoiceCalls,
+      totalAllowed: planLimits.maxVoiceCalls + voiceCallsBonus,
+      canMakeCall: canMakeVoiceCalls(userPlan, voiceCallsMade, voiceCallsBonus),
+      remaining: getRemainingVoiceCalls(userPlan, voiceCallsMade, voiceCallsBonus),
+    });
 
     // Check if user can make more calls
     if (!canMakeVoiceCalls(userPlan, voiceCallsMade, voiceCallsBonus)) {
@@ -297,8 +321,18 @@ export async function startBulkCalling(
       return { error: "Unauthorized" };
     }
 
+    // Get the user's plan from the database (session plan can be stale after upgrades)
+    const dbUser = await prisma.user.findUnique({
+      where: { id: user.id },
+      select: { plan: true },
+    });
+
+    if (!dbUser) {
+      return { error: "User not found" };
+    }
+
     // Check plan limits for voice calls
-    const userPlan = user.plan;
+    const userPlan = dbUser.plan;
 
     // Check if voice calls are enabled for this plan
     if (!isVoiceCallsEnabled(userPlan)) {

@@ -28,7 +28,9 @@ export async function getAllUsers() {
           select: { weddingEvents: true },
         },
         weddingEvents: {
-          include: {
+          select: {
+            id: true,
+            title: true,
             _count: {
               select: { guests: true },
             },
@@ -402,7 +404,9 @@ export async function getRecentUsers(limit: number = 5) {
           select: { weddingEvents: true },
         },
         weddingEvents: {
-          include: {
+          select: {
+            id: true,
+            title: true,
             _count: {
               select: { guests: true },
             },
