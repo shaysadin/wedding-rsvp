@@ -89,6 +89,7 @@ interface RsvpCustomizerProps {
   initialSettings: RsvpPageSettings | null;
   templates: RsvpTemplate[];
   locale: string;
+  isAdmin?: boolean;
 }
 
 type SettingsState = Partial<RsvpPageSettings>;
@@ -132,6 +133,7 @@ const defaultSettings: SettingsState = {
   // Visibility
   showGoogleMaps: true,
   showWaze: true,
+  showBuiltByGroom: false,
   // Advanced Card Settings
   cardBorderRadius: 16,
   cardPadding: 24,
@@ -325,6 +327,7 @@ export function RsvpCustomizer({
   initialSettings,
   templates,
   locale,
+  isAdmin = false,
 }: RsvpCustomizerProps) {
   const t = useTranslations("rsvpSettings");
   const tc = useTranslations("common");
@@ -1267,6 +1270,18 @@ export function RsvpCustomizer({
                           checked={settings.showWaze !== false}
                           onCheckedChange={(checked) => updateSetting("showWaze", checked)}
                         />
+                        {isAdmin && (
+                          <div className="pt-2 border-t border-dashed">
+                            <ToggleSwitch
+                              label={isRTL ? "נבנה ע״י החתן שי ❤️" : "Built by Groom Shay ❤️"}
+                              checked={settings.showBuiltByGroom === true}
+                              onCheckedChange={(checked) => updateSetting("showBuiltByGroom", checked)}
+                            />
+                            <p className="text-xs text-muted-foreground mt-1">
+                              {isRTL ? "הצג הודעה בתחתית עמוד ה-RSVP (רק למנהלי מערכת)" : "Show credit message at bottom of RSVP page (admin only)"}
+                            </p>
+                          </div>
+                        )}
                       </div>
 
                       <Separator />

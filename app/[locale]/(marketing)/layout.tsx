@@ -7,7 +7,7 @@ interface MarketingLayoutProps {
 
 export default function MarketingLayout({ children }: MarketingLayoutProps) {
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="flex min-h-screen max-w-7xl flex-col">
       <NavBar scroll={true} />
       <main className="flex-1">{children}</main>
       <SiteFooter />

@@ -1,6 +1,7 @@
 import dynamic from "next/dynamic";
 import { redirect, notFound } from "next/navigation";
 import { getLocale, getTranslations } from "next-intl/server";
+import { UserRole } from "@prisma/client";
 
 import { getRsvpPageSettings, getTemplates } from "@/actions/rsvp-settings";
 import { getCurrentUser } from "@/lib/session";
@@ -39,6 +40,7 @@ export default async function CustomizePage({ params }: CustomizePageProps) {
 
   const { settings, event } = settingsResult;
   const templates = templatesResult.templates || [];
+  const isAdmin = user.role === UserRole.ROLE_PLATFORM_OWNER;
 
   return (
     <PageFadeIn className="min-h-0 flex-1">
@@ -48,6 +50,7 @@ export default async function CustomizePage({ params }: CustomizePageProps) {
         initialSettings={settings}
         templates={templates}
         locale={locale}
+        isAdmin={isAdmin}
       />
     </PageFadeIn>
   );

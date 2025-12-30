@@ -310,6 +310,7 @@ model RsvpPageSettings {
   rsvpDeclineTextColor         String?          @map("rsvp_decline_text_color")
   titleTextColor               String?          @map("title_text_color")
   rsvpButtonFontSize           Int?             @map("rsvp_button_font_size")
+  showBuiltByGroom             Boolean          @default(false) @map("show_built_by_groom")
   weddingEvent                 WeddingEvent     @relation(fields: [weddingEventId], references: [id], onDelete: Cascade)
 
   @@map("rsvp_page_settings")
