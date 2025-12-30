@@ -12,7 +12,8 @@ export default async function CustomizePage() {
   const locale = await getLocale();
   const t = await getTranslations("events");
 
-  if (!user || user.role !== UserRole.ROLE_WEDDING_OWNER) {
+  // Allow both wedding owners and platform owners (admins)
+  if (!user || (user.role !== UserRole.ROLE_WEDDING_OWNER && user.role !== UserRole.ROLE_PLATFORM_OWNER)) {
     redirect(`/${locale}/dashboard`);
   }
 
