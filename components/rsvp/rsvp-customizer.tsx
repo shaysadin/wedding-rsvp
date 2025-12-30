@@ -83,13 +83,17 @@ import { Icons } from "@/components/shared/icons";
 import { DevicePreview } from "./device-preview";
 import { RsvpFormPreview } from "./rsvp-form-preview";
 
+// Serialized event type for client components (Decimal converted to number)
+type SerializedWeddingEvent = Omit<WeddingEvent, 'totalBudget'> & {
+  totalBudget: number | null;
+};
+
 interface RsvpCustomizerProps {
   eventId: string;
-  event: WeddingEvent;
+  event: SerializedWeddingEvent;
   initialSettings: RsvpPageSettings | null;
   templates: RsvpTemplate[];
   locale: string;
-  isAdmin?: boolean;
 }
 
 type SettingsState = Partial<RsvpPageSettings>;
@@ -327,7 +331,6 @@ export function RsvpCustomizer({
   initialSettings,
   templates,
   locale,
-  isAdmin = false,
 }: RsvpCustomizerProps) {
   const t = useTranslations("rsvpSettings");
   const tc = useTranslations("common");
@@ -1270,18 +1273,11 @@ export function RsvpCustomizer({
                           checked={settings.showWaze !== false}
                           onCheckedChange={(checked) => updateSetting("showWaze", checked)}
                         />
-                        {isAdmin && (
-                          <div className="pt-2 border-t border-dashed">
-                            <ToggleSwitch
-                              label={isRTL ? "נבנה ע״י החתן שי ❤️" : "Built by Groom Shay ❤️"}
-                              checked={settings.showBuiltByGroom === true}
-                              onCheckedChange={(checked) => updateSetting("showBuiltByGroom", checked)}
-                            />
-                            <p className="text-xs text-muted-foreground mt-1">
-                              {isRTL ? "הצג הודעה בתחתית עמוד ה-RSVP (רק למנהלי מערכת)" : "Show credit message at bottom of RSVP page (admin only)"}
-                            </p>
-                          </div>
-                        )}
+                        <ToggleSwitch
+                          label={isRTL ? "קרדיט לבונה" : "Builder Credit"}
+                          checked={settings.showBuiltByGroom === true}
+                          onCheckedChange={(checked) => updateSetting("showBuiltByGroom", checked)}
+                        />
                       </div>
 
                       <Separator />

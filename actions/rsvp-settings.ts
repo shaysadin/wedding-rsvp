@@ -176,13 +176,15 @@ export async function getRsvpPageSettings(eventId: string) {
   try {
     const user = await getCurrentUser();
 
-    if (!user || user.role !== UserRole.ROLE_WEDDING_OWNER) {
+    if (!user || (user.role !== UserRole.ROLE_WEDDING_OWNER && user.role !== UserRole.ROLE_PLATFORM_OWNER)) {
       return { error: "Unauthorized" };
     }
 
-    // Verify event ownership
+    // Verify event ownership (platform owners can access any event)
     const event = await prisma.weddingEvent.findFirst({
-      where: { id: eventId, ownerId: user.id },
+      where: user.role === UserRole.ROLE_PLATFORM_OWNER
+        ? { id: eventId }
+        : { id: eventId, ownerId: user.id },
       include: { rsvpPageSettings: true },
     });
 
@@ -190,7 +192,13 @@ export async function getRsvpPageSettings(eventId: string) {
       return { error: "Event not found" };
     }
 
-    return { success: true, settings: event.rsvpPageSettings, event };
+    // Convert Decimal to number for client component serialization
+    const serializedEvent = {
+      ...event,
+      totalBudget: event.totalBudget ? Number(event.totalBudget) : null,
+    };
+
+    return { success: true, settings: event.rsvpPageSettings, event: serializedEvent };
   } catch (error) {
     console.error("Error fetching RSVP page settings:", error);
     return { error: "Failed to fetch settings" };

@@ -197,7 +197,13 @@ export async function getEventById(eventId: string) {
       return { error: "Event not found" };
     }
 
-    return { success: true, event };
+    // Convert Decimal to number for client component serialization
+    const serializedEvent = {
+      ...event,
+      totalBudget: event.totalBudget ? Number(event.totalBudget) : null,
+    };
+
+    return { success: true, event: serializedEvent };
   } catch (error) {
     console.error("Error fetching event:", error);
     return { error: "Failed to fetch event" };
@@ -250,6 +256,8 @@ export async function getUserEvents() {
 
       return {
         ...event,
+        // Convert Decimal to number for client component serialization
+        totalBudget: event.totalBudget ? Number(event.totalBudget) : null,
         stats,
       };
     });

@@ -452,13 +452,6 @@ export function RsvpForm({ guest, event, existingRsvp, settings, locale = "he" }
             : `You already responded on ${format(new Date(existingRsvp.respondedAt), "MM/dd/yyyy", { locale: dateLocale })}. You can update your response.`}
         </p>
       )}
-
-      {/* Built by Groom message (admin-only feature) */}
-      {settings?.showBuiltByGroom && (
-        <p className="text-center text-xs text-muted-foreground/60 pt-4">
-          {isRTL ? "נבנה ע״י החתן שי עם ❤️" : "Built by the Groom Shay with ❤️"}
-        </p>
-      )}
     </form>
   );
 }

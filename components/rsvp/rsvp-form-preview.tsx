@@ -10,9 +10,14 @@ import { GuestCounter } from "@/components/rsvp/guest-counter";
 import { EventDateDisplay } from "@/components/rsvp/event-date-display";
 import { cn } from "@/lib/utils";
 
+// Serialized event type for client components (Decimal converted to number)
+type SerializedWeddingEvent = Omit<WeddingEvent, 'totalBudget'> & {
+  totalBudget: number | null;
+};
+
 interface RsvpFormPreviewProps {
   settings: Partial<RsvpPageSettings> & Record<string, any>;
-  event: WeddingEvent;
+  event: SerializedWeddingEvent;
   locale: string;
 }
 

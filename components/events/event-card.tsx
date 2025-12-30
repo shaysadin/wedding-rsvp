@@ -8,7 +8,12 @@ import { Heart, MapPin } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Card, CardContent } from "@/components/ui/card";
 
-type EventWithStats = WeddingEvent & {
+// Serialized event type for client components (Decimal converted to number)
+type SerializedWeddingEvent = Omit<WeddingEvent, 'totalBudget'> & {
+  totalBudget: number | null;
+};
+
+type EventWithStats = SerializedWeddingEvent & {
   guests?: (Guest & { rsvp: GuestRsvp | null })[];
   _count?: { guests: number };
   stats: {

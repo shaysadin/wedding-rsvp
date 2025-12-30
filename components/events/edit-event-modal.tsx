@@ -27,8 +27,13 @@ import {
 import { Icons } from "@/components/shared/icons";
 import { DateTimePicker } from "@/components/ui/date-time-picker";
 
+// Serialized event type for client components (Decimal converted to number)
+type SerializedWeddingEvent = Omit<WeddingEvent, 'totalBudget'> & {
+  totalBudget: number | null;
+};
+
 interface EditEventModalProps {
-  event: WeddingEvent;
+  event: SerializedWeddingEvent;
   variant?: "button" | "card";
 }
 

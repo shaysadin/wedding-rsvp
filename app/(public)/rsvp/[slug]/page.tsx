@@ -45,7 +45,7 @@ export default async function RsvpPage({ params, searchParams }: RsvpPageProps) 
   const locale = resolvedSearchParams.lang || settings?.pageLocale || "he";
 
   return (
-    <RsvpPageWrapper settings={settings}>
+    <RsvpPageWrapper settings={settings} locale={locale}>
       <RsvpForm
         guest={guest}
         event={weddingEvent}

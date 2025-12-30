@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 interface RsvpPageWrapperProps {
   settings: RsvpPageSettings | null;
   children: React.ReactNode;
+  locale?: string;
 }
 
 const cardStyles: Record<CardStyle, string> = {
@@ -22,7 +23,8 @@ const fontSizeClasses: Record<string, string> = {
   xl: "text-xl",
 };
 
-export function RsvpPageWrapper({ settings, children }: RsvpPageWrapperProps) {
+export function RsvpPageWrapper({ settings, children, locale = "he" }: RsvpPageWrapperProps) {
+  const isRTL = locale === "he";
   // Build inline styles based on settings
   const backgroundStyle: React.CSSProperties = {};
   const cardStyle: React.CSSProperties = {};
@@ -124,7 +126,7 @@ export function RsvpPageWrapper({ settings, children }: RsvpPageWrapperProps) {
 
       {/* Content */}
       <div
-        className="relative flex min-h-[100dvh] items-center justify-center p-4 py-8"
+        className="relative flex min-h-[100dvh] flex-col items-center justify-center p-4 py-8"
       >
         <div
           className={cn(
@@ -140,6 +142,15 @@ export function RsvpPageWrapper({ settings, children }: RsvpPageWrapperProps) {
         >
           {children}
         </div>
+
+        {/* Credits Section - Below the RSVP card */}
+        {settings?.showBuiltByGroom && (
+          <div className="mt-6 text-center" style={{ maxWidth }}>
+            <p className="text-sm font-medium text-white drop-shadow-md">
+              {isRTL ? "נבנה ע״י החתן שי עם ❤️" : "Built by the Groom Shay with ❤️"}
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );
