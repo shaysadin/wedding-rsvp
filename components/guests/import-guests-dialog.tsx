@@ -9,6 +9,7 @@ import { bulkImportGuests } from "@/actions/guests";
 import { Button } from "@/components/ui/button";
 
 const PREDEFINED_GROUPS = ["family", "friends", "work", "other"] as const;
+const PREDEFINED_SIDES = ["bride", "groom", "both"] as const;
 import {
   Dialog,
   DialogContent,
@@ -35,7 +36,7 @@ interface ParsedGuest {
   name: string;
   phoneNumber?: string;
   email?: string;
-  side?: "bride" | "groom" | "both";
+  side?: string;
   groupName?: string;
   expectedGuests?: number;
   notes?: string;
@@ -124,21 +125,34 @@ export function ImportGuestsDialog({ eventId }: ImportGuestsDialogProps) {
           const expectedGuestsCol = row["מספר אורחים / Guests"] || row["expectedGuests"] || row["Expected Guests"] || row["guests"] || row["מספר אורחים"] || row["כמות"];
           const notesCol = row["הערות / Notes"] || row["notes"] || row["Notes"] || row["הערות"];
 
-          // Map side values
-          let side: "bride" | "groom" | "both" | undefined;
-          const sideValue = String(sideCol || "").toLowerCase();
-          if (sideValue.includes("bride") || sideValue.includes("כלה")) side = "bride";
-          else if (sideValue.includes("groom") || sideValue.includes("חתן")) side = "groom";
-          else if (sideValue.includes("both") || sideValue.includes("משותף")) side = "both";
+          // Map side values (exact match only, otherwise keep custom value)
+          let side: string | undefined;
+          const sideValue = String(sideCol || "").toLowerCase().trim();
+          const sideExactMatches: Record<string, string> = {
+            "bride": "bride", "כלה": "bride",
+            "groom": "groom", "חתן": "groom",
+            "both": "both", "משותף": "both", "שניהם": "both",
+          };
+          if (sideExactMatches[sideValue]) {
+            side = sideExactMatches[sideValue];
+          } else if (sideCol) {
+            side = String(sideCol).trim(); // Custom side value
+          }
 
-          // Map group values
+          // Map group values (exact match only, otherwise keep custom value)
           let groupName: string | undefined;
-          const groupValue = String(groupCol || "").toLowerCase();
-          if (groupValue.includes("family") || groupValue.includes("משפחה")) groupName = "family";
-          else if (groupValue.includes("friend") || groupValue.includes("חבר")) groupName = "friends";
-          else if (groupValue.includes("work") || groupValue.includes("עבודה")) groupName = "work";
-          else if (groupValue.includes("other") || groupValue.includes("אחר")) groupName = "other";
-          else if (groupCol) groupName = String(groupCol).trim();
+          const groupValue = String(groupCol || "").toLowerCase().trim();
+          const groupExactMatches: Record<string, string> = {
+            "family": "family", "משפחה": "family",
+            "friends": "friends", "חברים": "friends",
+            "work": "work", "עבודה": "work",
+            "other": "other", "אחר": "other",
+          };
+          if (groupExactMatches[groupValue]) {
+            groupName = groupExactMatches[groupValue];
+          } else if (groupCol) {
+            groupName = String(groupCol).trim(); // Custom group value
+          }
 
           // Parse expected guests
           const expectedGuests = expectedGuestsCol ? parseInt(String(expectedGuestsCol), 10) : undefined;
@@ -301,7 +315,11 @@ export function ImportGuestsDialog({ eventId }: ImportGuestsDialogProps) {
                       <tr key={i} className="border-t">
                         <td className="p-2">{guest.name}</td>
                         <td className="p-2">{guest.phoneNumber || "-"}</td>
-                        <td className="p-2">{guest.side ? t(`sides.${guest.side}` as "sides.bride" | "sides.groom" | "sides.both") : "-"}</td>
+                        <td className="p-2">{guest.side
+                          ? (PREDEFINED_SIDES.includes(guest.side as typeof PREDEFINED_SIDES[number])
+                              ? t(`sides.${guest.side}` as "sides.bride" | "sides.groom" | "sides.both")
+                              : guest.side)
+                          : "-"}</td>
                         <td className="p-2">{guest.groupName
                           ? (PREDEFINED_GROUPS.includes(guest.groupName as typeof PREDEFINED_GROUPS[number])
                               ? t(`groups.${guest.groupName}` as "groups.family" | "groups.friends" | "groups.work" | "groups.other")
