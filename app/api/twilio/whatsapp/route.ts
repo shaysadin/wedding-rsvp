@@ -278,25 +278,20 @@ async function handleButtonResponse(
     },
   });
 
-  // Update RSVP status if applicable
+  // Update RSVP status if applicable (using upsert for atomic operation)
   if (rsvpStatus) {
-    if (guest.rsvp) {
-      await prisma.guestRsvp.update({
-        where: { id: guest.rsvp.id },
-        data: {
-          status: rsvpStatus,
-          respondedAt: new Date(),
-        },
-      });
-    } else {
-      await prisma.guestRsvp.create({
-        data: {
-          guestId: guest.id,
-          status: rsvpStatus,
-          respondedAt: new Date(),
-        },
-      });
-    }
+    await prisma.guestRsvp.upsert({
+      where: { guestId: guest.id },
+      create: {
+        guestId: guest.id,
+        status: rsvpStatus,
+        respondedAt: new Date(),
+      },
+      update: {
+        status: rsvpStatus,
+        respondedAt: new Date(),
+      },
+    });
 
     console.log(`RSVP updated via button: Guest ${guest.name} - ${rsvpStatus}`);
   }
@@ -418,25 +413,19 @@ async function handleListResponse(
     },
   });
 
-  // Update guest count in RSVP
-  if (guest.rsvp) {
-    await prisma.guestRsvp.update({
-      where: { id: guest.rsvp.id },
-      data: {
-        guestCount: guestCount,
-      },
-    });
-  } else {
-    // Create RSVP with the count (shouldn't normally happen, but handle it)
-    await prisma.guestRsvp.create({
-      data: {
-        guestId: guest.id,
-        status: RsvpStatus.ACCEPTED,
-        guestCount: guestCount,
-        respondedAt: new Date(),
-      },
-    });
-  }
+  // Update guest count in RSVP (using upsert for atomic operation)
+  await prisma.guestRsvp.upsert({
+    where: { guestId: guest.id },
+    create: {
+      guestId: guest.id,
+      status: RsvpStatus.ACCEPTED,
+      guestCount: guestCount,
+      respondedAt: new Date(),
+    },
+    update: {
+      guestCount: guestCount,
+    },
+  });
 
   console.log(`Guest count updated via list: Guest ${guest.name} - ${guestCount} guests`);
 

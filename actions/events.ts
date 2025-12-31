@@ -13,6 +13,8 @@ import {
 } from "@/lib/validations/event";
 import { PLAN_LIMITS } from "@/config/plans";
 import { uploadImage } from "@/lib/cloudinary";
+import { archiveEvent } from "@/lib/archive/event-archive-service";
+import { isR2Configured } from "@/lib/r2";
 
 export async function createEvent(input: CreateEventInput) {
   try {
@@ -145,13 +147,25 @@ export async function deleteEvent(eventId: string) {
       return { error: "Event not found" };
     }
 
+    // Archive event to R2 before deletion (if R2 is configured)
+    if (isR2Configured()) {
+      try {
+        await archiveEvent(eventId, user.id);
+      } catch (archiveError) {
+        console.error("Failed to archive event:", archiveError);
+        return { error: "Failed to archive event before deletion. Please try again." };
+      }
+    }
+
+    // Hard delete event (cascade handles related records)
     await prisma.weddingEvent.delete({
       where: { id: eventId },
     });
 
     revalidatePath("/dashboard/events");
+    revalidatePath("/dashboard/archives");
 
-    return { success: true };
+    return { success: true, archived: isR2Configured() };
   } catch (error) {
     console.error("Error deleting event:", error);
     return { error: "Failed to delete event" };

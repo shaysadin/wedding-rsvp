@@ -62,7 +62,7 @@ export async function submitRsvp(input: SubmitRsvpInput) {
       return { error: "This event is no longer accepting RSVPs" };
     }
 
-    // Update or create RSVP
+    // Update or create RSVP (using upsert for atomic operation to handle concurrent requests)
     const rsvpData = {
       status: validatedData.status,
       guestCount: validatedData.status === RsvpStatus.ACCEPTED ? validatedData.guestCount : 0,
@@ -70,20 +70,14 @@ export async function submitRsvp(input: SubmitRsvpInput) {
       respondedAt: new Date(),
     };
 
-    let rsvp;
-    if (guest.rsvp) {
-      rsvp = await prisma.guestRsvp.update({
-        where: { id: guest.rsvp.id },
-        data: rsvpData,
-      });
-    } else {
-      rsvp = await prisma.guestRsvp.create({
-        data: {
-          guestId: guest.id,
-          ...rsvpData,
-        },
-      });
-    }
+    const rsvp = await prisma.guestRsvp.upsert({
+      where: { guestId: guest.id },
+      create: {
+        guestId: guest.id,
+        ...rsvpData,
+      },
+      update: rsvpData,
+    });
 
     // Send confirmation notification
     try {

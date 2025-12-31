@@ -803,6 +803,23 @@ model WhatsAppButtonResponse {
   @@map("whatsapp_button_responses")
 }
 
+model EventArchive {
+  id              String   @id @default(cuid())
+  userId          String   @map("user_id")
+  originalEventId String   @unique @map("original_event_id")
+  eventTitle      String   @map("event_title")
+  eventDate       DateTime @map("event_date")
+  r2Key           String   @map("r2_key")
+  guestCount      Int      @default(0) @map("guest_count")
+  archiveSize     Int?     @map("archive_size")
+  archivedAt      DateTime @default(now()) @map("archived_at")
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  @@index([userId])
+  @@index([archivedAt])
+  @@map("event_archives")
+}
+
 enum UserRole {
   ROLE_PLATFORM_OWNER
   ROLE_WEDDING_OWNER
@@ -881,6 +898,7 @@ enum DateDisplayStyle {
 enum CronJobType {
   PLAN_CHANGE
   BULK_MESSAGE
+  EVENT_AUTO_CLOSE
 }
 
 enum CronJobStatus {

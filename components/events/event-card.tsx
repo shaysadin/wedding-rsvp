@@ -1,12 +1,22 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { WeddingEvent, Guest, GuestRsvp } from "@prisma/client";
 import { useTranslations } from "next-intl";
-import { Heart, MapPin } from "lucide-react";
+import { Heart, MapPin, MoreVertical, Pencil, Trash2, ExternalLink } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { Card, CardContent } from "@/components/ui/card";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { DeleteEventModal } from "@/components/events/delete-event-modal";
 
 // Serialized event type for client components (Decimal converted to number)
 type SerializedWeddingEvent = Omit<WeddingEvent, 'totalBudget'> & {
@@ -32,7 +42,9 @@ interface EventCardProps {
 
 export function EventCard({ event, locale }: EventCardProps) {
   const t = useTranslations("events");
+  const router = useRouter();
   const isRTL = locale === "he";
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
   const eventDate = new Date(event.dateTime);
   const isUpcoming = eventDate > new Date();
@@ -54,8 +66,9 @@ export function EventCard({ event, locale }: EventCardProps) {
     : 0;
 
   return (
-    <Link href={`/${locale}/dashboard/events/${event.id}`}>
-      <Card className="group relative overflow-hidden transition-all hover:shadow-lg hover:-translate-y-1 duration-200">
+    <>
+      <Link href={`/${locale}/dashboard/events/${event.id}`}>
+        <Card className="group relative overflow-hidden transition-all hover:shadow-lg hover:-translate-y-1 duration-200">
         {/* Decorative top gradient */}
         <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-pink-500 via-rose-500 to-red-500" />
 
@@ -79,7 +92,48 @@ export function EventCard({ event, locale }: EventCardProps) {
                 </p>
               )}
             </div>
-            <div className="shrink-0">
+            <div className="shrink-0 flex items-center gap-1">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    onClick={(e) => e.preventDefault()}
+                    className="rounded-full p-1.5 opacity-0 transition-opacity hover:bg-muted group-hover:opacity-100"
+                  >
+                    <MoreVertical className="h-4 w-4 text-muted-foreground" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align={isRTL ? "start" : "end"} className="w-48">
+                  <DropdownMenuItem
+                    onClick={(e) => {
+                      e.preventDefault();
+                      router.push(`/${locale}/dashboard/events/${event.id}`);
+                    }}
+                  >
+                    <ExternalLink className="me-2 h-4 w-4" />
+                    {isRTL ? "פתח אירוע" : "Open Event"}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={(e) => {
+                      e.preventDefault();
+                      router.push(`/${locale}/dashboard/events/${event.id}?edit=true`);
+                    }}
+                  >
+                    <Pencil className="me-2 h-4 w-4" />
+                    {isRTL ? "ערוך אירוע" : "Edit Event"}
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setIsDeleteModalOpen(true);
+                    }}
+                    className="text-red-600 focus:text-red-600 dark:text-red-400 dark:focus:text-red-400"
+                  >
+                    <Trash2 className="me-2 h-4 w-4" />
+                    {isRTL ? "מחק אירוע" : "Delete Event"}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
               <div className="rounded-full bg-gradient-to-br from-pink-100 to-rose-100 p-2 dark:from-pink-900/30 dark:to-rose-900/30 transition-transform duration-150 group-hover:rotate-12">
                 <Heart className="h-4 w-4 text-rose-500" />
               </div>
@@ -167,7 +221,16 @@ export function EventCard({ event, locale }: EventCardProps) {
             </div>
           </div>
         </CardContent>
-      </Card>
-    </Link>
+        </Card>
+      </Link>
+
+      <DeleteEventModal
+        eventId={event.id}
+        eventTitle={event.title}
+        guestCount={event.stats.total}
+        open={isDeleteModalOpen}
+        onOpenChange={setIsDeleteModalOpen}
+      />
+    </>
   );
 }

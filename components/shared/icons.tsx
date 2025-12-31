@@ -1,6 +1,7 @@
 import {
   Activity,
   AlertTriangle,
+  Archive,
   ArrowDown,
   ArrowLeft,
   ArrowRight,
@@ -97,6 +98,7 @@ export const Icons = {
   activity: Activity,
   add: Plus,
   alertTriangle: AlertTriangle,
+  archive: Archive,
   arrowDown: ArrowDown,
   arrowLeft: ArrowLeft,
   arrowRight: ArrowRight,

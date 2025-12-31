@@ -104,7 +104,14 @@ export const sidebarLinks: SidebarNavItem[] = [
     titleKey: "common.options",
     title: "OPTIONS",
     items: [
-         {
+      {
+        href: "/dashboard/archives",
+        icon: "archive",
+        titleKey: "navigation.archives",
+        title: "Archives",
+        authorizeOnly: UserRole.ROLE_WEDDING_OWNER,
+      },
+      {
         href: "/dashboard/billing",
         icon: "creditCard",
         titleKey: "navigation.billing",
