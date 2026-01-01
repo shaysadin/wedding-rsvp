@@ -85,7 +85,8 @@
     "cronLogs": "Cron Logs",
     "vapi": "Voice Agent",
     "voiceAgent": "Voice Agent",
-    "archives": "Archives"
+    "archives": "Archives",
+    "tasks": "Tasks"
   },
   "auth": {
     "signIn": "Sign In",
@@ -1488,5 +1489,34 @@
     "type": "Type",
     "channel": "Channel",
     "sentAt": "Sent At"
+  },
+  "tasks": {
+    "title": "Tasks",
+    "description": "Organize and track your wedding tasks",
+    "selectEventDescription": "Select an event to manage its tasks",
+    "manageTasks": "Manage Tasks",
+    "backlog": "Backlog",
+    "todo": "To Do",
+    "inProgress": "In Progress",
+    "complete": "Complete",
+    "addCard": "Add task",
+    "close": "Close",
+    "add": "Add",
+    "placeholder": "Add new task...",
+    "deleteZone": "Delete",
+    "totalTasks": "tasks",
+    "completionRate": "Completion rate",
+    "taskCreated": "Task created successfully",
+    "taskUpdated": "Task updated successfully",
+    "taskDeleted": "Task deleted successfully",
+    "errorCreating": "Failed to create task",
+    "errorUpdating": "Failed to update task",
+    "errorDeleting": "Failed to delete task",
+    "addNote": "Add note",
+    "notePlaceholder": "Write a note...",
+    "noteAdded": "Note added successfully",
+    "noteDeleted": "Note deleted successfully",
+    "errorAddingNote": "Failed to add note",
+    "errorDeletingNote": "Failed to delete note"
   }
 }

@@ -85,7 +85,8 @@
     "cronLogs": "יומני משימות",
     "vapi": "סוכן קולי",
     "voiceAgent": "סוכן קולי",
-    "archives": "ארכיון"
+    "archives": "ארכיון",
+    "tasks": "משימות"
   },
   "auth": {
     "signIn": "כניסה",
@@ -1492,5 +1493,34 @@
     "storageNotConfigured": "אחסון ארכיון לא הוגדר",
     "storageNotConfiguredDescription": "צור קשר עם מנהל המערכת כדי להפעיל ארכיון אירועים.",
     "backToArchives": "חזרה לארכיון"
+  },
+  "tasks": {
+    "title": "משימות",
+    "description": "ארגון ומעקב אחר משימות החתונה",
+    "selectEventDescription": "בחר אירוע לניהול משימות",
+    "manageTasks": "ניהול משימות",
+    "backlog": "ממתין",
+    "todo": "לביצוע",
+    "inProgress": "בתהליך",
+    "complete": "הושלם",
+    "addCard": "הוסף משימה",
+    "close": "סגור",
+    "add": "הוסף",
+    "placeholder": "הוסף משימה חדשה...",
+    "deleteZone": "מחק",
+    "totalTasks": "משימות",
+    "completionRate": "אחוז השלמה",
+    "taskCreated": "המשימה נוצרה בהצלחה",
+    "taskUpdated": "המשימה עודכנה בהצלחה",
+    "taskDeleted": "המשימה נמחקה בהצלחה",
+    "errorCreating": "שגיאה ביצירת משימה",
+    "errorUpdating": "שגיאה בעדכון משימה",
+    "errorDeleting": "שגיאה במחיקת משימה",
+    "addNote": "הוסף הערה",
+    "notePlaceholder": "כתוב הערה...",
+    "noteAdded": "ההערה נוספה בהצלחה",
+    "noteDeleted": "ההערה נמחקה בהצלחה",
+    "errorAddingNote": "שגיאה בהוספת הערה",
+    "errorDeletingNote": "שגיאה במחיקת הערה"
   }
 }

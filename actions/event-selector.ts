@@ -1,6 +1,6 @@
 "use server";
 
-import { UserRole, NotificationType, NotificationStatus } from "@prisma/client";
+import { UserRole, NotificationType, NotificationStatus, TaskStatus } from "@prisma/client";
 
 import { prisma } from "@/lib/db";
 import { getCurrentUser } from "@/lib/session";
@@ -658,6 +658,87 @@ export async function getEventsForSuppliersSelector(): Promise<{
     return { success: true, events: eventsWithStats };
   } catch (error) {
     console.error("Error fetching events for suppliers selector:", error);
+    return { error: "Failed to fetch events" };
+  }
+}
+
+// ============ TASKS SELECTOR ============
+
+export interface TasksEventData {
+  id: string;
+  title: string;
+  dateTime: Date;
+  location: string;
+  venue?: string | null;
+  taskStats: {
+    totalTasks: number;
+    backlogCount: number;
+    todoCount: number;
+    doingCount: number;
+    doneCount: number;
+    completionRate: number;
+  };
+}
+
+export async function getEventsForTasksSelector(): Promise<{
+  success?: boolean;
+  events?: TasksEventData[];
+  error?: string;
+}> {
+  try {
+    const user = await getCurrentUser();
+
+    if (!user || user.role !== UserRole.ROLE_WEDDING_OWNER) {
+      return { error: "Unauthorized" };
+    }
+
+    // Fetch events with task stats
+    const events = await prisma.weddingEvent.findMany({
+      where: { ownerId: user.id },
+      select: {
+        id: true,
+        title: true,
+        dateTime: true,
+        location: true,
+        venue: true,
+        tasks: {
+          select: {
+            id: true,
+            status: true,
+          },
+        },
+      },
+      orderBy: { dateTime: "asc" },
+    });
+
+    const eventsWithStats: TasksEventData[] = events.map((event) => {
+      const totalTasks = event.tasks.length;
+      const backlogCount = event.tasks.filter((t) => t.status === TaskStatus.BACKLOG).length;
+      const todoCount = event.tasks.filter((t) => t.status === TaskStatus.TODO).length;
+      const doingCount = event.tasks.filter((t) => t.status === TaskStatus.DOING).length;
+      const doneCount = event.tasks.filter((t) => t.status === TaskStatus.DONE).length;
+      const completionRate = totalTasks > 0 ? Math.round((doneCount / totalTasks) * 100) : 0;
+
+      return {
+        id: event.id,
+        title: event.title,
+        dateTime: event.dateTime,
+        location: event.location,
+        venue: event.venue,
+        taskStats: {
+          totalTasks,
+          backlogCount,
+          todoCount,
+          doingCount,
+          doneCount,
+          completionRate,
+        },
+      };
+    });
+
+    return { success: true, events: eventsWithStats };
+  } catch (error) {
+    console.error("Error fetching events for tasks selector:", error);
     return { error: "Failed to fetch events" };
   }
 }

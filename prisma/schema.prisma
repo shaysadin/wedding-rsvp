@@ -143,6 +143,7 @@ model WeddingEvent {
   venueBlocks             VenueBlock[]
   owner                   User               @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   tables                  WeddingTable[]
+  tasks                   WeddingTask[]
 
   @@index([ownerId])
   @@map("wedding_events")
@@ -960,4 +961,41 @@ enum PaymentMethod {
   BANK_TRANSFER
   CHECK
   OTHER
+}
+
+enum TaskStatus {
+  BACKLOG
+  TODO
+  DOING
+  DONE
+}
+
+model WeddingTask {
+  id             String      @id @default(cuid())
+  weddingEventId String      @map("wedding_event_id")
+  title          String
+  description    String?
+  status         TaskStatus  @default(BACKLOG)
+  position       Int         @default(0)
+  dueDate        DateTime?   @map("due_date")
+  createdAt      DateTime    @default(now()) @map("created_at")
+  updatedAt      DateTime    @default(now()) @updatedAt @map("updated_at")
+  weddingEvent   WeddingEvent @relation(fields: [weddingEventId], references: [id], onDelete: Cascade)
+  notes          TaskNote[]
+
+  @@index([weddingEventId])
+  @@index([status])
+  @@map("wedding_tasks")
+}
+
+model TaskNote {
+  id        String      @id @default(cuid())
+  taskId    String      @map("task_id")
+  content   String
+  createdAt DateTime    @default(now()) @map("created_at")
+  updatedAt DateTime    @default(now()) @updatedAt @map("updated_at")
+  task      WeddingTask @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@index([taskId])
+  @@map("task_notes")
 }

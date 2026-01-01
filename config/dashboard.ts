@@ -98,6 +98,13 @@ export const sidebarLinks: SidebarNavItem[] = [
         title: "Voice Agent",
         authorizeOnly: UserRole.ROLE_WEDDING_OWNER,
       },
+      {
+        href: "/dashboard/tasks",
+        icon: "checkSquare",
+        titleKey: "navigation.tasks",
+        title: "Tasks",
+        authorizeOnly: UserRole.ROLE_WEDDING_OWNER,
+      },
     ],
   },
   {
