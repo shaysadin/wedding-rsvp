@@ -6,7 +6,7 @@ import { Command as CommandPrimitive } from "cmdk"
 import { Search } from "lucide-react"
 
 import { cn } from "@/lib/utils"
-import { Dialog, DialogContent } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 
 const Command = React.forwardRef<
   React.ElementRef<typeof CommandPrimitive>,
@@ -23,13 +23,33 @@ const Command = React.forwardRef<
 ))
 Command.displayName = CommandPrimitive.displayName
 
-interface CommandDialogProps extends DialogProps { }
+interface CommandDialogProps extends DialogProps {
+  isRTL?: boolean;
+}
 
-const CommandDialog = ({ children, ...props }: CommandDialogProps) => {
+const CommandDialog = ({ children, isRTL, ...props }: CommandDialogProps) => {
   return (
     <Dialog {...props}>
-      <DialogContent size="auto" className="overflow-hidden p-0 shadow-2xl sm:min-w-[450px] sm:max-w-[550px] [&>div]:p-0">
-        <Command className="[&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:text-muted-foreground [&_[cmdk-group]:not([hidden])_~[cmdk-group]]:pt-0 [&_[cmdk-group]]:px-2 [&_[cmdk-input-wrapper]_svg]:size-5 [&_[cmdk-input]]:h-12 [&_[cmdk-item]]:px-2 [&_[cmdk-item]]:py-3 [&_[cmdk-item]_svg]:size-5 [&_[cmdk-item]]:cursor-pointer">
+      <DialogContent
+        size="auto"
+        hideCloseButton
+        noWrapper
+        className={cn(
+          "overflow-hidden p-0 shadow-2xl sm:min-w-[450px] sm:max-w-[550px]",
+          isRTL && "direction-rtl"
+        )}
+      >
+        <DialogTitle className="sr-only">{isRTL ? "חיפוש" : "Search"}</DialogTitle>
+        <DialogDescription className="sr-only">
+          {isRTL ? "חפש דפים, אירועים ופעולות" : "Search pages, events and actions"}
+        </DialogDescription>
+        <Command
+          loop
+          className={cn(
+            "pointer-events-auto [&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:text-muted-foreground [&_[cmdk-group]:not([hidden])_~[cmdk-group]]:pt-0 [&_[cmdk-group]]:px-2 [&_[cmdk-input-wrapper]_svg]:size-5 [&_[cmdk-input]]:h-12 [&_[cmdk-item]]:px-2 [&_[cmdk-item]]:py-3 [&_[cmdk-item]_svg]:size-5 [&_[cmdk-item]]:cursor-pointer [&_[cmdk-item]]:pointer-events-auto",
+            isRTL && "[&_[cmdk-group-heading]]:text-right"
+          )}
+        >
           {children}
         </Command>
       </DialogContent>
@@ -113,11 +133,13 @@ CommandSeparator.displayName = CommandPrimitive.Separator.displayName
 const CommandItem = React.forwardRef<
   React.ElementRef<typeof CommandPrimitive.Item>,
   React.ComponentPropsWithoutRef<typeof CommandPrimitive.Item>
->(({ className, ...props }, ref) => (
+>(({ className, onSelect, ...props }, ref) => (
   <CommandPrimitive.Item
     ref={ref}
+    onSelect={onSelect}
+    onClick={() => onSelect?.()}
     className={cn(
-      "relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none aria-selected:bg-accent aria-selected:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
+      "relative flex cursor-pointer items-center rounded-sm px-2 py-1.5 text-sm outline-none aria-selected:bg-accent aria-selected:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 hover:bg-accent/50 transition-colors",
       className
     )}
     {...props}

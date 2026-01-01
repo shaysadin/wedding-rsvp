@@ -33,7 +33,7 @@ DialogOverlay.displayName = DialogPrimitive.Overlay.displayName
 const dialogContentVariants = cva(
   cn(
     // Mobile: full screen with safe areas
-    "fixed inset-0 z-50 flex flex-col bg-card",
+    "fixed inset-0 z-[51] flex flex-col bg-card",
     // Desktop: centered modal
     "sm:inset-auto sm:left-1/2 sm:top-1/2 sm:max-h-[90vh] sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-xl sm:border sm:border-border/50 sm:shadow-xl",
     // Animations
@@ -61,12 +61,15 @@ const dialogContentVariants = cva(
 
 interface DialogContentProps
   extends React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content>,
-    VariantProps<typeof dialogContentVariants> {}
+    VariantProps<typeof dialogContentVariants> {
+  hideCloseButton?: boolean;
+  noWrapper?: boolean;
+}
 
 const DialogContent = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Content>,
   DialogContentProps
->(({ className, children, size, ...props }, ref) => (
+>(({ className, children, size, hideCloseButton, noWrapper, ...props }, ref) => (
   <DialogPortal>
     <DialogOverlay />
     <DialogPrimitive.Content
@@ -74,13 +77,19 @@ const DialogContent = React.forwardRef<
       className={cn(dialogContentVariants({ size }), className)}
       {...props}
     >
-      <div className="flex min-h-0 flex-1 flex-col overflow-y-auto p-4 sm:p-6">
-        {children}
-      </div>
-      <DialogPrimitive.Close className="absolute end-3 top-3 rounded-lg p-1.5 opacity-70 ring-offset-background transition-all hover:opacity-100 hover:bg-muted focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground sm:end-4 sm:top-4 sm:p-1 z-10">
-        <X className="size-5 sm:size-4" />
-        <span className="sr-only">Close</span>
-      </DialogPrimitive.Close>
+      {noWrapper ? (
+        children
+      ) : (
+        <div className="flex min-h-0 flex-1 flex-col overflow-y-auto p-4 sm:p-6">
+          {children}
+        </div>
+      )}
+      {!hideCloseButton && (
+        <DialogPrimitive.Close className="absolute end-3 top-3 rounded-lg p-1.5 opacity-70 ring-offset-background transition-all hover:opacity-100 hover:bg-muted focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground sm:end-4 sm:top-4 sm:p-1 z-10">
+          <X className="size-5 sm:size-4" />
+          <span className="sr-only">Close</span>
+        </DialogPrimitive.Close>
+      )}
     </DialogPrimitive.Content>
   </DialogPortal>
 ))

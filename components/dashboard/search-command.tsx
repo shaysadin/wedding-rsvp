@@ -132,7 +132,7 @@ export function SearchCommand({ links, userEvents = [] }: SearchCommandProps) {
         </kbd>
       </Button>
 
-      <CommandDialog open={open} onOpenChange={setOpen}>
+      <CommandDialog open={open} onOpenChange={setOpen} isRTL={isRTL}>
         <CommandInput
           placeholder={isRTL ? "חפש דפים, אירועים, פעולות..." : "Search pages, events, actions..."}
           className={cn(isRTL && "text-right")}
