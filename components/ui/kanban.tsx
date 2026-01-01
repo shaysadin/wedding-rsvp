@@ -343,7 +343,7 @@ const Column = ({
           "w-full rounded-lg border-2 border-dashed transition-colors p-1.5 min-h-[80px] space-y-2",
           active
             ? "border-primary/50 bg-primary/5"
-            : "border-transparent bg-[#aeaeae4d]"
+            : "border-transparent bg-[#aeaeae15]"
         )}
       >
         {filteredCards.map((c) => {
