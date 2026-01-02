@@ -1,128 +1,168 @@
-<a href="https://next-saas-stripe-starter.vercel.app">
-  <img alt="SaaS Starter" src="public/_static/og.jpg">
-  <h1 align="center">Next SaaS Stripe Starter</h1>
-</a>
+<h1 align="center">Wedding RSVP Manager</h1>
 
 <p align="center">
-  Start at full speed with SaaS Starter !
+  A comprehensive wedding event management platform for handling RSVPs, guest lists, seating arrangements, and more.
 </p>
 
 <p align="center">
-  <a href="https://twitter.com/miickasmt">
-    <img src="https://img.shields.io/twitter/follow/miickasmt?style=flat&label=miickasmt&logo=twitter&color=0bf&logoColor=fff" alt="Mickasmt Twitter follower count" />
-  </a>
-</p>
-
-<p align="center">
-  <a href="#introduction"><strong>Introduction</strong></a> ·
+  <a href="#features"><strong>Features</strong></a> ·
+  <a href="#tech-stack"><strong>Tech Stack</strong></a> ·
   <a href="#installation"><strong>Installation</strong></a> ·
-  <a href="#tech-stack--features"><strong>Tech Stack + Features</strong></a> ·
-  <a href="#author"><strong>Author</strong></a> ·
-  <a href="#credits"><strong>Credits</strong></a>
+  <a href="#environment-variables"><strong>Environment Variables</strong></a>
 </p>
-<br/>
 
-## Introduction
+---
 
-Empower your next project with the stack of Next.js 14, Prisma, Neon, Auth.js v5, Resend, React Email, Shadcn/ui, and Stripe.
-<br/>
-All seamlessly integrated with the SaaS Starter to accelerate your development and saas journey.
+## Features
+
+### Guest Management
+- Import guests from Excel/CSV files
+- Track RSVP responses and guest counts
+- Filter and search guests by status, group, and more
+- Bulk messaging for invitations and reminders
+
+### Voice AI Agent
+- Automated phone calls to collect RSVPs using VAPI
+- Natural conversation flow in Hebrew
+- Real-time call status tracking
+- Automatic RSVP updates from calls
+
+### Seating Arrangements
+- Interactive drag-and-drop table planner
+- Multiple table shapes (round, rectangle, square)
+- Guest assignment with visual feedback
+- Export seating charts
+
+### Task Management
+- Kanban board for wedding planning tasks
+- Drag-and-drop task organization
+- Notes and comments on tasks
+- Progress tracking across stages
+
+### Supplier Management
+- Track wedding vendors and suppliers
+- Payment tracking and budgeting
+- Contact information management
+
+### Invitations
+- Customizable RSVP pages
+- WhatsApp integration for sending invites
+- QR code generation
+- Interactive invitation templates
+
+### Multi-Language Support
+- Full Hebrew (RTL) and English support
+- Localized UI and communications
+
+---
+
+## Tech Stack
+
+### Framework
+- **Next.js 15** - React framework with App Router
+- **TypeScript** - Type-safe development
+- **Prisma** - Database ORM
+
+### Authentication & Payments
+- **Auth.js v5** - Authentication with multiple providers
+- **Stripe** - Subscription billing
+
+### UI & Styling
+- **Tailwind CSS** - Utility-first styling
+- **Shadcn/ui** - Component library
+- **Framer Motion** - Animations
+- **Lucide Icons** - Icon set
+
+### Database & Storage
+- **PostgreSQL** - Primary database (via Neon)
+- **Cloudflare R2** - File storage
+
+### Communications
+- **Resend** - Email delivery
+- **VAPI** - Voice AI agent
+- **Twilio** - SMS/WhatsApp messaging
+
+### Deployment
+- **Vercel** - Hosting and deployment
+
+---
 
 ## Installation
 
-Clone & create this repo locally with the following command:
-
+1. Clone the repository:
 ```bash
-npx create-next-app my-saas-project --example "https://github.com/mickasmt/next-saas-stripe-starter"
+git clone <repository-url>
+cd wedding-rsvp-manager
 ```
 
-Or, deploy with Vercel:
-
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fmickasmt%2Fnext-saas-stripe-starter)
-
-### Steps
-
-1. Install dependencies using pnpm:
-
-```sh
-pnpm install
+2. Install dependencies:
+```bash
+npm install
 ```
 
-2. Copy `.env.example` to `.env.local` and update the variables.
-
-```sh
+3. Set up environment variables:
+```bash
 cp .env.example .env.local
 ```
 
-3. Start the development server:
-
-```sh
-pnpm run dev
+4. Initialize the database:
+```bash
+npx prisma generate
+npx prisma db push
 ```
 
-> [!NOTE]  
-> I use [npm-check-updates](https://www.npmjs.com/package/npm-check-updates) package for update this project.
->
-> Use this command for update your project: `ncu -i --format group`
+5. Start the development server:
+```bash
+npm run dev
+```
 
-## Roadmap
-- [ ] Upgrade eslint to v9
-- [ ] Add resend for success subscriptions
+---
 
-## Tech Stack + Features
+## Environment Variables
 
-https://github.com/mickasmt/next-saas-stripe-starter/assets/62285783/828a4e0f-30e3-4cfe-96ff-4dfd9cd55124
+Create a `.env.local` file with the following variables:
 
-### Frameworks
+```env
+# Database
+DATABASE_URL=
 
-- [Next.js](https://nextjs.org/) – React framework for building performant apps with the best developer experience
-- [Auth.js](https://authjs.dev/) – Handle user authentication with ease with providers like Google, Twitter, GitHub, etc.
-- [Prisma](https://www.prisma.io/) – Typescript-first ORM for Node.js
-- [React Email](https://react.email/) – Versatile email framework for efficient and flexible email development
+# Auth
+AUTH_SECRET=
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
 
-### Platforms
+# Stripe
+STRIPE_API_KEY=
+STRIPE_WEBHOOK_SECRET=
+NEXT_PUBLIC_STRIPE_PRO_MONTHLY_PLAN_ID=
+NEXT_PUBLIC_STRIPE_PRO_YEARLY_PLAN_ID=
+NEXT_PUBLIC_STRIPE_BUSINESS_MONTHLY_PLAN_ID=
+NEXT_PUBLIC_STRIPE_BUSINESS_YEARLY_PLAN_ID=
 
-- [Vercel](https://vercel.com/) – Easily preview & deploy changes with git
-- [Resend](https://resend.com/) – A powerful email framework for streamlined email development
-- [Neon](https://neon.tech/) – Serverless Postgres with autoscaling, branching, bottomless storage and generous free tier.
+# Email
+RESEND_API_KEY=
 
-### UI
+# VAPI (Voice AI)
+VAPI_API_KEY=
+VAPI_PHONE_NUMBER_ID=
 
-- [Tailwind CSS](https://tailwindcss.com/) – Utility-first CSS framework for rapid UI development
-- [Shadcn/ui](https://ui.shadcn.com/) – Re-usable components built using Radix UI and Tailwind CSS
-- [Framer Motion](https://framer.com/motion) – Motion library for React to animate components with ease
-- [Lucide](https://lucide.dev/) – Beautifully simple, pixel-perfect icons
-- [`next/font`](https://nextjs.org/docs/basic-features/font-optimization) – Optimize custom fonts and remove external network requests for improved performance
-- [`ImageResponse`](https://nextjs.org/docs/app/api-reference/functions/image-response) – Generate dynamic Open Graph images at the edge
+# Twilio
+TWILIO_ACCOUNT_SID=
+TWILIO_AUTH_TOKEN=
+TWILIO_PHONE_NUMBER=
 
-### Hooks and Utilities
+# Cloudflare R2
+CLOUDFLARE_R2_ACCOUNT_ID=
+CLOUDFLARE_R2_ACCESS_KEY_ID=
+CLOUDFLARE_R2_SECRET_ACCESS_KEY=
+CLOUDFLARE_R2_BUCKET_NAME=
 
-- `useIntersectionObserver` – React hook to observe when an element enters or leaves the viewport
-- `useLocalStorage` – Persist data in the browser's local storage
-- `useScroll` – React hook to observe scroll position ([example](https://github.com/mickasmt/precedent/blob/main/components/layout/navbar.tsx#L12))
-- `nFormatter` – Format numbers with suffixes like `1.2k` or `1.2M`
-- `capitalize` – Capitalize the first letter of a string
-- `truncate` – Truncate a string to a specified length
-- [`use-debounce`](https://www.npmjs.com/package/use-debounce) – Debounce a function call / state update
+# App
+NEXT_PUBLIC_APP_URL=
+```
 
-### Code Quality
+---
 
-- [TypeScript](https://www.typescriptlang.org/) – Static type checker for end-to-end typesafety
-- [Prettier](https://prettier.io/) – Opinionated code formatter for consistent code style
-- [ESLint](https://eslint.org/) – Pluggable linter for Next.js and TypeScript
+## License
 
-### Miscellaneous
-
-- [Vercel Analytics](https://vercel.com/analytics) – Track unique visitors, pageviews, and more in a privacy-friendly way
-
-## Author
-
-Created by [@miickasmt](https://twitter.com/miickasmt) in 2023, released under the [MIT license](https://github.com/shadcn/taxonomy/blob/main/LICENSE.md).
-
-## Credits
-
-This project was inspired by shadcn's [Taxonomy](https://github.com/shadcn-ui/taxonomy), Steven Tey’s [Precedent](https://github.com/steven-tey/precedent), and Antonio Erdeljac's [Next 13 AI SaaS](https://github.com/AntonioErdeljac/next13-ai-saas).
-
-- Shadcn ([@shadcn](https://twitter.com/shadcn))
-- Steven Tey ([@steventey](https://twitter.com/steventey))
-- Antonio Erdeljac ([@YTCodeAntonio](https://twitter.com/AntonioErdeljac))
+MIT License
