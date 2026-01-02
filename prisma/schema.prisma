@@ -134,6 +134,9 @@ model WeddingEvent {
   invitationImagePublicId String?            @map("invitation_image_public_id")
   invitationImageUrl      String?            @map("invitation_image_url")
   totalBudget             Decimal?           @map("total_budget") @db.Decimal(10, 2)
+  // Custom system automation messages (overrides defaults if set)
+  rsvpConfirmedMessage    String?            @map("rsvp_confirmed_message")
+  rsvpDeclinedMessage     String?            @map("rsvp_declined_message")
   bulkMessageJobs         BulkMessageJob[]
   guests                  Guest[]
   messageTemplates        MessageTemplate[]
@@ -144,31 +147,39 @@ model WeddingEvent {
   owner                   User               @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   tables                  WeddingTable[]
   tasks                   WeddingTask[]
+  // New module relations
+  automationFlows         AutomationFlow[]
+  generatedInvitations    GeneratedInvitation[]
+  giftPaymentSettings     GiftPaymentSettings?
+  giftPayments            GiftPayment[]
 
   @@index([ownerId])
   @@map("wedding_events")
 }
 
 model Guest {
-  id                  String                   @id @default(cuid())
-  weddingEventId      String                   @map("wedding_event_id")
-  name                String
-  phoneNumber         String?                  @map("phone_number")
-  email               String?
-  slug                String                   @unique
-  side                String?
-  groupName           String?                  @map("group_name")
-  notes               String?
-  createdAt           DateTime                 @default(now()) @map("created_at")
-  updatedAt           DateTime                 @default(now()) @updatedAt @map("updated_at")
-  expectedGuests      Int                      @default(1) @map("expected_guests")
-  bulkMessageJobItems BulkMessageJobItem[]
-  rsvp                GuestRsvp?
-  weddingEvent        WeddingEvent             @relation(fields: [weddingEventId], references: [id], onDelete: Cascade)
-  notificationLogs    NotificationLog[]
-  tableAssignment     TableAssignment?
-  vapiCallLogs        VapiCallLog[]
-  whatsappResponses   WhatsAppButtonResponse[]
+  id                     String                      @id @default(cuid())
+  weddingEventId         String                      @map("wedding_event_id")
+  name                   String
+  phoneNumber            String?                     @map("phone_number")
+  email                  String?
+  slug                   String                      @unique
+  side                   String?
+  groupName              String?                     @map("group_name")
+  notes                  String?
+  createdAt              DateTime                    @default(now()) @map("created_at")
+  updatedAt              DateTime                    @default(now()) @updatedAt @map("updated_at")
+  expectedGuests         Int                         @default(1) @map("expected_guests")
+  bulkMessageJobItems    BulkMessageJobItem[]
+  rsvp                   GuestRsvp?
+  weddingEvent           WeddingEvent                @relation(fields: [weddingEventId], references: [id], onDelete: Cascade)
+  notificationLogs       NotificationLog[]
+  tableAssignment        TableAssignment?
+  vapiCallLogs           VapiCallLog[]
+  whatsappResponses      WhatsAppButtonResponse[]
+  // New module relations
+  automationExecutions   AutomationFlowExecution[]
+  giftPayments           GiftPayment[]
 
   @@index([weddingEventId])
   @@index([slug])
@@ -970,6 +981,101 @@ enum TaskStatus {
   DONE
 }
 
+// ============================================
+// AUTOMATION FLOW MODULE ENUMS
+// ============================================
+
+enum AutomationTrigger {
+  // Immediate Event Triggers (System automations - shown as active by default)
+  RSVP_CONFIRMED           // When guest confirms attendance - system automation
+  RSVP_DECLINED            // When guest declines - system automation
+
+  // Time-Based Triggers (uses delayHours field, 1-24 hours)
+  NO_RESPONSE_WHATSAPP     // Guest hasn't responded to WhatsApp invite/reminder after X hours
+  NO_RESPONSE_SMS          // Guest hasn't responded to SMS invite/reminder after X hours
+  BEFORE_EVENT             // X hours before the event (1-24h)
+  AFTER_EVENT              // X hours after the event (1-24h)
+
+  // Legacy triggers (for backwards compatibility - hidden in UI)
+  RSVP_SENT                // @deprecated - removed from UI
+  NO_RESPONSE              // @deprecated Use NO_RESPONSE_WHATSAPP or NO_RESPONSE_SMS
+  NO_RESPONSE_24H          // @deprecated Use NO_RESPONSE_WHATSAPP with delayHours=24
+  NO_RESPONSE_48H          // @deprecated Use NO_RESPONSE_WHATSAPP with delayHours=48
+  NO_RESPONSE_72H          // @deprecated Use NO_RESPONSE_WHATSAPP with delayHours=72
+  EVENT_MORNING            // @deprecated
+  EVENT_DAY_MORNING        // @deprecated
+  DAY_AFTER_MORNING        // @deprecated
+  HOURS_BEFORE_EVENT_2     // @deprecated Use BEFORE_EVENT with delayHours=2
+  DAY_AFTER_EVENT          // @deprecated
+}
+
+enum AutomationAction {
+  // WhatsApp Template Actions
+  SEND_WHATSAPP_INVITE             // Basic WhatsApp invite with RSVP link
+  SEND_WHATSAPP_REMINDER           // WhatsApp reminder message
+  SEND_WHATSAPP_CONFIRMATION       // Thank you/confirmation message
+  SEND_WHATSAPP_IMAGE_INVITE       // Interactive WhatsApp with wedding invitation image
+  SEND_WHATSAPP_INTERACTIVE_REMINDER // Interactive reminder with buttons
+  SEND_WHATSAPP_GUEST_COUNT        // Guest count selection list
+  SEND_TABLE_ASSIGNMENT            // Table assignment with location info
+
+  // Custom Message Actions
+  SEND_CUSTOM_WHATSAPP             // Custom WhatsApp message (uses message editor)
+  SEND_CUSTOM_SMS                  // Custom SMS message (uses message editor)
+
+  // Legacy (for backwards compatibility - hidden in UI)
+  SEND_WHATSAPP_INTERACTIVE_INVITE // @deprecated merged into SEND_WHATSAPP_IMAGE_INVITE
+  SEND_WHATSAPP_TEMPLATE           // @deprecated
+  SEND_SMS_REMINDER                // @deprecated Use SEND_CUSTOM_SMS
+}
+
+enum AutomationFlowStatus {
+  DRAFT     // Not yet activated
+  ACTIVE    // Running
+  PAUSED    // Temporarily stopped
+  ARCHIVED  // No longer in use
+}
+
+enum AutomationExecutionStatus {
+  PENDING     // Waiting to execute
+  PROCESSING  // Currently executing
+  COMPLETED   // Successfully completed
+  FAILED      // Execution failed
+  SKIPPED     // Skipped (condition not met)
+}
+
+// ============================================
+// PDF INVITATION MODULE ENUMS
+// ============================================
+
+enum InvitationFieldType {
+  GUEST_NAME     // Guest's name
+  EVENT_DATE     // Event date
+  EVENT_TIME     // Event time
+  VENUE          // Venue name/address
+  COUPLE_NAMES   // Bride & Groom names
+  CUSTOM         // Custom text
+}
+
+enum EventType {
+  WEDDING     // Wedding event
+  HENNA       // Henna ceremony
+  ENGAGEMENT  // Engagement party
+  OTHER       // Other celebration
+}
+
+// ============================================
+// GIFT PAYMENT MODULE ENUMS
+// ============================================
+
+enum GiftPaymentStatus {
+  PENDING     // Payment initiated but not completed
+  PROCESSING  // Payment being processed
+  COMPLETED   // Payment successful
+  FAILED      // Payment failed
+  REFUNDED    // Payment was refunded
+}
+
 model WeddingTask {
   id             String      @id @default(cuid())
   weddingEventId String      @map("wedding_event_id")
@@ -998,4 +1104,223 @@ model TaskNote {
 
   @@index([taskId])
   @@map("task_notes")
+}
+
+// ============================================
+// AUTOMATION FLOW MODULE MODELS
+// ============================================
+
+// System pre-built automation flow templates
+model AutomationFlowTemplate {
+  id          String             @id @default(cuid())
+  name        String             @unique
+  nameHe      String             @map("name_he")
+  description String?
+  descriptionHe String?          @map("description_he")
+  trigger     AutomationTrigger
+  action      AutomationAction
+  isActive    Boolean            @default(true) @map("is_active")
+  sortOrder   Int                @default(0) @map("sort_order")
+  createdAt   DateTime           @default(now()) @map("created_at")
+  updatedAt   DateTime           @default(now()) @updatedAt @map("updated_at")
+
+  flows       AutomationFlow[]
+
+  @@index([isActive])
+  @@map("automation_flow_templates")
+}
+
+// User/Event-level automation flows (can be from template or custom)
+model AutomationFlow {
+  id             String               @id @default(cuid())
+  weddingEventId String               @map("wedding_event_id")
+  name           String
+  trigger        AutomationTrigger
+  action         AutomationAction
+  status         AutomationFlowStatus @default(DRAFT)
+  templateId     String?              @map("template_id") // If created from a template
+  customMessage  String?              @map("custom_message") // Optional custom message override
+  delayHours     Int?                 @map("delay_hours") // For time-based triggers (NO_RESPONSE, BEFORE_EVENT, AFTER_EVENT)
+  createdAt      DateTime             @default(now()) @map("created_at")
+  updatedAt      DateTime             @default(now()) @updatedAt @map("updated_at")
+
+  weddingEvent   WeddingEvent              @relation(fields: [weddingEventId], references: [id], onDelete: Cascade)
+  template       AutomationFlowTemplate?   @relation(fields: [templateId], references: [id], onDelete: SetNull)
+  executions     AutomationFlowExecution[]
+
+  @@index([weddingEventId])
+  @@index([status])
+  @@index([trigger])
+  @@index([templateId])
+  @@map("automation_flows")
+}
+
+// Tracks execution of automation flows per guest
+model AutomationFlowExecution {
+  id             String                    @id @default(cuid())
+  flowId         String                    @map("flow_id")
+  guestId        String                    @map("guest_id")
+  status         AutomationExecutionStatus @default(PENDING)
+  scheduledFor   DateTime?                 @map("scheduled_for")
+  executedAt     DateTime?                 @map("executed_at")
+  errorMessage   String?                   @map("error_message")
+  retryCount     Int                       @default(0) @map("retry_count")
+  createdAt      DateTime                  @default(now()) @map("created_at")
+  updatedAt      DateTime                  @default(now()) @updatedAt @map("updated_at")
+
+  flow           AutomationFlow            @relation(fields: [flowId], references: [id], onDelete: Cascade)
+  guest          Guest                     @relation(fields: [guestId], references: [id], onDelete: Cascade)
+
+  @@unique([flowId, guestId])
+  @@index([flowId])
+  @@index([guestId])
+  @@index([status])
+  @@index([scheduledFor])
+  @@map("automation_flow_executions")
+}
+
+// ============================================
+// PDF INVITATION MODULE MODELS
+// ============================================
+
+// Admin-uploaded PDF invitation templates
+model InvitationTemplate {
+  id            String          @id @default(cuid())
+  name          String
+  nameHe        String          @map("name_he")
+  description   String?
+  descriptionHe String?         @map("description_he")
+  eventType     EventType       @default(WEDDING) @map("event_type")
+  pdfUrl        String          @map("pdf_url") // R2 URL to base PDF
+  thumbnailUrl  String?         @map("thumbnail_url") // R2 URL to preview image
+  isActive      Boolean         @default(true) @map("is_active")
+  sortOrder     Int             @default(0) @map("sort_order")
+  createdAt     DateTime        @default(now()) @map("created_at")
+  updatedAt     DateTime        @default(now()) @updatedAt @map("updated_at")
+
+  fields        InvitationTemplateField[]
+  generations   GeneratedInvitation[]
+
+  @@index([eventType])
+  @@index([isActive])
+  @@map("invitation_templates")
+}
+
+// X/Y coordinates for text placement on PDF templates
+model InvitationTemplateField {
+  id           String              @id @default(cuid())
+  templateId   String              @map("template_id")
+  fieldType    InvitationFieldType @map("field_type")
+  label        String              // Display label for the field
+  labelHe      String?             @map("label_he")
+  positionX    Float               @map("position_x") // X coordinate on PDF
+  positionY    Float               @map("position_y") // Y coordinate on PDF
+  fontSize     Int                 @default(16) @map("font_size")
+  fontFamily   String              @default("Heebo") @map("font_family")
+  fontWeight   String              @default("normal") @map("font_weight")
+  textColor    String              @default("#000000") @map("text_color")
+  textAlign    String              @default("center") @map("text_align") // left, center, right
+  maxWidth     Float?              @map("max_width") // Max width for text wrapping
+  isRequired   Boolean             @default(true) @map("is_required")
+  defaultValue String?             @map("default_value")
+  sortOrder    Int                 @default(0) @map("sort_order")
+  createdAt    DateTime            @default(now()) @map("created_at")
+  updatedAt    DateTime            @default(now()) @updatedAt @map("updated_at")
+
+  template     InvitationTemplate  @relation(fields: [templateId], references: [id], onDelete: Cascade)
+
+  @@index([templateId])
+  @@map("invitation_template_fields")
+}
+
+// User-generated PDF invitations
+model GeneratedInvitation {
+  id             String             @id @default(cuid())
+  weddingEventId String             @map("wedding_event_id")
+  templateId     String             @map("template_id")
+  pdfUrl         String             @map("pdf_url") // R2 URL to generated PDF
+  fieldValues    Json               @map("field_values") // JSON of field values used
+  createdAt      DateTime           @default(now()) @map("created_at")
+
+  weddingEvent   WeddingEvent       @relation(fields: [weddingEventId], references: [id], onDelete: Cascade)
+  template       InvitationTemplate @relation(fields: [templateId], references: [id])
+
+  @@index([weddingEventId])
+  @@index([templateId])
+  @@map("generated_invitations")
+}
+
+// ============================================
+// GIFT PAYMENT MODULE MODELS
+// ============================================
+
+// Per-event gift payment settings
+model GiftPaymentSettings {
+  id                String       @id @default(cuid())
+  weddingEventId    String       @unique @map("wedding_event_id")
+  isEnabled         Boolean      @default(false) @map("is_enabled")
+  currency          String       @default("ILS")
+  minAmount         Decimal      @default(50) @map("min_amount") @db.Decimal(10, 2)
+  maxAmount         Decimal      @default(10000) @map("max_amount") @db.Decimal(10, 2)
+  suggestedAmounts  Json?        @map("suggested_amounts") // e.g., [100, 200, 500, 1000]
+  allowCustomAmount Boolean      @default(true) @map("allow_custom_amount")
+  thankYouMessage   String?      @map("thank_you_message")
+  thankYouMessageHe String?      @map("thank_you_message_he")
+  createdAt         DateTime     @default(now()) @map("created_at")
+  updatedAt         DateTime     @default(now()) @updatedAt @map("updated_at")
+
+  weddingEvent      WeddingEvent @relation(fields: [weddingEventId], references: [id], onDelete: Cascade)
+
+  @@map("gift_payment_settings")
+}
+
+// Individual gift payments
+model GiftPayment {
+  id              String            @id @default(cuid())
+  weddingEventId  String            @map("wedding_event_id")
+  guestId         String?           @map("guest_id") // Optional - for linked guests
+  guestName       String            @map("guest_name") // Name entered by payer
+  guestEmail      String?           @map("guest_email")
+  guestPhone      String?           @map("guest_phone")
+  amount          Decimal           @map("amount") @db.Decimal(10, 2)
+  serviceFee      Decimal           @map("service_fee") @db.Decimal(10, 2) // 8% fee
+  totalCharged    Decimal           @map("total_charged") @db.Decimal(10, 2) // amount + serviceFee
+  currency        String            @default("ILS")
+  status          GiftPaymentStatus @default(PENDING)
+  greetingMessage String?           @map("greeting_message")
+  greetingImage   String?           @map("greeting_image") // R2 URL to image
+  isManual        Boolean           @default(false) @map("is_manual") // Cash gift added manually
+  paidAt          DateTime?         @map("paid_at")
+  createdAt       DateTime          @default(now()) @map("created_at")
+  updatedAt       DateTime          @default(now()) @updatedAt @map("updated_at")
+
+  weddingEvent    WeddingEvent          @relation(fields: [weddingEventId], references: [id], onDelete: Cascade)
+  guest           Guest?                @relation(fields: [guestId], references: [id], onDelete: SetNull)
+  transactions    PaymentTransaction[]
+
+  @@index([weddingEventId])
+  @@index([guestId])
+  @@index([status])
+  @@map("gift_payments")
+}
+
+// Payment provider transaction details
+model PaymentTransaction {
+  id                    String        @id @default(cuid())
+  giftPaymentId         String        @map("gift_payment_id")
+  provider              String        @default("meshulam") // Payment provider name
+  providerTransactionId String?       @unique @map("provider_transaction_id")
+  providerPageCode      String?       @map("provider_page_code")
+  providerResponse      Json?         @map("provider_response")
+  status                String        // Provider-specific status
+  errorCode             String?       @map("error_code")
+  errorMessage          String?       @map("error_message")
+  createdAt             DateTime      @default(now()) @map("created_at")
+  updatedAt             DateTime      @default(now()) @updatedAt @map("updated_at")
+
+  giftPayment           GiftPayment   @relation(fields: [giftPaymentId], references: [id], onDelete: Cascade)
+
+  @@index([giftPaymentId])
+  @@index([providerTransactionId])
+  @@map("payment_transactions")
 }

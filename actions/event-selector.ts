@@ -742,3 +742,261 @@ export async function getEventsForTasksSelector(): Promise<{
     return { error: "Failed to fetch events" };
   }
 }
+
+// ============ AUTOMATIONS SELECTOR ============
+
+export interface AutomationsEventData {
+  id: string;
+  title: string;
+  dateTime: Date;
+  location: string;
+  venue?: string | null;
+  automationStats: {
+    totalGuests: number;
+    activeFlows: number;
+    totalExecutions: number;
+    pendingExecutions: number;
+    completedExecutions: number;
+  };
+}
+
+export async function getEventsForAutomationsSelector(): Promise<{
+  success?: boolean;
+  events?: AutomationsEventData[];
+  error?: string;
+}> {
+  try {
+    const user = await getCurrentUser();
+
+    if (!user || user.role !== UserRole.ROLE_WEDDING_OWNER) {
+      return { error: "Unauthorized" };
+    }
+
+    const events = await prisma.weddingEvent.findMany({
+      where: { ownerId: user.id },
+      select: {
+        id: true,
+        title: true,
+        dateTime: true,
+        location: true,
+        venue: true,
+        _count: {
+          select: { guests: true },
+        },
+        automationFlows: {
+          select: {
+            id: true,
+            status: true,
+            executions: {
+              select: {
+                status: true,
+              },
+            },
+          },
+        },
+      },
+      orderBy: { dateTime: "asc" },
+    });
+
+    const eventsWithStats: AutomationsEventData[] = events.map((event) => {
+      const totalGuests = event._count.guests;
+      const activeFlows = event.automationFlows.filter(
+        (f) => f.status === "ACTIVE"
+      ).length;
+
+      let totalExecutions = 0;
+      let pendingExecutions = 0;
+      let completedExecutions = 0;
+
+      event.automationFlows.forEach((flow) => {
+        flow.executions.forEach((exec) => {
+          totalExecutions++;
+          if (exec.status === "PENDING" || exec.status === "PROCESSING") {
+            pendingExecutions++;
+          } else if (exec.status === "COMPLETED") {
+            completedExecutions++;
+          }
+        });
+      });
+
+      return {
+        id: event.id,
+        title: event.title,
+        dateTime: event.dateTime,
+        location: event.location,
+        venue: event.venue,
+        automationStats: {
+          totalGuests,
+          activeFlows,
+          totalExecutions,
+          pendingExecutions,
+          completedExecutions,
+        },
+      };
+    });
+
+    return { success: true, events: eventsWithStats };
+  } catch (error) {
+    console.error("Error fetching events for automations selector:", error);
+    return { error: "Failed to fetch events" };
+  }
+}
+
+// ============ PDF INVITATIONS SELECTOR ============
+
+export interface PdfInvitationsEventData {
+  id: string;
+  title: string;
+  dateTime: Date;
+  location: string;
+  venue?: string | null;
+  pdfStats: {
+    totalGuests: number;
+    generatedInvitations: number;
+    availableTemplates: number;
+  };
+}
+
+export async function getEventsForPdfInvitationsSelector(): Promise<{
+  success?: boolean;
+  events?: PdfInvitationsEventData[];
+  error?: string;
+}> {
+  try {
+    const user = await getCurrentUser();
+
+    if (!user || user.role !== UserRole.ROLE_WEDDING_OWNER) {
+      return { error: "Unauthorized" };
+    }
+
+    // Get count of available templates
+    const templatesCount = await prisma.invitationTemplate.count({
+      where: { isActive: true },
+    });
+
+    const events = await prisma.weddingEvent.findMany({
+      where: { ownerId: user.id },
+      select: {
+        id: true,
+        title: true,
+        dateTime: true,
+        location: true,
+        venue: true,
+        _count: {
+          select: {
+            guests: true,
+            generatedInvitations: true,
+          },
+        },
+      },
+      orderBy: { dateTime: "asc" },
+    });
+
+    const eventsWithStats: PdfInvitationsEventData[] = events.map((event) => {
+      return {
+        id: event.id,
+        title: event.title,
+        dateTime: event.dateTime,
+        location: event.location,
+        venue: event.venue,
+        pdfStats: {
+          totalGuests: event._count.guests,
+          generatedInvitations: event._count.generatedInvitations,
+          availableTemplates: templatesCount,
+        },
+      };
+    });
+
+    return { success: true, events: eventsWithStats };
+  } catch (error) {
+    console.error("Error fetching events for pdf invitations selector:", error);
+    return { error: "Failed to fetch events" };
+  }
+}
+
+// ============ GIFTS SELECTOR ============
+
+export interface GiftsEventData {
+  id: string;
+  title: string;
+  dateTime: Date;
+  location: string;
+  venue?: string | null;
+  giftStats: {
+    totalGuests: number;
+    totalGifts: number;
+    completedGifts: number;
+    totalAmount: number;
+    isEnabled: boolean;
+  };
+}
+
+export async function getEventsForGiftsSelector(): Promise<{
+  success?: boolean;
+  events?: GiftsEventData[];
+  error?: string;
+}> {
+  try {
+    const user = await getCurrentUser();
+
+    if (!user || user.role !== UserRole.ROLE_WEDDING_OWNER) {
+      return { error: "Unauthorized" };
+    }
+
+    const events = await prisma.weddingEvent.findMany({
+      where: { ownerId: user.id },
+      select: {
+        id: true,
+        title: true,
+        dateTime: true,
+        location: true,
+        venue: true,
+        _count: {
+          select: { guests: true },
+        },
+        giftPaymentSettings: {
+          select: {
+            isEnabled: true,
+          },
+        },
+        giftPayments: {
+          select: {
+            status: true,
+            amount: true,
+          },
+        },
+      },
+      orderBy: { dateTime: "asc" },
+    });
+
+    const eventsWithStats: GiftsEventData[] = events.map((event) => {
+      const totalGifts = event.giftPayments.length;
+      const completedGifts = event.giftPayments.filter(
+        (g) => g.status === "COMPLETED"
+      ).length;
+      const totalAmount = event.giftPayments
+        .filter((g) => g.status === "COMPLETED")
+        .reduce((sum, g) => sum + Number(g.amount), 0);
+
+      return {
+        id: event.id,
+        title: event.title,
+        dateTime: event.dateTime,
+        location: event.location,
+        venue: event.venue,
+        giftStats: {
+          totalGuests: event._count.guests,
+          totalGifts,
+          completedGifts,
+          totalAmount,
+          isEnabled: event.giftPaymentSettings?.isEnabled ?? false,
+        },
+      };
+    });
+
+    return { success: true, events: eventsWithStats };
+  } catch (error) {
+    console.error("Error fetching events for gifts selector:", error);
+    return { error: "Failed to fetch events" };
+  }
+}

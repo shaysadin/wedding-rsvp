@@ -125,6 +125,27 @@ export default async function EventPage({ params, searchParams }: EventPageProps
                 {locale === "he" ? "קולי" : "Voice"}
               </span>
             </Link>
+
+            <Link href={`/${locale}/dashboard/events/${event.id}/automation`} className={cardClassName}>
+              <Icons.sparkles className="h-4 w-4 text-muted-foreground transition-colors group-hover:text-purple-500 sm:h-5 sm:w-5" />
+              <span className="text-[9px] font-medium leading-tight text-muted-foreground transition-colors group-hover:text-foreground sm:text-[10px]">
+                {locale === "he" ? "אוטומציות" : "Automations"}
+              </span>
+            </Link>
+
+            <Link href={`/${locale}/dashboard/events/${event.id}/pdf-invitations`} className={cardClassName}>
+              <Icons.fileText className="h-4 w-4 text-muted-foreground transition-colors group-hover:text-purple-500 sm:h-5 sm:w-5" />
+              <span className="text-[9px] font-medium leading-tight text-muted-foreground transition-colors group-hover:text-foreground sm:text-[10px]">
+                {locale === "he" ? "הזמנות" : "Invitations"}
+              </span>
+            </Link>
+
+            <Link href={`/${locale}/dashboard/events/${event.id}/gifts`} className={cardClassName}>
+              <Icons.gift className="h-4 w-4 text-muted-foreground transition-colors group-hover:text-purple-500 sm:h-5 sm:w-5" />
+              <span className="text-[9px] font-medium leading-tight text-muted-foreground transition-colors group-hover:text-foreground sm:text-[10px]">
+                {locale === "he" ? "מתנות" : "Gifts"}
+              </span>
+            </Link>
           </div>
         </div>
       </div>

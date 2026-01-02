@@ -27,6 +27,8 @@ interface EventWithStats {
   invitationImageUrl: string | null;
   invitationImagePublicId: string | null;
   totalBudget: any;
+  rsvpConfirmedMessage: string | null;
+  rsvpDeclinedMessage: string | null;
   stats: {
     total: number;
     pending: number;

@@ -21,7 +21,7 @@ export default function Testimonials() {
 
   return (
     <section>
-      <div className="container flex max-w-6xl flex-col gap-10 py-32 sm:gap-y-16">
+      <div className="container flex max-w-7xl flex-col gap-10 py-32 sm:gap-y-16">
         <HeaderSection
           label={t("label")}
           title={t("title")}
