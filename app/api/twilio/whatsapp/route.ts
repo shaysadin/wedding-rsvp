@@ -555,12 +555,14 @@ async function sendConfirmationMessage(
       // Use custom message from event if available, otherwise use default
       if (event.rsvpConfirmedMessage) {
         console.log("Using custom ACCEPTED message");
-        // Replace placeholders in custom message
+        // Replace placeholders in custom message (matching automation system naming)
         message = event.rsvpConfirmedMessage
-          .replace(/\{name\}/g, guest.name)
+          .replace(/\{guestName\}/g, guest.name)
+          .replace(/\{name\}/g, guest.name) // Support both variations
           .replace(/\{eventTitle\}/g, event.title)
           .replace(/\{eventDate\}/g, eventDate)
-          .replace(/\{location\}/g, locationString)
+          .replace(/\{address\}/g, locationString)
+          .replace(/\{location\}/g, locationString) // Support both variations
           .replace(/\{venue\}/g, event.venue || event.location)
           .replace(/\{guestCount\}/g, String(guestCount));
       } else {
@@ -572,12 +574,14 @@ async function sendConfirmationMessage(
       // Use custom message from event if available, otherwise use default
       if (event.rsvpDeclinedMessage) {
         console.log("Using custom DECLINED message");
-        // Replace placeholders in custom message
+        // Replace placeholders in custom message (matching automation system naming)
         message = event.rsvpDeclinedMessage
-          .replace(/\{name\}/g, guest.name)
+          .replace(/\{guestName\}/g, guest.name)
+          .replace(/\{name\}/g, guest.name) // Support both variations
           .replace(/\{eventTitle\}/g, event.title)
           .replace(/\{eventDate\}/g, eventDate)
-          .replace(/\{location\}/g, locationString)
+          .replace(/\{address\}/g, locationString)
+          .replace(/\{location\}/g, locationString) // Support both variations
           .replace(/\{venue\}/g, event.venue || event.location);
       } else {
         console.log("Using default DECLINED message");

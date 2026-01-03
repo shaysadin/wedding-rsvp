@@ -117,11 +117,14 @@ export class MockNotificationService implements NotificationService {
       // Use custom message from event if available, otherwise use default
       if (event.rsvpConfirmedMessage) {
         // Note: In mock mode we don't have access to guestCount, using placeholder
+        // Replace placeholders (matching automation system naming)
         message = event.rsvpConfirmedMessage
-          .replace(/\{name\}/g, guest.name)
+          .replace(/\{guestName\}/g, guest.name)
+          .replace(/\{name\}/g, guest.name) // Support both variations
           .replace(/\{eventTitle\}/g, event.title)
           .replace(/\{eventDate\}/g, eventDate)
-          .replace(/\{location\}/g, locationString)
+          .replace(/\{address\}/g, locationString)
+          .replace(/\{location\}/g, locationString) // Support both variations
           .replace(/\{venue\}/g, event.venue || event.location)
           .replace(/\{guestCount\}/g, "1");
       } else {
@@ -136,11 +139,14 @@ export class MockNotificationService implements NotificationService {
     } else {
       // Use custom message from event if available, otherwise use default
       if (event.rsvpDeclinedMessage) {
+        // Replace placeholders (matching automation system naming)
         message = event.rsvpDeclinedMessage
-          .replace(/\{name\}/g, guest.name)
+          .replace(/\{guestName\}/g, guest.name)
+          .replace(/\{name\}/g, guest.name) // Support both variations
           .replace(/\{eventTitle\}/g, event.title)
           .replace(/\{eventDate\}/g, eventDate)
-          .replace(/\{location\}/g, locationString)
+          .replace(/\{address\}/g, locationString)
+          .replace(/\{location\}/g, locationString) // Support both variations
           .replace(/\{venue\}/g, event.venue || event.location);
       } else {
         // Default message from templates

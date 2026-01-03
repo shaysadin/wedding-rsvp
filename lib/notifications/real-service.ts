@@ -257,12 +257,14 @@ export class TwilioNotificationService implements NotificationService {
     if (status === "ACCEPTED") {
       // Use custom message from event if available, otherwise use default
       if (event.rsvpConfirmedMessage) {
-        // Replace placeholders in custom message
+        // Replace placeholders in custom message (matching automation system naming)
         message = event.rsvpConfirmedMessage
-          .replace(/\{name\}/g, guest.name)
+          .replace(/\{guestName\}/g, guest.name)
+          .replace(/\{name\}/g, guest.name) // Support both variations
           .replace(/\{eventTitle\}/g, event.title)
           .replace(/\{eventDate\}/g, eventDate)
-          .replace(/\{location\}/g, locationString)
+          .replace(/\{address\}/g, locationString)
+          .replace(/\{location\}/g, locationString) // Support both variations
           .replace(/\{venue\}/g, event.venue || event.location)
           .replace(/\{guestCount\}/g, String(guestCount));
       } else {
@@ -277,12 +279,14 @@ export class TwilioNotificationService implements NotificationService {
     } else {
       // Use custom message from event if available, otherwise use default
       if (event.rsvpDeclinedMessage) {
-        // Replace placeholders in custom message
+        // Replace placeholders in custom message (matching automation system naming)
         message = event.rsvpDeclinedMessage
-          .replace(/\{name\}/g, guest.name)
+          .replace(/\{guestName\}/g, guest.name)
+          .replace(/\{name\}/g, guest.name) // Support both variations
           .replace(/\{eventTitle\}/g, event.title)
           .replace(/\{eventDate\}/g, eventDate)
-          .replace(/\{location\}/g, locationString)
+          .replace(/\{address\}/g, locationString)
+          .replace(/\{location\}/g, locationString) // Support both variations
           .replace(/\{venue\}/g, event.venue || event.location);
       } else {
         // Default message from templates
