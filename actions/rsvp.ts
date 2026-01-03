@@ -4,7 +4,7 @@ import { RsvpStatus } from "@prisma/client";
 
 import { prisma } from "@/lib/db";
 import { submitRsvpSchema, type SubmitRsvpInput } from "@/lib/validations/rsvp";
-import { notificationService } from "@/lib/notifications/mock-service";
+import { notificationService } from "@/lib/notifications/real-service";
 import { isRateLimited, RATE_LIMIT_PRESETS } from "@/lib/rate-limit";
 
 export async function getGuestBySlug(slug: string) {

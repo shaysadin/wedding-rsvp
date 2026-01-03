@@ -542,12 +542,52 @@ async function sendConfirmationMessage(
       ? `${event.venue}, ${event.location}`
       : event.location;
 
+    // Debug logging
+    console.log("=== CONFIRMATION MESSAGE DEBUG ===");
+    console.log("Event ID:", event.id);
+    console.log("Status:", status);
+    console.log("Custom rsvpConfirmedMessage:", event.rsvpConfirmedMessage);
+    console.log("Custom rsvpDeclinedMessage:", event.rsvpDeclinedMessage);
+    console.log("===================================");
+
     let message: string;
     if (status === "ACCEPTED") {
-      message = `תודה ${guest.name}! 🎉\n\nאישור ההגעה שלך ל${event.title} התקבל בהצלחה.\n\n📅 תאריך: ${eventDate}\n📍 מיקום: ${locationString}\n👥 מספר אורחים: ${guestCount}\n\nמחכים לראותכם! 💕`;
+      // Use custom message from event if available, otherwise use default
+      if (event.rsvpConfirmedMessage) {
+        console.log("Using custom ACCEPTED message");
+        // Replace placeholders in custom message
+        message = event.rsvpConfirmedMessage
+          .replace(/\{name\}/g, guest.name)
+          .replace(/\{eventTitle\}/g, event.title)
+          .replace(/\{eventDate\}/g, eventDate)
+          .replace(/\{location\}/g, locationString)
+          .replace(/\{venue\}/g, event.venue || event.location)
+          .replace(/\{guestCount\}/g, String(guestCount));
+      } else {
+        console.log("Using default ACCEPTED message");
+        // Default message
+        message = `תודה ${guest.name}! 🎉\n\nאישור ההגעה שלך ל${event.title} התקבל בהצלחה.\n\n📅 תאריך: ${eventDate}\n📍 מיקום: ${locationString}\n👥 מספר אורחים: ${guestCount}\n\nמחכים לראותכם! 💕`;
+      }
     } else {
-      message = `תודה ${guest.name} על התשובה.\n\nקיבלנו את ההודעה שלא תוכל/י להגיע ל${event.title}.\n\nמקווים לראותך באירוע אחר! 💕`;
+      // Use custom message from event if available, otherwise use default
+      if (event.rsvpDeclinedMessage) {
+        console.log("Using custom DECLINED message");
+        // Replace placeholders in custom message
+        message = event.rsvpDeclinedMessage
+          .replace(/\{name\}/g, guest.name)
+          .replace(/\{eventTitle\}/g, event.title)
+          .replace(/\{eventDate\}/g, eventDate)
+          .replace(/\{location\}/g, locationString)
+          .replace(/\{venue\}/g, event.venue || event.location);
+      } else {
+        console.log("Using default DECLINED message");
+        // Default message
+        message = `תודה ${guest.name} על התשובה.\n\nקיבלנו את ההודעה שלא תוכל/י להגיע ל${event.title}.\n\nמקווים לראותך באירוע אחר! 💕`;
+      }
     }
+
+    console.log("Final message to send:", message);
+    console.log("===================================");
 
     // Send simple text message (no template needed - within 24h reply window)
     await client.messages.create({

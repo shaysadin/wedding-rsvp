@@ -105,15 +105,48 @@ export class MockNotificationService implements NotificationService {
   ): Promise<NotificationResult> {
     const channel = preferredChannel || this.getChannel(guest);
 
-    const message =
-      status === "ACCEPTED"
-        ? hebrewTemplates.confirmation.accepted.message(
-            guest.name,
-            event.title,
-            event.dateTime.toLocaleDateString("he-IL"),
-            event.location
-          )
-        : hebrewTemplates.confirmation.declined.message(guest.name, event.title);
+    // Build location string with venue if available
+    const locationString = event.venue
+      ? `${event.venue}, ${event.location}`
+      : event.location;
+
+    const eventDate = event.dateTime.toLocaleDateString("he-IL");
+
+    let message: string;
+    if (status === "ACCEPTED") {
+      // Use custom message from event if available, otherwise use default
+      if (event.rsvpConfirmedMessage) {
+        // Note: In mock mode we don't have access to guestCount, using placeholder
+        message = event.rsvpConfirmedMessage
+          .replace(/\{name\}/g, guest.name)
+          .replace(/\{eventTitle\}/g, event.title)
+          .replace(/\{eventDate\}/g, eventDate)
+          .replace(/\{location\}/g, locationString)
+          .replace(/\{venue\}/g, event.venue || event.location)
+          .replace(/\{guestCount\}/g, "1");
+      } else {
+        // Default message from templates
+        message = hebrewTemplates.confirmation.accepted.message(
+          guest.name,
+          event.title,
+          eventDate,
+          event.location
+        );
+      }
+    } else {
+      // Use custom message from event if available, otherwise use default
+      if (event.rsvpDeclinedMessage) {
+        message = event.rsvpDeclinedMessage
+          .replace(/\{name\}/g, guest.name)
+          .replace(/\{eventTitle\}/g, event.title)
+          .replace(/\{eventDate\}/g, eventDate)
+          .replace(/\{location\}/g, locationString)
+          .replace(/\{venue\}/g, event.venue || event.location);
+      } else {
+        // Default message from templates
+        message = hebrewTemplates.confirmation.declined.message(guest.name, event.title);
+      }
+    }
 
     // Log to console (mock implementation)
     console.log("=".repeat(50));

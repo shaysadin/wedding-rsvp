@@ -240,15 +240,55 @@ export class TwilioNotificationService implements NotificationService {
     const locale = event.notes?.includes("locale:en") ? "en" : "he";
     const templates = locale === "en" ? englishTemplates : hebrewTemplates;
 
-    const message =
-      status === "ACCEPTED"
-        ? templates.confirmation.accepted.message(
-            guest.name,
-            event.title,
-            event.dateTime.toLocaleDateString(locale === "en" ? "en-US" : "he-IL"),
-            event.location
-          )
-        : templates.confirmation.declined.message(guest.name, event.title);
+    // Get guest count for accepted messages
+    const guestRsvp = await prisma.guestRsvp.findUnique({
+      where: { guestId: guest.id },
+    });
+    const guestCount = guestRsvp?.guestCount || 1;
+
+    // Build location string with venue if available
+    const locationString = event.venue
+      ? `${event.venue}, ${event.location}`
+      : event.location;
+
+    const eventDate = event.dateTime.toLocaleDateString(locale === "en" ? "en-US" : "he-IL");
+
+    let message: string;
+    if (status === "ACCEPTED") {
+      // Use custom message from event if available, otherwise use default
+      if (event.rsvpConfirmedMessage) {
+        // Replace placeholders in custom message
+        message = event.rsvpConfirmedMessage
+          .replace(/\{name\}/g, guest.name)
+          .replace(/\{eventTitle\}/g, event.title)
+          .replace(/\{eventDate\}/g, eventDate)
+          .replace(/\{location\}/g, locationString)
+          .replace(/\{venue\}/g, event.venue || event.location)
+          .replace(/\{guestCount\}/g, String(guestCount));
+      } else {
+        // Default message from templates
+        message = templates.confirmation.accepted.message(
+          guest.name,
+          event.title,
+          eventDate,
+          event.location
+        );
+      }
+    } else {
+      // Use custom message from event if available, otherwise use default
+      if (event.rsvpDeclinedMessage) {
+        // Replace placeholders in custom message
+        message = event.rsvpDeclinedMessage
+          .replace(/\{name\}/g, guest.name)
+          .replace(/\{eventTitle\}/g, event.title)
+          .replace(/\{eventDate\}/g, eventDate)
+          .replace(/\{location\}/g, locationString)
+          .replace(/\{venue\}/g, event.venue || event.location);
+      } else {
+        // Default message from templates
+        message = templates.confirmation.declined.message(guest.name, event.title);
+      }
+    }
 
     // Prepare WhatsApp options with Content Template if available
     let whatsappOptions: { contentSid?: string; contentVariables?: Record<string, string> } | undefined;
@@ -459,3 +499,6 @@ export class TwilioNotificationService implements NotificationService {
     }
   }
 }
+
+// Export singleton instance for production use
+export const notificationService = new TwilioNotificationService();
