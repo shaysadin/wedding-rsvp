@@ -171,7 +171,7 @@ export default async function EventPage({ params, searchParams }: EventPageProps
             <AddGuestDialog eventId={event.id} />
           </div>
         </div>
-        <div className="md:min-h-0 md:flex-1 md:overflow-hidden">
+        <div className="md:min-h-[500px] md:flex-1 md:overflow-hidden">
           <GuestsTable guests={event.guests} eventId={event.id} initialFilter={activeFilter} invitationImageUrl={event.invitationImageUrl} />
         </div>
       </div>

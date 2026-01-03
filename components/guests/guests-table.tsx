@@ -764,7 +764,7 @@ export function GuestsTable({ guests, eventId, initialFilter = "all", invitation
       )}
 
       {/* Table */}
-      <div className="relative w-full overflow-auto rounded-lg border md:min-h-0 md:flex-1">
+      <div className="relative w-full overflow-auto rounded-lg border md:min-h-[500px] md:flex-1">
         <Button
           variant="ghost"
           size="icon"
