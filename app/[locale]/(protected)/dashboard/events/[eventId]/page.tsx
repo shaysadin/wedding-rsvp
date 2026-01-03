@@ -161,7 +161,7 @@ export default async function EventPage({ params, searchParams }: EventPageProps
       <DuplicatePhoneWarning eventId={event.id} />
 
       {/* Guest Management - flex-1 and min-h-0 to allow table to take remaining space and scroll on desktop */}
-      <div className="flex flex-col gap-3 sm:gap-4 md:min-h-0 md:flex-1 md:overflow-hidden">
+      <div className="flex flex-col gap-3 sm:gap-4 md:min-h-0 md:flex-1">
         <div className="flex shrink-0 flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
           <h2 className="text-lg font-semibold sm:text-xl">{tGuests("title")}</h2>
           <div className="flex flex-wrap gap-1.5 sm:gap-2">
@@ -171,7 +171,7 @@ export default async function EventPage({ params, searchParams }: EventPageProps
             <AddGuestDialog eventId={event.id} />
           </div>
         </div>
-        <div className="md:min-h-[500px] md:flex-1 md:overflow-hidden">
+        <div className="md:min-h-[500px] md:flex-1">
           <GuestsTable guests={event.guests} eventId={event.id} initialFilter={activeFilter} invitationImageUrl={event.invitationImageUrl} />
         </div>
       </div>

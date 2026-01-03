@@ -545,7 +545,7 @@ export function GuestsTable({ guests, eventId, initialFilter = "all", invitation
   }
 
   return (
-    <div className="flex flex-col gap-4 md:h-full md:overflow-hidden">
+    <div className="flex flex-col gap-4 md:h-full">
       {/* Edit Guest Dialog */}
       {editingGuest && (
         <EditGuestDialog
@@ -967,7 +967,7 @@ export function GuestsTable({ guests, eventId, initialFilter = "all", invitation
               <Minimize2 className="h-4 w-4" />
             </Button>
           </DialogHeader>
-          <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-hidden p-6">
+          <div className="flex min-h-0 flex-1 flex-col gap-4 p-6">
             {/* Bulk Actions Bar in Modal */}
             {selectedIds.size > 0 && (
               <div className="flex shrink-0 flex-col gap-3 rounded-lg border-2 border-primary/20 bg-primary/5 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
