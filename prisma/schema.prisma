@@ -1271,6 +1271,25 @@ model InvitationTemplateField {
   isRequired   Boolean             @default(true) @map("is_required")
   defaultValue String?             @map("default_value")
   sortOrder    Int                 @default(0) @map("sort_order")
+
+  // CSS Styling & Positioning (for PDF-based templates)
+  cssClassName   String?  @map("css_class_name")      // Custom CSS class name
+  fontSize       String?  @map("font_size")           // e.g., "24px", "1.5rem"
+  fontFamily     String?  @map("font_family")         // e.g., "Heebo", "Arial"
+  fontWeight     String?  @map("font_weight")         // e.g., "bold", "400"
+  textColor      String?  @map("text_color")          // e.g., "#000000", "rgb(0,0,0)"
+  textAlign      String?  @map("text_align")          // e.g., "center", "left", "right"
+  lineHeight     String?  @map("line_height")         // e.g., "1.5", "32px"
+  letterSpacing  String?  @map("letter_spacing")      // e.g., "0.05em", "1px"
+
+  // Positioning (absolute positioning for PDF overlay)
+  top            String?  @map("top")                 // e.g., "100px", "10%"
+  left           String?  @map("left")                // e.g., "50px"
+  right          String?  @map("right")               // e.g., "50px"
+  bottom         String?  @map("bottom")              // e.g., "20px"
+  width          String?  @map("width")               // e.g., "300px", "50%"
+  maxWidth       String?  @map("max_width")           // e.g., "500px"
+
   createdAt    DateTime            @default(now()) @map("created_at")
   updatedAt    DateTime            @default(now()) @updatedAt @map("updated_at")
 
