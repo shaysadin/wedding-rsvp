@@ -100,7 +100,7 @@ export const DEFAULT_FIELD_CONFIGS: Record<
       isRequired: true,
     },
     {
-      fieldType: "VENUE",
+      fieldType: "VENUE_NAME",
       label: "Venue",
       labelHe: "מקום האירוע",
       fontSize: 18,
@@ -136,7 +136,7 @@ export const DEFAULT_FIELD_CONFIGS: Record<
       isRequired: true,
     },
     {
-      fieldType: "VENUE",
+      fieldType: "VENUE_NAME",
       label: "Venue",
       labelHe: "מקום האירוע",
       fontSize: 18,

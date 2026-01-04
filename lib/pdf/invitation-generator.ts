@@ -227,7 +227,7 @@ export async function previewInvitation(
       value: locale === "he" ? "19:00" : "7:00 PM",
     },
     {
-      fieldType: "VENUE",
+      fieldType: "VENUE_NAME",
       value: locale === "he" ? "אולמי הגן, רחוב הפרחים 1, תל אביב" : "The Garden Hall, 123 Main St",
     },
     {

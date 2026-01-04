@@ -123,7 +123,7 @@ export async function generateCustomInvitation(params: {
         weddingEventId: params.eventId,
         templateId: params.templateId,
         pngUrl,
-        fieldValues: params.fieldValues,
+        fieldValues: params.fieldValues as any, // Prisma Json type
       },
     });
 

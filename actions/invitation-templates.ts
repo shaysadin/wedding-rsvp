@@ -371,14 +371,13 @@ export async function addTemplateField(
         fieldType: data.fieldType,
         label: data.label,
         labelHe: data.labelHe,
-        positionX: data.positionX,
-        positionY: data.positionY,
-        fontSize: data.fontSize ?? 16,
+        // Legacy fields - not used in new system
+        fontSize: data.fontSize ? `${data.fontSize}px` : "16px",
         fontFamily: data.fontFamily ?? "Heebo",
         fontWeight: data.fontWeight ?? "normal",
         textColor: data.textColor ?? "#000000",
         textAlign: data.textAlign ?? "center",
-        maxWidth: data.maxWidth,
+        maxWidth: data.maxWidth ? `${data.maxWidth}px` : undefined,
         isRequired: data.isRequired ?? true,
         defaultValue: data.defaultValue,
         sortOrder: (maxSortOrder._max.sortOrder ?? 0) + 1,
@@ -419,9 +418,16 @@ export async function updateTemplateField(
       return { error: "Unauthorized" };
     }
 
+    // Transform number fields to string (px) for schema compatibility
+    const transformedData = {
+      ...data,
+      fontSize: data.fontSize ? `${data.fontSize}px` : undefined,
+      maxWidth: data.maxWidth ? `${data.maxWidth}px` : undefined,
+    };
+
     const field = await prisma.invitationTemplateField.update({
       where: { id: fieldId },
-      data,
+      data: transformedData,
     });
 
     revalidatePath(`/admin/invitation-templates/${field.templateId}`);

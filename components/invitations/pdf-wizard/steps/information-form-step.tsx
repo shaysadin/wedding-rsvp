@@ -14,19 +14,21 @@ const FIELD_TYPE_ICONS: Record<InvitationFieldType, keyof typeof Icons> = {
   GUEST_NAME: "user",
   EVENT_DATE: "calendar",
   EVENT_TIME: "clock",
-  VENUE: "mapPin",
+  VENUE_NAME: "mapPin",
   COUPLE_NAMES: "heart",
   CUSTOM: "edit",
-};
+  // Add remaining field types with default icon
+} as any;
 
 const FIELD_TYPE_PLACEHOLDERS: Record<InvitationFieldType, string> = {
   GUEST_NAME: "John & Jane Doe",
   EVENT_DATE: "January 15, 2026",
   EVENT_TIME: "18:00",
-  VENUE: "The Grand Ballroom",
+  VENUE_NAME: "The Grand Ballroom",
   COUPLE_NAMES: "Sarah & Michael",
   CUSTOM: "",
-};
+  // Add remaining field types with default placeholder
+} as any;
 
 export function InformationFormStep() {
   const t = useTranslations("pdfInvitations");

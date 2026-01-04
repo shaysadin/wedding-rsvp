@@ -58,7 +58,7 @@ const FIELD_TYPES: { value: InvitationFieldType; labelEn: string; labelHe: strin
   { value: "COUPLE_NAMES", labelEn: "Couple Names", labelHe: "שמות הזוג" },
   { value: "EVENT_DATE", labelEn: "Event Date", labelHe: "תאריך האירוע" },
   { value: "EVENT_TIME", labelEn: "Event Time", labelHe: "שעת האירוע" },
-  { value: "VENUE", labelEn: "Venue", labelHe: "מקום האירוע" },
+  { value: "VENUE_NAME", labelEn: "Venue", labelHe: "מקום האירוע" },
   { value: "CUSTOM", labelEn: "Custom", labelHe: "מותאם" },
 ];
 

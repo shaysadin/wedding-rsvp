@@ -83,13 +83,18 @@ export async function smartEraseTextRegions(
       const sampleY = Math.max(0, region.top - 5);
 
       try {
+        // Get image metadata first
+        const metadata = await sharp(imageBuffer).metadata();
+        const imgWidth = metadata.width || 800;
+        const imgHeight = metadata.height || 1200;
+
         // Extract a small region to sample color
         const { data, info } = await sharp(imageBuffer)
           .extract({
             left: sampleX,
             top: sampleY,
-            width: Math.min(10, info.width - sampleX),
-            height: Math.min(10, info.height - sampleY),
+            width: Math.min(10, imgWidth - sampleX),
+            height: Math.min(10, imgHeight - sampleY),
           })
           .raw()
           .toBuffer({ resolveWithObject: true });
