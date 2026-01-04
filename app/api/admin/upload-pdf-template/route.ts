@@ -10,17 +10,22 @@ export const maxDuration = 60; // 60 seconds for processing
 const MAX_PDF_SIZE = 20 * 1024 * 1024;
 
 export async function POST(request: NextRequest) {
+  console.log("[upload-pdf-template] Request received");
+  console.log("[upload-pdf-template] Headers:", Object.fromEntries(request.headers.entries()));
+
   try {
     // Check authentication - only platform owners can upload templates
     const user = await requirePlatformOwner();
+    console.log("[upload-pdf-template] requirePlatformOwner returned:", user ? `User ${user.id}` : 'null');
+
     if (!user) {
-      console.error("Upload PDF: User not authorized as platform owner");
+      console.error("[upload-pdf-template] User not authorized as platform owner");
       return NextResponse.json({
         error: "Unauthorized: Only platform owners can upload templates"
       }, { status: 403 });
     }
 
-    console.log("Upload PDF: User authorized:", user.id);
+    console.log("[upload-pdf-template] User authorized:", user.id, user.email);
 
     // Parse form data
     const formData = await request.formData();
