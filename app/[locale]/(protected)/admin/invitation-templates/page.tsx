@@ -8,7 +8,6 @@ import { toast } from "sonner";
 import { EventType } from "@prisma/client";
 
 import { getAdminInvitationTemplates, createInvitationTemplate, deleteInvitationTemplate, updateInvitationTemplate } from "@/actions/invitation-templates";
-import { uploadPdfTemplate } from "@/actions/invitation-templates-new";
 import { DashboardHeader } from "@/components/dashboard/header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -103,8 +102,8 @@ export default function AdminInvitationTemplatesPage() {
       return;
     }
 
-    if (file.size > 10 * 1024 * 1024) {
-      toast.error(isRTL ? "הקובץ גדול מדי. גודל מקסימלי: 10MB" : "File too large. Max size: 10MB");
+    if (file.size > 20 * 1024 * 1024) {
+      toast.error(isRTL ? "הקובץ גדול מדי. גודל מקסימלי: 20MB" : "File too large. Max size: 20MB");
       return;
     }
 
@@ -112,42 +111,37 @@ export default function AdminInvitationTemplatesPage() {
     setIsUploading(true);
 
     try {
-      // Convert to base64
-      const reader = new FileReader();
-      reader.onload = async (event) => {
-        const base64Pdf = event.target?.result as string;
+      // Create FormData for upload
+      const formData = new FormData();
+      formData.append("pdf", file);
 
-        // Upload PDF
-        const result = await uploadPdfTemplate(base64Pdf);
+      // Upload PDF via API route
+      const response = await fetch("/api/admin/upload-pdf-template", {
+        method: "POST",
+        body: formData,
+      });
 
-        if (result.error) {
-          toast.error(result.error);
-          setPdfFile(null);
-        } else if (result.success) {
-          setUploadedPdfData({
-            pdfUrl: result.pdfUrl!,
-            previewUrl: result.previewUrl!,
-            dimensions: result.dimensions!,
-          });
-          // Auto-fill form data
-          setFormData({
-            ...formData,
-            pdfUrl: result.pdfUrl!,
-            thumbnailUrl: result.previewUrl!,
-          });
-          toast.success(isRTL ? "הקובץ הועלה בהצלחה" : "File uploaded successfully");
-        }
+      const result = await response.json();
 
-        setIsUploading(false);
-      };
-
-      reader.onerror = () => {
-        toast.error(isRTL ? "שגיאה בקריאת הקובץ" : "Error reading file");
+      if (!response.ok || result.error) {
+        toast.error(result.error || "Failed to upload PDF");
         setPdfFile(null);
-        setIsUploading(false);
-      };
+      } else if (result.success) {
+        setUploadedPdfData({
+          pdfUrl: result.pdfUrl,
+          previewUrl: result.previewUrl,
+          dimensions: result.dimensions,
+        });
+        // Auto-fill form data
+        setFormData((prev) => ({
+          ...prev,
+          pdfUrl: result.pdfUrl,
+          thumbnailUrl: result.previewUrl,
+        }));
+        toast.success(isRTL ? "הקובץ הועלה בהצלחה" : "File uploaded successfully");
+      }
 
-      reader.readAsDataURL(file);
+      setIsUploading(false);
     } catch (error) {
       toast.error(isRTL ? "שגיאה בהעלאת הקובץ" : "Error uploading file");
       setPdfFile(null);

@@ -8,8 +8,8 @@ import { pdfToPng, getPdfDimensions } from "@/lib/invitations/pdf-to-png";
 import { eraseTextRegions, smartEraseTextRegions, type TextRegion } from "@/lib/invitations/image-processor";
 import { uploadToR2, getPublicR2Url } from "@/lib/r2";
 
-// Maximum file size (10MB for PDFs)
-const MAX_PDF_SIZE = 10 * 1024 * 1024;
+// Maximum file size (20MB for PDFs)
+const MAX_PDF_SIZE = 20 * 1024 * 1024;
 
 /**
  * Upload PDF template and convert to PNG background

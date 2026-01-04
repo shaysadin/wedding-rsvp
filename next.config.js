@@ -67,7 +67,7 @@ const nextConfig = {
   // Server actions configuration
   experimental: {
     serverActions: {
-      bodySizeLimit: "15mb", // Increased for PDF uploads (10MB PDF + 33% base64 overhead)
+      bodySizeLimit: "30mb", // Increased for PDF uploads (20MB PDF + 33% base64 overhead)
     },
   },
 };
