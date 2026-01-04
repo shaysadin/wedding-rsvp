@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { EventType } from "@prisma/client";
 
 import { getAdminInvitationTemplates, createInvitationTemplate, deleteInvitationTemplate, updateInvitationTemplate } from "@/actions/invitation-templates";
+import { uploadPdfTemplate } from "@/actions/invitation-templates-new";
 import { DashboardHeader } from "@/components/dashboard/header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -54,6 +55,13 @@ export default function AdminInvitationTemplatesPage() {
   const [isCreating, setIsCreating] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [pdfFile, setPdfFile] = useState<File | null>(null);
+  const [uploadedPdfData, setUploadedPdfData] = useState<{
+    pdfUrl: string;
+    previewUrl: string;
+    dimensions: { width: number; height: number };
+  } | null>(null);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -86,6 +94,67 @@ export default function AdminInvitationTemplatesPage() {
     loadTemplates();
   }, [loadTemplates]);
 
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.type !== "application/pdf") {
+      toast.error(isRTL ? "אנא בחרו קובץ PDF" : "Please select a PDF file");
+      return;
+    }
+
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error(isRTL ? "הקובץ גדול מדי. גודל מקסימלי: 10MB" : "File too large. Max size: 10MB");
+      return;
+    }
+
+    setPdfFile(file);
+    setIsUploading(true);
+
+    try {
+      // Convert to base64
+      const reader = new FileReader();
+      reader.onload = async (event) => {
+        const base64Pdf = event.target?.result as string;
+
+        // Upload PDF
+        const result = await uploadPdfTemplate(base64Pdf);
+
+        if (result.error) {
+          toast.error(result.error);
+          setPdfFile(null);
+        } else if (result.success) {
+          setUploadedPdfData({
+            pdfUrl: result.pdfUrl!,
+            previewUrl: result.previewUrl!,
+            dimensions: result.dimensions!,
+          });
+          // Auto-fill form data
+          setFormData({
+            ...formData,
+            pdfUrl: result.pdfUrl!,
+            thumbnailUrl: result.previewUrl!,
+          });
+          toast.success(isRTL ? "הקובץ הועלה בהצלחה" : "File uploaded successfully");
+        }
+
+        setIsUploading(false);
+      };
+
+      reader.onerror = () => {
+        toast.error(isRTL ? "שגיאה בקריאת הקובץ" : "Error reading file");
+        setPdfFile(null);
+        setIsUploading(false);
+      };
+
+      reader.readAsDataURL(file);
+    } catch (error) {
+      toast.error(isRTL ? "שגיאה בהעלאת הקובץ" : "Error uploading file");
+      setPdfFile(null);
+      setIsUploading(false);
+    }
+  };
+
   const handleCreate = async () => {
     if (!formData.name || !formData.nameHe || !formData.pdfUrl) {
       toast.error(isRTL ? "נא למלא את כל השדות הנדרשים" : "Please fill all required fields");
@@ -109,6 +178,7 @@ export default function AdminInvitationTemplatesPage() {
       } else {
         toast.success(isRTL ? "התבנית נוצרה בהצלחה" : "Template created successfully");
         setIsCreateOpen(false);
+        // Reset all state
         setFormData({
           name: "",
           nameHe: "",
@@ -118,6 +188,8 @@ export default function AdminInvitationTemplatesPage() {
           pdfUrl: "",
           thumbnailUrl: "",
         });
+        setPdfFile(null);
+        setUploadedPdfData(null);
         loadTemplates();
       }
     } catch {
@@ -180,7 +252,26 @@ export default function AdminInvitationTemplatesPage() {
         heading={isRTL ? "תבניות הזמנות" : "Invitation Templates"}
         text={isRTL ? "ניהול תבניות הזמנות PDF" : "Manage PDF invitation templates"}
       >
-        <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+        <Dialog
+          open={isCreateOpen}
+          onOpenChange={(open) => {
+            setIsCreateOpen(open);
+            if (!open) {
+              // Reset state when closing
+              setPdfFile(null);
+              setUploadedPdfData(null);
+              setFormData({
+                name: "",
+                nameHe: "",
+                description: "",
+                descriptionHe: "",
+                eventType: "WEDDING",
+                pdfUrl: "",
+                thumbnailUrl: "",
+              });
+            }
+          }}
+        >
           <DialogTrigger asChild>
             <Button>
               <Icons.add className={cn("h-4 w-4", isRTL ? "ml-2" : "mr-2")} />
@@ -256,29 +347,49 @@ export default function AdminInvitationTemplatesPage() {
               </div>
 
               <div className="space-y-2">
-                <Label>{isRTL ? "קישור ל-PDF" : "PDF URL"} *</Label>
-                <Input
-                  value={formData.pdfUrl}
-                  onChange={(e) => setFormData({ ...formData, pdfUrl: e.target.value })}
-                  placeholder="https://..."
-                />
+                <Label>{isRTL ? "העלאת קובץ PDF" : "Upload PDF File"} *</Label>
+                <div className="flex items-center gap-4">
+                  <Input
+                    type="file"
+                    accept="application/pdf"
+                    onChange={handleFileSelect}
+                    disabled={isUploading}
+                    className="cursor-pointer"
+                  />
+                  {isUploading && (
+                    <Icons.spinner className="h-5 w-5 animate-spin text-muted-foreground" />
+                  )}
+                </div>
+                {pdfFile && !isUploading && (
+                  <p className="text-sm text-muted-foreground">
+                    {pdfFile.name} ({(pdfFile.size / 1024 / 1024).toFixed(2)} MB)
+                  </p>
+                )}
               </div>
 
-              <div className="space-y-2">
-                <Label>{isRTL ? "קישור לתמונה ממוזערת" : "Thumbnail URL"}</Label>
-                <Input
-                  value={formData.thumbnailUrl}
-                  onChange={(e) => setFormData({ ...formData, thumbnailUrl: e.target.value })}
-                  placeholder="https://..."
-                />
-              </div>
+              {uploadedPdfData && (
+                <div className="space-y-2">
+                  <Label>{isRTL ? "תצוגה מקדימה" : "Preview"}</Label>
+                  <div className="relative aspect-[3/4] max-w-xs bg-muted rounded-lg overflow-hidden border">
+                    <Image
+                      src={uploadedPdfData.previewUrl}
+                      alt="PDF Preview"
+                      fill
+                      className="object-cover"
+                    />
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    {isRTL ? "מידות" : "Dimensions"}: {uploadedPdfData.dimensions.width} x {uploadedPdfData.dimensions.height}px
+                  </p>
+                </div>
+              )}
             </div>
 
             <DialogFooter>
               <Button variant="outline" onClick={() => setIsCreateOpen(false)}>
                 {isRTL ? "ביטול" : "Cancel"}
               </Button>
-              <Button onClick={handleCreate} disabled={isCreating}>
+              <Button onClick={handleCreate} disabled={isCreating || !uploadedPdfData}>
                 {isCreating && <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />}
                 {isRTL ? "צור תבנית" : "Create Template"}
               </Button>
