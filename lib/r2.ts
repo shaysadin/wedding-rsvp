@@ -119,3 +119,16 @@ export async function deleteFromR2(key: string): Promise<void> {
     })
   );
 }
+
+/**
+ * Get public URL for an R2 object
+ * For permanent files (invitations, templates), uses long-lived signed URL (1 year)
+ * @param key - The object key (path) in the bucket
+ * @returns A public URL for the object
+ */
+export async function getPublicR2Url(key: string): Promise<string> {
+  // For invitations and templates, we want long-lived URLs (1 year)
+  // This is more secure than making the bucket public
+  const ONE_YEAR = 365 * 24 * 60 * 60; // 1 year in seconds
+  return await getSignedR2Url(key, ONE_YEAR);
+}

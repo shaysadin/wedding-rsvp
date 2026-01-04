@@ -34,8 +34,14 @@
 - **VAPI** - Voice AI agent for automated phone calls
 
 ### Storage
-- **Cloudflare R2** - File storage (invitations, images)
+- **Cloudflare R2** - Primary file storage (invitations, templates, images)
 - **Cloudinary** - Image transformations
+
+### Image & Document Processing
+- **Puppeteer** - HTML to PNG rendering (headless browser)
+- **Sharp** - High-performance image processing and manipulation
+- **pdf-lib** - PDF parsing and dimension extraction
+- **Canvas** - Server-side canvas operations
 
 ### i18n
 - **next-intl** - Hebrew (default, RTL) + English
@@ -66,9 +72,10 @@ components/
 config/               # App configuration (site, dashboard nav, plans)
 lib/
   automation/         # Automation flow engine
+  invitations/        # Invitation generation system (PDF/HTML to PNG)
   notifications/      # SMS/WhatsApp sending
   payments/           # Gift payment processing (Meshulam)
-  pdf/                # PDF invitation generation
+  pdf/                # Legacy PDF utilities
   validations/        # Zod schemas
 messages/             # i18n translations (en.json, he.json)
 prisma/               # Database schema
@@ -156,8 +163,15 @@ All icons through `components/shared/icons.tsx` - exports Lucide icons as `Icons
 ## Current Development State
 
 ### Active Modules
-1. **Automation Flows** - Event-driven messaging (NO_RESPONSE_WHATSAPP, NO_RESPONSE_SMS, BEFORE_EVENT, AFTER_EVENT triggers)
-2. **PDF Invitations** - Template-based generation with pdf-lib
+1. **Automation Flows** - Event-driven messaging (NO_RESPONSE_WHATSAPP, NO_RESPONSE_SMS, BEFORE_EVENT, AFTER_EVENT triggers) with custom RSVP confirmation messages
+2. **Invitation Generation System** - NEW! Complete invitation creation pipeline:
+   - Platform owner uploads complete PDF templates with sample text
+   - Smart text region erasing with background color matching (Sharp)
+   - HTML/CSS template rendering to high-quality PNG (Puppeteer)
+   - Support for 24+ field types (couple names, dates, venue, etc.)
+   - Wedding owners generate custom invitations by filling forms
+   - Generated invitations stored in Cloudflare R2 (10GB free tier)
+   - See `INVITATION_SYSTEM.md` for complete documentation
 3. **Gift Payments** - Meshulam integration with 8% platform fee
 4. **Task Management** - Kanban board for wedding planning
 5. **Voice AI** - VAPI-powered phone calls for RSVP collection
@@ -171,9 +185,14 @@ All icons through `components/shared/icons.tsx` - exports Lucide icons as `Icons
 ### Known TODOs in Codebase
 - `actions/generate-user-stripe.ts:3` - Stripe session generation not implemented
 - `actions/invitations.ts:266` - WhatsApp image template sending incomplete
-- `actions/invitation-templates.ts:108` - PDF field extraction disabled
 - `lib/subscription.ts:64` - Subscription cancellation check incomplete
 - `app/api/vapi/webhook/route.ts:24` - VAPI signature verification not implemented
+
+### Invitation System - Pending UI Development
+Backend complete, UI needed for:
+- **Template Upload Page** (`admin/invitation-templates/new`) - Visual region marker for text areas
+- **Invitation Generator Page** (`dashboard/events/[eventId]/invitations`) - Template browser and form builder
+- See `INVITATION_SYSTEM.md` section "What You Need to Do" for details
 
 ### Deprecated (Legacy) Items
 Schema contains many `@deprecated` triggers/actions for backward compatibility:
@@ -220,6 +239,7 @@ npx prisma studio    # Database GUI
 - `NEXT_PUBLIC_APP_URL` - Base URL for links
 - `STRIPE_*` - Payment processing
 - `TWILIO_*` / `VAPI_*` - Communications
+- `CLOUDFLARE_R2_*` - R2 storage for invitations, templates, files
 
 ### User Roles
 - `ROLE_WEDDING_OWNER` - Standard user (default)

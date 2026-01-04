@@ -52,6 +52,11 @@ revalidatePath() → UI Update
 
 ### Feature Modules
 - **Automation** → `lib/automation/`, `AutomationFlow` + `AutomationFlowExecution`
+- **Invitations** → `lib/invitations/`, `InvitationTemplate` + `GeneratedInvitation` (NEW!)
+  - PDF to PNG conversion with pdf-lib + Sharp
+  - Smart text region erasing with background matching
+  - HTML to PNG rendering with Puppeteer
+  - Template-based generation with 24+ field types
 - **Seating** → `WeddingTable`, `TableAssignment`, `VenueBlock`
 - **Tasks** → `WeddingTask` with Kanban statuses
 - **Suppliers** → `Supplier` with payments
@@ -66,7 +71,7 @@ revalidatePath() → UI Update
 | Twilio | SMS/WhatsApp | `api/twilio/whatsapp`, `lib/notifications/` |
 | VAPI | Voice AI | `api/vapi/webhook` |
 | Resend | Email | `lib/email.ts` |
-| Cloudflare R2 | File storage | `lib/r2.ts` |
+| Cloudflare R2 | File storage (invitations, templates) | `lib/r2.ts` |
 | Cloudinary | Image transforms | `lib/cloudinary.ts` |
 
 ## Authentication Flow

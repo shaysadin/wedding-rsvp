@@ -1,7 +1,7 @@
-<h1 align="center">Wedding RSVP Manager</h1>
+<h1 align="center">Wedinex</h1>
 
 <p align="center">
-  A comprehensive wedding event management platform for handling RSVPs, guest lists, seating arrangements, and more.
+  A comprehensive wedding event management SaaS platform for the Israeli market. Handles RSVPs, guest management, seating arrangements, custom invitation generation, automated messaging, voice AI calls, and more.
 </p>
 
 <p align="center">
@@ -44,11 +44,15 @@
 - Payment tracking and budgeting
 - Contact information management
 
-### Invitations
-- Customizable RSVP pages
-- WhatsApp integration for sending invites
-- QR code generation
-- Interactive invitation templates
+### Invitation Generation
+- **PDF Template System** - Platform owner uploads complete invitation PDFs
+- **Smart Text Erasing** - Intelligent background matching to remove original text
+- **Custom Generation** - Wedding owners fill forms to create personalized invitations
+- **24+ Field Types** - Support for couple names, dates, venues, families, etc.
+- **High-Quality Output** - 2x resolution PNG generation
+- **RSVP Pages** - Customizable guest RSVP links
+- **WhatsApp Integration** - Send invites via WhatsApp
+- **QR Code Generation** - Easy RSVP access
 
 ### Multi-Language Support
 - Full Hebrew (RTL) and English support
@@ -75,7 +79,13 @@
 
 ### Database & Storage
 - **PostgreSQL** - Primary database (via Neon)
-- **Cloudflare R2** - File storage
+- **Cloudflare R2** - File storage (invitations, templates, images)
+
+### Image Processing
+- **Puppeteer** - HTML to PNG rendering
+- **Sharp** - Image manipulation and processing
+- **pdf-lib** - PDF parsing and conversion
+- **Canvas** - Server-side canvas operations
 
 ### Communications
 - **Resend** - Email delivery
@@ -151,7 +161,7 @@ TWILIO_ACCOUNT_SID=
 TWILIO_AUTH_TOKEN=
 TWILIO_PHONE_NUMBER=
 
-# Cloudflare R2
+# Cloudflare R2 (File Storage: Invitations, Templates, Images)
 CLOUDFLARE_R2_ACCOUNT_ID=
 CLOUDFLARE_R2_ACCESS_KEY_ID=
 CLOUDFLARE_R2_SECRET_ACCESS_KEY=

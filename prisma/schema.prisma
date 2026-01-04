@@ -1049,12 +1049,39 @@ enum AutomationExecutionStatus {
 // ============================================
 
 enum InvitationFieldType {
-  GUEST_NAME     // Guest's name
-  EVENT_DATE     // Event date
-  EVENT_TIME     // Event time
-  VENUE          // Venue name/address
-  COUPLE_NAMES   // Bride & Groom names
-  CUSTOM         // Custom text
+  // Guest & Couple Info
+  GUEST_NAME           // Guest's name (for personalized invitations)
+  COUPLE_NAMES         // Bride & Groom names
+  COUPLE_NAMES_ENGLISH // Couple names in English (e.g., "SHAY & SAPIR")
+  COUPLE_NAMES_HEBREW  // Couple names in Hebrew (e.g., "שי & ספיר")
+
+  // Date & Time Fields
+  EVENT_DATE           // Event date (Gregorian, e.g., "28.01.26")
+  EVENT_DATE_HEBREW    // Hebrew date (e.g., "י' שבט ה'תשפ"ו")
+  DAY_OF_WEEK          // Day of week (e.g., "יום רביעי")
+  EVENT_TIME           // Generic event time
+  RECEPTION_TIME       // Reception start time (e.g., "קבלת פנים 19:30")
+  CEREMONY_TIME        // Ceremony time (e.g., "חופה וקידושין 20:30")
+
+  // Location Fields
+  VENUE_NAME           // Venue name only (e.g., "מאגיה")
+  VENUE_ADDRESS        // Full address (e.g., "רחוב החשמל 5, טבריה")
+  STREET_ADDRESS       // Street only (e.g., "רחוב החשמל 5")
+  CITY                 // City name (e.g., "טבריה")
+
+  // Family Names
+  BRIDE_PARENTS        // Bride's parents names (e.g., "דורית וזאב שוויץ")
+  GROOM_PARENTS        // Groom's parents names (e.g., "גלית סוויס ואיציק סדינה")
+  BRIDE_FAMILY         // Bride's family name (e.g., "משפחת הכלה שוויץ")
+  GROOM_FAMILY         // Groom's family name (e.g., "משפחת החתן סדינה")
+
+  // Event Description
+  EVENT_TYPE           // Event type description (e.g., "טקס החינה", "חתונה")
+  INVITATION_TEXT      // Main invitation text
+  BLESSING_QUOTE       // Quote/blessing at top (e.g., "עד שמצאתי את שאהבה נפשי...")
+
+  // Custom
+  CUSTOM               // Custom text field
 }
 
 enum EventType {
@@ -1062,6 +1089,11 @@ enum EventType {
   HENNA       // Henna ceremony
   ENGAGEMENT  // Engagement party
   OTHER       // Other celebration
+}
+
+enum TemplateType {
+  HTML        // Pure HTML/CSS template (fully customizable)
+  PDF         // PDF upload (converted to background image with HTML overlay)
 }
 
 // ============================================
@@ -1180,10 +1212,10 @@ model AutomationFlowExecution {
 }
 
 // ============================================
-// PDF INVITATION MODULE MODELS
+// INVITATION MODULE MODELS (HTML/CSS Based)
 // ============================================
 
-// Admin-uploaded PDF invitation templates
+// Admin-created invitation templates (HTML/CSS or PDF-based)
 model InvitationTemplate {
   id            String          @id @default(cuid())
   name          String
@@ -1191,8 +1223,29 @@ model InvitationTemplate {
   description   String?
   descriptionHe String?         @map("description_he")
   eventType     EventType       @default(WEDDING) @map("event_type")
-  pdfUrl        String          @map("pdf_url") // R2 URL to base PDF
-  thumbnailUrl  String?         @map("thumbnail_url") // R2 URL to preview image
+
+  // Template type (HTML or PDF)
+  templateType  TemplateType    @default(HTML) @map("template_type")
+
+  // HTML template content (with placeholders like {{coupleName}})
+  htmlContent   String?         @map("html_content") @db.Text
+
+  // CSS styles for the template
+  cssContent    String?         @map("css_content") @db.Text
+
+  // PDF file URL (R2) - for PDF-based templates
+  pdfUrl        String?         @map("pdf_url")
+
+  // Background image URL (R2) - PDF converted to image for overlay
+  backgroundImageUrl String?    @map("background_image_url")
+
+  // Preview/thumbnail image URL (R2)
+  thumbnailUrl  String?         @map("thumbnail_url")
+
+  // Dimensions for generation (pixels)
+  width         Int             @default(800)
+  height        Int             @default(1200)
+
   isActive      Boolean         @default(true) @map("is_active")
   sortOrder     Int             @default(0) @map("sort_order")
   createdAt     DateTime        @default(now()) @map("created_at")
@@ -1203,24 +1256,18 @@ model InvitationTemplate {
 
   @@index([eventType])
   @@index([isActive])
+  @@index([templateType])
   @@map("invitation_templates")
 }
 
-// X/Y coordinates for text placement on PDF templates
+// Define which fields are available in each template
 model InvitationTemplateField {
   id           String              @id @default(cuid())
   templateId   String              @map("template_id")
   fieldType    InvitationFieldType @map("field_type")
   label        String              // Display label for the field
   labelHe      String?             @map("label_he")
-  positionX    Float               @map("position_x") // X coordinate on PDF
-  positionY    Float               @map("position_y") // Y coordinate on PDF
-  fontSize     Int                 @default(16) @map("font_size")
-  fontFamily   String              @default("Heebo") @map("font_family")
-  fontWeight   String              @default("normal") @map("font_weight")
-  textColor    String              @default("#000000") @map("text_color")
-  textAlign    String              @default("center") @map("text_align") // left, center, right
-  maxWidth     Float?              @map("max_width") // Max width for text wrapping
+  placeholder  String?             // Placeholder text for input
   isRequired   Boolean             @default(true) @map("is_required")
   defaultValue String?             @map("default_value")
   sortOrder    Int                 @default(0) @map("sort_order")
@@ -1233,12 +1280,13 @@ model InvitationTemplateField {
   @@map("invitation_template_fields")
 }
 
-// User-generated PDF invitations
+// User-generated invitations
 model GeneratedInvitation {
   id             String             @id @default(cuid())
   weddingEventId String             @map("wedding_event_id")
   templateId     String             @map("template_id")
-  pdfUrl         String             @map("pdf_url") // R2 URL to generated PDF
+  pngUrl         String?            @map("png_url") // R2 URL to generated PNG (primary output)
+  pdfUrl         String?            @map("pdf_url") // R2 URL to generated PDF (optional)
   fieldValues    Json               @map("field_values") // JSON of field values used
   createdAt      DateTime           @default(now()) @map("created_at")
 

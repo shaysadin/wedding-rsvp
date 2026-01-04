@@ -101,3 +101,45 @@ const PLAN_GUEST_LIMITS: Record<PlanTier, number> = {
 ```
 - Enforced in Server Actions
 - Checked before mutations
+
+## Puppeteer for Invitation Rendering
+
+HTML to PNG conversion uses Puppeteer headless browser:
+- **Why not server-side canvas?** Canvas libraries have poor Hebrew/RTL support
+- **Why not CSS-to-image services?** Need exact font matching and custom styling
+- **Performance**: Singleton browser instance reused across requests
+- **Quality**: 2x scale factor for retina displays
+
+## Sharp for Image Processing
+
+Text region erasing uses Sharp:
+- **Smart background matching**: Samples surrounding pixels, fills with average color
+- **No white boxes**: Blends erased regions with existing background
+- **Performance**: Sharp is fastest image library for Node.js
+- **PNG optimization**: Built-in compression
+
+## Cloudflare R2 for All File Storage
+
+All file storage (invitations, templates, images) uses Cloudflare R2:
+- **Generous free tier**: 10GB storage vs Vercel Blob's 500MB
+- **No egress fees**: Unlimited bandwidth out (huge cost savings)
+- **S3-compatible**: Standard API, easy to migrate if needed
+- **Already configured**: Project already uses R2 (`lib/r2.ts`)
+- **Long-lived URLs**: Uses 1-year signed URLs for "permanent" files like invitations
+- **Cost-effective**: $0.015/GB after free tier vs Vercel Blob's higher pricing
+
+## PDF Template Approach
+
+Platform owner uploads **complete PDFs** (not blank templates):
+- **Reasoning**: Most users have pre-designed PDFs from designers
+- **Text erasing**: System removes original text intelligently
+- **Font matching**: Admin manually specifies matching web fonts
+- **Flexibility**: Also supports pure HTML/CSS templates via `TemplateType` enum
+
+## CSS Positioning Over PDF Coordinates
+
+Template fields store CSS properties (top, left, width) not PDF coordinates:
+- **Responsive**: Can adapt to different viewport sizes if needed
+- **Web-native**: Direct mapping to HTML rendering
+- **Flexibility**: Supports both absolute and relative positioning
+- **Debugging**: Easier to test in browser DevTools
