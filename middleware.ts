@@ -20,10 +20,12 @@ export default async function middleware(request: NextRequest) {
     pathname.includes(".");
 
   if (shouldSkipI18n) {
+    console.log("[middleware] Skipping for:", pathname);
     return NextResponse.next();
   }
 
   // Apply i18n middleware
+  console.log("[middleware] Applying i18n for:", pathname);
   return intlMiddleware(request);
 }
 

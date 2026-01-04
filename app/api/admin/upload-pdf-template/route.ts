@@ -5,9 +5,22 @@ import { uploadToR2, getPublicR2Url } from "@/lib/r2";
 
 export const runtime = "nodejs";
 export const maxDuration = 60; // 60 seconds for processing
+export const dynamic = "force-dynamic"; // Disable static optimization
 
 // Maximum file size (20MB for PDFs)
 const MAX_PDF_SIZE = 20 * 1024 * 1024;
+
+// Handle OPTIONS for CORS preflight
+export async function OPTIONS(request: NextRequest) {
+  return new NextResponse(null, {
+    status: 200,
+    headers: {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "POST, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type, Authorization",
+    },
+  });
+}
 
 export async function POST(request: NextRequest) {
   console.log("[upload-pdf-template] Request received");
@@ -69,19 +82,31 @@ export async function POST(request: NextRequest) {
     await uploadToR2(pdfKey, pdfBuffer, "application/pdf");
     const pdfUrl = await getPublicR2Url(pdfKey);
 
-    return NextResponse.json({
-      success: true,
-      previewUrl,
-      pdfUrl,
-      dimensions,
-    });
+    return NextResponse.json(
+      {
+        success: true,
+        previewUrl,
+        pdfUrl,
+        dimensions,
+      },
+      {
+        headers: {
+          "Access-Control-Allow-Origin": "*",
+        },
+      }
+    );
   } catch (error) {
     console.error("Error uploading PDF template:", error);
     return NextResponse.json(
       {
         error: `Failed to upload template: ${error instanceof Error ? error.message : "Unknown error"}`,
       },
-      { status: 500 }
+      {
+        status: 500,
+        headers: {
+          "Access-Control-Allow-Origin": "*",
+        },
+      }
     );
   }
 }
