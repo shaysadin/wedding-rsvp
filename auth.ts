@@ -15,6 +15,7 @@ export const {
     signIn: "/he/login",
     error: "/he/login",
   },
+  trustHost: true, // Required for Vercel production deployment
   callbacks: {
     async signIn({ user, account }) {
       // Allow OAuth sign-in and link to existing accounts with same email

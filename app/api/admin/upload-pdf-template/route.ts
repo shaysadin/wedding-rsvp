@@ -14,8 +14,13 @@ export async function POST(request: NextRequest) {
     // Check authentication - only platform owners can upload templates
     const user = await requirePlatformOwner();
     if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      console.error("Upload PDF: User not authorized as platform owner");
+      return NextResponse.json({
+        error: "Unauthorized: Only platform owners can upload templates"
+      }, { status: 403 });
     }
+
+    console.log("Upload PDF: User authorized:", user.id);
 
     // Parse form data
     const formData = await request.formData();
