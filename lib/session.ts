@@ -31,19 +31,26 @@ export async function getCurrentUserRole(userId: string): Promise<UserRole | nul
  */
 export async function requirePlatformOwner() {
   const sessionUser = await getCurrentUser();
+  console.log("[requirePlatformOwner] Session user:", sessionUser?.id, sessionUser?.email);
+
   if (!sessionUser?.id) {
+    console.log("[requirePlatformOwner] No session user found");
     return null;
   }
 
   // Check if user has ROLE_PLATFORM_OWNER in their roles array
   const user = await prisma.user.findUnique({
     where: { id: sessionUser.id },
-    select: { roles: true },
+    select: { roles: true, email: true },
   });
 
+  console.log("[requirePlatformOwner] DB user roles:", user?.email, user?.roles);
+
   if (!user?.roles?.includes(UserRole.ROLE_PLATFORM_OWNER)) {
+    console.log("[requirePlatformOwner] User does not have ROLE_PLATFORM_OWNER");
     return null;
   }
 
+  console.log("[requirePlatformOwner] User authorized as platform owner");
   return sessionUser;
 }

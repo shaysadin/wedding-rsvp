@@ -24,10 +24,14 @@ export default async function AdminLayout({ children }: AdminLayoutProps) {
   // This ensures role switches are immediately reflected
   const dbUser = await prisma.user.findUnique({
     where: { id: user.id },
-    select: { role: true },
+    select: { role: true, roles: true },
   });
 
-  if (!dbUser || dbUser.role !== UserRole.ROLE_PLATFORM_OWNER) {
+  // Check both role (single) and roles (array) for backward compatibility
+  const isPlatformOwner = dbUser?.role === UserRole.ROLE_PLATFORM_OWNER ||
+                          dbUser?.roles?.includes(UserRole.ROLE_PLATFORM_OWNER);
+
+  if (!dbUser || !isPlatformOwner) {
     redirect(`/${locale}/dashboard`);
   }
 
