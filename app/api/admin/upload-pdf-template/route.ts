@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getCurrentUser } from "@/lib/session";
-import { UserRole } from "@prisma/client";
+import { requirePlatformOwner } from "@/lib/session";
 import { pdfToPng, getPdfDimensions } from "@/lib/invitations/pdf-to-png";
 import { uploadToR2, getPublicR2Url } from "@/lib/r2";
 
@@ -12,9 +11,9 @@ const MAX_PDF_SIZE = 20 * 1024 * 1024;
 
 export async function POST(request: NextRequest) {
   try {
-    // Check authentication
-    const user = await getCurrentUser();
-    if (!user || user.role !== UserRole.ROLE_PLATFORM_OWNER) {
+    // Check authentication - only platform owners can upload templates
+    const user = await requirePlatformOwner();
+    if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 

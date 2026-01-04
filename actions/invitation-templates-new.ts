@@ -20,7 +20,7 @@ export async function uploadPdfTemplate(base64Pdf: string) {
     const user = await getCurrentUser();
 
     // Only platform owner can upload templates
-    if (!user || user.role !== UserRole.ROLE_PLATFORM_OWNER) {
+    if (!user || !user.roles?.includes(UserRole.ROLE_PLATFORM_OWNER)) {
       return { error: "Unauthorized: Only platform owners can upload templates" };
     }
 
@@ -95,7 +95,7 @@ export async function processPdfTemplate(params: {
   try {
     const user = await getCurrentUser();
 
-    if (!user || user.role !== UserRole.ROLE_PLATFORM_OWNER) {
+    if (!user || !user.roles?.includes(UserRole.ROLE_PLATFORM_OWNER)) {
       return { error: "Unauthorized" };
     }
 
@@ -194,7 +194,7 @@ export async function createHtmlTemplate(params: {
   try {
     const user = await getCurrentUser();
 
-    if (!user || user.role !== UserRole.ROLE_PLATFORM_OWNER) {
+    if (!user || !user.roles?.includes(UserRole.ROLE_PLATFORM_OWNER)) {
       return { error: "Unauthorized" };
     }
 
