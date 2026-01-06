@@ -419,6 +419,7 @@ export async function getAutomationFlow(flowId: string) {
             scheduledFor: true,
             executedAt: true,
             errorMessage: true,
+            retryCount: true,
             guest: {
               select: {
                 id: true,
@@ -632,6 +633,180 @@ export async function cancelPendingExecutions(flowId: string) {
   } catch (error) {
     console.error("Error cancelling pending executions:", error);
     return { error: "Failed to cancel executions" };
+  }
+}
+
+/**
+ * Retry a single execution (works for both FAILED and PENDING with errors)
+ */
+export async function retrySingleExecution(executionId: string) {
+  try {
+    const user = await getCurrentUser();
+
+    if (!user || user.role !== UserRole.ROLE_WEDDING_OWNER) {
+      return { error: "Unauthorized" };
+    }
+
+    // Get execution with flow and event
+    const execution = await prisma.automationFlowExecution.findUnique({
+      where: { id: executionId },
+      include: {
+        flow: {
+          include: {
+            weddingEvent: true,
+          },
+        },
+      },
+    });
+
+    if (!execution || execution.flow.weddingEvent.ownerId !== user.id) {
+      return { error: "Execution not found" };
+    }
+
+    // Reset to pending for immediate retry
+    await prisma.automationFlowExecution.update({
+      where: { id: executionId },
+      data: {
+        status: "PENDING",
+        errorMessage: null,
+        scheduledFor: new Date(), // Schedule for now
+      },
+    });
+
+    revalidatePath(`/dashboard/automations`);
+
+    return { success: true };
+  } catch (error) {
+    console.error("Error retrying single execution:", error);
+    return { error: "Failed to retry execution" };
+  }
+}
+
+/**
+ * Run a single pending execution immediately
+ * This bypasses the cron job and executes right now
+ */
+export async function runExecutionNow(executionId: string) {
+  try {
+    const user = await getCurrentUser();
+
+    if (!user || user.role !== UserRole.ROLE_WEDDING_OWNER) {
+      return { error: "Unauthorized" };
+    }
+
+    // Get execution with all needed data
+    const execution = await prisma.automationFlowExecution.findUnique({
+      where: { id: executionId },
+      include: {
+        flow: {
+          include: {
+            weddingEvent: true,
+          },
+        },
+        guest: {
+          include: {
+            rsvp: true,
+            tableAssignment: {
+              include: {
+                table: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!execution || execution.flow.weddingEvent.ownerId !== user.id) {
+      return { error: "Execution not found" };
+    }
+
+    if (execution.status !== "PENDING" && execution.status !== "FAILED") {
+      return { error: "Can only run pending or failed executions" };
+    }
+
+    // Import and execute
+    const { executeAction } = await import("@/lib/automation/action-executor");
+
+    // Mark as processing
+    await prisma.automationFlowExecution.update({
+      where: { id: executionId },
+      data: { status: "PROCESSING" },
+    });
+
+    const now = new Date();
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://rsvp.app";
+    const rsvpUrl = `${baseUrl}/rsvp/${execution.guest.slug}`;
+
+    // Format event time
+    const timeFormatter = new Intl.DateTimeFormat("he-IL", {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+    const eventTime = timeFormatter.format(execution.flow.weddingEvent.dateTime);
+
+    // Build context
+    const context = {
+      guestId: execution.guest.id,
+      weddingEventId: execution.flow.weddingEventId,
+      guestName: execution.guest.name,
+      guestPhone: execution.guest.phoneNumber,
+      rsvpStatus: execution.guest.rsvp?.status,
+      tableName: execution.guest.tableAssignment?.table.name,
+      eventDate: execution.flow.weddingEvent.dateTime,
+      eventTime,
+      eventLocation: execution.flow.weddingEvent.location,
+      eventVenue: execution.flow.weddingEvent.venue,
+      customMessage: execution.flow.customMessage,
+      rsvpLink: rsvpUrl,
+    };
+
+    // Execute the action
+    const actionResult = await executeAction(execution.flow.action, context);
+
+    // Update execution status
+    if (actionResult.success) {
+      await prisma.automationFlowExecution.update({
+        where: { id: executionId },
+        data: {
+          status: "COMPLETED",
+          executedAt: now,
+          errorMessage: null,
+        },
+      });
+
+      revalidatePath(`/dashboard/automations`);
+      return { success: true, message: actionResult.message };
+    } else {
+      // Mark as failed
+      await prisma.automationFlowExecution.update({
+        where: { id: executionId },
+        data: {
+          status: "FAILED",
+          executedAt: now,
+          errorMessage: actionResult.message,
+          retryCount: { increment: 1 },
+        },
+      });
+
+      revalidatePath(`/dashboard/automations`);
+      return { error: actionResult.message };
+    }
+  } catch (error) {
+    console.error("Error running execution now:", error);
+
+    // Try to mark as failed
+    try {
+      await prisma.automationFlowExecution.update({
+        where: { id: executionId },
+        data: {
+          status: "FAILED",
+          executedAt: new Date(),
+          errorMessage: error instanceof Error ? error.message : "Unknown error",
+        },
+      });
+    } catch {}
+
+    return { error: error instanceof Error ? error.message : "Failed to run execution" };
   }
 }
 

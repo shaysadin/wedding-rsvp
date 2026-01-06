@@ -79,6 +79,7 @@ import {
   deleteAutomationFlow,
   retryFailedExecutions,
   cancelPendingExecutions,
+  runExecutionNow,
 } from "@/actions/automation";
 import { Icons } from "@/components/shared/icons";
 
@@ -96,6 +97,7 @@ interface ExecutionItem {
   scheduledFor: Date | null;
   executedAt: Date | null;
   errorMessage: string | null;
+  retryCount: number;
   guest: {
     id: string;
     name: string;
@@ -174,6 +176,7 @@ export function FlowDetailDialog({
   const [editAction, setEditAction] = useState<AutomationAction | "">("");
   const [editMessage, setEditMessage] = useState("");
   const [showPreview, setShowPreview] = useState(false);
+  const [runningExecutionId, setRunningExecutionId] = useState<string | null>(null);
 
   const triggerOptions = getTriggerOptions(locale);
   const actionOptions = getActionOptions(locale);
@@ -309,6 +312,23 @@ export function FlowDetailDialog({
       }
     } catch {
       toast.error(isRTL ? "שגיאה בביטול ההרצות" : "Failed to cancel executions");
+    }
+  };
+
+  const handleRunNow = async (executionId: string) => {
+    setRunningExecutionId(executionId);
+    try {
+      const result = await runExecutionNow(executionId);
+      if (result.error) {
+        toast.error(result.error);
+      } else {
+        toast.success(isRTL ? "הפעולה בוצעה בהצלחה" : "Action executed successfully");
+        loadFlow();
+      }
+    } catch {
+      toast.error(isRTL ? "שגיאה בהרצת הפעולה" : "Failed to run action");
+    } finally {
+      setRunningExecutionId(null);
     }
   };
 
@@ -788,56 +808,100 @@ export function FlowDetailDialog({
                     {flow.executions.map((execution) => {
                       const statusConfig = EXECUTION_STATUS_CONFIG[execution.status];
                       const StatusIcon = statusConfig.icon;
+                      const isRunning = runningExecutionId === execution.id;
+                      const canRunNow = execution.status === "PENDING" || execution.status === "FAILED";
+                      const hasError = !!execution.errorMessage;
+                      const hasRetries = execution.retryCount > 0;
 
                       return (
-                        <Card key={execution.id}>
-                          <CardContent className={cn(
-                            "flex items-center justify-between p-3",
-                            isRTL && "flex-row-reverse"
-                          )}>
-                            <div className={cn("flex items-center gap-3", isRTL && "flex-row-reverse")}>
-                              <StatusIcon className={cn("h-5 w-5", statusConfig.color)} />
-                              <div className={isRTL ? "text-right" : ""}>
-                                <p className="font-medium flex items-center gap-2">
-                                  <User className="h-3 w-3 text-muted-foreground" />
-                                  {execution.guest.name}
-                                </p>
-                                {execution.guest.phoneNumber && (
-                                  <p className="text-xs text-muted-foreground flex items-center gap-1">
-                                    <Phone className="h-3 w-3" />
-                                    {execution.guest.phoneNumber}
+                        <Card key={execution.id} className={cn(
+                          hasError && execution.status === "PENDING" && "border-amber-500/50 bg-amber-500/5"
+                        )}>
+                          <CardContent className="p-3">
+                            <div className={cn(
+                              "flex items-start justify-between gap-3",
+                              isRTL && "flex-row-reverse"
+                            )}>
+                              {/* Left side - Guest info */}
+                              <div className={cn("flex items-start gap-3", isRTL && "flex-row-reverse")}>
+                                <StatusIcon className={cn("h-5 w-5 mt-0.5", statusConfig.color)} />
+                                <div className={isRTL ? "text-right" : ""}>
+                                  <p className="font-medium flex items-center gap-2">
+                                    <User className="h-3 w-3 text-muted-foreground" />
+                                    {execution.guest.name}
                                   </p>
+                                  {execution.guest.phoneNumber && (
+                                    <p className="text-xs text-muted-foreground flex items-center gap-1">
+                                      <Phone className="h-3 w-3" />
+                                      {execution.guest.phoneNumber}
+                                    </p>
+                                  )}
+                                </div>
+                              </div>
+
+                              {/* Right side - Status and actions */}
+                              <div className={cn("flex flex-col items-end gap-2", isRTL && "items-start")}>
+                                <div className="flex items-center gap-2">
+                                  {hasRetries && (
+                                    <Badge variant="outline" className="text-amber-600 border-amber-400 text-xs">
+                                      {isRTL ? `ניסיון ${execution.retryCount + 1}` : `Retry #${execution.retryCount}`}
+                                    </Badge>
+                                  )}
+                                  <Badge variant="outline" className={statusConfig.color}>
+                                    {isRTL ? statusConfig.label.he : statusConfig.label.en}
+                                  </Badge>
+                                </div>
+
+                                {execution.executedAt && (
+                                  <p className="text-xs text-muted-foreground">
+                                    {new Date(execution.executedAt).toLocaleString(
+                                      isRTL ? "he-IL" : "en-US",
+                                      { dateStyle: "short", timeStyle: "short" }
+                                    )}
+                                  </p>
+                                )}
+                                {execution.scheduledFor && execution.status === "PENDING" && (
+                                  <p className="text-xs text-muted-foreground">
+                                    {isRTL ? "מתוכנן ל: " : "Scheduled: "}
+                                    {new Date(execution.scheduledFor).toLocaleString(
+                                      isRTL ? "he-IL" : "en-US",
+                                      { dateStyle: "short", timeStyle: "short" }
+                                    )}
+                                  </p>
+                                )}
+
+                                {/* Run Now button for pending/failed */}
+                                {canRunNow && (
+                                  <Button
+                                    size="sm"
+                                    variant={execution.status === "FAILED" ? "destructive" : "outline"}
+                                    className="h-7 text-xs"
+                                    onClick={() => handleRunNow(execution.id)}
+                                    disabled={isRunning}
+                                  >
+                                    {isRunning ? (
+                                      <Icons.spinner className="h-3 w-3 animate-spin me-1" />
+                                    ) : (
+                                      <Play className="h-3 w-3 me-1" />
+                                    )}
+                                    {isRTL ? "הרץ עכשיו" : "Run Now"}
+                                  </Button>
                                 )}
                               </div>
                             </div>
 
-                            <div className={cn("text-right", isRTL && "text-left")}>
-                              <Badge variant="outline" className={statusConfig.color}>
-                                {isRTL ? statusConfig.label.he : statusConfig.label.en}
-                              </Badge>
-                              {execution.executedAt && (
-                                <p className="text-xs text-muted-foreground mt-1">
-                                  {new Date(execution.executedAt).toLocaleString(
-                                    isRTL ? "he-IL" : "en-US",
-                                    { dateStyle: "short", timeStyle: "short" }
-                                  )}
-                                </p>
-                              )}
-                              {execution.scheduledFor && execution.status === "PENDING" && (
-                                <p className="text-xs text-muted-foreground mt-1">
-                                  {isRTL ? "מתוכנן ל: " : "Scheduled: "}
-                                  {new Date(execution.scheduledFor).toLocaleString(
-                                    isRTL ? "he-IL" : "en-US",
-                                    { dateStyle: "short", timeStyle: "short" }
-                                  )}
-                                </p>
-                              )}
-                              {execution.errorMessage && (
-                                <p className="text-xs text-red-500 mt-1 max-w-[200px] truncate">
+                            {/* Error message - full width below */}
+                            {hasError && (
+                              <div className={cn(
+                                "mt-2 p-2 rounded bg-red-500/10 border border-red-500/20",
+                                isRTL && "text-right"
+                              )}>
+                                <p className="text-xs text-red-600 dark:text-red-400">
+                                  <span className="font-medium">{isRTL ? "שגיאה: " : "Error: "}</span>
                                   {execution.errorMessage}
                                 </p>
-                              )}
-                            </div>
+                              </div>
+                            )}
                           </CardContent>
                         </Card>
                       );
