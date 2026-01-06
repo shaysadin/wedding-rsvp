@@ -131,6 +131,17 @@ export async function executeAction(
 
 /**
  * Send WhatsApp using a specific template
+ *
+ * For standard templates (invite, reminder, confirmation, etc.):
+ *   - {{1}} = guest name
+ *   - {{2}} = event title
+ *   - {{3}} = RSVP link
+ *
+ * For interactive templates (with image/buttons):
+ *   - {{1}} = guest name
+ *   - {{2}} = event title
+ *   - {{3}} = Cloudinary image path (stripped of base URL)
+ *   - RSVP link comes from button action, not a variable
  */
 async function sendWhatsAppWithTemplate(
   context: AutomationContext,
@@ -218,15 +229,47 @@ async function sendWhatsAppWithTemplate(
     }
 
     const twilio = require("twilio")(accountSid, authToken);
-
     const formattedPhone = formatPhoneNumber(guestPhone);
+
+    // Check if this is an interactive template (with image)
+    // Interactive templates expect {{3}} to be the Cloudinary image path, not RSVP link
+    const isInteractiveTemplate =
+      templateField === "whatsappInteractiveInviteContentSid" ||
+      templateField === "whatsappInteractiveReminderContentSid" ||
+      templateField === "whatsappImageInviteContentSid";
+
+    // Build content variables based on template type
+    const contentVariables: Record<string, string> = {
+      "1": guestName,           // {{1}} = guest name
+      "2": event.title,         // {{2}} = event title
+    };
+
+    if (isInteractiveTemplate) {
+      // For interactive/image templates, {{3}} is the Cloudinary image path
+      // The template has format: https://res.cloudinary.com/{{3}}
+      // So we need to strip the base URL from the invitation image
+      if (event.invitationImageUrl) {
+        // Strip Cloudinary base URL to get just the path
+        const imagePath = event.invitationImageUrl.replace("https://res.cloudinary.com/", "");
+        contentVariables["3"] = imagePath;
+      } else {
+        // No image configured - this will likely fail on Twilio's side
+        // but we let it through so the error message is clear
+        console.warn("Interactive template requested but no invitation image URL configured for event");
+        return {
+          success: false,
+          message: "No invitation image configured for this event. Please upload an invitation image first.",
+          errorCode: "NO_IMAGE",
+        };
+      }
+    } else {
+      // For standard templates, {{3}} is the RSVP link
+      contentVariables["3"] = rsvpUrl;
+    }
+
     const message = await twilio.messages.create({
       contentSid: templateSid,
-      contentVariables: JSON.stringify({
-        "1": guestName,           // {{1}} = guest name
-        "2": event.title,         // {{2}} = event title
-        "3": rsvpUrl,             // {{3}} = RSVP link
-      }),
+      contentVariables: JSON.stringify(contentVariables),
       from: `whatsapp:${fromNumber}`,
       to: `whatsapp:${formattedPhone}`,
     });
