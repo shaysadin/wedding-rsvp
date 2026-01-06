@@ -13,7 +13,7 @@ import { useMediaQuery } from "@/hooks/use-media-query";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
 import {
   Tooltip,
   TooltipContent,
@@ -349,6 +349,7 @@ export function MobileSheetSidebar({ links, userEvents = [], currentRole, availa
           </Button>
         </SheetTrigger>
         <SheetContent side={isRTL ? "right" : "left"} className="flex h-full flex-col p-0">
+          <SheetTitle className="sr-only">{t("common.menu")}</SheetTitle>
           {/* Fixed Header - Logo */}
           <div className="shrink-0 p-6 pb-0">
             <Link

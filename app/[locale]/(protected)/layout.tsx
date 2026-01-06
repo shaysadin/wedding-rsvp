@@ -82,7 +82,7 @@ export default async function ProtectedLayout({ children }: ProtectedLayoutProps
       />
 
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden md:rounded-xl md:border bg-background md:shadow-md md:p-2 md:m-3">
-        <header className="shrink-0 flex h-14 justify-between items-center border-b lg:h-[60px] pe-3">
+        <header className="shrink-0 flex h-14 justify-between items-center border-b lg:h-[60px] pe-3 ps-3 sm:ps-0">
           <MaxWidthWrapper className="flex justify-between w-full items-center gap-x-3 px-0">
             <MobileSheetSidebar
               links={filteredLinks}
@@ -104,7 +104,7 @@ export default async function ProtectedLayout({ children }: ProtectedLayoutProps
         </header>
 
         <main className="flex min-h-0 flex-1 flex-col overflow-auto md:overflow-hidden">
-          <MaxWidthWrapper className="flex w-full min-h-0 flex-1 flex-col gap-4 lg:gap-6">
+          <MaxWidthWrapper className="flex w-full min-h-0 flex-1 pb-[74px] flex-col gap-4 lg:gap-6">
             {children}
           </MaxWidthWrapper>
         </main>
