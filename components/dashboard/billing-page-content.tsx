@@ -323,7 +323,7 @@ export function BillingPageContent({ userId, subscriptionPlan }: BillingPageCont
       >
         {isProcessing ? (
           <>
-            <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
+            <Icons.spinner className="me-2 h-4 w-4 animate-spin" />
             {tBilling("loading")}
           </>
         ) : (
@@ -360,12 +360,12 @@ export function BillingPageContent({ userId, subscriptionPlan }: BillingPageCont
               >
                 {isLoadingPortal ? (
                   <>
-                    <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
+                    <Icons.spinner className="me-2 h-4 w-4 animate-spin" />
                     {tBilling("loading")}
                   </>
                 ) : (
                   <>
-                    <Icons.settings className="mr-2 h-4 w-4" />
+                    <Icons.settings className="me-2 h-4 w-4" />
                     {t("manageBilling")}
                   </>
                 )}
@@ -464,12 +464,12 @@ export function BillingPageContent({ userId, subscriptionPlan }: BillingPageCont
                 >
                   {isCancellingScheduledChange ? (
                     <>
-                      <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
+                      <Icons.spinner className="me-2 h-4 w-4 animate-spin" />
                       {t("cancelling")}
                     </>
                   ) : (
                     <>
-                      <Icons.close className="mr-2 h-4 w-4" />
+                      <Icons.close className="me-2 h-4 w-4" />
                       {t("cancelScheduledChange")}
                     </>
                   )}
@@ -521,7 +521,7 @@ export function BillingPageContent({ userId, subscriptionPlan }: BillingPageCont
               >
                 {isLoadingPortal ? (
                   <>
-                    <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
+                    <Icons.spinner className="me-2 h-4 w-4 animate-spin" />
                     {tBilling("loading")}
                   </>
                 ) : (
@@ -704,7 +704,7 @@ export function BillingPageContent({ userId, subscriptionPlan }: BillingPageCont
             >
               {isCancelling ? (
                 <>
-                  <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
+                  <Icons.spinner className="me-2 h-4 w-4 animate-spin" />
                   {t("cancelling")}
                 </>
               ) : (

@@ -21,6 +21,10 @@ export const env = createEnv({
     CLOUDFLARE_R2_ACCESS_KEY_ID: z.string().optional(),
     CLOUDFLARE_R2_SECRET_ACCESS_KEY: z.string().optional(),
     CLOUDFLARE_R2_BUCKET_NAME: z.string().default("wedding-archives"),
+    // Public domain for permanent R2 URLs (e.g., https://pub-xxx.r2.dev)
+    CLOUDFLARE_R2_PUBLIC_DOMAIN: z.string().optional(),
+    // Google Gemini API key for AI image generation
+    GOOGLE_GEMINI_API_KEY: z.string().optional(),
   },
   client: {
     NEXT_PUBLIC_APP_URL: z.string().min(1),
@@ -41,5 +45,7 @@ export const env = createEnv({
     CLOUDFLARE_R2_ACCESS_KEY_ID: process.env.CLOUDFLARE_R2_ACCESS_KEY_ID,
     CLOUDFLARE_R2_SECRET_ACCESS_KEY: process.env.CLOUDFLARE_R2_SECRET_ACCESS_KEY,
     CLOUDFLARE_R2_BUCKET_NAME: process.env.CLOUDFLARE_R2_BUCKET_NAME,
+    CLOUDFLARE_R2_PUBLIC_DOMAIN: process.env.CLOUDFLARE_R2_PUBLIC_DOMAIN,
+    GOOGLE_GEMINI_API_KEY: process.env.GOOGLE_GEMINI_API_KEY,
   },
 });

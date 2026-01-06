@@ -26,6 +26,7 @@ import { TemplateCard } from "./template-card";
 import { FlowEditorDialog } from "./flow-editor-dialog";
 import { FlowDetailDialog } from "./flow-detail-dialog";
 import { SystemAutomationCards } from "./system-automation-card";
+import { TestAutomationDialog } from "./test-automation-dialog";
 import {
   updateAutomationFlowStatus,
   deleteAutomationFlow,
@@ -50,6 +51,7 @@ interface Flow {
   status: AutomationFlowStatus;
   templateId?: string | null;
   customMessage?: string | null;
+  delayHours?: number | null;
   stats: FlowStats;
 }
 
@@ -89,6 +91,8 @@ export function AutomationDashboard({
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [selectedFlowId, setSelectedFlowId] = useState<string | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
+  const [testFlowId, setTestFlowId] = useState<string | null>(null);
+  const [isTestDialogOpen, setIsTestDialogOpen] = useState(false);
 
   // Get list of existing triggers
   const existingTriggers = flows.map((f) => f.trigger);
@@ -193,13 +197,25 @@ export function AutomationDashboard({
     }
   };
 
+  const handleTest = (flowId: string) => {
+    setTestFlowId(flowId);
+    setIsTestDialogOpen(true);
+  };
+
+  const handleTestDialogClose = (open: boolean) => {
+    setIsTestDialogOpen(open);
+    if (!open) {
+      setTestFlowId(null);
+    }
+  };
+
+  // Get the selected flow for testing
+  const testFlow = testFlowId ? flows.find((f) => f.id === testFlowId) : null;
+
   return (
     <div className="space-y-6">
       {/* Header with stats */}
-      <div className={cn(
-        "flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between",
-        isRTL && "sm:flex-row-reverse"
-      )}>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className={isRTL ? "text-right" : ""}>
           <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
             <Sparkles className="h-6 w-6 text-purple-500" />
@@ -346,7 +362,7 @@ export function AutomationDashboard({
                 </p>
                 <div className={cn("flex gap-3", isRTL && "flex-row-reverse")}>
                   <Button variant="outline" onClick={() => setActiveTab("templates")}>
-                    <Grid3X3 className={cn("h-4 w-4", isRTL ? "ml-2" : "mr-2")} />
+                    <Grid3X3 className={cn("h-4 w-4", isRTL ? "ms-2" : "me-2")} />
                     {isRTL ? "בחר תבנית" : "Choose Template"}
                   </Button>
                   <FlowEditorDialog
@@ -355,7 +371,7 @@ export function AutomationDashboard({
                     onSuccess={onRefresh}
                   >
                     <Button>
-                      <Plus className={cn("h-4 w-4", isRTL ? "ml-2" : "mr-2")} />
+                      <Plus className={cn("h-4 w-4", isRTL ? "ms-2" : "me-2")} />
                       {isRTL ? "צור מותאם אישית" : "Create Custom"}
                     </Button>
                   </FlowEditorDialog>
@@ -382,6 +398,7 @@ export function AutomationDashboard({
                   onPause={handlePause}
                   onDelete={handleDelete}
                   onViewDetails={handleViewDetails}
+                  onTest={handleTest}
                 />
               ))}
               </div>
@@ -468,6 +485,21 @@ export function AutomationDashboard({
           open={isDetailOpen}
           onOpenChange={handleDetailClose}
           onUpdate={onRefresh}
+        />
+      )}
+
+      {/* Test Automation Dialog */}
+      {testFlow && (
+        <TestAutomationDialog
+          open={isTestDialogOpen}
+          onOpenChange={handleTestDialogClose}
+          flowId={testFlow.id}
+          flowName={testFlow.name}
+          action={testFlow.action}
+          trigger={testFlow.trigger}
+          delayHours={testFlow.delayHours}
+          customMessage={testFlow.customMessage}
+          eventId={eventId}
         />
       )}
     </div>

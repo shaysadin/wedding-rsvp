@@ -16,7 +16,8 @@
       "Bash(node -e:*)",
       "Bash(dir /b \"C:\\\\Users\\\\Multiply\\\\Desktop\\\\Projects\\\\wedding rsvp\\\\next-saas-stripe-starter\\\\app\\\\[locale]\\\\\\(protected\\)\\\\dashboard\\\\events\\\\[eventId]\")",
       "Bash(dir \"C:\\\\Users\\\\Multiply\\\\Desktop\\\\Projects\\\\wedding rsvp\\\\next-saas-stripe-starter\\\\components\\\\admin\" /b)",
-      "Bash(dir /b:*)"
+      "Bash(dir /b:*)",
+      "Bash(npx tsc:*)"
     ],
     "deny": [],
     "ask": []

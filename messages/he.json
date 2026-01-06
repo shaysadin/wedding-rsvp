@@ -70,8 +70,9 @@
   "navigation": {
     "dashboard": "לוח בקרה",
     "events": "אירועים",
+    "rsvp": "אישורי הגעה",
     "guests": "אורחים",
-    "invitations": "שליחת הזמנות",
+    "invitations": "הזמנות",
     "seating": "סידורי ישיבה",
     "messages": "תבניות הודעות",
     "customize": "עיצוב דף אישורים",
@@ -87,11 +88,16 @@
     "voiceAgent": "סוכן קולי",
     "archives": "ארכיון",
     "tasks": "משימות",
-    "automation": "אוטומציות",
-    "pdfInvitations": "הזמנות PDF",
+    "automations": "אוטומציות",
     "gifts": "מתנות",
     "invitationTemplates": "תבניות הזמנה",
-    "payments": "תשלומים"
+    "payments": "תשלומים",
+    "adminSettings": "הגדרות מערכת",
+    "eventOrganization": "סדר וארגון האירוע",
+    "designInvitations": "עיצוב והזמנות",
+    "rsvpCommunication": "אישורי הגעה ותקשורת",
+    "accountSettings": "ניהול חשבון והגדרות",
+    "adminPanel": "ניהול מערכת"
   },
   "auth": {
     "signIn": "כניסה",
@@ -342,6 +348,7 @@
   },
   "rsvp": {
     "title": "אישור הגעה",
+    "description": "ניהול ומעקב אחר אישורי הגעה לאירוע",
     "welcome": "שמחים שהגעתם!",
     "willYouAttend": "האם תגיעו לאירוע?",
     "attending": "אגיע בשמחה!",
@@ -1136,9 +1143,9 @@
     }
   },
   "invitations": {
-    "title": "שליחת הזמנות",
-    "description": "שלח תמונת הזמנה לחתונה לאורחים בוואטסאפ",
-    "selectEventDescription": "בחר אירוע לשליחת הזמנות",
+    "title": "הזמנות",
+    "description": "צרו ושלחו הזמנות מרהיבות לאורחים שלכם",
+    "selectEventDescription": "בחרו אירוע לניהול הזמנות",
     "uploadImage": "העלה תמונת הזמנה",
     "uploadDescription": "העלה את תמונת ההזמנה לחתונה (JPG, PNG, עד 5MB)",
     "currentImage": "תמונת הזמנה נוכחית",

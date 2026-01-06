@@ -115,6 +115,26 @@ export interface RsvpPageSettingsInput {
   acceptButtonTextColor?: string | null;
   declineButtonColor?: string | null;
   declineButtonTextColor?: string | null;
+  // Font Weights
+  titleFontWeight?: number | null;
+  subtitleFontWeight?: number | null;
+  labelFontWeight?: number | null;
+  buttonTextFontWeight?: number | null;
+  dateDayFontWeight?: number | null;
+  dateMonthFontWeight?: number | null;
+  dateDayOfWeekFontWeight?: number | null;
+  countdownNumberFontWeight?: number | null;
+  countdownLabelFontWeight?: number | null;
+  timeFontWeight?: number | null;
+  addressFontWeight?: number | null;
+  // Navigation Button Styling
+  navButtonFontSize?: number | null;
+  navButtonFontWeight?: number | null;
+  navButtonBackground?: string | null;
+  navButtonTextColor?: string | null;
+  navButtonBorderColor?: string | null;
+  navButtonBorderRadius?: number | null;
+  navButtonBorderWidth?: number | null;
 }
 
 export async function updateRsvpPageSettings(input: RsvpPageSettingsInput) {

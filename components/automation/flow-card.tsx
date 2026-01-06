@@ -72,6 +72,9 @@ const ACTION_LABELS: Record<AutomationAction, { en: string; he: string; icon: st
   SEND_TABLE_ASSIGNMENT: { en: "Table Assignment", he: "שיבוץ לשולחן", icon: "🪑" },
   SEND_CUSTOM_WHATSAPP: { en: "Custom WhatsApp", he: "וואטסאפ מותאם", icon: "✏️" },
   SEND_CUSTOM_SMS: { en: "Custom SMS", he: "SMS מותאם", icon: "📱" },
+  // Event Day & Thank You Actions
+  SEND_WHATSAPP_EVENT_DAY: { en: "Event Day", he: "יום האירוע", icon: "🎉" },
+  SEND_WHATSAPP_THANK_YOU: { en: "Thank You", he: "תודה", icon: "💝" },
   // Legacy Actions (hidden from UI)
   SEND_WHATSAPP_INTERACTIVE_INVITE: { en: "Interactive Invite", he: "הזמנה אינטראקטיבית", icon: "🔘" },
   SEND_WHATSAPP_TEMPLATE: { en: "WhatsApp Template", he: "תבנית וואטסאפ", icon: "💬" },
@@ -124,18 +127,18 @@ export function FlowCard({ flow, onActivate, onPause, onDelete, onEdit }: FlowCa
             <DropdownMenuContent align={isRTL ? "start" : "end"}>
               {flow.status === "ACTIVE" ? (
                 <DropdownMenuItem onClick={() => onPause(flow.id)}>
-                  <Pause className={cn("h-4 w-4", isRTL ? "ml-2" : "mr-2")} />
+                  <Pause className={cn("h-4 w-4", isRTL ? "ml-2" : "me-2")} />
                   {isRTL ? "השהה" : "Pause"}
                 </DropdownMenuItem>
               ) : flow.status !== "ARCHIVED" ? (
                 <DropdownMenuItem onClick={() => onActivate(flow.id)}>
-                  <Play className={cn("h-4 w-4", isRTL ? "ml-2" : "mr-2")} />
+                  <Play className={cn("h-4 w-4", isRTL ? "ml-2" : "me-2")} />
                   {isRTL ? "הפעל" : "Activate"}
                 </DropdownMenuItem>
               ) : null}
               {onEdit && flow.status !== "ARCHIVED" && (
                 <DropdownMenuItem onClick={() => onEdit(flow.id)}>
-                  <Edit className={cn("h-4 w-4", isRTL ? "ml-2" : "mr-2")} />
+                  <Edit className={cn("h-4 w-4", isRTL ? "ml-2" : "me-2")} />
                   {isRTL ? "ערוך" : "Edit"}
                 </DropdownMenuItem>
               )}
@@ -144,7 +147,7 @@ export function FlowCard({ flow, onActivate, onPause, onDelete, onEdit }: FlowCa
                 onClick={() => onDelete(flow.id)}
                 className="text-destructive focus:text-destructive"
               >
-                <Trash2 className={cn("h-4 w-4", isRTL ? "ml-2" : "mr-2")} />
+                <Trash2 className={cn("h-4 w-4", isRTL ? "ml-2" : "me-2")} />
                 {isRTL ? "מחק" : "Delete"}
               </DropdownMenuItem>
             </DropdownMenuContent>

@@ -191,7 +191,7 @@ export function EditTableDialog({ open, onOpenChange, table }: EditTableDialogPr
               </Button>
               <Button type="submit" disabled={form.formState.isSubmitting}>
                 {form.formState.isSubmitting && (
-                  <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
+                  <Icons.spinner className="me-2 h-4 w-4 animate-spin" />
                 )}
                 {tc("save")}
               </Button>

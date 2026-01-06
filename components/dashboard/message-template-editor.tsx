@@ -160,12 +160,12 @@ export function MessageTemplateEditor({
         <Button onClick={handleSave} disabled={isPending}>
           {isPending ? (
             <>
-              <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
+              <Icons.spinner className="me-2 h-4 w-4 animate-spin" />
               Saving...
             </>
           ) : (
             <>
-              <Icons.save className="mr-2 h-4 w-4" />
+              <Icons.save className="me-2 h-4 w-4" />
               Save Template
             </>
           )}

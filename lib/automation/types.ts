@@ -21,6 +21,9 @@ export interface AutomationContext {
   guestCount?: number; // Number of guests confirmed
   customMessage?: string | null; // Custom message from the flow
   rsvpLink?: string; // RSVP link for the guest
+  giftLink?: string | null; // Gift payment link
+  navigationLink?: string | null; // Google Maps or Waze link
+  coupleName?: string | null; // Couple names for thank you message
 }
 
 export interface TriggerCheckResult {

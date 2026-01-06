@@ -405,7 +405,7 @@ function DraggableTable({
                 onAssignGuests(table.id);
               }}
             >
-              <Icons.userPlus className="mr-2 h-4 w-4" />
+              <Icons.userPlus className="me-2 h-4 w-4" />
               {t("assignGuests")}
             </Button>
             <Button
@@ -417,7 +417,7 @@ function DraggableTable({
                 onEditTable(table);
               }}
             >
-              <Icons.pencil className="mr-2 h-4 w-4" />
+              <Icons.pencil className="me-2 h-4 w-4" />
               {t("editTable")}
             </Button>
           </div>
@@ -688,7 +688,7 @@ function DraggableVenueBlock({
                   setShowDeleteConfirm(true);
                 }}
               >
-                <Icons.trash className="mr-2 h-4 w-4" />
+                <Icons.trash className="me-2 h-4 w-4" />
                 {tc("delete")}
               </Button>
             </div>
@@ -1178,7 +1178,7 @@ export function TableFloorPlan({
               onClick={handleDiscardChanges}
               disabled={isSaving}
             >
-              <Icons.close className="mr-2 h-4 w-4" />
+              <Icons.close className="me-2 h-4 w-4" />
               {tc("discard")}
             </Button>
             <Button
@@ -1187,9 +1187,9 @@ export function TableFloorPlan({
               disabled={isSaving}
             >
               {isSaving ? (
-                <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
+                <Icons.spinner className="me-2 h-4 w-4 animate-spin" />
               ) : (
-                <Icons.check className="mr-2 h-4 w-4" />
+                <Icons.check className="me-2 h-4 w-4" />
               )}
               {tc("save")}
             </Button>

@@ -45,7 +45,7 @@ export function DeleteAccountSection() {
               variant="destructive"
               onClick={() => setShowDeleteAccountModal(true)}
             >
-              <Icons.trash className="mr-2 size-4" />
+              <Icons.trash className="me-2 size-4" />
               <span>Delete Account</span>
             </Button>
           </div>

@@ -76,8 +76,11 @@ interface EventDateDisplayProps {
   // Individual Date Text Colors
   dateDayOfWeekColor?: string;
   dateDayOfWeekFontSize?: number;
+  dateDayOfWeekFontWeight?: number;
   dateDayNumberColor?: string;
+  dateDayFontWeight?: number;
   dateMonthYearColor?: string;
+  dateMonthFontWeight?: number;
   // Time Section Styling
   timeSectionBackground?: string;
   timeSectionTextColor?: string;
@@ -86,6 +89,7 @@ interface EventDateDisplayProps {
   timeSectionBorderColor?: string;
   timeSectionPadding?: number;
   timeFontSize?: number;
+  timeFontWeight?: number;
   timeIconColor?: string;
   // Address Section Styling
   addressSectionBackground?: string;
@@ -95,6 +99,7 @@ interface EventDateDisplayProps {
   addressSectionBorderColor?: string;
   addressSectionPadding?: number;
   addressFontSize?: number;
+  addressFontWeight?: number;
   addressIconColor?: string;
   // Countdown Section Styling
   countdownSectionBackground?: string;
@@ -111,7 +116,9 @@ interface EventDateDisplayProps {
   countdownBoxSize?: number;
   countdownLabelColor?: string;
   countdownNumberFontSize?: number;
+  countdownNumberFontWeight?: number;
   countdownLabelFontSize?: number;
+  countdownLabelFontWeight?: number;
 }
 
 interface CountdownValues {
@@ -148,8 +155,11 @@ export function EventDateDisplay({
   // Individual Date Text Colors
   dateDayOfWeekColor,
   dateDayOfWeekFontSize = 11,
+  dateDayOfWeekFontWeight = 500,
   dateDayNumberColor,
+  dateDayFontWeight = 700,
   dateMonthYearColor,
+  dateMonthFontWeight = 500,
   // Time Section
   timeSectionBackground,
   timeSectionTextColor,
@@ -158,6 +168,7 @@ export function EventDateDisplay({
   timeSectionBorderColor,
   timeSectionPadding,
   timeFontSize = 20,
+  timeFontWeight = 600,
   timeIconColor,
   // Address Section
   addressSectionBackground,
@@ -167,6 +178,7 @@ export function EventDateDisplay({
   addressSectionBorderColor,
   addressSectionPadding,
   addressFontSize = 16,
+  addressFontWeight = 500,
   addressIconColor,
   // Countdown
   countdownSectionBackground,
@@ -183,7 +195,9 @@ export function EventDateDisplay({
   countdownBoxSize,
   countdownLabelColor,
   countdownNumberFontSize = 18,
+  countdownNumberFontWeight = 700,
   countdownLabelFontSize = 9,
+  countdownLabelFontWeight = 500,
 }: EventDateDisplayProps) {
   const dateLocale = isRTL ? he : enUS;
   const [countdown, setCountdown] = useState<CountdownValues | null>(null);
@@ -237,10 +251,11 @@ export function EventDateDisplay({
         >
           {/* Day of Week */}
           <div
-            className="font-medium uppercase tracking-widest"
+            className="uppercase tracking-widest"
             style={{
               color: dateDayOfWeekColor || undefined,
               fontSize: dateDayOfWeekFontSize ? `${dateDayOfWeekFontSize}px` : "11px",
+              fontWeight: dateDayOfWeekFontWeight,
               opacity: dateDayOfWeekColor ? 1 : 0.6,
             }}
           >
@@ -249,10 +264,11 @@ export function EventDateDisplay({
 
           {/* Date Number */}
           <div
-            className="font-bold leading-none tracking-tight"
+            className="leading-none tracking-tight"
             style={{
               color: dateDayNumberColor || accentColor,
               fontSize: dateDayFontSize ? `${dateDayFontSize}px` : "56px",
+              fontWeight: dateDayFontWeight,
             }}
           >
             {format(eventDate, "d", { locale: dateLocale })}
@@ -260,10 +276,10 @@ export function EventDateDisplay({
 
           {/* Month & Year */}
           <div
-            className="font-medium"
             style={{
               color: dateMonthYearColor || undefined,
               fontSize: dateMonthFontSize ? `${dateMonthFontSize}px` : "16px",
+              fontWeight: dateMonthFontWeight,
               opacity: dateMonthYearColor ? 1 : 0.8,
             }}
           >
@@ -278,9 +294,10 @@ export function EventDateDisplay({
               <div className="flex items-center gap-3">
                 <ClockIcon color={timeIconColor || accentColor} size={22} />
                 <span
-                  className="font-semibold tracking-wide"
+                  className="tracking-wide"
                   style={{
                     fontSize: timeFontSize ? `${timeFontSize}px` : "20px",
+                    fontWeight: timeFontWeight,
                     color: timeSectionTextColor || undefined,
                   }}
                 >
@@ -293,9 +310,10 @@ export function EventDateDisplay({
               <div className="flex items-center gap-3 text-center">
                 <LocationIcon color={addressIconColor || accentColor} size={22} />
                 <span
-                  className="font-medium leading-snug"
+                  className="leading-snug"
                   style={{
                     fontSize: addressFontSize ? `${addressFontSize}px` : "16px",
+                    fontWeight: addressFontWeight,
                     color: addressSectionTextColor || undefined,
                   }}
                 >
@@ -320,7 +338,9 @@ export function EventDateDisplay({
             boxSize={countdownBoxSize}
             labelColor={countdownLabelColor || countdownSectionTextColor}
             numberFontSize={countdownNumberFontSize}
+            numberFontWeight={countdownNumberFontWeight}
             labelFontSize={countdownLabelFontSize}
+            labelFontWeight={countdownLabelFontWeight}
           />
         )}
       </div>
@@ -378,9 +398,10 @@ export function EventDateDisplay({
               <div className="flex items-center gap-3">
                 <ClockIcon color={timeIconColor || accentColor} size={22} />
                 <span
-                  className="font-semibold tracking-wide"
+                  className="tracking-wide"
                   style={{
                     fontSize: timeFontSize ? `${timeFontSize}px` : "20px",
+                    fontWeight: timeFontWeight,
                     color: timeSectionTextColor || undefined,
                   }}
                 >
@@ -393,9 +414,10 @@ export function EventDateDisplay({
               <div className="flex items-center gap-3 text-center">
                 <LocationIcon color={addressIconColor || accentColor} size={22} />
                 <span
-                  className="font-medium leading-snug"
+                  className="leading-snug"
                   style={{
                     fontSize: addressFontSize ? `${addressFontSize}px` : "16px",
+                    fontWeight: addressFontWeight,
                     color: addressSectionTextColor || undefined,
                   }}
                 >
@@ -420,7 +442,9 @@ export function EventDateDisplay({
             boxSize={countdownBoxSize}
             labelColor={countdownLabelColor || countdownSectionTextColor}
             numberFontSize={countdownNumberFontSize}
+            numberFontWeight={countdownNumberFontWeight}
             labelFontSize={countdownLabelFontSize}
+            labelFontWeight={countdownLabelFontWeight}
           />
         )}
       </div>
@@ -484,10 +508,11 @@ export function EventDateDisplay({
         >
           {/* Day of Week */}
           <div
-            className="text-xs font-medium uppercase tracking-widest"
+            className="text-xs uppercase tracking-widest"
             style={{
               color: dateDayOfWeekColor || undefined,
               fontSize: dateDayOfWeekFontSize ? `${dateDayOfWeekFontSize}px` : undefined,
+              fontWeight: dateDayOfWeekFontWeight,
               opacity: dateDayOfWeekColor ? 1 : (useColoredBackground ? 0.8 : 0.6),
             }}
           >
@@ -496,10 +521,11 @@ export function EventDateDisplay({
 
           {/* Date Number */}
           <div
-            className="my-2 font-bold leading-none tracking-tight"
+            className="my-2 leading-none tracking-tight"
             style={{
               color: dateDayNumberColor || undefined,
               fontSize: dateDayFontSize ? `${dateDayFontSize}px` : "64px",
+              fontWeight: dateDayFontWeight,
             }}
           >
             {format(eventDate, "d", { locale: dateLocale })}
@@ -507,10 +533,11 @@ export function EventDateDisplay({
 
           {/* Month & Year */}
           <div
-            className="font-medium tracking-wide"
+            className="tracking-wide"
             style={{
               color: dateMonthYearColor || undefined,
               fontSize: dateMonthFontSize ? `${dateMonthFontSize}px` : "18px",
+              fontWeight: dateMonthFontWeight,
               opacity: dateMonthYearColor ? 1 : (useColoredBackground ? 1 : 0.8),
             }}
           >
@@ -526,9 +553,10 @@ export function EventDateDisplay({
             <div className="flex items-center gap-3">
               <ClockIcon color={timeIconColor || accentColor} size={22} />
               <span
-                className="font-semibold tracking-wide"
+                className="tracking-wide"
                 style={{
                   fontSize: timeFontSize ? `${timeFontSize}px` : "20px",
+                  fontWeight: timeFontWeight,
                   color: timeSectionTextColor || undefined,
                 }}
               >
@@ -541,9 +569,10 @@ export function EventDateDisplay({
             <div className="flex items-center gap-3 text-center">
               <LocationIcon color={addressIconColor || accentColor} size={22} />
               <span
-                className="font-medium leading-snug"
+                className="leading-snug"
                 style={{
                   fontSize: addressFontSize ? `${addressFontSize}px` : "16px",
+                  fontWeight: addressFontWeight,
                   color: addressSectionTextColor || undefined,
                 }}
               >
@@ -568,7 +597,9 @@ export function EventDateDisplay({
           boxSize={countdownBoxSize}
           labelColor={countdownLabelColor}
           numberFontSize={countdownNumberFontSize}
+          numberFontWeight={countdownNumberFontWeight}
           labelFontSize={countdownLabelFontSize}
+          labelFontWeight={countdownLabelFontWeight}
         />
       )}
     </div>
@@ -587,7 +618,9 @@ interface CountdownDisplayProps {
   boxSize?: number;
   labelColor?: string;
   numberFontSize?: number;
+  numberFontWeight?: number;
   labelFontSize?: number;
+  labelFontWeight?: number;
 }
 
 function CountdownDisplay({
@@ -602,7 +635,9 @@ function CountdownDisplay({
   boxSize,
   labelColor,
   numberFontSize = 18,
+  numberFontWeight = 700,
   labelFontSize = 9,
+  labelFontWeight = 500,
 }: CountdownDisplayProps) {
   const labels = isRTL
     ? { days: "ימים", hours: "שעות", minutes: "דקות", seconds: "שניות" }
@@ -634,7 +669,9 @@ function CountdownDisplay({
         boxBorderRadius={boxBorderRadius}
         size={size}
         fontSize={numberFontSize}
+        fontWeight={numberFontWeight}
         labelSize={labelFontSize}
+        labelWeight={labelFontWeight}
         labelColor={labelColor}
       />
         <div className="text-sm font-bold opacity-20" style={{ color: labelColor }}>:</div>
@@ -649,7 +686,9 @@ function CountdownDisplay({
           boxBorderRadius={boxBorderRadius}
           size={size}
           fontSize={numberFontSize}
+          fontWeight={numberFontWeight}
           labelSize={labelFontSize}
+          labelWeight={labelFontWeight}
           labelColor={labelColor}
         />
         <div className="text-sm font-bold opacity-20" style={{ color: labelColor }}>:</div>
@@ -664,7 +703,9 @@ function CountdownDisplay({
           boxBorderRadius={boxBorderRadius}
           size={size}
           fontSize={numberFontSize}
+          fontWeight={numberFontWeight}
           labelSize={labelFontSize}
+          labelWeight={labelFontWeight}
           labelColor={labelColor}
         />
         <div className="text-sm font-bold opacity-20" style={{ color: labelColor }}>:</div>
@@ -679,7 +720,9 @@ function CountdownDisplay({
         boxBorderRadius={boxBorderRadius}
         size={size}
         fontSize={numberFontSize}
+        fontWeight={numberFontWeight}
         labelSize={labelFontSize}
+        labelWeight={labelFontWeight}
         labelColor={labelColor}
       />
     </div>
@@ -697,7 +740,9 @@ interface CountdownUnitProps {
   boxBorderRadius?: number;
   size: number;
   fontSize: number;
+  fontWeight?: number;
   labelSize: number;
+  labelWeight?: number;
   labelColor?: string;
 }
 
@@ -712,18 +757,21 @@ function CountdownUnit({
   boxBorderRadius,
   size,
   fontSize,
+  fontWeight = 700,
   labelSize,
+  labelWeight = 500,
   labelColor,
 }: CountdownUnitProps) {
   return (
     <div className="flex flex-col items-center">
       <div
-        className="flex items-center justify-center font-semibold tabular-nums"
+        className="flex items-center justify-center tabular-nums"
         style={{
           minWidth: `${size}px`,
           minHeight: `${size}px`,
           padding: "8px 10px",
           fontSize: `${fontSize}px`,
+          fontWeight: fontWeight,
           backgroundColor: boxBackground || "#f3f4f6",
           color: boxTextColor || accentColor || "#374151",
           borderWidth: boxBorderWidth ? `${boxBorderWidth}px` : undefined,
@@ -735,9 +783,10 @@ function CountdownUnit({
         {value.toString().padStart(2, "0")}
       </div>
       <span
-        className="mt-1 font-medium"
+        className="mt-1"
         style={{
           fontSize: `${labelSize}px`,
+          fontWeight: labelWeight,
           color: labelColor || "rgb(107, 114, 128)",
         }}
       >

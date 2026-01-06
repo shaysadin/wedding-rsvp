@@ -72,6 +72,12 @@ export function MessagingSettingsForm({ settings }: MessagingSettingsFormProps) 
   const [whatsappInteractiveInviteText, setWhatsappInteractiveInviteText] = useState(settings?.whatsappInteractiveInviteText || "");
   const [whatsappInteractiveReminderText, setWhatsappInteractiveReminderText] = useState(settings?.whatsappInteractiveReminderText || "");
 
+  // Event Day & Thank You Templates
+  const [whatsappEventDayContentSid, setWhatsappEventDayContentSid] = useState((settings as any)?.whatsappEventDayContentSid || "");
+  const [whatsappEventDayTemplateText, setWhatsappEventDayTemplateText] = useState((settings as any)?.whatsappEventDayTemplateText || "");
+  const [whatsappThankYouContentSid, setWhatsappThankYouContentSid] = useState((settings as any)?.whatsappThankYouContentSid || "");
+  const [whatsappThankYouTemplateText, setWhatsappThankYouTemplateText] = useState((settings as any)?.whatsappThankYouTemplateText || "");
+
   // SMS state (Twilio only)
   const smsProvider = "twilio"; // Fixed to Twilio
   const [smsApiKey, setSmsApiKey] = useState(settings?.smsApiKey || "");
@@ -107,6 +113,11 @@ export function MessagingSettingsForm({ settings }: MessagingSettingsFormProps) 
         whatsappGuestCountListContentSid: whatsappGuestCountListContentSid || null,
         whatsappInteractiveInviteText: whatsappInteractiveInviteText || null,
         whatsappInteractiveReminderText: whatsappInteractiveReminderText || null,
+        // Event Day & Thank You templates
+        whatsappEventDayContentSid: whatsappEventDayContentSid || null,
+        whatsappEventDayTemplateText: whatsappEventDayTemplateText || null,
+        whatsappThankYouContentSid: whatsappThankYouContentSid || null,
+        whatsappThankYouTemplateText: whatsappThankYouTemplateText || null,
       });
 
       if (result.success) {
@@ -536,11 +547,93 @@ export function MessagingSettingsForm({ settings }: MessagingSettingsFormProps) 
             </div>
           </div>
 
+          {/* Event Day & Thank You Templates Section */}
+          <div className="border-t pt-4 mt-4">
+            <div className="mb-4">
+              <h4 className="text-sm font-medium flex items-center gap-2">
+                <Icons.calendar className="h-4 w-4 text-orange-600" />
+                Event Day & Thank You Templates
+              </h4>
+              <p className="text-xs text-muted-foreground mt-1">
+                Templates for same-day reminders and post-event thank you messages.
+              </p>
+            </div>
+            <div className="grid gap-6">
+              {/* Event Day Template */}
+              <div className="space-y-3 rounded-lg border border-orange-200 dark:border-orange-800 bg-orange-50/50 dark:bg-orange-900/20 p-4">
+                <div className="flex items-center gap-2">
+                  <Icons.mapPin className="h-4 w-4 text-orange-600" />
+                  <Label className="text-sm font-medium">Event Day Reminder Template</Label>
+                </div>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="whatsapp-event-day-template" className="text-xs text-muted-foreground">Content SID</Label>
+                    <Input
+                      id="whatsapp-event-day-template"
+                      placeholder="HXxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+                      value={whatsappEventDayContentSid}
+                      onChange={(e) => setWhatsappEventDayContentSid(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="whatsapp-event-day-text" className="text-xs text-muted-foreground">Template Text (for display)</Label>
+                    <Textarea
+                      id="whatsapp-event-day-text"
+                      placeholder="היום זה היום! 🎉&#10;&#10;{{1}}, השולחן שלך: {{2}}&#10;📍 כתובת: {{3}}&#10;🗺️ ניווט: {{4}}&#10;💝 קישור למתנה: {{5}}"
+                      value={whatsappEventDayTemplateText}
+                      onChange={(e) => setWhatsappEventDayTemplateText(e.target.value)}
+                      rows={5}
+                      className="text-sm"
+                    />
+                  </div>
+                </div>
+                <div className="text-xs text-muted-foreground space-y-1">
+                  <p>Variables: {"{{1}}"} = guest name, {"{{2}}"} = table name, {"{{3}}"} = venue address, {"{{4}}"} = navigation link, {"{{5}}"} = gift link</p>
+                  <p className="text-orange-600">Sent morning of the event to confirmed guests</p>
+                </div>
+              </div>
+
+              {/* Thank You Template */}
+              <div className="space-y-3 rounded-lg border border-pink-200 dark:border-pink-800 bg-pink-50/50 dark:bg-pink-900/20 p-4">
+                <div className="flex items-center gap-2">
+                  <Icons.heart className="h-4 w-4 text-pink-600" />
+                  <Label className="text-sm font-medium">Thank You Template</Label>
+                </div>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="whatsapp-thank-you-template" className="text-xs text-muted-foreground">Content SID</Label>
+                    <Input
+                      id="whatsapp-thank-you-template"
+                      placeholder="HXxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+                      value={whatsappThankYouContentSid}
+                      onChange={(e) => setWhatsappThankYouContentSid(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="whatsapp-thank-you-text" className="text-xs text-muted-foreground">Template Text (for display)</Label>
+                    <Textarea
+                      id="whatsapp-thank-you-text"
+                      placeholder="תודה רבה {{1}}! 💕&#10;&#10;שמחנו לחגוג איתך את היום המיוחד שלנו!&#10;&#10;באהבה,&#10;{{2}}"
+                      value={whatsappThankYouTemplateText}
+                      onChange={(e) => setWhatsappThankYouTemplateText(e.target.value)}
+                      rows={4}
+                      className="text-sm"
+                    />
+                  </div>
+                </div>
+                <div className="text-xs text-muted-foreground space-y-1">
+                  <p>Variables: {"{{1}}"} = guest name, {"{{2}}"} = couple names</p>
+                  <p className="text-pink-600">Sent day after the event to guests who attended</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <div className="flex gap-3">
             <Button onClick={handleSaveWhatsApp} disabled={isPending}>
               {isPending ? (
                 <>
-                  <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
+                  <Icons.spinner className="me-2 h-4 w-4 animate-spin" />
                   Saving...
                 </>
               ) : (
@@ -554,12 +647,12 @@ export function MessagingSettingsForm({ settings }: MessagingSettingsFormProps) 
             >
               {isTesting === "whatsapp" ? (
                 <>
-                  <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
+                  <Icons.spinner className="me-2 h-4 w-4 animate-spin" />
                   Testing...
                 </>
               ) : (
                 <>
-                  <Icons.zap className="mr-2 h-4 w-4" />
+                  <Icons.zap className="me-2 h-4 w-4" />
                   Test Connection
                 </>
               )}
@@ -658,7 +751,7 @@ export function MessagingSettingsForm({ settings }: MessagingSettingsFormProps) 
             <Button onClick={handleSaveSms} disabled={isPending}>
               {isPending ? (
                 <>
-                  <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
+                  <Icons.spinner className="me-2 h-4 w-4 animate-spin" />
                   Saving...
                 </>
               ) : (
@@ -672,12 +765,12 @@ export function MessagingSettingsForm({ settings }: MessagingSettingsFormProps) 
             >
               {isTesting === "sms" ? (
                 <>
-                  <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
+                  <Icons.spinner className="me-2 h-4 w-4 animate-spin" />
                   Testing...
                 </>
               ) : (
                 <>
-                  <Icons.zap className="mr-2 h-4 w-4" />
+                  <Icons.zap className="me-2 h-4 w-4" />
                   Test Connection
                 </>
               )}

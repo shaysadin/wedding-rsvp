@@ -54,12 +54,14 @@ import {
   LucideIcon,
   LucideProps,
   Mail,
+  MailCheck,
   Map,
   MapPin,
   MessageCircle,
   MessageSquare,
   MessagesSquare,
   Mic,
+  Minus,
   Moon,
   MoreVertical,
   Music,
@@ -94,6 +96,7 @@ import {
   X,
   XCircle,
   Zap,
+  ZoomIn,
 } from "lucide-react";
 
 export type Icon = LucideIcon;
@@ -194,6 +197,7 @@ export const Icons = {
   logo: Puzzle,
   media: Image,
   messages: MessagesSquare,
+  minus: Minus,
   moon: Moon,
   package: Package,
   page: File,
@@ -232,6 +236,7 @@ export const Icons = {
   edit: Pencil,
   globe: Globe,
   mail: Mail,
+  mailCheck: MailCheck,
   map: Map,
   mapPin: MapPin,
   messageCircle: MessageCircle,
@@ -269,4 +274,6 @@ export const Icons = {
   // Suppliers
   suppliers: Store,
   briefcase: Briefcase,
+  // Zoom
+  zoomIn: ZoomIn,
 };

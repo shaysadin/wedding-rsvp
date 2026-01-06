@@ -5,7 +5,8 @@ import { RsvpStatus } from "@prisma/client";
 import { useLocale, useTranslations } from "next-intl";
 import { toast } from "sonner";
 
-import { sendImageInvitation, sendBulkImageInvitations } from "@/actions/invitations";
+import { sendImageInvitation, sendBulkImageInvitations } from "@/actions/generate-invitation";
+import { cn } from "@/lib/utils";
 import {
   Table,
   TableBody,
@@ -303,7 +304,7 @@ export function InvitationsGuestTable({
 
   return (
     <>
-    <div className="relative space-y-4">
+    <div className="relative space-y-4" dir={isRTL ? "rtl" : "ltr"}>
       {/* Expand Button */}
       <Button
         variant="ghost"
@@ -346,18 +347,18 @@ export function InvitationsGuestTable({
 
       {/* Stats Cards */}
       <div className="grid gap-4 md:grid-cols-3">
-        <div className="rounded-lg border bg-card p-4">
+        <div className={cn("rounded-lg border bg-card p-4", isRTL && "text-right")}>
           <div className="text-sm text-muted-foreground">{t("stats.total")}</div>
           <div className="text-2xl font-bold">{guestsWithPhone}</div>
           <div className="text-xs text-muted-foreground">
             {tg("withPhone")}
           </div>
         </div>
-        <div className="rounded-lg border bg-card p-4">
+        <div className={cn("rounded-lg border bg-card p-4", isRTL && "text-right")}>
           <div className="text-sm text-muted-foreground">{t("stats.sent")}</div>
           <div className="text-2xl font-bold text-green-600">{sentCount}</div>
         </div>
-        <div className="rounded-lg border bg-card p-4">
+        <div className={cn("rounded-lg border bg-card p-4", isRTL && "text-right")}>
           <div className="text-sm text-muted-foreground">{t("stats.pending")}</div>
           <div className="text-2xl font-bold text-yellow-600">{notSentCount}</div>
         </div>
@@ -375,14 +376,14 @@ export function InvitationsGuestTable({
           />
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
           {/* Quick action: Select all not sent */}
           <Button
             variant="outline"
             size="sm"
             onClick={selectAllNotSent}
             disabled={notSentCount === 0 || !hasInvitationImage}
-            className="gap-2"
+            className="gap-2 w-full sm:w-auto"
           >
             <Icons.send className="h-4 w-4" />
             {t("sendToAllNotSent")}
@@ -393,74 +394,76 @@ export function InvitationsGuestTable({
             )}
           </Button>
 
-          <div className="flex-1" />
+          <div className="hidden sm:block sm:flex-1" />
 
           {/* Filters */}
-          <Select
-            value={invitationFilter}
-            onValueChange={(v) => setInvitationFilter(v as InvitationStatusFilter)}
-          >
-            <SelectTrigger className="w-[140px]">
-              <SelectValue placeholder={t("filters.all")} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">{t("filters.all")}</SelectItem>
-              <SelectItem value="sent">{t("filters.sent")}</SelectItem>
-              <SelectItem value="notSent">{t("filters.notSent")}</SelectItem>
-            </SelectContent>
-          </Select>
+          <div className="flex flex-wrap gap-2">
+            <Select
+              value={invitationFilter}
+              onValueChange={(v) => setInvitationFilter(v as InvitationStatusFilter)}
+            >
+              <SelectTrigger className="flex-1 min-w-[100px] sm:w-[140px] sm:flex-none">
+                <SelectValue placeholder={t("filters.all")} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">{t("filters.all")}</SelectItem>
+                <SelectItem value="sent">{t("filters.sent")}</SelectItem>
+                <SelectItem value="notSent">{t("filters.notSent")}</SelectItem>
+              </SelectContent>
+            </Select>
 
-          <Select value={sideFilter} onValueChange={setSideFilter}>
-            <SelectTrigger className="w-[140px]">
-              <SelectValue placeholder={tg("side")} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">{tc("all")}</SelectItem>
-              {PREDEFINED_SIDES.map((side) => (
-                <SelectItem key={side} value={side}>
-                  {tg(`sides.${side}` as "sides.bride" | "sides.groom" | "sides.both")}
-                </SelectItem>
-              ))}
-              {customSides.map((side) => (
-                <SelectItem key={side} value={side}>
-                  {side}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+            <Select value={sideFilter} onValueChange={setSideFilter}>
+              <SelectTrigger className="flex-1 min-w-[100px] sm:w-[140px] sm:flex-none">
+                <SelectValue placeholder={tg("side")} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">{tc("all")}</SelectItem>
+                {PREDEFINED_SIDES.map((side) => (
+                  <SelectItem key={side} value={side}>
+                    {tg(`sides.${side}` as "sides.bride" | "sides.groom" | "sides.both")}
+                  </SelectItem>
+                ))}
+                {customSides.map((side) => (
+                  <SelectItem key={side} value={side}>
+                    {side}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
 
-          <Select value={groupFilter} onValueChange={setGroupFilter}>
-            <SelectTrigger className="w-[140px]">
-              <SelectValue placeholder={tg("group")} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">{tc("all")}</SelectItem>
-              {PREDEFINED_GROUPS.map((group) => (
-                <SelectItem key={group} value={group}>
-                  {tg(`groups.${group}` as "groups.family" | "groups.friends" | "groups.work" | "groups.other")}
-                </SelectItem>
-              ))}
-              {customGroups.map((group) => (
-                <SelectItem key={group} value={group}>
-                  {group}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+            <Select value={groupFilter} onValueChange={setGroupFilter}>
+              <SelectTrigger className="flex-1 min-w-[100px] sm:w-[140px] sm:flex-none">
+                <SelectValue placeholder={tg("group")} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">{tc("all")}</SelectItem>
+                {PREDEFINED_GROUPS.map((group) => (
+                  <SelectItem key={group} value={group}>
+                    {tg(`groups.${group}` as "groups.family" | "groups.friends" | "groups.work" | "groups.other")}
+                  </SelectItem>
+                ))}
+                {customGroups.map((group) => (
+                  <SelectItem key={group} value={group}>
+                    {group}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
 
-          {activeFilterCount > 0 && (
-            <Button variant="ghost" size="sm" onClick={clearFilters}>
-              <Icons.close className="me-1 h-4 w-4" />
-              {tc("clearFilters")}
-            </Button>
-          )}
+            {activeFilterCount > 0 && (
+              <Button variant="ghost" size="sm" onClick={clearFilters} className="shrink-0">
+                <Icons.close className="me-1 h-4 w-4" />
+                {tc("clearFilters")}
+              </Button>
+            )}
+          </div>
         </div>
       </div>
 
       {/* Bulk Actions Bar */}
       {selectedIds.size > 0 && (
         <div className="flex flex-col gap-3 rounded-lg border-2 border-primary/20 bg-primary/5 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-2">
+          <div className={cn("flex items-center gap-2", isRTL && "flex-row-reverse")}>
             <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground">
               {selectedIds.size}
             </div>
@@ -468,7 +471,7 @@ export function InvitationsGuestTable({
               {tg("selectedCount", { count: selectedIds.size })}
             </p>
           </div>
-          <div className="flex flex-wrap items-center gap-2">
+          <div className={cn("flex flex-wrap items-center gap-2", isRTL && "flex-row-reverse")}>
             <Button
               size="sm"
               onClick={confirmSendBulk}
@@ -494,7 +497,7 @@ export function InvitationsGuestTable({
       )}
 
       {/* Table */}
-      <div className="w-full overflow-auto rounded-lg border">
+      <div className="w-full overflow-auto rounded-lg border" dir={isRTL ? "rtl" : "ltr"}>
         <Table>
           <TableHeader>
             <TableRow className="bg-muted/50">
@@ -629,8 +632,8 @@ export function InvitationsGuestTable({
 
     {/* Expanded Modal */}
     <Dialog open={isTableExpanded} onOpenChange={setIsTableExpanded}>
-      <DialogContent size="full" className="flex h-[90vh] max-h-[90vh] flex-col gap-0 [&>div]:p-0">
-        <DialogHeader className="flex shrink-0 flex-row items-center justify-between border-b px-6 py-4">
+      <DialogContent size="full" className="flex h-[90vh] max-h-[90vh] flex-col gap-0 [&>div]:p-0" dir={isRTL ? "rtl" : "ltr"}>
+        <DialogHeader className={cn("flex shrink-0 flex-row items-center justify-between border-b px-6 py-4", isRTL && "flex-row-reverse")}>
           <DialogTitle>{t("title")}</DialogTitle>
           <Button
             variant="ghost"
@@ -644,18 +647,18 @@ export function InvitationsGuestTable({
         <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-auto p-6">
           {/* Stats Cards */}
           <div className="grid gap-4 md:grid-cols-3">
-            <div className="rounded-lg border bg-card p-4">
+            <div className={cn("rounded-lg border bg-card p-4", isRTL && "text-right")}>
               <div className="text-sm text-muted-foreground">{t("stats.total")}</div>
               <div className="text-2xl font-bold">{guestsWithPhone}</div>
               <div className="text-xs text-muted-foreground">
                 {tg("withPhone")}
               </div>
             </div>
-            <div className="rounded-lg border bg-card p-4">
+            <div className={cn("rounded-lg border bg-card p-4", isRTL && "text-right")}>
               <div className="text-sm text-muted-foreground">{t("stats.sent")}</div>
               <div className="text-2xl font-bold text-green-600">{sentCount}</div>
             </div>
-            <div className="rounded-lg border bg-card p-4">
+            <div className={cn("rounded-lg border bg-card p-4", isRTL && "text-right")}>
               <div className="text-sm text-muted-foreground">{t("stats.pending")}</div>
               <div className="text-2xl font-bold text-yellow-600">{notSentCount}</div>
             </div>
@@ -673,13 +676,13 @@ export function InvitationsGuestTable({
               />
             </div>
 
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
               <Button
                 variant="outline"
                 size="sm"
                 onClick={selectAllNotSent}
                 disabled={notSentCount === 0 || !hasInvitationImage}
-                className="gap-2"
+                className="gap-2 w-full sm:w-auto"
               >
                 <Icons.send className="h-4 w-4" />
                 {t("sendToAllNotSent")}
@@ -690,66 +693,68 @@ export function InvitationsGuestTable({
                 )}
               </Button>
 
-              <div className="flex-1" />
+              <div className="hidden sm:block sm:flex-1" />
 
-              <Select
-                value={invitationFilter}
-                onValueChange={(v) => setInvitationFilter(v as InvitationStatusFilter)}
-              >
-                <SelectTrigger className="w-[140px]">
-                  <SelectValue placeholder={t("filters.all")} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">{t("filters.all")}</SelectItem>
-                  <SelectItem value="sent">{t("filters.sent")}</SelectItem>
-                  <SelectItem value="notSent">{t("filters.notSent")}</SelectItem>
-                </SelectContent>
-              </Select>
+              <div className="flex flex-wrap gap-2">
+                <Select
+                  value={invitationFilter}
+                  onValueChange={(v) => setInvitationFilter(v as InvitationStatusFilter)}
+                >
+                  <SelectTrigger className="flex-1 min-w-[100px] sm:w-[140px] sm:flex-none">
+                    <SelectValue placeholder={t("filters.all")} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">{t("filters.all")}</SelectItem>
+                    <SelectItem value="sent">{t("filters.sent")}</SelectItem>
+                    <SelectItem value="notSent">{t("filters.notSent")}</SelectItem>
+                  </SelectContent>
+                </Select>
 
-              <Select value={sideFilter} onValueChange={setSideFilter}>
-                <SelectTrigger className="w-[140px]">
-                  <SelectValue placeholder={tg("side")} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">{tc("all")}</SelectItem>
-                  {PREDEFINED_SIDES.map((side) => (
-                    <SelectItem key={side} value={side}>
-                      {tg(`sides.${side}` as "sides.bride" | "sides.groom" | "sides.both")}
-                    </SelectItem>
-                  ))}
-                  {customSides.map((side) => (
-                    <SelectItem key={side} value={side}>
-                      {side}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                <Select value={sideFilter} onValueChange={setSideFilter}>
+                  <SelectTrigger className="flex-1 min-w-[100px] sm:w-[140px] sm:flex-none">
+                    <SelectValue placeholder={tg("side")} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">{tc("all")}</SelectItem>
+                    {PREDEFINED_SIDES.map((side) => (
+                      <SelectItem key={side} value={side}>
+                        {tg(`sides.${side}` as "sides.bride" | "sides.groom" | "sides.both")}
+                      </SelectItem>
+                    ))}
+                    {customSides.map((side) => (
+                      <SelectItem key={side} value={side}>
+                        {side}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
 
-              <Select value={groupFilter} onValueChange={setGroupFilter}>
-                <SelectTrigger className="w-[140px]">
-                  <SelectValue placeholder={tg("group")} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">{tc("all")}</SelectItem>
-                  {PREDEFINED_GROUPS.map((group) => (
-                    <SelectItem key={group} value={group}>
-                      {tg(`groups.${group}` as "groups.family" | "groups.friends" | "groups.work" | "groups.other")}
-                    </SelectItem>
-                  ))}
-                  {customGroups.map((group) => (
-                    <SelectItem key={group} value={group}>
-                      {group}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                <Select value={groupFilter} onValueChange={setGroupFilter}>
+                  <SelectTrigger className="flex-1 min-w-[100px] sm:w-[140px] sm:flex-none">
+                    <SelectValue placeholder={tg("group")} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">{tc("all")}</SelectItem>
+                    {PREDEFINED_GROUPS.map((group) => (
+                      <SelectItem key={group} value={group}>
+                        {tg(`groups.${group}` as "groups.family" | "groups.friends" | "groups.work" | "groups.other")}
+                      </SelectItem>
+                    ))}
+                    {customGroups.map((group) => (
+                      <SelectItem key={group} value={group}>
+                        {group}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
 
-              {activeFilterCount > 0 && (
-                <Button variant="ghost" size="sm" onClick={clearFilters}>
-                  <Icons.close className="me-1 h-4 w-4" />
-                  {tc("clearFilters")}
-                </Button>
-              )}
+                {activeFilterCount > 0 && (
+                  <Button variant="ghost" size="sm" onClick={clearFilters} className="shrink-0">
+                    <Icons.close className="me-1 h-4 w-4" />
+                    {tc("clearFilters")}
+                  </Button>
+                )}
+              </div>
             </div>
           </div>
 
@@ -790,7 +795,7 @@ export function InvitationsGuestTable({
           )}
 
           {/* Table */}
-          <div className="w-full overflow-auto rounded-lg border">
+          <div className="w-full overflow-auto rounded-lg border" dir={isRTL ? "rtl" : "ltr"}>
             <Table>
               <TableHeader>
                 <TableRow className="bg-muted/50">

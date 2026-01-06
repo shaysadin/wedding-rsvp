@@ -320,12 +320,12 @@ export function BulkSendDialog({
               <Button onClick={handleStart} disabled={isStarting || eligibleCount === 0}>
                 {isStarting ? (
                   <>
-                    <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
+                    <Icons.spinner className="me-2 h-4 w-4 animate-spin" />
                     Starting...
                   </>
                 ) : (
                   <>
-                    <Icons.send className="mr-2 h-4 w-4" />
+                    <Icons.send className="me-2 h-4 w-4" />
                     Start Sending
                   </>
                 )}
@@ -395,12 +395,12 @@ export function BulkSendDialog({
               >
                 {isCancelling ? (
                   <>
-                    <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
+                    <Icons.spinner className="me-2 h-4 w-4 animate-spin" />
                     Cancelling...
                   </>
                 ) : (
                   <>
-                    <Icons.close className="mr-2 h-4 w-4" />
+                    <Icons.close className="me-2 h-4 w-4" />
                     Cancel
                   </>
                 )}

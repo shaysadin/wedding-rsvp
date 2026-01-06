@@ -19,9 +19,10 @@ interface EventStatsCardsProps {
   };
   eventId: string;
   activeFilter: string;
+  basePath?: string;
 }
 
-export function EventStatsCards({ stats, eventId, activeFilter }: EventStatsCardsProps) {
+export function EventStatsCards({ stats, eventId, activeFilter, basePath: customBasePath }: EventStatsCardsProps) {
   const pathname = usePathname();
   const locale = useLocale();
   const tGuests = useTranslations("guests");
@@ -29,8 +30,8 @@ export function EventStatsCards({ stats, eventId, activeFilter }: EventStatsCard
   const tEvents = useTranslations("events");
   const isRTL = locale === "he";
 
-  // Get base path without query params
-  const basePath = pathname?.split("?")[0] || `/dashboard/events/${eventId}`;
+  // Get base path without query params (use custom if provided)
+  const basePath = customBasePath || pathname?.split("?")[0] || `/dashboard/events/${eventId}`;
 
   const cards = [
     {

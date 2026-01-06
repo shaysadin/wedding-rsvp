@@ -329,6 +329,26 @@ model RsvpPageSettings {
   titleTextColor               String?          @map("title_text_color")
   rsvpButtonFontSize           Int?             @map("rsvp_button_font_size")
   showBuiltByGroom             Boolean          @default(false) @map("show_built_by_groom")
+  // Font Weights
+  titleFontWeight              Int?             @map("title_font_weight")
+  subtitleFontWeight           Int?             @map("subtitle_font_weight")
+  labelFontWeight              Int?             @map("label_font_weight")
+  buttonTextFontWeight         Int?             @map("button_text_font_weight")
+  dateDayFontWeight            Int?             @map("date_day_font_weight")
+  dateMonthFontWeight          Int?             @map("date_month_font_weight")
+  dateDayOfWeekFontWeight      Int?             @map("date_day_of_week_font_weight")
+  countdownNumberFontWeight    Int?             @map("countdown_number_font_weight")
+  countdownLabelFontWeight     Int?             @map("countdown_label_font_weight")
+  timeFontWeight               Int?             @map("time_font_weight")
+  addressFontWeight            Int?             @map("address_font_weight")
+  // Navigation Button Styling
+  navButtonFontSize            Int?             @map("nav_button_font_size")
+  navButtonFontWeight          Int?             @map("nav_button_font_weight")
+  navButtonBackground          String?          @map("nav_button_background")
+  navButtonTextColor           String?          @map("nav_button_text_color")
+  navButtonBorderColor         String?          @map("nav_button_border_color")
+  navButtonBorderRadius        Int?             @map("nav_button_border_radius")
+  navButtonBorderWidth         Int?             @map("nav_button_border_width")
   weddingEvent                 WeddingEvent     @relation(fields: [weddingEventId], references: [id], onDelete: Cascade)
 
   @@map("rsvp_page_settings")
@@ -440,6 +460,26 @@ model RsvpTemplate {
   welcomeMessageFontSize       Int?             @map("welcome_message_font_size")
   welcomeTitleColor            String?          @map("welcome_title_color")
   welcomeTitleFontSize         Int?             @map("welcome_title_font_size")
+  // Font Weights
+  titleFontWeight              Int?             @map("title_font_weight")
+  subtitleFontWeight           Int?             @map("subtitle_font_weight")
+  labelFontWeight              Int?             @map("label_font_weight")
+  buttonTextFontWeight         Int?             @map("button_text_font_weight")
+  dateDayFontWeight            Int?             @map("date_day_font_weight")
+  dateMonthFontWeight          Int?             @map("date_month_font_weight")
+  dateDayOfWeekFontWeight      Int?             @map("date_day_of_week_font_weight")
+  countdownNumberFontWeight    Int?             @map("countdown_number_font_weight")
+  countdownLabelFontWeight     Int?             @map("countdown_label_font_weight")
+  timeFontWeight               Int?             @map("time_font_weight")
+  addressFontWeight            Int?             @map("address_font_weight")
+  // Navigation Button Styling
+  navButtonFontSize            Int?             @map("nav_button_font_size")
+  navButtonFontWeight          Int?             @map("nav_button_font_weight")
+  navButtonBackground          String?          @map("nav_button_background")
+  navButtonTextColor           String?          @map("nav_button_text_color")
+  navButtonBorderColor         String?          @map("nav_button_border_color")
+  navButtonBorderRadius        Int?             @map("nav_button_border_radius")
+  navButtonBorderWidth         Int?             @map("nav_button_border_width")
   owner                        User?            @relation(fields: [ownerId], references: [id], onDelete: Cascade)
 
   @@index([ownerId])
@@ -489,6 +529,14 @@ model MessagingProviderSettings {
   // Interactive template text for display
   whatsappInteractiveInviteText    String? @map("whatsapp_interactive_invite_text")
   whatsappInteractiveReminderText  String? @map("whatsapp_interactive_reminder_text")
+
+  // Event Day Templates (morning of event with table, address, gift link)
+  whatsappEventDayContentSid       String? @map("whatsapp_event_day_content_sid")
+  whatsappEventDayTemplateText     String? @map("whatsapp_event_day_template_text")
+
+  // Thank You Templates (day after event)
+  whatsappThankYouContentSid       String? @map("whatsapp_thank_you_content_sid")
+  whatsappThankYouTemplateText     String? @map("whatsapp_thank_you_template_text")
 
   // Related phone numbers
   whatsappPhoneNumbers WhatsAppPhoneNumber[]
@@ -865,6 +913,9 @@ enum NotificationType {
   INTERACTIVE_INVITE
   INTERACTIVE_REMINDER
   GUEST_COUNT_REQUEST
+  EVENT_DAY           // Event day reminder (table, navigation, gift)
+  THANK_YOU           // Thank you message after event
+  TABLE_ASSIGNMENT    // Table assignment notification
 }
 
 enum NotificationChannel {
@@ -1019,6 +1070,10 @@ enum AutomationAction {
   SEND_WHATSAPP_GUEST_COUNT        // Guest count selection list
   SEND_TABLE_ASSIGNMENT            // Table assignment with location info
 
+  // Event Day & Thank You Templates
+  SEND_WHATSAPP_EVENT_DAY          // Event day reminder with table, address, gift link
+  SEND_WHATSAPP_THANK_YOU          // Thank you message after event
+
   // Custom Message Actions
   SEND_CUSTOM_WHATSAPP             // Custom WhatsApp message (uses message editor)
   SEND_CUSTOM_SMS                  // Custom SMS message (uses message editor)
@@ -1091,10 +1146,7 @@ enum EventType {
   OTHER       // Other celebration
 }
 
-enum TemplateType {
-  HTML        // Pure HTML/CSS template (fully customizable)
-  PDF         // PDF upload (converted to background image with HTML overlay)
-}
+// TemplateType enum removed - now using AI-powered image editing only
 
 // ============================================
 // GIFT PAYMENT MODULE ENUMS
@@ -1212,10 +1264,10 @@ model AutomationFlowExecution {
 }
 
 // ============================================
-// INVITATION MODULE MODELS (HTML/CSS Based)
+// INVITATION MODULE MODELS (AI-Powered)
 // ============================================
 
-// Admin-created invitation templates (HTML/CSS or PDF-based)
+// Admin-created invitation templates (AI image editing based)
 model InvitationTemplate {
   id            String          @id @default(cuid())
   name          String
@@ -1224,27 +1276,14 @@ model InvitationTemplate {
   descriptionHe String?         @map("description_he")
   eventType     EventType       @default(WEDDING) @map("event_type")
 
-  // Template type (HTML or PDF)
-  templateType  TemplateType    @default(HTML) @map("template_type")
-
-  // HTML template content (with placeholders like {{coupleName}})
-  htmlContent   String?         @map("html_content") @db.Text
-
-  // CSS styles for the template
-  cssContent    String?         @map("css_content") @db.Text
-
-  // PDF file URL (R2) - for PDF-based templates
-  pdfUrl        String?         @map("pdf_url")
-
-  // Background image URL (R2) - PDF converted to image for overlay
-  backgroundImageUrl String?    @map("background_image_url")
+  // Template image URL (R2) - the reference image for AI editing
+  imageUrl      String          @default("") @map("image_url")
 
   // Preview/thumbnail image URL (R2)
   thumbnailUrl  String?         @map("thumbnail_url")
 
-  // Dimensions for generation (pixels)
-  width         Int             @default(800)
-  height        Int             @default(1200)
+  // Original PDF URL (R2) - kept for reference
+  pdfUrl        String?         @map("pdf_url")
 
   isActive      Boolean         @default(true) @map("is_active")
   sortOrder     Int             @default(0) @map("sort_order")
@@ -1256,44 +1295,25 @@ model InvitationTemplate {
 
   @@index([eventType])
   @@index([isActive])
-  @@index([templateType])
   @@map("invitation_templates")
 }
 
-// Define which fields are available in each template
+// Define which fields are editable in each template (for AI text replacement)
 model InvitationTemplateField {
-  id           String              @id @default(cuid())
-  templateId   String              @map("template_id")
-  fieldType    InvitationFieldType @map("field_type")
-  label        String              // Display label for the field
-  labelHe      String?             @map("label_he")
-  placeholder  String?             // Placeholder text for input
-  isRequired   Boolean             @default(true) @map("is_required")
-  defaultValue String?             @map("default_value")
-  sortOrder    Int                 @default(0) @map("sort_order")
+  id            String              @id @default(cuid())
+  templateId    String              @map("template_id")
+  fieldType     InvitationFieldType @map("field_type")
+  label         String              // Display label for the field (English)
+  labelHe       String?             @map("label_he") // Display label (Hebrew)
+  placeholder   String?             // Placeholder/hint text for input
+  isRequired    Boolean             @default(true) @map("is_required")
+  originalValue String              @default("") @map("original_value") // The original text in the template image
+  sortOrder     Int                 @default(0) @map("sort_order")
 
-  // CSS Styling & Positioning (for PDF-based templates)
-  cssClassName   String?  @map("css_class_name")      // Custom CSS class name
-  fontSize       String?  @map("font_size")           // e.g., "24px", "1.5rem"
-  fontFamily     String?  @map("font_family")         // e.g., "Heebo", "Arial"
-  fontWeight     String?  @map("font_weight")         // e.g., "bold", "400"
-  textColor      String?  @map("text_color")          // e.g., "#000000", "rgb(0,0,0)"
-  textAlign      String?  @map("text_align")          // e.g., "center", "left", "right"
-  lineHeight     String?  @map("line_height")         // e.g., "1.5", "32px"
-  letterSpacing  String?  @map("letter_spacing")      // e.g., "0.05em", "1px"
+  createdAt     DateTime            @default(now()) @map("created_at")
+  updatedAt     DateTime            @default(now()) @updatedAt @map("updated_at")
 
-  // Positioning (absolute positioning for PDF overlay)
-  top            String?  @map("top")                 // e.g., "100px", "10%"
-  left           String?  @map("left")                // e.g., "50px"
-  right          String?  @map("right")               // e.g., "50px"
-  bottom         String?  @map("bottom")              // e.g., "20px"
-  width          String?  @map("width")               // e.g., "300px", "50%"
-  maxWidth       String?  @map("max_width")           // e.g., "500px"
-
-  createdAt    DateTime            @default(now()) @map("created_at")
-  updatedAt    DateTime            @default(now()) @updatedAt @map("updated_at")
-
-  template     InvitationTemplate  @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  template      InvitationTemplate  @relation(fields: [templateId], references: [id], onDelete: Cascade)
 
   @@index([templateId])
   @@map("invitation_template_fields")
@@ -1390,4 +1410,18 @@ model PaymentTransaction {
   @@index([giftPaymentId])
   @@index([providerTransactionId])
   @@map("payment_transactions")
+}
+
+// ============================================
+// SYSTEM SETTINGS
+// ============================================
+
+// Key-value store for system-wide settings
+model SystemSetting {
+  key       String   @id
+  value     String   @db.Text
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
+
+  @@map("system_settings")
 }

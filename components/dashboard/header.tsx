@@ -12,10 +12,10 @@ export function DashboardHeader({
   return (
     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
       <div className="grid gap-0.5 min-w-0">
-        <h1 className="font-heading text-xl font-semibold sm:text-2xl whitespace-nowrap overflow-hidden text-ellipsis">{heading}</h1>
-        {text && <p className="text-sm text-muted-foreground sm:text-base whitespace-nowrap overflow-hidden text-ellipsis">{text}</p>}
+        <h1 className="font-heading text-xl font-semibold sm:text-2xl truncate">{heading}</h1>
+        {text && <p className="text-sm text-muted-foreground sm:text-base truncate">{text}</p>}
       </div>
-      {children}
+      {children && <div className="flex items-center gap-2 shrink-0">{children}</div>}
     </div>
   );
 }

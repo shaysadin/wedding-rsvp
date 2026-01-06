@@ -177,24 +177,23 @@ export function SupplierStatsCards({ stats, currency = "ILS" }: SupplierStatsCar
       transition={{ delay: (baseDelay + index) * 0.03, duration: 0.15, ease: "easeOut" }}
       whileHover={{ y: -2, transition: { duration: 0.15 } }}
       style={{ willChange: "transform" }}
-      className="shrink-0 sm:shrink"
     >
       <Card
         className={cn(
-          "relative w-[160px] overflow-hidden border transition-all duration-300 hover:shadow-md sm:w-auto",
+          "relative overflow-hidden border transition-all duration-300 hover:shadow-md",
           card.cardBg,
           card.borderColor
         )}
       >
-        <CardContent className="p-4 sm:p-5">
+        <CardContent className="p-3 sm:p-5">
           <div className={cn(
-            "flex items-center gap-3 sm:gap-4",
+            "flex items-center gap-2 sm:gap-4",
             isRTL && "flex-row-reverse"
           )}>
             {/* Icon */}
             <div
               className={cn(
-                "flex h-9 w-9 shrink-0 items-center justify-center rounded-xl transition-transform duration-150 hover:scale-105 sm:h-11 sm:w-11",
+                "flex h-8 w-8 shrink-0 items-center justify-center rounded-xl transition-transform duration-150 hover:scale-105 sm:h-11 sm:w-11",
                 card.iconBg
               )}
             >
@@ -203,14 +202,14 @@ export function SupplierStatsCards({ stats, currency = "ILS" }: SupplierStatsCar
 
             {/* Content */}
             <div className={cn("flex-1 min-w-0", isRTL && "text-right")}>
-              <p className="text-xs font-medium text-muted-foreground truncate sm:text-sm">
+              <p className="text-[10px] font-medium text-muted-foreground truncate sm:text-sm">
                 {card.label}
               </p>
-              <p className="mt-0.5 text-lg font-bold tracking-tight sm:text-xl">
+              <p className="text-base font-bold tracking-tight sm:text-xl">
                 {card.value}
               </p>
               <p className={cn(
-                "text-[10px] text-muted-foreground/80 truncate sm:text-xs",
+                "text-[9px] text-muted-foreground/80 truncate sm:text-xs",
                 card.alert && "text-amber-600 dark:text-amber-400 font-medium"
               )}>
                 {card.subLabel}
@@ -225,10 +224,8 @@ export function SupplierStatsCards({ stats, currency = "ILS" }: SupplierStatsCar
   return (
     <div className="space-y-4">
       {/* Budget Stats Row */}
-      <div className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:overflow-visible sm:px-0">
-        <div className="flex gap-3 px-1 pb-2 sm:grid sm:grid-cols-2 sm:gap-4 sm:pb-0 lg:grid-cols-5">
-          {budgetCards.map((card, index) => renderCard(card, index))}
-        </div>
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-2 sm:gap-4 lg:grid-cols-5">
+        {budgetCards.map((card, index) => renderCard(card, index))}
       </div>
 
       {/* Guest Cost Analytics Row */}
@@ -240,10 +237,8 @@ export function SupplierStatsCards({ stats, currency = "ILS" }: SupplierStatsCar
           )}>
             {isRTL ? "ניתוח עלות לאורח" : "Guest Cost Analysis"}
           </h3>
-          <div className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:overflow-visible sm:px-0">
-            <div className="flex gap-3 px-1 pb-2 sm:grid sm:grid-cols-3 sm:gap-4 sm:pb-0">
-              {guestCostCards.map((card, index) => renderCard(card, index, budgetCards.length))}
-            </div>
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-4">
+            {guestCostCards.map((card, index) => renderCard(card, index, budgetCards.length))}
           </div>
         </div>
       )}

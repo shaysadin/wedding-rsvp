@@ -299,7 +299,7 @@ export function SystemAutomationCards({
 
           <DialogFooter className={isRTL ? "flex-row-reverse" : ""}>
             <Button variant="outline" onClick={handleCancel} disabled={isLoading}>
-              <X className={cn("h-4 w-4", isRTL ? "ml-2" : "mr-2")} />
+              <X className={cn("h-4 w-4", isRTL ? "ml-2" : "me-2")} />
               {isRTL ? "ביטול" : "Cancel"}
             </Button>
             <Button
@@ -309,7 +309,7 @@ export function SystemAutomationCards({
               {isLoading ? (
                 <Icons.spinner className="h-4 w-4 animate-spin" />
               ) : (
-                <Save className={cn("h-4 w-4", isRTL ? "ml-2" : "mr-2")} />
+                <Save className={cn("h-4 w-4", isRTL ? "ml-2" : "me-2")} />
               )}
               {isRTL ? "שמור" : "Save"}
             </Button>

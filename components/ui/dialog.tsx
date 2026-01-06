@@ -69,30 +69,45 @@ interface DialogContentProps
 const DialogContent = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Content>,
   DialogContentProps
->(({ className, children, size, hideCloseButton, noWrapper, ...props }, ref) => (
-  <DialogPortal>
-    <DialogOverlay />
-    <DialogPrimitive.Content
-      ref={ref}
-      className={cn(dialogContentVariants({ size }), className)}
-      {...props}
-    >
-      {noWrapper ? (
-        children
-      ) : (
-        <div className="flex min-h-0 flex-1 flex-col overflow-y-auto p-4 sm:p-6">
-          {children}
-        </div>
-      )}
-      {!hideCloseButton && (
-        <DialogPrimitive.Close className="absolute end-3 top-3 rounded-lg p-1.5 opacity-70 ring-offset-background transition-all hover:opacity-100 hover:bg-muted focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground sm:end-4 sm:top-4 sm:p-1 z-10">
-          <X className="size-5 sm:size-4" />
-          <span className="sr-only">Close</span>
-        </DialogPrimitive.Close>
-      )}
-    </DialogPrimitive.Content>
-  </DialogPortal>
-))
+>(({ className, children, size, hideCloseButton, noWrapper, dir, ...props }, ref) => {
+  // Get document direction for RTL support in portal (if not explicitly set)
+  const [autoDir, setAutoDir] = React.useState<"ltr" | "rtl" | undefined>(undefined)
+
+  React.useEffect(() => {
+    if (!dir) {
+      const htmlDir = document.documentElement.dir as "ltr" | "rtl"
+      if (htmlDir === "rtl" || htmlDir === "ltr") {
+        setAutoDir(htmlDir)
+      }
+    }
+  }, [dir])
+
+  return (
+    <DialogPortal>
+      <DialogOverlay />
+      <DialogPrimitive.Content
+        ref={ref}
+        dir={dir || autoDir}
+        className={cn(dialogContentVariants({ size }), className)}
+        {...props}
+      >
+        {noWrapper ? (
+          children
+        ) : (
+          <div className="flex min-h-0 flex-1 flex-col overflow-y-auto p-4 sm:p-6">
+            {children}
+          </div>
+        )}
+        {!hideCloseButton && (
+          <DialogPrimitive.Close className="absolute end-3 top-3 rounded-lg p-1.5 opacity-70 ring-offset-background transition-all hover:opacity-100 hover:bg-muted focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground sm:end-4 sm:top-4 sm:p-1 z-10">
+            <X className="size-5 sm:size-4" />
+            <span className="sr-only">Close</span>
+          </DialogPrimitive.Close>
+        )}
+      </DialogPrimitive.Content>
+    </DialogPortal>
+  )
+})
 DialogContent.displayName = DialogPrimitive.Content.displayName
 
 const DialogHeader = ({

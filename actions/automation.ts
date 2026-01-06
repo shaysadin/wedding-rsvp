@@ -5,9 +5,10 @@ import { UserRole, AutomationFlowStatus, AutomationTrigger, AutomationAction } f
 
 import { prisma } from "@/lib/db";
 import { getCurrentUser } from "@/lib/session";
-import { FLOW_TEMPLATES } from "@/lib/automation/types";
+import { FLOW_TEMPLATES, AutomationContext } from "@/lib/automation/types";
 import { onFlowActivated } from "@/lib/automation/event-handlers";
 import { getAutomationStats } from "@/lib/automation/flow-processor";
+import { executeAction } from "@/lib/automation/action-executor";
 
 // ============================================
 // FLOW TEMPLATES (System-wide)
@@ -900,5 +901,433 @@ export async function getEventAutomationStats(eventId: string) {
   } catch (error) {
     console.error("Error fetching automation stats:", error);
     return { error: "Failed to fetch stats" };
+  }
+}
+
+// ============================================
+// TEST AUTOMATION
+// ============================================
+
+/**
+ * Test an automation flow by sending to a test phone number immediately
+ */
+export async function testAutomationFlow(
+  flowId: string,
+  testPhone: string,
+  testName?: string
+) {
+  try {
+    const user = await getCurrentUser();
+
+    if (!user || user.role !== UserRole.ROLE_WEDDING_OWNER) {
+      return { error: "Unauthorized" };
+    }
+
+    // Validate and format phone number
+    let cleanPhone = testPhone.replace(/\D/g, "");
+    if (cleanPhone.length < 9) {
+      return { error: "Invalid phone number" };
+    }
+
+    // Convert Israeli local format (05xxxxxxxx) to international format (+9725xxxxxxxx)
+    if (cleanPhone.startsWith("05") && cleanPhone.length === 10) {
+      cleanPhone = "972" + cleanPhone.substring(1);
+    }
+    // Handle numbers starting with 0 (other local formats)
+    else if (cleanPhone.startsWith("0")) {
+      cleanPhone = "972" + cleanPhone.substring(1);
+    }
+
+    // Get the flow with event details
+    const flow = await prisma.automationFlow.findFirst({
+      where: { id: flowId },
+      include: {
+        weddingEvent: {
+          include: {
+            rsvpPageSettings: true,
+          },
+        },
+      },
+    });
+
+    if (!flow) {
+      return { error: "Automation flow not found" };
+    }
+
+    // Verify ownership
+    if (flow.weddingEvent.ownerId !== user.id) {
+      return { error: "Unauthorized" };
+    }
+
+    const event = flow.weddingEvent;
+
+    // Build the automation context for the test
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://rsvp.app";
+
+    const context: AutomationContext = {
+      guestId: "test-guest-id",
+      weddingEventId: event.id,
+      guestName: testName || "Test Guest",
+      guestPhone: cleanPhone.startsWith("+") ? cleanPhone : `+${cleanPhone}`,
+      rsvpStatus: "PENDING",
+      eventDate: event.dateTime,
+      eventTime: event.dateTime ? event.dateTime.toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit" }) : undefined,
+      eventLocation: event.location || "",
+      eventVenue: event.venue || "",
+      eventAddress: event.location || "",
+      customMessage: flow.customMessage || undefined,
+      rsvpLink: `${baseUrl}/rsvp/test-preview`,
+      guestCount: 2,
+      tableName: "Test Table",
+    };
+
+    // Execute the action immediately
+    const result = await executeAction(flow.action, context);
+
+    if (result.success) {
+      return {
+        success: true,
+        message: result.message,
+        channel: flow.action.includes("SMS") ? "SMS" : "WhatsApp"
+      };
+    } else {
+      return {
+        error: result.message || "Test failed",
+        errorCode: result.errorCode
+      };
+    }
+  } catch (error) {
+    console.error("Error testing automation:", error);
+    return { error: error instanceof Error ? error.message : "Failed to test automation" };
+  }
+}
+
+/**
+ * Test automation with an existing guest (uses their real phone number)
+ */
+export async function testAutomationWithGuest(
+  flowId: string,
+  guestId: string
+) {
+  try {
+    const user = await getCurrentUser();
+
+    if (!user || user.role !== UserRole.ROLE_WEDDING_OWNER) {
+      return { error: "Unauthorized" };
+    }
+
+    // Get the flow with event details
+    const flow = await prisma.automationFlow.findFirst({
+      where: { id: flowId },
+      include: {
+        weddingEvent: {
+          include: {
+            rsvpPageSettings: true,
+          },
+        },
+      },
+    });
+
+    if (!flow) {
+      return { error: "Automation flow not found" };
+    }
+
+    // Verify ownership
+    if (flow.weddingEvent.ownerId !== user.id) {
+      return { error: "Unauthorized" };
+    }
+
+    // Get the guest
+    const guest = await prisma.guest.findFirst({
+      where: {
+        id: guestId,
+        weddingEventId: flow.weddingEventId,
+      },
+      include: {
+        rsvp: true,
+        tableAssignment: {
+          include: { table: true },
+        },
+      },
+    });
+
+    if (!guest) {
+      return { error: "Guest not found" };
+    }
+
+    if (!guest.phoneNumber) {
+      return { error: "Guest has no phone number" };
+    }
+
+    const event = flow.weddingEvent;
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://rsvp.app";
+
+    // Build the automation context with real guest data
+    const context: AutomationContext = {
+      guestId: guest.id,
+      weddingEventId: event.id,
+      guestName: guest.name,
+      guestPhone: guest.phoneNumber,
+      rsvpStatus: guest.rsvp?.status || "PENDING",
+      eventDate: event.dateTime,
+      eventTime: event.dateTime ? event.dateTime.toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit" }) : undefined,
+      eventLocation: event.location || "",
+      eventVenue: event.venue || "",
+      eventAddress: event.location || "",
+      customMessage: flow.customMessage || undefined,
+      rsvpLink: `${baseUrl}/rsvp/${guest.slug}`,
+      guestCount: guest.expectedGuests || 1,
+      tableName: guest.tableAssignment?.table?.name || undefined,
+    };
+
+    // Execute the action immediately
+    const result = await executeAction(flow.action, context);
+
+    if (result.success) {
+      return {
+        success: true,
+        message: result.message,
+        channel: flow.action.includes("SMS") ? "SMS" : "WhatsApp",
+        guestName: guest.name
+      };
+    } else {
+      return {
+        error: result.message || "Test failed",
+        errorCode: result.errorCode
+      };
+    }
+  } catch (error) {
+    console.error("Error testing automation with guest:", error);
+    return { error: error instanceof Error ? error.message : "Failed to test automation" };
+  }
+}
+
+/**
+ * Get guests with phone numbers for testing automations
+ */
+export async function getEventGuestsForTesting(eventId: string) {
+  try {
+    const user = await getCurrentUser();
+
+    if (!user || user.role !== UserRole.ROLE_WEDDING_OWNER) {
+      return { error: "Unauthorized" };
+    }
+
+    // Verify ownership
+    const event = await prisma.weddingEvent.findFirst({
+      where: { id: eventId, ownerId: user.id },
+    });
+
+    if (!event) {
+      return { error: "Event not found" };
+    }
+
+    // Get guests with phone numbers
+    const guests = await prisma.guest.findMany({
+      where: {
+        weddingEventId: eventId,
+        phoneNumber: { not: null },
+      },
+      select: {
+        id: true,
+        name: true,
+        phoneNumber: true,
+      },
+      orderBy: { name: "asc" },
+      take: 100,
+    });
+
+    // Map to expected interface (phone instead of phoneNumber)
+    const mappedGuests = guests.map(g => ({
+      id: g.id,
+      name: g.name,
+      phone: g.phoneNumber,
+    }));
+
+    return { success: true, guests: mappedGuests };
+  } catch (error) {
+    console.error("Error fetching guests for testing:", error);
+    return { error: "Failed to fetch guests" };
+  }
+}
+
+// Trigger labels for simulation display
+const TRIGGER_LABELS: Record<string, { en: string; he: string }> = {
+  NO_RESPONSE_WHATSAPP: { en: "No WhatsApp response", he: "אין תגובה בוואטסאפ" },
+  NO_RESPONSE_SMS: { en: "No SMS response", he: "אין תגובה ב-SMS" },
+  RSVP_CONFIRMED: { en: "RSVP confirmed", he: "אישור הגעה" },
+  RSVP_DECLINED: { en: "RSVP declined", he: "סירוב הגעה" },
+  BEFORE_EVENT_1_DAY: { en: "1 day before event", he: "יום לפני האירוע" },
+  BEFORE_EVENT_3_DAYS: { en: "3 days before event", he: "3 ימים לפני האירוע" },
+  BEFORE_EVENT_1_WEEK: { en: "1 week before event", he: "שבוע לפני האירוע" },
+  EVENT_DAY_MORNING: { en: "Event day morning", he: "בוקר יום האירוע" },
+  AFTER_EVENT_1_DAY: { en: "1 day after event", he: "יום אחרי האירוע" },
+};
+
+const ACTION_LABELS: Record<string, { en: string; he: string }> = {
+  SEND_WHATSAPP_INVITE: { en: "Send WhatsApp invitation", he: "שלח הזמנה בוואטסאפ" },
+  SEND_WHATSAPP_REMINDER: { en: "Send WhatsApp reminder", he: "שלח תזכורת בוואטסאפ" },
+  SEND_WHATSAPP_CONFIRMATION: { en: "Send WhatsApp confirmation", he: "שלח אישור בוואטסאפ" },
+  SEND_CUSTOM_WHATSAPP: { en: "Send custom WhatsApp", he: "שלח הודעת וואטסאפ מותאמת" },
+  SEND_CUSTOM_SMS: { en: "Send custom SMS", he: "שלח SMS מותאם" },
+  SEND_SMS_REMINDER: { en: "Send SMS reminder", he: "שלח תזכורת ב-SMS" },
+  SEND_TABLE_ASSIGNMENT: { en: "Send table assignment", he: "שלח שיבוץ שולחן" },
+};
+
+/**
+ * Simulate a full automation flow test
+ * This tests the complete flow: trigger check -> delay simulation -> action execution
+ */
+export async function simulateAutomationFlow(
+  flowId: string,
+  testPhone: string,
+  testName?: string
+) {
+  try {
+    const user = await getCurrentUser();
+
+    if (!user || user.role !== UserRole.ROLE_WEDDING_OWNER) {
+      return { error: "Unauthorized" };
+    }
+
+    // Validate and format phone number
+    let cleanPhone = testPhone.replace(/\D/g, "");
+    if (cleanPhone.length < 9) {
+      return { error: "Invalid phone number" };
+    }
+
+    // Convert Israeli local format to international format
+    if (cleanPhone.startsWith("05") && cleanPhone.length === 10) {
+      cleanPhone = "972" + cleanPhone.substring(1);
+    } else if (cleanPhone.startsWith("0")) {
+      cleanPhone = "972" + cleanPhone.substring(1);
+    }
+
+    // Get the flow with event details
+    const flow = await prisma.automationFlow.findFirst({
+      where: { id: flowId },
+      include: {
+        weddingEvent: {
+          include: {
+            rsvpPageSettings: true,
+          },
+        },
+      },
+    });
+
+    if (!flow) {
+      return { error: "Automation flow not found" };
+    }
+
+    if (flow.weddingEvent.ownerId !== user.id) {
+      return { error: "Unauthorized" };
+    }
+
+    const event = flow.weddingEvent;
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://rsvp.app";
+    const isHebrew = true; // Default to Hebrew for Israeli market
+
+    // Simulate the flow steps
+    const steps: Array<{
+      step: number;
+      type: "trigger" | "delay" | "action";
+      title: string;
+      description: string;
+      status: "pending" | "simulated" | "executed" | "failed";
+      result?: string;
+    }> = [];
+
+    // Step 1: Trigger
+    const triggerLabel = TRIGGER_LABELS[flow.trigger] || { en: flow.trigger, he: flow.trigger };
+    steps.push({
+      step: 1,
+      type: "trigger",
+      title: isHebrew ? "טריגר" : "Trigger",
+      description: isHebrew ? triggerLabel.he : triggerLabel.en,
+      status: "simulated",
+      result: isHebrew ? "הטריגר הופעל (סימולציה)" : "Trigger activated (simulated)",
+    });
+
+    // Step 2: Delay (if applicable)
+    if (flow.delayHours && flow.delayHours > 0) {
+      steps.push({
+        step: 2,
+        type: "delay",
+        title: isHebrew ? "המתנה" : "Delay",
+        description: isHebrew
+          ? `המתנה של ${flow.delayHours} שעות`
+          : `Wait ${flow.delayHours} hours`,
+        status: "simulated",
+        result: isHebrew
+          ? `דילגנו על ההמתנה בסימולציה`
+          : `Delay skipped in simulation`,
+      });
+    }
+
+    // Step 3: Execute Action
+    const actionLabel = ACTION_LABELS[flow.action] || { en: flow.action, he: flow.action };
+    const actionStep: typeof steps[number] = {
+      step: flow.delayHours ? 3 : 2,
+      type: "action",
+      title: isHebrew ? "פעולה" : "Action",
+      description: isHebrew ? actionLabel.he : actionLabel.en,
+      status: "pending",
+    };
+
+    // Build the automation context
+    const context: AutomationContext = {
+      guestId: "test-guest-id",
+      weddingEventId: event.id,
+      guestName: testName || "אורח בדיקה",
+      guestPhone: cleanPhone.startsWith("+") ? cleanPhone : `+${cleanPhone}`,
+      rsvpStatus: "PENDING",
+      eventDate: event.dateTime,
+      eventTime: event.dateTime
+        ? event.dateTime.toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit" })
+        : undefined,
+      eventLocation: event.location || "",
+      eventVenue: event.venue || "",
+      eventAddress: event.location || "",
+      customMessage: flow.customMessage || undefined,
+      rsvpLink: `${baseUrl}/rsvp/test-preview`,
+      guestCount: 2,
+      tableName: "שולחן בדיקה",
+    };
+
+    // Execute the action
+    const result = await executeAction(flow.action, context);
+
+    if (result.success) {
+      actionStep.status = "executed";
+      actionStep.result = result.message;
+    } else {
+      actionStep.status = "failed";
+      actionStep.result = result.message;
+    }
+
+    steps.push(actionStep);
+
+    // Determine overall success
+    const allSuccessful = steps.every((s) => s.status !== "failed");
+
+    return {
+      success: allSuccessful,
+      flowName: flow.name,
+      trigger: flow.trigger,
+      action: flow.action,
+      delayHours: flow.delayHours,
+      steps,
+      channel: flow.action.includes("SMS") ? "SMS" : "WhatsApp",
+      message: allSuccessful
+        ? isHebrew
+          ? "סימולציית האוטומציה הושלמה בהצלחה!"
+          : "Automation simulation completed successfully!"
+        : isHebrew
+        ? "הסימולציה נכשלה בשלב הפעולה"
+        : "Simulation failed at action step",
+    };
+  } catch (error) {
+    console.error("Error simulating automation flow:", error);
+    return { error: error instanceof Error ? error.message : "Simulation failed" };
   }
 }

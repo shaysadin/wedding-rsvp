@@ -325,6 +325,49 @@ function SettingsSection({
   );
 }
 
+// Font Weight Select Component
+function FontWeightSelect({
+  value,
+  onChange,
+  label,
+  isRTL = false,
+}: {
+  value: number;
+  onChange: (value: number) => void;
+  label: string;
+  isRTL?: boolean;
+}) {
+  const weights = [
+    { value: 300, label: isRTL ? "דק" : "Light" },
+    { value: 400, label: isRTL ? "רגיל" : "Regular" },
+    { value: 500, label: isRTL ? "בינוני" : "Medium" },
+    { value: 600, label: isRTL ? "חצי עבה" : "Semi Bold" },
+    { value: 700, label: isRTL ? "עבה" : "Bold" },
+    { value: 800, label: isRTL ? "כבד" : "Extra Bold" },
+  ];
+
+  return (
+    <div className="flex items-center justify-between">
+      <span className="text-sm">{label}</span>
+      <Select
+        value={value?.toString() || "400"}
+        onValueChange={(v) => onChange(Number(v))}
+      >
+        <SelectTrigger className="w-28 h-8">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {weights.map((w) => (
+            <SelectItem key={w.value} value={w.value.toString()}>
+              {w.label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
+  );
+}
+
 export function RsvpCustomizer({
   eventId,
   event,
@@ -909,6 +952,12 @@ export function RsvpCustomizer({
                           min={16}
                           max={48}
                         />
+                        <FontWeightSelect
+                          label={isRTL ? "עובי כותרת" : "Title Weight"}
+                          value={settings.titleFontWeight || 700}
+                          onChange={(v) => updateSetting("titleFontWeight", v)}
+                          isRTL={isRTL}
+                        />
                         <CompactColorPicker
                           label={isRTL ? "צבע תת-כותרת" : "Subtitle Color"}
                           value={settings.subtitleTextColor || "#6b7280"}
@@ -921,6 +970,12 @@ export function RsvpCustomizer({
                           onChange={(v) => updateSetting("subtitleFontSize", v)}
                           min={10}
                           max={24}
+                        />
+                        <FontWeightSelect
+                          label={isRTL ? "עובי תת-כותרת" : "Subtitle Weight"}
+                          value={settings.subtitleFontWeight || 400}
+                          onChange={(v) => updateSetting("subtitleFontWeight", v)}
+                          isRTL={isRTL}
                         />
                       </div>
 
@@ -1031,6 +1086,12 @@ export function RsvpCustomizer({
                             min={8}
                             max={18}
                           />
+                          <FontWeightSelect
+                            label={isRTL ? "עובי יום בשבוע" : "Day of Week Weight"}
+                            value={settings.dateDayOfWeekFontWeight || 500}
+                            onChange={(v) => updateSetting("dateDayOfWeekFontWeight", v)}
+                            isRTL={isRTL}
+                          />
                           <ModernSlider
                             isRTL={isRTL}
                             label={isRTL ? "מספר יום" : "Day Number"}
@@ -1039,6 +1100,12 @@ export function RsvpCustomizer({
                             min={24}
                             max={80}
                           />
+                          <FontWeightSelect
+                            label={isRTL ? "עובי מספר יום" : "Day Number Weight"}
+                            value={settings.dateDayFontWeight || 700}
+                            onChange={(v) => updateSetting("dateDayFontWeight", v)}
+                            isRTL={isRTL}
+                          />
                           <ModernSlider
                             isRTL={isRTL}
                             label={isRTL ? "חודש ושנה" : "Month & Year"}
@@ -1046,6 +1113,12 @@ export function RsvpCustomizer({
                             onChange={(v) => updateSetting("dateMonthFontSize", v)}
                             min={10}
                             max={28}
+                          />
+                          <FontWeightSelect
+                            label={isRTL ? "עובי חודש ושנה" : "Month Weight"}
+                            value={settings.dateMonthFontWeight || 500}
+                            onChange={(v) => updateSetting("dateMonthFontWeight", v)}
+                            isRTL={isRTL}
                           />
                         </div>
                       </div>
@@ -1076,6 +1149,12 @@ export function RsvpCustomizer({
                           min={12}
                           max={32}
                         />
+                        <FontWeightSelect
+                          label={isRTL ? "עובי שעה" : "Time Weight"}
+                          value={settings.timeFontWeight || 600}
+                          onChange={(v) => updateSetting("timeFontWeight", v)}
+                          isRTL={isRTL}
+                        />
                         <CompactColorPicker
                           label={isRTL ? "צבע כתובת" : "Address Text"}
                           value={settings.addressSectionTextColor || "#374151"}
@@ -1093,6 +1172,12 @@ export function RsvpCustomizer({
                           onChange={(v) => updateSetting("addressFontSize", v)}
                           min={10}
                           max={24}
+                        />
+                        <FontWeightSelect
+                          label={isRTL ? "עובי כתובת" : "Address Weight"}
+                          value={settings.addressFontWeight || 400}
+                          onChange={(v) => updateSetting("addressFontWeight", v)}
+                          isRTL={isRTL}
                         />
                       </div>
 
@@ -1127,6 +1212,12 @@ export function RsvpCustomizer({
                           min={12}
                           max={32}
                         />
+                        <FontWeightSelect
+                          label={isRTL ? "עובי מספרים" : "Number Weight"}
+                          value={settings.countdownNumberFontWeight || 700}
+                          onChange={(v) => updateSetting("countdownNumberFontWeight", v)}
+                          isRTL={isRTL}
+                        />
                         <ModernSlider
                           isRTL={isRTL}
                           label={isRTL ? "גודל תוויות" : "Label Size"}
@@ -1134,6 +1225,12 @@ export function RsvpCustomizer({
                           onChange={(v) => updateSetting("countdownLabelFontSize", v)}
                           min={6}
                           max={16}
+                        />
+                        <FontWeightSelect
+                          label={isRTL ? "עובי תוויות" : "Label Weight"}
+                          value={settings.countdownLabelFontWeight || 500}
+                          onChange={(v) => updateSetting("countdownLabelFontWeight", v)}
+                          isRTL={isRTL}
                         />
                       </div>
 
@@ -1281,6 +1378,55 @@ export function RsvpCustomizer({
                       </div>
 
                       <Separator />
+
+                      {/* Navigation Buttons Style Section */}
+                      {(settings.showGoogleMaps !== false || settings.showWaze !== false) && (
+                        <>
+                          <div className="space-y-4">
+                            <h3 className="flex items-center gap-2 font-medium">
+                              <MapPin className="h-4 w-4" />
+                              {isRTL ? "כפתורי ניווט" : "Navigation Buttons"}
+                            </h3>
+                            <CompactColorPicker
+                              label={isRTL ? "צבע רקע" : "Background"}
+                              value={settings.navButtonBackground || "#fafafa"}
+                              onChange={(value) => updateSetting("navButtonBackground", value)}
+                            />
+                            <CompactColorPicker
+                              label={isRTL ? "צבע טקסט" : "Text Color"}
+                              value={settings.navButtonTextColor || "#374151"}
+                              onChange={(value) => updateSetting("navButtonTextColor", value)}
+                            />
+                            <CompactColorPicker
+                              label={isRTL ? "צבע גבול" : "Border Color"}
+                              value={settings.navButtonBorderColor || "#e5e7eb"}
+                              onChange={(value) => updateSetting("navButtonBorderColor", value)}
+                            />
+                            <ModernSlider
+                              isRTL={isRTL}
+                              label={isRTL ? "עיגול פינות" : "Border Radius"}
+                              value={settings.navButtonBorderRadius || 12}
+                              onChange={(v) => updateSetting("navButtonBorderRadius", v)}
+                              max={24}
+                            />
+                            <ModernSlider
+                              isRTL={isRTL}
+                              label={isRTL ? "גודל טקסט" : "Text Size"}
+                              value={settings.navButtonFontSize || 14}
+                              onChange={(v) => updateSetting("navButtonFontSize", v)}
+                              min={10}
+                              max={20}
+                            />
+                            <FontWeightSelect
+                              label={isRTL ? "עובי טקסט" : "Font Weight"}
+                              value={settings.navButtonFontWeight || 500}
+                              onChange={(v) => updateSetting("navButtonFontWeight", v)}
+                              isRTL={isRTL}
+                            />
+                          </div>
+                          <Separator />
+                        </>
+                      )}
 
                       {/* Button Style Section */}
                       <div className="space-y-4">
@@ -1722,6 +1868,12 @@ export function RsvpCustomizer({
                               min={18}
                               max={48}
                             />
+                            <FontWeightSelect
+                              label={isRTL ? "עובי כותרת" : "Title Weight"}
+                              value={settings.titleFontWeight || 700}
+                              onChange={(v) => updateSetting("titleFontWeight", v)}
+                              isRTL={isRTL}
+                            />
                             <ModernSlider
                               isRTL={isRTL}
                               label={isRTL ? "גודל תת-כותרת" : "Subtitle Size"}
@@ -1730,6 +1882,12 @@ export function RsvpCustomizer({
                               min={12}
                               max={24}
                             />
+                            <FontWeightSelect
+                              label={isRTL ? "עובי תת-כותרת" : "Subtitle Weight"}
+                              value={settings.subtitleFontWeight || 400}
+                              onChange={(v) => updateSetting("subtitleFontWeight", v)}
+                              isRTL={isRTL}
+                            />
                             <ModernSlider
                               isRTL={isRTL}
                               label={isRTL ? "גודל תוויות" : "Label Size"}
@@ -1737,6 +1895,12 @@ export function RsvpCustomizer({
                               onChange={(v) => updateSetting("labelFontSize", v)}
                               min={10}
                               max={20}
+                            />
+                            <FontWeightSelect
+                              label={isRTL ? "עובי תוויות" : "Label Weight"}
+                              value={settings.labelFontWeight || 500}
+                              onChange={(v) => updateSetting("labelFontWeight", v)}
+                              isRTL={isRTL}
                             />
                           </SettingsSection>
                         </div>

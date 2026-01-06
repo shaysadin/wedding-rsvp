@@ -7,6 +7,7 @@ import { prisma } from "@/lib/db";
 import { getCurrentUser } from "@/lib/session";
 import { getNotificationService } from "@/lib/notifications";
 import { PLAN_LIMITS } from "@/config/plans";
+import { onNotificationSent } from "@/lib/automation/event-handlers";
 
 export type ChannelType = "WHATSAPP" | "SMS" | "AUTO";
 
@@ -307,6 +308,14 @@ export async function sendInvite(guestId: string, channel: ChannelType = "AUTO")
     // Update usage tracking if message was sent
     if (result.success) {
       await checkAndUpdateUsage(user.id, result.channel, 1);
+
+      // Trigger automation scheduling for NO_RESPONSE flows
+      await onNotificationSent({
+        guestId: guest.id,
+        weddingEventId: guest.weddingEventId,
+        notificationType: "INVITE",
+        sentAt: new Date(),
+      });
     }
 
     revalidatePath(`/dashboard/events/${guest.weddingEventId}`);
@@ -378,6 +387,14 @@ export async function sendReminder(guestId: string, channel: ChannelType = "AUTO
     // Update usage tracking if message was sent
     if (result.success) {
       await checkAndUpdateUsage(user.id, result.channel, 1);
+
+      // Trigger automation scheduling for NO_RESPONSE flows
+      await onNotificationSent({
+        guestId: guest.id,
+        weddingEventId: guest.weddingEventId,
+        notificationType: "REMINDER",
+        sentAt: new Date(),
+      });
     }
 
     revalidatePath(`/dashboard/events/${guest.weddingEventId}`);
@@ -668,6 +685,14 @@ export async function sendInteractiveInvite(guestId: string, includeImage: boole
     // Update usage tracking if message was sent
     if (result.success) {
       await checkAndUpdateUsage(user.id, NotificationChannel.WHATSAPP, 1);
+
+      // Trigger automation scheduling for NO_RESPONSE flows
+      await onNotificationSent({
+        guestId: guest.id,
+        weddingEventId: guest.weddingEventId,
+        notificationType: "INTERACTIVE_INVITE",
+        sentAt: new Date(),
+      });
     }
 
     revalidatePath(`/dashboard/events/${guest.weddingEventId}`);
@@ -736,6 +761,14 @@ export async function sendInteractiveReminder(guestId: string, includeImage: boo
     // Update usage tracking if message was sent
     if (result.success) {
       await checkAndUpdateUsage(user.id, NotificationChannel.WHATSAPP, 1);
+
+      // Trigger automation scheduling for NO_RESPONSE flows
+      await onNotificationSent({
+        guestId: guest.id,
+        weddingEventId: guest.weddingEventId,
+        notificationType: "INTERACTIVE_REMINDER",
+        sentAt: new Date(),
+      });
     }
 
     revalidatePath(`/dashboard/events/${guest.weddingEventId}`);

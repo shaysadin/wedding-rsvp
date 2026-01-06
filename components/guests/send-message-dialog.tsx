@@ -633,17 +633,17 @@ export function SendMessageDialog({
               <Button onClick={handleSendClick} disabled={sending}>
                 {sending ? (
                   <>
-                    <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
+                    <Icons.spinner className="me-2 h-4 w-4 animate-spin" />
                     {t("sending")}
                   </>
                 ) : showConfirmation ? (
                   <>
-                    <Icons.check className="mr-2 h-4 w-4" />
+                    <Icons.check className="me-2 h-4 w-4" />
                     {isRTL ? "שלח בכל זאת" : "Send Anyway"}
                   </>
                 ) : (
                   <>
-                    <Icons.send className="mr-2 h-4 w-4" />
+                    <Icons.send className="me-2 h-4 w-4" />
                     {t("send")}
                   </>
                 )}

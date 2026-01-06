@@ -243,12 +243,12 @@ export function WhatsAppPhoneNumbers({ onActiveNumberChange }: WhatsAppPhoneNumb
               >
                 {isAdding ? (
                   <>
-                    <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
+                    <Icons.spinner className="me-2 h-4 w-4 animate-spin" />
                     Adding...
                   </>
                 ) : (
                   <>
-                    <Icons.add className="mr-2 h-4 w-4" />
+                    <Icons.add className="me-2 h-4 w-4" />
                     Add Phone Number
                   </>
                 )}

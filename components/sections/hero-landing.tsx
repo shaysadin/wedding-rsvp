@@ -64,7 +64,7 @@ export default function HeroLanding() {
               "px-5",
             )}
           >
-            <Icons.billing className="mr-2 size-4" />
+            <Icons.billing className="me-2 size-4" />
             <p>{t("viewPricing")}</p>
           </Link>
         </div>

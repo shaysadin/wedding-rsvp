@@ -63,6 +63,7 @@ interface VisualFlowCardProps {
   onDelete: (id: string) => void;
   onEdit?: (id: string) => void;
   onViewDetails?: (id: string) => void;
+  onTest?: (id: string) => void;
 }
 
 const STATUS_CONFIG: Record<AutomationFlowStatus, {
@@ -109,6 +110,7 @@ export function VisualFlowCard({
   onDelete,
   onEdit,
   onViewDetails,
+  onTest,
 }: VisualFlowCardProps) {
   const locale = useLocale();
   const isRTL = locale === "he";
@@ -191,25 +193,31 @@ export function VisualFlowCard({
             <DropdownMenuContent align={isRTL ? "start" : "end"} data-no-click>
               {onViewDetails && (
                 <DropdownMenuItem onClick={() => onViewDetails(flow.id)}>
-                  <Settings className={cn("h-4 w-4", isRTL ? "ml-2" : "mr-2")} />
+                  <Settings className={cn("h-4 w-4", isRTL ? "ml-2" : "me-2")} />
                   {isRTL ? "הגדרות ופרטים" : "Settings & Details"}
                 </DropdownMenuItem>
               )}
               {flow.status === "ACTIVE" ? (
                 <DropdownMenuItem onClick={() => onPause(flow.id)}>
-                  <Pause className={cn("h-4 w-4", isRTL ? "ml-2" : "mr-2")} />
+                  <Pause className={cn("h-4 w-4", isRTL ? "ml-2" : "me-2")} />
                   {isRTL ? "השהה" : "Pause"}
                 </DropdownMenuItem>
               ) : flow.status !== "ARCHIVED" ? (
                 <DropdownMenuItem onClick={() => onActivate(flow.id)}>
-                  <Play className={cn("h-4 w-4", isRTL ? "ml-2" : "mr-2")} />
+                  <Play className={cn("h-4 w-4", isRTL ? "ml-2" : "me-2")} />
                   {isRTL ? "הפעל" : "Activate"}
                 </DropdownMenuItem>
               ) : null}
               {onEdit && flow.status !== "ARCHIVED" && (
                 <DropdownMenuItem onClick={() => onEdit(flow.id)}>
-                  <Edit className={cn("h-4 w-4", isRTL ? "ml-2" : "mr-2")} />
+                  <Edit className={cn("h-4 w-4", isRTL ? "ml-2" : "me-2")} />
                   {isRTL ? "ערוך הודעה" : "Edit Message"}
+                </DropdownMenuItem>
+              )}
+              {onTest && flow.status !== "ARCHIVED" && (
+                <DropdownMenuItem onClick={() => onTest(flow.id)}>
+                  <Zap className={cn("h-4 w-4", isRTL ? "ml-2" : "me-2")} />
+                  {isRTL ? "בדוק אוטומציה" : "Test Automation"}
                 </DropdownMenuItem>
               )}
               <DropdownMenuSeparator />
@@ -217,7 +225,7 @@ export function VisualFlowCard({
                 onClick={() => onDelete(flow.id)}
                 className="text-destructive focus:text-destructive"
               >
-                <Trash2 className={cn("h-4 w-4", isRTL ? "ml-2" : "mr-2")} />
+                <Trash2 className={cn("h-4 w-4", isRTL ? "ml-2" : "me-2")} />
                 {isRTL ? "מחק" : "Delete"}
               </DropdownMenuItem>
             </DropdownMenuContent>
@@ -297,12 +305,12 @@ export function VisualFlowCard({
                 >
                   {isExpanded ? (
                     <>
-                      <ChevronUp className="h-3 w-3 mr-1" />
+                      <ChevronUp className="h-3 w-3 me-1" />
                       {isRTL ? "הסתר פרטים" : "Hide details"}
                     </>
                   ) : (
                     <>
-                      <ChevronDown className="h-3 w-3 mr-1" />
+                      <ChevronDown className="h-3 w-3 me-1" />
                       {isRTL ? "הצג פרטים" : "Show details"}
                     </>
                   )}

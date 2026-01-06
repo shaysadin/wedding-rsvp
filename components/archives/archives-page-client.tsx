@@ -177,7 +177,7 @@ export function ArchivesPageClient({
                   router.push(`/${locale}/dashboard/archives/${archive.id}`)
                 }
               >
-                <Eye className="mr-2 h-4 w-4" />
+                <Eye className="me-2 h-4 w-4" />
                 {t("view")}
               </Button>
               <Button

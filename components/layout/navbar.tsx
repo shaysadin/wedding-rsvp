@@ -7,7 +7,6 @@ import { useTranslations, useLocale } from "next-intl";
 import { UserRole } from "@prisma/client";
 
 import { docsConfig } from "@/config/docs";
-import { siteConfig } from "@/config/site";
 import { cn } from "@/lib/utils";
 import { useScroll } from "@/hooks/use-scroll";
 import { Button } from "@/components/ui/button";
@@ -57,11 +56,8 @@ export function NavBar({ scroll = false }: NavBarProps) {
         large={documentation}
       >
         <div className="flex gap-6 md:gap-10">
-          <Link href="/" className="flex items-center space-x-2">
+          <Link href="/" className="flex items-center">
             <AppLogo size="md" />
-            <span className="font-urban text-xl font-bold">
-              {siteConfig.name}
-            </span>
           </Link>
 
           {links && links.length > 0 ? (

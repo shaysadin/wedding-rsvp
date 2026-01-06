@@ -86,7 +86,7 @@ export function UnifiedAuthPage({
         <div className="mx-auto w-full max-w-[400px]">
           {/* Logo */}
           <div className="mb-8">
-            <AppLogo size="lg" className="h-10 w-10" />
+            <AppLogo size="lg" />
           </div>
 
           {/* Welcome text with animation */}

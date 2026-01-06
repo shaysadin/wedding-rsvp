@@ -36,7 +36,11 @@ const nextConfig = {
       },
       {
         protocol: "https",
-        hostname: "*.r2.cloudflarestorage.com", // R2 storage for invitations
+        hostname: "*.r2.cloudflarestorage.com", // R2 private storage
+      },
+      {
+        protocol: "https",
+        hostname: "*.r2.dev", // R2 public storage for invitations
       },
     ],
   },

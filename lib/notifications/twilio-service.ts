@@ -379,6 +379,94 @@ export async function sendWhatsApp(
 }
 
 /**
+ * Send a WhatsApp message with an image using Twilio
+ * Reference: https://www.twilio.com/docs/whatsapp/tutorial/send-whatsapp-notification-messages-templates#media-message
+ *
+ * Important: The media URL must be publicly accessible
+ */
+export async function sendWhatsAppWithMedia(
+  client: TwilioClient,
+  fromNumber: string,
+  toNumber: string,
+  mediaUrl: string,
+  body?: string
+): Promise<{
+  success: boolean;
+  messageId?: string;
+  status?: string;
+  error?: string;
+  errorCode?: number;
+  isTrialError?: boolean;
+}> {
+  try {
+    // Format numbers with whatsapp: prefix as per Twilio documentation
+    const from = fromNumber.startsWith("whatsapp:")
+      ? fromNumber
+      : `whatsapp:${fromNumber}`;
+    const to = toNumber.startsWith("whatsapp:") ? toNumber : `whatsapp:${toNumber}`;
+
+    console.log("=".repeat(60));
+    console.log("📱 SENDING WHATSAPP IMAGE MESSAGE VIA TWILIO");
+    console.log("=".repeat(60));
+    console.log(`From: ${from}`);
+    console.log(`To: ${to}`);
+    console.log(`Media URL: ${mediaUrl}`);
+    console.log(`Caption: ${body || "(none)"}`);
+    console.log("-".repeat(60));
+
+    const messageParams: {
+      from: string;
+      to: string;
+      mediaUrl: string[];
+      body?: string;
+    } = {
+      from,
+      to,
+      mediaUrl: [mediaUrl],
+    };
+
+    if (body) {
+      messageParams.body = body;
+    }
+
+    const message = await client.messages.create(messageParams);
+
+    console.log("✅ TWILIO API RESPONSE:");
+    console.log(`   Message SID: ${message.sid}`);
+    console.log(`   Status: ${message.status}`);
+    console.log(`   Direction: ${message.direction}`);
+    console.log(`   Date Created: ${message.dateCreated}`);
+    console.log(`   Error Code: ${message.errorCode || "none"}`);
+    console.log(`   Error Message: ${message.errorMessage || "none"}`);
+    console.log("=".repeat(60));
+
+    return {
+      success: true,
+      messageId: message.sid,
+      status: message.status,
+    };
+  } catch (error: any) {
+    console.error("=".repeat(60));
+    console.error("❌ TWILIO WHATSAPP IMAGE ERROR:");
+    console.error(`   Error Code: ${error.code}`);
+    console.error(`   Error Message: ${error.message}`);
+    console.error(`   More Info: ${error.moreInfo || "N/A"}`);
+    console.error("=".repeat(60));
+
+    const errorMessage = error.code && ERROR_MESSAGES[error.code]
+      ? ERROR_MESSAGES[error.code]
+      : error.message || "Failed to send WhatsApp image message";
+
+    return {
+      success: false,
+      error: errorMessage,
+      errorCode: error.code,
+      isTrialError: error.code && TRIAL_ERROR_CODES[error.code as keyof typeof TRIAL_ERROR_CODES] !== undefined,
+    };
+  }
+}
+
+/**
  * Get messaging settings from the database
  */
 export async function getMessagingConfig(): Promise<TwilioConfig | null> {

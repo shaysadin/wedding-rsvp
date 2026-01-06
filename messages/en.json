@@ -70,8 +70,9 @@
   "navigation": {
     "dashboard": "Dashboard",
     "events": "Events",
+    "rsvp": "RSVP Approvals",
     "guests": "Guests",
-    "invitations": "Send Invitations",
+    "invitations": "Invitations",
     "seating": "Table Seating",
     "messages": "Message Templates",
     "customize": "Customize RSVP",
@@ -87,11 +88,16 @@
     "voiceAgent": "Voice Agent",
     "archives": "Archives",
     "tasks": "Tasks",
-    "automation": "Automations",
-    "pdfInvitations": "PDF Invitations",
+    "automations": "Automations",
     "gifts": "Gifts",
     "invitationTemplates": "Invitation Templates",
-    "payments": "Payments"
+    "payments": "Payments",
+    "adminSettings": "System Settings",
+    "eventOrganization": "Event Organization",
+    "designInvitations": "Design & Invitations",
+    "rsvpCommunication": "RSVP & Communication",
+    "accountSettings": "Account & Settings",
+    "adminPanel": "Admin Panel"
   },
   "auth": {
     "signIn": "Sign In",
@@ -342,6 +348,7 @@
   },
   "rsvp": {
     "title": "RSVP",
+    "description": "Manage and track event RSVPs",
     "welcome": "Welcome!",
     "willYouAttend": "Will you attend the event?",
     "attending": "Yes, I'll be there!",
@@ -1136,9 +1143,9 @@
     }
   },
   "invitations": {
-    "title": "Send Invitations",
-    "description": "Send wedding invitation images to your guests via WhatsApp",
-    "selectEventDescription": "Choose an event to send invitations",
+    "title": "Invitations",
+    "description": "Create and send beautiful wedding invitations to your guests",
+    "selectEventDescription": "Choose an event to manage invitations",
     "uploadImage": "Upload Invitation Image",
     "uploadDescription": "Upload your wedding invitation image (JPG, PNG, max 5MB)",
     "currentImage": "Current Invitation Image",

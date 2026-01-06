@@ -86,61 +86,61 @@ export default async function EventPage({ params, searchParams }: EventPageProps
         </div>
 
         {/* Action Cards - Scrollable on mobile */}
-        <div className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:overflow-visible sm:px-0">
+        <div className="overflow-x-auto px-4 sm:mx-0 sm:overflow-visible sm:px-0">
           <div className="flex gap-2">
             <EditEventModal event={event} variant="card" />
             <CopyLinkButton eventId={event.id} firstGuestSlug={firstGuestSlug} variant="card" />
 
-            <Link href={`/${locale}/dashboard/events/${event.id}/seating`} className={cardClassName}>
+            <Link href={`/${locale}/dashboard/seating?eventId=${event.id}`} className={cardClassName}>
               <Icons.layoutGrid className="h-4 w-4 text-muted-foreground transition-colors group-hover:text-purple-500 sm:h-5 sm:w-5" />
               <span className="text-[9px] font-medium leading-tight text-muted-foreground transition-colors group-hover:text-foreground sm:text-[10px]">
                 {locale === "he" ? "ישיבה" : "Seating"}
               </span>
             </Link>
 
-            <Link href={`/${locale}/dashboard/events/${event.id}/invitations`} className={cardClassName}>
+            <Link href={`/${locale}/dashboard/invitations?eventId=${event.id}`} className={cardClassName}>
               <Icons.mail className="h-4 w-4 text-muted-foreground transition-colors group-hover:text-purple-500 sm:h-5 sm:w-5" />
               <span className="text-[9px] font-medium leading-tight text-muted-foreground transition-colors group-hover:text-foreground sm:text-[10px]">
                 {locale === "he" ? "הזמנות" : "Invites"}
               </span>
             </Link>
 
-            <Link href={`/${locale}/dashboard/events/${event.id}/messages`} className={cardClassName}>
+            <Link href={`/${locale}/dashboard/messages?eventId=${event.id}`} className={cardClassName}>
               <Icons.messageSquare className="h-4 w-4 text-muted-foreground transition-colors group-hover:text-purple-500 sm:h-5 sm:w-5" />
               <span className="text-[9px] font-medium leading-tight text-muted-foreground transition-colors group-hover:text-foreground sm:text-[10px]">
                 {locale === "he" ? "הודעות" : "Messages"}
               </span>
             </Link>
 
-            <Link href={`/${locale}/dashboard/events/${event.id}/customize`} className={cardClassName}>
+            <Link href={`/${locale}/dashboard/customize?eventId=${event.id}`} className={cardClassName}>
               <Icons.palette className="h-4 w-4 text-muted-foreground transition-colors group-hover:text-purple-500 sm:h-5 sm:w-5" />
               <span className="text-[9px] font-medium leading-tight text-muted-foreground transition-colors group-hover:text-foreground sm:text-[10px]">
                 {locale === "he" ? "עיצוב" : "Design"}
               </span>
             </Link>
 
-            <Link href={`/${locale}/dashboard/events/${event.id}/voice-agent`} className={cardClassName}>
+            <Link href={`/${locale}/dashboard/voice-agent?eventId=${event.id}`} className={cardClassName}>
               <Icons.phone className="h-4 w-4 text-muted-foreground transition-colors group-hover:text-purple-500 sm:h-5 sm:w-5" />
               <span className="text-[9px] font-medium leading-tight text-muted-foreground transition-colors group-hover:text-foreground sm:text-[10px]">
                 {locale === "he" ? "קולי" : "Voice"}
               </span>
             </Link>
 
-            <Link href={`/${locale}/dashboard/events/${event.id}/automation`} className={cardClassName}>
+            <Link href={`/${locale}/dashboard/automations?eventId=${event.id}`} className={cardClassName}>
               <Icons.sparkles className="h-4 w-4 text-muted-foreground transition-colors group-hover:text-purple-500 sm:h-5 sm:w-5" />
               <span className="text-[9px] font-medium leading-tight text-muted-foreground transition-colors group-hover:text-foreground sm:text-[10px]">
                 {locale === "he" ? "אוטומציות" : "Automations"}
               </span>
             </Link>
 
-            <Link href={`/${locale}/dashboard/events/${event.id}/pdf-invitations`} className={cardClassName}>
-              <Icons.fileText className="h-4 w-4 text-muted-foreground transition-colors group-hover:text-purple-500 sm:h-5 sm:w-5" />
+            <Link href={`/${locale}/dashboard/suppliers?eventId=${event.id}`} className={cardClassName}>
+              <Icons.users className="h-4 w-4 text-muted-foreground transition-colors group-hover:text-purple-500 sm:h-5 sm:w-5" />
               <span className="text-[9px] font-medium leading-tight text-muted-foreground transition-colors group-hover:text-foreground sm:text-[10px]">
-                {locale === "he" ? "הזמנות" : "Invitations"}
+                {locale === "he" ? "ספקים" : "Suppliers"}
               </span>
             </Link>
 
-            <Link href={`/${locale}/dashboard/events/${event.id}/gifts`} className={cardClassName}>
+            <Link href={`/${locale}/dashboard/gifts?eventId=${event.id}`} className={cardClassName}>
               <Icons.gift className="h-4 w-4 text-muted-foreground transition-colors group-hover:text-purple-500 sm:h-5 sm:w-5" />
               <span className="text-[9px] font-medium leading-tight text-muted-foreground transition-colors group-hover:text-foreground sm:text-[10px]">
                 {locale === "he" ? "מתנות" : "Gifts"}

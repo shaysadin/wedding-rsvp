@@ -284,12 +284,12 @@ export function SuppliersTable({
                 <TableCell>
                   {supplier.agreedPrice ? (
                     <div className={cn(
-                      "flex items-center gap-3 min-w-[180px]",
+                      "flex items-center gap-2",
                       isRTL && "flex-row-reverse"
                     )}>
-                      <Progress value={supplier.paidPercent} className={cn("h-2 flex-1", isRTL && "rotate-180")} />
+                      <Progress value={supplier.paidPercent} className={cn("h-2 w-16 sm:w-24 shrink-0", isRTL && "rotate-180")} />
                       <span className={cn(
-                        "text-xs text-muted-foreground w-24 whitespace-nowrap",
+                        "text-xs text-muted-foreground whitespace-nowrap",
                         isRTL ? "text-start" : "text-end"
                       )}>
                         {formatCurrency(supplier.totalPaid)} / {formatCurrency(Number(supplier.agreedPrice))}
@@ -402,8 +402,8 @@ export function SuppliersTable({
       </Button>
 
       {/* Search and Filters */}
-      <div className={cn("flex flex-wrap gap-3", isRTL && "flex-row-reverse")}>
-        <div className="relative flex-1 min-w-[200px]">
+      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+        <div className="relative flex-1 min-w-0 sm:min-w-[200px]">
           <Search className="absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             placeholder={isRTL ? "חיפוש ספקים..." : "Search suppliers..."}
@@ -414,33 +414,35 @@ export function SuppliersTable({
           />
         </div>
 
-        <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-          <SelectTrigger className="w-[160px]">
-            <SelectValue placeholder={isRTL ? "קטגוריה" : "Category"} />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">{isRTL ? "כל הקטגוריות" : "All Categories"}</SelectItem>
-            {categoryOptions.map((option) => (
-              <SelectItem key={option.value} value={option.value}>
-                {option.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <div className={cn("flex gap-2", isRTL && "flex-row-reverse")}>
+          <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+            <SelectTrigger className="flex-1 sm:w-[160px] sm:flex-none">
+              <SelectValue placeholder={isRTL ? "קטגוריה" : "Category"} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">{isRTL ? "כל הקטגוריות" : "All Categories"}</SelectItem>
+              {categoryOptions.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
 
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-[140px]">
-            <SelectValue placeholder={isRTL ? "סטטוס" : "Status"} />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">{isRTL ? "כל הסטטוסים" : "All Statuses"}</SelectItem>
-            {statusOptions.map((option) => (
-              <SelectItem key={option.value} value={option.value}>
-                {option.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="flex-1 sm:w-[140px] sm:flex-none">
+              <SelectValue placeholder={isRTL ? "סטטוס" : "Status"} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">{isRTL ? "כל הסטטוסים" : "All Statuses"}</SelectItem>
+              {statusOptions.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       {/* Table */}
@@ -466,8 +468,8 @@ export function SuppliersTable({
         </DialogHeader>
         <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-auto p-6">
           {/* Search and Filters in Modal */}
-          <div className={cn("flex flex-wrap gap-3", isRTL && "flex-row-reverse")}>
-            <div className="relative flex-1 min-w-[200px]">
+          <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+            <div className="relative flex-1 min-w-0 sm:min-w-[200px]">
               <Search className="absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 placeholder={isRTL ? "חיפוש ספקים..." : "Search suppliers..."}
@@ -478,33 +480,35 @@ export function SuppliersTable({
               />
             </div>
 
-            <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-              <SelectTrigger className="w-[160px]">
-                <SelectValue placeholder={isRTL ? "קטגוריה" : "Category"} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">{isRTL ? "כל הקטגוריות" : "All Categories"}</SelectItem>
-                {categoryOptions.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <div className={cn("flex gap-2", isRTL && "flex-row-reverse")}>
+              <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                <SelectTrigger className="flex-1 sm:w-[160px] sm:flex-none">
+                  <SelectValue placeholder={isRTL ? "קטגוריה" : "Category"} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">{isRTL ? "כל הקטגוריות" : "All Categories"}</SelectItem>
+                  {categoryOptions.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
 
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-[140px]">
-                <SelectValue placeholder={isRTL ? "סטטוס" : "Status"} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">{isRTL ? "כל הסטטוסים" : "All Statuses"}</SelectItem>
-                {statusOptions.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="flex-1 sm:w-[140px] sm:flex-none">
+                  <SelectValue placeholder={isRTL ? "סטטוס" : "Status"} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">{isRTL ? "כל הסטטוסים" : "All Statuses"}</SelectItem>
+                  {statusOptions.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           {/* Table in Modal */}

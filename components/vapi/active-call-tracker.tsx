@@ -140,7 +140,7 @@ export function ActiveCallTracker({ eventId, onCallsUpdated }: ActiveCallTracker
           </div>
           <h3 className="text-base font-semibold text-emerald-700 dark:text-emerald-400">
             {t("activeCalls.title")}
-            <span className="ml-2 text-foreground">({activeCalls.length})</span>
+            <span className="ms-2 text-foreground">({activeCalls.length})</span>
           </h3>
         </div>
         <Button

@@ -248,9 +248,9 @@ export function CallLogTable({ callLogs, onRefresh }: CallLogTableProps) {
           className="me-8"
         >
           {isRefreshing ? (
-            <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
+            <Icons.spinner className="me-2 h-4 w-4 animate-spin" />
           ) : (
-            <Icons.refresh className="mr-2 h-4 w-4" />
+            <Icons.refresh className="me-2 h-4 w-4" />
           )}
           {tc("refresh")}
         </Button>
@@ -289,9 +289,9 @@ export function CallLogTable({ callLogs, onRefresh }: CallLogTableProps) {
               disabled={isRefreshing}
             >
               {isRefreshing ? (
-                <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
+                <Icons.spinner className="me-2 h-4 w-4 animate-spin" />
               ) : (
-                <Icons.refresh className="mr-2 h-4 w-4" />
+                <Icons.refresh className="me-2 h-4 w-4" />
               )}
               {tc("refresh")}
             </Button>

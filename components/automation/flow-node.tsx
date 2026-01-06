@@ -328,6 +328,23 @@ const ACTION_CONFIG: Record<AutomationAction, NodeConfig> = {
     bgColor: "bg-violet-50 dark:bg-violet-950/50",
     borderColor: "border-violet-200 dark:border-violet-800",
   },
+  // Event Day & Thank You Actions
+  SEND_WHATSAPP_EVENT_DAY: {
+    icon: Sunrise,
+    label: { en: "Event Day Reminder", he: "תזכורת יום האירוע" },
+    description: { en: "Send table, address, navigation & gift link", he: "שלח שולחן, כתובת, ניווט וקישור למתנה" },
+    color: "text-orange-600 dark:text-orange-400",
+    bgColor: "bg-orange-50 dark:bg-orange-950/50",
+    borderColor: "border-orange-200 dark:border-orange-800",
+  },
+  SEND_WHATSAPP_THANK_YOU: {
+    icon: Heart,
+    label: { en: "Thank You Message", he: "הודעת תודה" },
+    description: { en: "Send thank you message from the couple", he: "שלח הודעת תודה מהזוג" },
+    color: "text-pink-600 dark:text-pink-400",
+    bgColor: "bg-pink-50 dark:bg-pink-950/50",
+    borderColor: "border-pink-200 dark:border-pink-800",
+  },
   // Custom Message Actions
   SEND_CUSTOM_WHATSAPP: {
     icon: Edit3,

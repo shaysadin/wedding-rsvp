@@ -116,7 +116,7 @@ export function DuplicatePhoneWarning({ eventId, onEditGuest }: DuplicatePhoneWa
   return (
     <>
       <Collapsible open={isOpen} onOpenChange={setIsOpen}>
-        <div className="rounded-lg border-2 border-orange-500/50 bg-orange-500/10 p-4">
+        <div className="mt-6 rounded-lg border-2 border-orange-500/50 bg-orange-500/10 p-4">
           <CollapsibleTrigger asChild>
             <button
               className={cn(

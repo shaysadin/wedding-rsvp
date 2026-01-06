@@ -8,7 +8,6 @@ import { UserRole } from "@prisma/client";
 import { NavItem, SidebarNavItem } from "@/types";
 import { Menu, PanelLeftClose, PanelRightClose, ChevronDown, ChevronRight } from "lucide-react";
 
-import { siteConfig } from "@/config/site";
 import { cn } from "@/lib/utils";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { Badge } from "@/components/ui/badge";
@@ -94,74 +93,59 @@ export function DashboardSidebar({ links, userEvents = [], currentRole, availabl
 
   return (
     <TooltipProvider delayDuration={0}>
-      <div className="sticky top-0 h-full">
-        <ScrollArea className="h-full overflow-y-auto">
-          <aside
-            className={cn(
-              isSidebarExpanded ? "w-[220px] xl:w-[260px]" : "w-[68px]",
-              "hidden h-screen bg-sidebar border-e border-sidebar-border md:block",
-            )}
+      <aside
+        className={cn(
+          isSidebarExpanded ? "w-[220px] xl:w-[260px]" : "w-[68px]",
+          "sticky top-0 hidden h-screen flex-col bg-sidebar border-e border-sidebar-border md:flex",
+        )}
+      >
+        {/* Fixed Header - Logo */}
+        <div className={cn(
+          "flex h-14 shrink-0 items-center p-4 lg:h-[60px]",
+          isRTL && "flex-row-reverse"
+        )}>
+          <Link
+            href={`/${locale}/dashboard`}
+            className="flex items-center"
           >
-            <div className="flex h-full max-h-screen flex-1 flex-col gap-2">
-              <div className={cn(
-                "flex h-14 items-center p-4 lg:h-[60px]",
-                isRTL && "flex-row-reverse"
-              )}>
-                {isSidebarExpanded ? (
-                  <Link
-                    href={`/${locale}/dashboard`}
-                    className={cn(
-                      "flex items-center gap-2",
-                      isRTL && "flex-row-reverse"
-                    )}
-                  >
-                    <AppLogo size="md" />
-                    <span className="font-semibold text-foreground">
-                      {siteConfig.name}
-                    </span>
-                  </Link>
-                ) : (
-                  <Link
-                    href={`/${locale}/dashboard`}
-                    className="flex items-center justify-center"
-                  >
-                    <AppLogo size="md" />
-                  </Link>
-                )}
+            <AppLogo size={isSidebarExpanded ? "md" : "sm"} />
+          </Link>
 
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className={cn("size-9 lg:size-8", isRTL ? "me-auto" : "ms-auto")}
-                  onClick={toggleSidebar}
-                >
-                  {isSidebarExpanded ? (
-                    <PanelLeftClose
-                      size={18}
-                      className="stroke-muted-foreground rtl:rotate-180"
-                    />
-                  ) : (
-                    <PanelRightClose
-                      size={18}
-                      className="stroke-muted-foreground rtl:rotate-180"
-                    />
-                  )}
-                  <span className="sr-only">Toggle Sidebar</span>
-                </Button>
-              </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            className={cn("size-9 lg:size-8", isRTL ? "me-auto" : "ms-auto")}
+            onClick={toggleSidebar}
+          >
+            {isSidebarExpanded ? (
+              <PanelLeftClose
+                size={18}
+                className="stroke-muted-foreground rtl:rotate-180"
+              />
+            ) : (
+              <PanelRightClose
+                size={18}
+                className="stroke-muted-foreground rtl:rotate-180"
+              />
+            )}
+            <span className="sr-only">Toggle Sidebar</span>
+          </Button>
+        </div>
 
-              {/* Role Switcher - only visible for users with multiple roles */}
-              {currentRole && availableRoles.length > 1 && (
-                <div className="px-4">
-                  <RoleSwitcher
-                    currentRole={currentRole}
-                    availableRoles={availableRoles}
-                    expanded={isSidebarExpanded}
-                  />
-                </div>
-              )}
+        {/* Fixed Role Switcher - only visible for users with multiple roles */}
+        {currentRole && availableRoles.length > 1 && (
+          <div className="shrink-0 px-4 pb-2">
+            <RoleSwitcher
+              currentRole={currentRole}
+              availableRoles={availableRoles}
+              expanded={isSidebarExpanded}
+            />
+          </div>
+        )}
 
-              <nav className="flex flex-1 flex-col gap-8 px-4 pt-4">
+        {/* Scrollable Navigation */}
+        <ScrollArea className="flex-1 min-h-0">
+          <nav className="flex flex-col gap-6 px-4 py-4">
                 {links.map((section) => (
                   <section
                     key={section.title}
@@ -299,15 +283,14 @@ export function DashboardSidebar({ links, userEvents = [], currentRole, availabl
                     })}
                   </section>
                 ))}
-              </nav>
-
-              <div className="mt-auto xl:p-4">
-                {isSidebarExpanded ? <UpgradeCard /> : null}
-              </div>
-            </div>
-          </aside>
+          </nav>
         </ScrollArea>
-      </div>
+
+        {/* Fixed Footer - Upgrade Card */}
+        <div className="shrink-0 p-4">
+          {isSidebarExpanded ? <UpgradeCard /> : null}
+        </div>
+      </aside>
     </TooltipProvider>
   );
 }
@@ -365,33 +348,33 @@ export function MobileSheetSidebar({ links, userEvents = [], currentRole, availa
             <span className="sr-only">{t("common.menu")}</span>
           </Button>
         </SheetTrigger>
-        <SheetContent side={isRTL ? "right" : "left"} className="flex flex-col p-0">
-          <ScrollArea className="h-full overflow-y-auto">
-            <div className="flex h-screen flex-col">
-              <nav className="flex flex-1 flex-col gap-y-8 p-6 text-lg font-medium">
-                <Link
-                  href={`/${locale}/dashboard`}
-                  className={cn(
-                    "flex items-center gap-2 text-lg font-semibold",
-                    isRTL && "flex-row-reverse"
-                  )}
-                >
-                  <AppLogo size="lg" />
-                  <span className="font-urban text-xl font-bold">
-                    {siteConfig.name}
-                  </span>
-                </Link>
+        <SheetContent side={isRTL ? "right" : "left"} className="flex h-full flex-col p-0">
+          {/* Fixed Header - Logo */}
+          <div className="shrink-0 p-6 pb-0">
+            <Link
+              href={`/${locale}/dashboard`}
+              className="flex items-center"
+              onClick={() => setOpen(false)}
+            >
+              <AppLogo size="lg" />
+            </Link>
 
-                {/* Role Switcher - only visible for users with multiple roles */}
-                {currentRole && availableRoles.length > 1 && (
-                  <RoleSwitcher
-                    currentRole={currentRole}
-                    availableRoles={availableRoles}
-                    expanded={true}
-                  />
-                )}
+            {/* Role Switcher - only visible for users with multiple roles */}
+            {currentRole && availableRoles.length > 1 && (
+              <div className="mt-4">
+                <RoleSwitcher
+                  currentRole={currentRole}
+                  availableRoles={availableRoles}
+                  expanded={true}
+                />
+              </div>
+            )}
+          </div>
 
-                {links.map((section) => (
+          {/* Scrollable Navigation */}
+          <ScrollArea className="flex-1 min-h-0">
+            <nav className="flex flex-col gap-6 p-6 text-lg font-medium">
+              {links.map((section) => (
                   <section
                     key={section.title}
                     className="flex flex-col gap-0.5"
@@ -504,13 +487,13 @@ export function MobileSheetSidebar({ links, userEvents = [], currentRole, availa
                     })}
                   </section>
                 ))}
-
-                <div className="mt-auto">
-                  <UpgradeCard />
-                </div>
-              </nav>
-            </div>
+            </nav>
           </ScrollArea>
+
+          {/* Fixed Footer - Upgrade Card */}
+          <div className="shrink-0 p-6 pt-2">
+            <UpgradeCard />
+          </div>
         </SheetContent>
       </Sheet>
     );

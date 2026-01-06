@@ -26,7 +26,7 @@ export function SeatingViewToggle({ value, onChange }: SeatingViewToggleProps) {
         aria-label={t("gridView")}
         className="data-[state=on]:bg-background data-[state=on]:shadow-sm px-3"
       >
-        <Icons.layoutGrid className="h-4 w-4 mr-2" />
+        <Icons.layoutGrid className="h-4 w-4 me-2" />
         {t("gridView")}
       </ToggleGroupItem>
       <ToggleGroupItem
@@ -34,7 +34,7 @@ export function SeatingViewToggle({ value, onChange }: SeatingViewToggleProps) {
         aria-label={t("floorPlan")}
         className="data-[state=on]:bg-background data-[state=on]:shadow-sm px-3"
       >
-        <Icons.map className="h-4 w-4 mr-2" />
+        <Icons.map className="h-4 w-4 me-2" />
         {t("floorPlan")}
       </ToggleGroupItem>
     </ToggleGroup>

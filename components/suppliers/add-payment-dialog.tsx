@@ -386,7 +386,7 @@ export function AddPaymentDialog({
                 {isRTL ? "ביטול" : "Cancel"}
               </Button>
               <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {isSubmitting && <Loader2 className="me-2 h-4 w-4 animate-spin" />}
                 {isEditing
                   ? isRTL
                     ? "עדכון"

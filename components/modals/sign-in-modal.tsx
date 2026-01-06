@@ -27,7 +27,7 @@ function SignInModal({
       <div className="w-full">
         <div className="flex flex-col items-center justify-center space-y-3 border-b bg-background px-4 py-6 pt-8 text-center md:px-16">
           <a href={siteConfig.url}>
-            <AppLogo size="lg" className="h-10 w-10" />
+            <AppLogo size="lg" />
           </a>
           <h3 className="font-urban text-2xl font-bold">Sign In</h3>
           <p className="text-sm text-gray-500">
@@ -50,9 +50,9 @@ function SignInModal({
             }}
           >
             {signInClicked ? (
-              <Icons.spinner className="mr-2 size-4 animate-spin" />
+              <Icons.spinner className="me-2 size-4 animate-spin" />
             ) : (
-              <Icons.google className="mr-2 size-4" />
+              <Icons.google className="me-2 size-4" />
             )}{" "}
             Sign In with Google
           </Button>

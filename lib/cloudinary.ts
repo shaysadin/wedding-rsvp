@@ -13,6 +13,9 @@ export async function uploadImage(
   file: string, // base64 string
   folder: string = "rsvp-backgrounds"
 ): Promise<{ url: string; publicId: string }> {
+  console.log("[Cloudinary] Starting upload to folder:", folder);
+  console.log("[Cloudinary] File length:", file?.length);
+
   try {
     const result = await cloudinary.uploader.upload(file, {
       folder,
@@ -23,13 +26,17 @@ export async function uploadImage(
       ],
     });
 
+    console.log("[Cloudinary] Upload success:", result.secure_url);
     return {
       url: result.secure_url,
       publicId: result.public_id,
     };
-  } catch (error) {
-    console.error("Cloudinary upload error:", error);
-    throw new Error("Failed to upload image");
+  } catch (error: any) {
+    console.error("[Cloudinary] Upload error:", error);
+    console.error("[Cloudinary] Error message:", error?.message);
+    console.error("[Cloudinary] Error details:", error?.error);
+    const errorMsg = error?.message || error?.error?.message || String(error);
+    throw new Error(`Cloudinary error: ${errorMsg}`);
   }
 }
 

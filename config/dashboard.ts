@@ -2,11 +2,11 @@ import { UserRole } from "@prisma/client";
 
 import { SidebarNavItem } from "types";
 
-// Translation keys for sidebar - will be translated in the component
-export const sidebarLinks: SidebarNavItem[] = [
+// Admin panel links (shown only to platform owners)
+export const adminLinks: SidebarNavItem[] = [
   {
-    titleKey: "common.menu",
-    title: "MENU", // Fallback
+    titleKey: "navigation.adminPanel",
+    title: "ADMIN PANEL",
     items: [
       {
         href: "/admin",
@@ -58,11 +58,22 @@ export const sidebarLinks: SidebarNavItem[] = [
         authorizeOnly: UserRole.ROLE_PLATFORM_OWNER,
       },
       {
-        href: "/dashboard",
-        icon: "dashboard",
-        titleKey: "navigation.dashboard",
-        title: "Dashboard"
+        href: "/admin/settings",
+        icon: "settings",
+        titleKey: "navigation.adminSettings",
+        title: "System Settings",
+        authorizeOnly: UserRole.ROLE_PLATFORM_OWNER,
       },
+    ],
+  },
+];
+
+// Translation keys for sidebar - will be translated in the component
+export const sidebarLinks: SidebarNavItem[] = [
+  {
+    titleKey: "navigation.eventOrganization",
+    title: "EVENT ORGANIZATION",
+    items: [
       {
         href: "/dashboard/events",
         icon: "calendar",
@@ -71,10 +82,16 @@ export const sidebarLinks: SidebarNavItem[] = [
         authorizeOnly: UserRole.ROLE_WEDDING_OWNER,
       },
       {
-        href: "/dashboard/suppliers",
-        icon: "suppliers",
-        titleKey: "navigation.suppliers",
-        title: "Suppliers",
+        href: "/dashboard",
+        icon: "dashboard",
+        titleKey: "navigation.dashboard",
+        title: "Dashboard"
+      },
+      {
+        href: "/dashboard/tasks",
+        icon: "checkSquare",
+        titleKey: "navigation.tasks",
+        title: "Tasks",
         authorizeOnly: UserRole.ROLE_WEDDING_OWNER,
       },
       {
@@ -85,52 +102,10 @@ export const sidebarLinks: SidebarNavItem[] = [
         authorizeOnly: UserRole.ROLE_WEDDING_OWNER,
       },
       {
-        href: "/dashboard/invitations",
-        icon: "mail",
-        titleKey: "navigation.invitations",
-        title: "Send Invitations",
-        authorizeOnly: UserRole.ROLE_WEDDING_OWNER,
-      },
-      {
-        href: "/dashboard/messages",
-        icon: "messageSquare",
-        titleKey: "navigation.messages",
-        title: "Message Templates",
-        authorizeOnly: UserRole.ROLE_WEDDING_OWNER,
-      },
-      {
-        href: "/dashboard/customize",
-        icon: "palette",
-        titleKey: "navigation.customize",
-        title: "Customize RSVP",
-        authorizeOnly: UserRole.ROLE_WEDDING_OWNER,
-      },
-      {
-        href: "/dashboard/voice-agent",
-        icon: "phone",
-        titleKey: "navigation.voiceAgent",
-        title: "Voice Agent",
-        authorizeOnly: UserRole.ROLE_WEDDING_OWNER,
-      },
-      {
-        href: "/dashboard/tasks",
-        icon: "checkSquare",
-        titleKey: "navigation.tasks",
-        title: "Tasks",
-        authorizeOnly: UserRole.ROLE_WEDDING_OWNER,
-      },
-      {
-        href: "/dashboard/automations",
-        icon: "sparkles",
-        titleKey: "navigation.automations",
-        title: "Automations",
-        authorizeOnly: UserRole.ROLE_WEDDING_OWNER,
-      },
-      {
-        href: "/dashboard/pdf-invitations",
-        icon: "fileText",
-        titleKey: "navigation.pdfInvitations",
-        title: "PDF Invitations",
+        href: "/dashboard/suppliers",
+        icon: "suppliers",
+        titleKey: "navigation.suppliers",
+        title: "Suppliers",
         authorizeOnly: UserRole.ROLE_WEDDING_OWNER,
       },
       {
@@ -143,8 +118,62 @@ export const sidebarLinks: SidebarNavItem[] = [
     ],
   },
   {
-    titleKey: "common.options",
-    title: "OPTIONS",
+    titleKey: "navigation.designInvitations",
+    title: "DESIGN & INVITATIONS",
+    items: [
+      {
+        href: "/dashboard/customize",
+        icon: "palette",
+        titleKey: "navigation.customize",
+        title: "Customize RSVP",
+        authorizeOnly: UserRole.ROLE_WEDDING_OWNER,
+      },
+      {
+        href: "/dashboard/invitations",
+        icon: "mail",
+        titleKey: "navigation.invitations",
+        title: "Invitations",
+        authorizeOnly: UserRole.ROLE_WEDDING_OWNER,
+      },
+    ],
+  },
+  {
+    titleKey: "navigation.rsvpCommunication",
+    title: "RSVP & COMMUNICATION",
+    items: [
+      {
+        href: "/dashboard/rsvp",
+        icon: "mailCheck",
+        titleKey: "navigation.rsvp",
+        title: "RSVP Approvals",
+        authorizeOnly: UserRole.ROLE_WEDDING_OWNER,
+      },
+      {
+        href: "/dashboard/messages",
+        icon: "messageSquare",
+        titleKey: "navigation.messages",
+        title: "Message Templates",
+        authorizeOnly: UserRole.ROLE_WEDDING_OWNER,
+      },
+      {
+        href: "/dashboard/automations",
+        icon: "sparkles",
+        titleKey: "navigation.automations",
+        title: "Automations",
+        authorizeOnly: UserRole.ROLE_WEDDING_OWNER,
+      },
+      {
+        href: "/dashboard/voice-agent",
+        icon: "phone",
+        titleKey: "navigation.voiceAgent",
+        title: "Voice Agent",
+        authorizeOnly: UserRole.ROLE_WEDDING_OWNER,
+      },
+    ],
+  },
+  {
+    titleKey: "navigation.accountSettings",
+    title: "ACCOUNT & SETTINGS",
     items: [
       {
         href: "/dashboard/archives",
@@ -159,8 +188,12 @@ export const sidebarLinks: SidebarNavItem[] = [
         titleKey: "navigation.billing",
         title: "Billing",
       },
-      { href: "/dashboard/settings", icon: "settings", titleKey: "navigation.settings", title: "Settings" },
-      // { href: "/", icon: "home", titleKey: "common.homepage", title: "Homepage" },
+      {
+        href: "/dashboard/settings",
+        icon: "settings",
+        titleKey: "navigation.settings",
+        title: "Settings"
+      },
     ],
   },
 ];

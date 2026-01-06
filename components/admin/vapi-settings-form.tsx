@@ -228,7 +228,7 @@ export function VapiSettingsForm({ settings, phoneNumbers: initialPhoneNumbers =
               </CardDescription>
             </div>
             <Button onClick={() => setIsAddingPhone(!isAddingPhone)}>
-              <Plus className="mr-2 size-4" />
+              <Plus className="me-2 size-4" />
               Add Phone Number
             </Button>
           </div>
@@ -269,7 +269,7 @@ export function VapiSettingsForm({ settings, phoneNumbers: initialPhoneNumbers =
               </div>
               <div className="flex gap-2">
                 <Button onClick={handleAddPhone} disabled={isPhoneLoading}>
-                  {isPhoneLoading ? <Loader2 className="mr-2 size-4 animate-spin" /> : null}
+                  {isPhoneLoading ? <Loader2 className="me-2 size-4 animate-spin" /> : null}
                   Save
                 </Button>
                 <Button variant="outline" onClick={() => setIsAddingPhone(false)}>
@@ -308,7 +308,7 @@ export function VapiSettingsForm({ settings, phoneNumbers: initialPhoneNumbers =
                         )}
                         {phone.isDefault && (
                           <Badge variant="secondary">
-                            <Star className="mr-1 size-3" />
+                            <Star className="me-1 size-3" />
                             Default
                           </Badge>
                         )}
@@ -380,12 +380,12 @@ export function VapiSettingsForm({ settings, phoneNumbers: initialPhoneNumbers =
             <div className="flex items-center gap-2">
               {settings?.isConfigured ? (
                 <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                  <CheckCircle2 className="mr-1 size-3" />
+                  <CheckCircle2 className="me-1 size-3" />
                   Configured
                 </Badge>
               ) : (
                 <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">
-                  <XCircle className="mr-1 size-3" />
+                  <XCircle className="me-1 size-3" />
                   Not Configured
                 </Badge>
               )}
@@ -489,7 +489,7 @@ export function VapiSettingsForm({ settings, phoneNumbers: initialPhoneNumbers =
             >
               {isTesting ? (
                 <>
-                  <Loader2 className="mr-2 size-4 animate-spin" />
+                  <Loader2 className="me-2 size-4 animate-spin" />
                   Testing...
                 </>
               ) : (
@@ -500,7 +500,7 @@ export function VapiSettingsForm({ settings, phoneNumbers: initialPhoneNumbers =
             <Button onClick={handleSaveApiConfig} disabled={isPending}>
               {isPending ? (
                 <>
-                  <Loader2 className="mr-2 size-4 animate-spin" />
+                  <Loader2 className="me-2 size-4 animate-spin" />
                   Saving...
                 </>
               ) : (

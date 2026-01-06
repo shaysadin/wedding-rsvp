@@ -249,7 +249,7 @@ export function GiftsDashboard({
         <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
           <DialogTrigger asChild>
             <Button>
-              <Icons.add className={cn("h-4 w-4", isRTL ? "ml-2" : "mr-2")} />
+              <Icons.add className={cn("h-4 w-4", isRTL ? "ml-2" : "me-2")} />
               {isRTL ? "הוסף מתנה במזומן" : "Add Cash Gift"}
             </Button>
           </DialogTrigger>
@@ -292,7 +292,7 @@ export function GiftsDashboard({
                 {isRTL ? "ביטול" : "Cancel"}
               </Button>
               <Button onClick={handleAddGift} disabled={isAdding}>
-                {isAdding && <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />}
+                {isAdding && <Icons.spinner className="me-2 h-4 w-4 animate-spin" />}
                 {isRTL ? "הוסף" : "Add"}
               </Button>
             </DialogFooter>
@@ -302,7 +302,7 @@ export function GiftsDashboard({
         <Dialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
           <DialogTrigger asChild>
             <Button variant="outline">
-              <Icons.settings className={cn("h-4 w-4", isRTL ? "ml-2" : "mr-2")} />
+              <Icons.settings className={cn("h-4 w-4", isRTL ? "ml-2" : "me-2")} />
               {isRTL ? "הגדרות" : "Settings"}
             </Button>
           </DialogTrigger>
@@ -356,7 +356,7 @@ export function GiftsDashboard({
                 {isRTL ? "ביטול" : "Cancel"}
               </Button>
               <Button onClick={handleSaveSettings} disabled={isSavingSettings}>
-                {isSavingSettings && <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />}
+                {isSavingSettings && <Icons.spinner className="me-2 h-4 w-4 animate-spin" />}
                 {isRTL ? "שמור" : "Save"}
               </Button>
             </DialogFooter>
@@ -439,7 +439,7 @@ export function GiftsDashboard({
               disabled={isDeleting}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              {isDeleting && <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />}
+              {isDeleting && <Icons.spinner className="me-2 h-4 w-4 animate-spin" />}
               {isRTL ? "מחק" : "Delete"}
             </AlertDialogAction>
           </AlertDialogFooter>

@@ -119,7 +119,7 @@ export function AddVenueBlockDialog({ eventId, open: controlledOpen, onOpenChang
       {!isControlled && (
         <DialogTrigger asChild>
           <Button variant="outline">
-            <Icons.add className="mr-2 h-4 w-4" />
+            <Icons.add className="me-2 h-4 w-4" />
             {t("venueBlocks.add")}
           </Button>
         </DialogTrigger>
@@ -213,7 +213,7 @@ export function AddVenueBlockDialog({ eventId, open: controlledOpen, onOpenChang
               </Button>
               <Button type="submit" disabled={isLoading}>
                 {isLoading && (
-                  <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
+                  <Icons.spinner className="me-2 h-4 w-4 animate-spin" />
                 )}
                 {tc("create")}
               </Button>

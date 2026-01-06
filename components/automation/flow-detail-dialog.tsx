@@ -410,21 +410,21 @@ export function FlowDetailDialog({
                   value="overview"
                   className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent"
                 >
-                  <Settings className="h-4 w-4 mr-2" />
+                  <Settings className="h-4 w-4 me-2" />
                   {isRTL ? "הגדרות" : "Settings"}
                 </TabsTrigger>
                 <TabsTrigger
                   value="message"
                   className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent"
                 >
-                  <MessageSquare className="h-4 w-4 mr-2" />
+                  <MessageSquare className="h-4 w-4 me-2" />
                   {isRTL ? "הודעה" : "Message"}
                 </TabsTrigger>
                 <TabsTrigger
                   value="history"
                   className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent"
                 >
-                  <History className="h-4 w-4 mr-2" />
+                  <History className="h-4 w-4 me-2" />
                   {isRTL ? "היסטוריה" : "History"}
                   {flow.stats.total > 0 && (
                     <Badge variant="secondary" className="ml-2 h-5 px-1.5">
@@ -501,20 +501,20 @@ export function FlowDetailDialog({
                     </h3>
                     {!isEditing ? (
                       <Button variant="outline" size="sm" onClick={() => setIsEditing(true)}>
-                        <Edit3 className="h-4 w-4 mr-2" />
+                        <Edit3 className="h-4 w-4 me-2" />
                         {isRTL ? "עריכה" : "Edit"}
                       </Button>
                     ) : (
                       <div className="flex gap-2">
                         <Button variant="outline" size="sm" onClick={() => setIsEditing(false)}>
-                          <X className="h-4 w-4 mr-2" />
+                          <X className="h-4 w-4 me-2" />
                           {isRTL ? "ביטול" : "Cancel"}
                         </Button>
                         <Button size="sm" onClick={handleSave} disabled={isSaving}>
                           {isSaving ? (
-                            <Icons.spinner className="h-4 w-4 mr-2 animate-spin" />
+                            <Icons.spinner className="h-4 w-4 me-2 animate-spin" />
                           ) : (
-                            <Save className="h-4 w-4 mr-2" />
+                            <Save className="h-4 w-4 me-2" />
                           )}
                           {isRTL ? "שמור" : "Save"}
                         </Button>
@@ -616,26 +616,26 @@ export function FlowDetailDialog({
                   <div className="grid grid-cols-2 gap-3">
                     {flow.status === "ACTIVE" ? (
                       <Button variant="outline" onClick={() => handleStatusChange("PAUSED")}>
-                        <Pause className="h-4 w-4 mr-2" />
+                        <Pause className="h-4 w-4 me-2" />
                         {isRTL ? "השהה" : "Pause"}
                       </Button>
                     ) : (
                       <Button onClick={() => handleStatusChange("ACTIVE")}>
-                        <Play className="h-4 w-4 mr-2" />
+                        <Play className="h-4 w-4 me-2" />
                         {isRTL ? "הפעל" : "Activate"}
                       </Button>
                     )}
 
                     {flow.stats.failed > 0 && (
                       <Button variant="outline" onClick={handleRetryFailed}>
-                        <RotateCcw className="h-4 w-4 mr-2" />
+                        <RotateCcw className="h-4 w-4 me-2" />
                         {isRTL ? `נסה שוב (${flow.stats.failed})` : `Retry Failed (${flow.stats.failed})`}
                       </Button>
                     )}
 
                     {flow.stats.pending > 0 && (
                       <Button variant="outline" onClick={handleCancelPending}>
-                        <Ban className="h-4 w-4 mr-2" />
+                        <Ban className="h-4 w-4 me-2" />
                         {isRTL ? `בטל ממתינים (${flow.stats.pending})` : `Cancel Pending (${flow.stats.pending})`}
                       </Button>
                     )}
@@ -643,7 +643,7 @@ export function FlowDetailDialog({
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
                         <Button variant="destructive">
-                          <Trash2 className="h-4 w-4 mr-2" />
+                          <Trash2 className="h-4 w-4 me-2" />
                           {isRTL ? "מחק" : "Delete"}
                         </Button>
                       </AlertDialogTrigger>
@@ -682,7 +682,7 @@ export function FlowDetailDialog({
                       size="sm"
                       onClick={() => setShowPreview(!showPreview)}
                     >
-                      <Eye className="h-4 w-4 mr-2" />
+                      <Eye className="h-4 w-4 me-2" />
                       {showPreview
                         ? (isRTL ? "הסתר תצוגה מקדימה" : "Hide Preview")
                         : (isRTL ? "תצוגה מקדימה" : "Preview")}
@@ -751,9 +751,9 @@ export function FlowDetailDialog({
                   {/* Save Button */}
                   <Button onClick={handleSave} disabled={isSaving} className="w-full">
                     {isSaving ? (
-                      <Icons.spinner className="h-4 w-4 mr-2 animate-spin" />
+                      <Icons.spinner className="h-4 w-4 me-2 animate-spin" />
                     ) : (
-                      <Save className="h-4 w-4 mr-2" />
+                      <Save className="h-4 w-4 me-2" />
                     )}
                     {isRTL ? "שמור הודעה" : "Save Message"}
                   </Button>
@@ -767,7 +767,7 @@ export function FlowDetailDialog({
                     {isRTL ? "היסטוריית הרצות" : "Execution History"}
                   </h3>
                   <Button variant="outline" size="sm" onClick={loadFlow}>
-                    <RefreshCw className="h-4 w-4 mr-2" />
+                    <RefreshCw className="h-4 w-4 me-2" />
                     {isRTL ? "רענן" : "Refresh"}
                   </Button>
                 </div>

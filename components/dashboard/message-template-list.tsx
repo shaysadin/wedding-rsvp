@@ -195,7 +195,7 @@ export function MessageTemplateList({
           </p>
         </div>
         <Button variant="outline" onClick={handleResetDefaults} disabled={isPending}>
-          <Icons.trash className="mr-2 h-4 w-4" />
+          <Icons.trash className="me-2 h-4 w-4" />
           {t("resetToDefaults")}
         </Button>
       </div>
@@ -425,7 +425,7 @@ export function MessageTemplateList({
                         className="w-full"
                         onClick={() => handleEdit(template)}
                       >
-                        <Icons.edit className="mr-2 h-4 w-4" />
+                        <Icons.edit className="me-2 h-4 w-4" />
                         {t("editTemplate")}
                       </Button>
                     </div>
@@ -453,7 +453,7 @@ export function MessageTemplateList({
                           setIsEditorOpen(true);
                         }}
                       >
-                        <Icons.add className="mr-2 h-4 w-4" />
+                        <Icons.add className="me-2 h-4 w-4" />
                         {t("createTemplate")}
                       </Button>
                     </div>

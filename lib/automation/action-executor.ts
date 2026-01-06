@@ -3,6 +3,41 @@ import { AutomationContext, ExecutionResult } from "./types";
 import { prisma } from "@/lib/db";
 
 /**
+ * Format phone number to international format (E.164)
+ * Handles Israeli local numbers (05xxxxxxxx) -> +9725xxxxxxxx
+ */
+function formatPhoneNumber(phone: string): string {
+  // Remove all non-digit characters except leading +
+  let cleaned = phone.replace(/[^\d+]/g, "");
+
+  // If already has + prefix and looks valid, return as-is
+  if (cleaned.startsWith("+") && cleaned.length >= 10) {
+    return cleaned;
+  }
+
+  // Remove leading + if present for processing
+  cleaned = cleaned.replace(/^\+/, "");
+
+  // Israeli mobile numbers: 05xxxxxxxx (10 digits)
+  if (cleaned.startsWith("05") && cleaned.length === 10) {
+    return `+972${cleaned.substring(1)}`;
+  }
+
+  // Israeli numbers starting with 0 (other formats)
+  if (cleaned.startsWith("0") && cleaned.length >= 9 && cleaned.length <= 10) {
+    return `+972${cleaned.substring(1)}`;
+  }
+
+  // If starts with 972, add +
+  if (cleaned.startsWith("972") && cleaned.length >= 12) {
+    return `+${cleaned}`;
+  }
+
+  // Default: add + prefix
+  return `+${cleaned}`;
+}
+
+/**
  * Replace message variables with actual values
  */
 function replaceMessageVariables(
@@ -63,6 +98,13 @@ export async function executeAction(
 
     case "SEND_TABLE_ASSIGNMENT":
       return sendTableAssignment(context);
+
+    // Event Day & Thank You Actions
+    case "SEND_WHATSAPP_EVENT_DAY":
+      return sendEventDayReminder(context);
+
+    case "SEND_WHATSAPP_THANK_YOU":
+      return sendThankYouMessage(context);
 
     // Custom Message Actions
     case "SEND_CUSTOM_WHATSAPP":
@@ -127,63 +169,81 @@ async function sendWhatsAppWithTemplate(
       };
     }
 
-    // Get event details for RSVP link
+    // Get event details
     const event = await prisma.weddingEvent.findUnique({
       where: { id: weddingEventId },
     });
 
-    const guest = await prisma.guest.findUnique({
-      where: { id: guestId },
-    });
-
-    if (!event || !guest) {
+    if (!event) {
       return {
         success: false,
-        message: "Event or guest not found",
+        message: "Event not found",
         errorCode: "NOT_FOUND",
       };
     }
 
-    // Build RSVP URL
+    // For test mode, use context values; otherwise fetch guest
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://rsvp.app";
-    const rsvpUrl = `${baseUrl}/rsvp/${guest.slug}`;
+    let rsvpUrl: string;
 
-    // Send via Twilio
-    const accountSid = providerSettings.smsApiKey;
-    const authToken = providerSettings.smsApiSecret;
+    if (guestId.startsWith("test-")) {
+      // Test mode - use provided context values
+      rsvpUrl = context.rsvpLink || `${baseUrl}/rsvp/test-preview`;
+    } else {
+      const guest = await prisma.guest.findUnique({
+        where: { id: guestId },
+      });
+
+      if (!guest) {
+        return {
+          success: false,
+          message: "Guest not found",
+          errorCode: "NOT_FOUND",
+        };
+      }
+      rsvpUrl = `${baseUrl}/rsvp/${guest.slug}`;
+    }
+
+    // Send via Twilio - use WhatsApp credentials
+    const accountSid = providerSettings.whatsappApiKey;
+    const authToken = providerSettings.whatsappApiSecret;
     const fromNumber = providerSettings.whatsappPhoneNumber;
 
     if (!accountSid || !authToken || !fromNumber) {
       return {
         success: false,
-        message: "Twilio credentials not configured",
+        message: "WhatsApp credentials not configured",
         errorCode: "NO_CREDENTIALS",
       };
     }
 
     const twilio = require("twilio")(accountSid, authToken);
 
+    const formattedPhone = formatPhoneNumber(guestPhone);
     const message = await twilio.messages.create({
       contentSid: templateSid,
       contentVariables: JSON.stringify({
-        1: guestName,
-        2: rsvpUrl,
+        "1": guestName,           // {{1}} = guest name
+        "2": event.title,         // {{2}} = event title
+        "3": rsvpUrl,             // {{3}} = RSVP link
       }),
       from: `whatsapp:${fromNumber}`,
-      to: `whatsapp:${guestPhone}`,
+      to: `whatsapp:${formattedPhone}`,
     });
 
-    // Log the notification
-    await prisma.notificationLog.create({
-      data: {
-        guestId,
-        type: "REMINDER",
-        channel: "WHATSAPP",
-        status: "SENT",
-        sentAt: new Date(),
-        providerResponse: message.sid,
-      },
-    });
+    // Log the notification (skip for test guests)
+    if (!guestId.startsWith("test-")) {
+      await prisma.notificationLog.create({
+        data: {
+          guestId,
+          type: "REMINDER",
+          channel: "WHATSAPP",
+          status: "SENT",
+          sentAt: new Date(),
+          providerResponse: message.sid,
+        },
+      });
+    }
 
     return {
       success: true,
@@ -255,23 +315,26 @@ async function sendCustomWhatsApp(
 
     // Note: Free-form WhatsApp messages only work within 24-hour session window
     // Outside the window, they will fail and need approved templates
+    const formattedPhone = formatPhoneNumber(guestPhone);
     const message = await twilio.messages.create({
       body: messageBody,
       from: `whatsapp:${fromNumber}`,
-      to: `whatsapp:${guestPhone}`,
+      to: `whatsapp:${formattedPhone}`,
     });
 
-    // Log the notification
-    await prisma.notificationLog.create({
-      data: {
-        guestId,
-        type: "REMINDER",
-        channel: "WHATSAPP",
-        status: "SENT",
-        sentAt: new Date(),
-        providerResponse: message.sid,
-      },
-    });
+    // Log the notification (skip for test guests)
+    if (!guestId.startsWith("test-")) {
+      await prisma.notificationLog.create({
+        data: {
+          guestId,
+          type: "REMINDER",
+          channel: "WHATSAPP",
+          status: "SENT",
+          sentAt: new Date(),
+          providerResponse: message.sid,
+        },
+      });
+    }
 
     return {
       success: true,
@@ -342,9 +405,10 @@ async function sendCustomSms(
 
     const twilio = require("twilio")(accountSid, authToken);
 
+    const formattedPhone = formatPhoneNumber(guestPhone);
     const messageParams: any = {
       body: messageBody,
-      to: guestPhone,
+      to: formattedPhone,
     };
 
     if (messagingServiceSid) {
@@ -355,17 +419,19 @@ async function sendCustomSms(
 
     const message = await twilio.messages.create(messageParams);
 
-    // Log the notification
-    await prisma.notificationLog.create({
-      data: {
-        guestId,
-        type: "REMINDER",
-        channel: "SMS",
-        status: "SENT",
-        sentAt: new Date(),
-        providerResponse: message.sid,
-      },
-    });
+    // Log the notification (skip for test guests)
+    if (!guestId.startsWith("test-")) {
+      await prisma.notificationLog.create({
+        data: {
+          guestId,
+          type: "REMINDER",
+          channel: "SMS",
+          status: "SENT",
+          sentAt: new Date(),
+          providerResponse: message.sid,
+        },
+      });
+    }
 
     return {
       success: true,
@@ -455,23 +521,26 @@ async function sendSmsReminder(
 
     const twilio = require("twilio")(accountSid, authToken);
 
+    const formattedPhone = formatPhoneNumber(guestPhone);
     const smsMessage = await twilio.messages.create({
       body: message,
       messagingServiceSid,
-      to: guestPhone,
+      to: formattedPhone,
     });
 
-    // Log the notification
-    await prisma.notificationLog.create({
-      data: {
-        guestId,
-        type: "REMINDER",
-        channel: "SMS",
-        status: "SENT",
-        sentAt: new Date(),
-        providerResponse: smsMessage.sid,
-      },
-    });
+    // Log the notification (skip for test guests)
+    if (!guestId.startsWith("test-")) {
+      await prisma.notificationLog.create({
+        data: {
+          guestId,
+          type: "REMINDER",
+          channel: "SMS",
+          status: "SENT",
+          sentAt: new Date(),
+          providerResponse: smsMessage.sid,
+        },
+      });
+    }
 
     return {
       success: true,
@@ -585,23 +654,26 @@ async function sendTableAssignment(
 
     const twilio = require("twilio")(accountSid, authToken);
 
+    const formattedPhone = formatPhoneNumber(guestPhone);
     const message = await twilio.messages.create({
       body: messageBody,
       from: `whatsapp:${fromNumber}`,
-      to: `whatsapp:${guestPhone}`,
+      to: `whatsapp:${formattedPhone}`,
     });
 
-    // Log the notification
-    await prisma.notificationLog.create({
-      data: {
-        guestId,
-        type: "CONFIRMATION",
-        channel: "WHATSAPP",
-        status: "SENT",
-        sentAt: new Date(),
-        providerResponse: message.sid,
-      },
-    });
+    // Log the notification (skip for test guests)
+    if (!guestId.startsWith("test-")) {
+      await prisma.notificationLog.create({
+        data: {
+          guestId,
+          type: "TABLE_ASSIGNMENT",
+          channel: "WHATSAPP",
+          status: "SENT",
+          sentAt: new Date(),
+          providerResponse: message.sid,
+        },
+      });
+    }
 
     return {
       success: true,
@@ -612,6 +684,302 @@ async function sendTableAssignment(
     return {
       success: false,
       message: error instanceof Error ? error.message : "Failed to send table assignment",
+      errorCode: "SEND_FAILED",
+    };
+  }
+}
+
+/**
+ * Send Event Day reminder with table, address, navigation, and gift link
+ * Uses WhatsApp template with variables
+ */
+async function sendEventDayReminder(
+  context: AutomationContext
+): Promise<ExecutionResult> {
+  const {
+    guestId,
+    guestName,
+    guestPhone,
+    weddingEventId,
+    tableName,
+    eventLocation,
+    eventVenue,
+  } = context;
+
+  if (!guestPhone) {
+    return {
+      success: false,
+      message: "Guest has no phone number",
+      errorCode: "NO_PHONE",
+    };
+  }
+
+  try {
+    // Get messaging provider settings
+    const providerSettings = await prisma.messagingProviderSettings.findFirst();
+
+    if (!providerSettings?.whatsappEnabled) {
+      return {
+        success: false,
+        message: "WhatsApp messaging not enabled",
+        errorCode: "WHATSAPP_DISABLED",
+      };
+    }
+
+    const templateSid = providerSettings.whatsappEventDayContentSid;
+
+    if (!templateSid) {
+      return {
+        success: false,
+        message: "Event Day WhatsApp template not configured. Please configure it in Admin > Messaging Settings.",
+        errorCode: "NO_TEMPLATE",
+      };
+    }
+
+    // Get event with RSVP settings and guest info
+    const event = await prisma.weddingEvent.findUnique({
+      where: { id: weddingEventId },
+      include: {
+        rsvpPageSettings: true,
+      },
+    });
+
+    if (!event) {
+      return {
+        success: false,
+        message: "Event not found",
+        errorCode: "NOT_FOUND",
+      };
+    }
+
+    // Get guest for table assignment and slug (for per-guest gift link)
+    let guestTableName = tableName;
+    let guestSlug: string | null = null;
+
+    if (!guestId.startsWith("test-")) {
+      const guest = await prisma.guest.findUnique({
+        where: { id: guestId },
+        include: {
+          tableAssignment: {
+            include: {
+              table: true,
+            },
+          },
+        },
+      });
+      if (!guestTableName) {
+        guestTableName = guest?.tableAssignment?.table?.name || null;
+      }
+      guestSlug = guest?.slug || null;
+    } else {
+      // For test mode, use a test slug
+      guestSlug = "test-preview";
+    }
+
+    // Build navigation URL (prefer Google Maps, fallback to Waze)
+    let navigationUrl = "";
+    if (event.rsvpPageSettings?.googleMapsUrl) {
+      navigationUrl = event.rsvpPageSettings.googleMapsUrl;
+    } else if (event.rsvpPageSettings?.wazeUrl) {
+      navigationUrl = event.rsvpPageSettings.wazeUrl;
+    }
+
+    // Build per-guest gift link (each guest has their own gift link using their slug)
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://rsvp.app";
+    let giftLink = "";
+    if (guestSlug) {
+      // Check if gift payments are enabled for this event
+      const giftSettings = await prisma.giftPaymentSettings.findUnique({
+        where: { weddingEventId: weddingEventId },
+      });
+      if (giftSettings?.isEnabled) {
+        giftLink = `${baseUrl}/gift/${guestSlug}`;
+      }
+    }
+
+    // Build venue/address display
+    const venueDisplay = eventVenue || event.venue || eventLocation || "המקום";
+    const addressDisplay = eventLocation || "";
+
+    // Send via Twilio with template
+    const accountSid = providerSettings.smsApiKey;
+    const authToken = providerSettings.smsApiSecret;
+    const fromNumber = providerSettings.whatsappPhoneNumber;
+
+    if (!accountSid || !authToken || !fromNumber) {
+      return {
+        success: false,
+        message: "Twilio credentials not configured",
+        errorCode: "NO_CREDENTIALS",
+      };
+    }
+
+    const twilio = require("twilio")(accountSid, authToken);
+
+    const formattedPhone = formatPhoneNumber(guestPhone);
+
+    // Template variables for Event Day:
+    // {{1}} = guest name
+    // {{2}} = wedding/event name
+    // {{3}} = table name
+    // {{4}} = venue/address
+    // {{5}} = navigation link
+    // {{6}} = gift link
+    const message = await twilio.messages.create({
+      contentSid: templateSid,
+      contentVariables: JSON.stringify({
+        "1": guestName,
+        "2": event.title,
+        "3": guestTableName || "טרם שובץ",
+        "4": `${venueDisplay}${addressDisplay ? ` - ${addressDisplay}` : ""}`,
+        "5": navigationUrl || "לא זמין",
+        "6": giftLink || "לא זמין",
+      }),
+      from: `whatsapp:${fromNumber}`,
+      to: `whatsapp:${formattedPhone}`,
+    });
+
+    // Log the notification (skip for test guests)
+    if (!guestId.startsWith("test-")) {
+      await prisma.notificationLog.create({
+        data: {
+          guestId,
+          type: "EVENT_DAY",
+          channel: "WHATSAPP",
+          status: "SENT",
+          sentAt: new Date(),
+          providerResponse: message.sid,
+        },
+      });
+    }
+
+    return {
+      success: true,
+      message: `Event day reminder sent: ${message.sid}`,
+    };
+  } catch (error) {
+    console.error("Error sending event day reminder:", error);
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : "Failed to send event day reminder",
+      errorCode: "SEND_FAILED",
+    };
+  }
+}
+
+/**
+ * Send Thank You message from the couple (day after event)
+ * Uses WhatsApp template
+ */
+async function sendThankYouMessage(
+  context: AutomationContext
+): Promise<ExecutionResult> {
+  const {
+    guestId,
+    guestName,
+    guestPhone,
+    weddingEventId,
+  } = context;
+
+  if (!guestPhone) {
+    return {
+      success: false,
+      message: "Guest has no phone number",
+      errorCode: "NO_PHONE",
+    };
+  }
+
+  try {
+    // Get messaging provider settings
+    const providerSettings = await prisma.messagingProviderSettings.findFirst();
+
+    if (!providerSettings?.whatsappEnabled) {
+      return {
+        success: false,
+        message: "WhatsApp messaging not enabled",
+        errorCode: "WHATSAPP_DISABLED",
+      };
+    }
+
+    const templateSid = providerSettings.whatsappThankYouContentSid;
+
+    if (!templateSid) {
+      return {
+        success: false,
+        message: "Thank You WhatsApp template not configured. Please configure it in Admin > Messaging Settings.",
+        errorCode: "NO_TEMPLATE",
+      };
+    }
+
+    // Get event for couple names
+    const event = await prisma.weddingEvent.findUnique({
+      where: { id: weddingEventId },
+    });
+
+    if (!event) {
+      return {
+        success: false,
+        message: "Event not found",
+        errorCode: "NOT_FOUND",
+      };
+    }
+
+    // Build couple name display
+    const coupleName = context.coupleName || event.title || "החתן והכלה";
+
+    // Send via Twilio with template
+    const accountSid = providerSettings.smsApiKey;
+    const authToken = providerSettings.smsApiSecret;
+    const fromNumber = providerSettings.whatsappPhoneNumber;
+
+    if (!accountSid || !authToken || !fromNumber) {
+      return {
+        success: false,
+        message: "Twilio credentials not configured",
+        errorCode: "NO_CREDENTIALS",
+      };
+    }
+
+    const twilio = require("twilio")(accountSid, authToken);
+
+    const formattedPhone = formatPhoneNumber(guestPhone);
+
+    // Template variables for Thank You:
+    // {{1}} = guest name
+    // {{2}} = couple name / event title
+    const message = await twilio.messages.create({
+      contentSid: templateSid,
+      contentVariables: JSON.stringify({
+        "1": guestName,
+        "2": coupleName,
+      }),
+      from: `whatsapp:${fromNumber}`,
+      to: `whatsapp:${formattedPhone}`,
+    });
+
+    // Log the notification (skip for test guests)
+    if (!guestId.startsWith("test-")) {
+      await prisma.notificationLog.create({
+        data: {
+          guestId,
+          type: "THANK_YOU",
+          channel: "WHATSAPP",
+          status: "SENT",
+          sentAt: new Date(),
+          providerResponse: message.sid,
+        },
+      });
+    }
+
+    return {
+      success: true,
+      message: `Thank you message sent: ${message.sid}`,
+    };
+  } catch (error) {
+    console.error("Error sending thank you message:", error);
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : "Failed to send thank you message",
       errorCode: "SEND_FAILED",
     };
   }

@@ -6,7 +6,7 @@ import { useDropzone } from "react-dropzone";
 import { toast } from "sonner";
 import Image from "next/image";
 
-import { uploadInvitationImage, deleteInvitationImage } from "@/actions/invitations";
+import { uploadInvitationImage, deleteInvitationImage } from "@/actions/upload";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -131,12 +131,12 @@ export function InvitationImageUpload({
                 <Button variant="outline" disabled={isUploading}>
                   {isUploading ? (
                     <>
-                      <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
+                      <Icons.spinner className="me-2 h-4 w-4 animate-spin" />
                       {t("uploadProgress")}
                     </>
                   ) : (
                     <>
-                      <Icons.upload className="mr-2 h-4 w-4" />
+                      <Icons.upload className="me-2 h-4 w-4" />
                       {t("changeImage")}
                     </>
                   )}
@@ -148,9 +148,9 @@ export function InvitationImageUpload({
                 disabled={isDeleting}
               >
                 {isDeleting ? (
-                  <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
+                  <Icons.spinner className="me-2 h-4 w-4 animate-spin" />
                 ) : (
-                  <Icons.trash className="mr-2 h-4 w-4" />
+                  <Icons.trash className="me-2 h-4 w-4" />
                 )}
                 {t("deleteImage")}
               </Button>

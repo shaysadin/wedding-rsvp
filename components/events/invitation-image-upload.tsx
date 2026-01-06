@@ -113,12 +113,9 @@ export function InvitationImageUpload({ eventId, currentImageUrl }: InvitationIm
       <DialogTrigger asChild>
         <Button
           variant={previewUrl ? "outline" : "default"}
-          size="sm"
-          className={`h-8 shrink-0 gap-1.5 px-2.5 text-xs sm:h-9 sm:gap-2 sm:px-3 sm:text-sm ${
-            !previewUrl ? "bg-purple-600 hover:bg-purple-700 text-white" : ""
-          }`}
+          className={!previewUrl ? "bg-purple-600 hover:bg-purple-700 text-white" : ""}
         >
-          <Icons.media className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+          <Icons.media className="me-2 h-4 w-4" />
           {previewUrl
             ? (isRTL ? "תמונת הזמנה ✓" : "Invitation Image ✓")
             : (isRTL ? "העלה תמונת הזמנה" : "Upload Invitation")}

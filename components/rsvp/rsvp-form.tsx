@@ -168,12 +168,23 @@ export function RsvpForm({ guest, event, existingRsvp, settings, locale = "he" }
     <form onSubmit={handleSubmit} className="space-y-6" dir={isRTL ? "rtl" : "ltr"}>
       {/* Welcome Section */}
       <div className="text-center">
-        <h1 className="text-2xl font-bold">
+        <h1
+          className="font-bold"
+          style={{
+            fontSize: settings?.titleFontSize ? `${settings.titleFontSize}px` : "24px",
+            color: settings?.titleTextColor || undefined,
+            fontWeight: settings?.titleFontWeight || 700,
+          }}
+        >
           {settings?.welcomeTitle || event.title}
         </h1>
         <p
-          className="mt-2 text-muted"
-          style={{ color: settings?.subtitleTextColor || undefined }}
+          className="mt-2"
+          style={{
+            color: settings?.subtitleTextColor || undefined,
+            fontSize: settings?.subtitleFontSize ? `${settings.subtitleFontSize}px` : "14px",
+            fontWeight: settings?.subtitleFontWeight || 400,
+          }}
         >
           {settings?.welcomeMessage || (isRTL
             ? `שלום ${guest.name}, נשמח לדעת אם תוכלו להגיע לאירוע שלנו`
@@ -203,14 +214,19 @@ export function RsvpForm({ guest, event, existingRsvp, settings, locale = "he" }
         // Individual Date Text Colors
         dateDayOfWeekColor={settings?.dateDayOfWeekColor || undefined}
         dateDayOfWeekFontSize={settings?.dateDayOfWeekFontSize || 11}
+        dateDayOfWeekFontWeight={settings?.dateDayOfWeekFontWeight || 500}
         dateDayNumberColor={settings?.dateDayNumberColor || undefined}
+        dateDayFontWeight={settings?.dateDayFontWeight || 700}
         dateMonthYearColor={settings?.dateMonthYearColor || undefined}
+        dateMonthFontWeight={settings?.dateMonthFontWeight || 500}
         // Time Section
         timeFontSize={settings?.timeFontSize || 14}
+        timeFontWeight={settings?.timeFontWeight || 600}
         timeSectionTextColor={settings?.timeSectionTextColor || undefined}
         timeIconColor={settings?.timeIconColor || undefined}
         // Address Section
         addressFontSize={settings?.addressFontSize || 13}
+        addressFontWeight={settings?.addressFontWeight || 500}
         addressSectionTextColor={settings?.addressSectionTextColor || undefined}
         addressIconColor={settings?.addressIconColor || undefined}
         // Countdown
@@ -218,7 +234,9 @@ export function RsvpForm({ guest, event, existingRsvp, settings, locale = "he" }
         countdownBoxTextColor={settings?.countdownBoxTextColor || settings?.accentColor || "#1a1a1a"}
         countdownLabelColor={settings?.countdownLabelColor || undefined}
         countdownNumberFontSize={settings?.countdownNumberFontSize || 18}
+        countdownNumberFontWeight={settings?.countdownNumberFontWeight || 700}
         countdownLabelFontSize={settings?.countdownLabelFontSize || 9}
+        countdownLabelFontWeight={settings?.countdownLabelFontWeight || 500}
         countdownBoxSize={44}
       />
 
@@ -230,10 +248,15 @@ export function RsvpForm({ guest, event, existingRsvp, settings, locale = "he" }
               href={getGoogleMapsUrl()}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex flex-1 items-center justify-center gap-2 rounded-xl border bg-card px-4 py-3 text-sm font-medium hover:bg-accent transition-colors"
+              className="flex flex-1 items-center justify-center gap-2 border bg-card px-4 py-3 hover:opacity-80 transition-opacity"
               style={{
-                borderColor: settings?.inputBorderColor || "#e5e7eb",
-                backgroundColor: settings?.inputBackgroundColor || "#fafafa",
+                borderColor: settings?.navButtonBorderColor || settings?.inputBorderColor || "#e5e7eb",
+                backgroundColor: settings?.navButtonBackground || settings?.inputBackgroundColor || "#fafafa",
+                color: settings?.navButtonTextColor || "#374151",
+                borderRadius: settings?.navButtonBorderRadius ? `${settings.navButtonBorderRadius}px` : "12px",
+                fontSize: settings?.navButtonFontSize ? `${settings.navButtonFontSize}px` : "14px",
+                fontWeight: settings?.navButtonFontWeight || 500,
+                borderWidth: settings?.navButtonBorderWidth ? `${settings.navButtonBorderWidth}px` : "1px",
               }}
             >
               <Icons.mapPin className="h-4 w-4" style={{ color: accentColor }} />
@@ -245,10 +268,15 @@ export function RsvpForm({ guest, event, existingRsvp, settings, locale = "he" }
               href={getWazeUrl()}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex flex-1 items-center justify-center gap-2 rounded-xl border bg-card px-4 py-3 text-sm font-medium hover:bg-accent transition-colors"
+              className="flex flex-1 items-center justify-center gap-2 border bg-card px-4 py-3 hover:opacity-80 transition-opacity"
               style={{
-                borderColor: settings?.inputBorderColor || "#e5e7eb",
-                backgroundColor: settings?.inputBackgroundColor || "#fafafa",
+                borderColor: settings?.navButtonBorderColor || settings?.inputBorderColor || "#e5e7eb",
+                backgroundColor: settings?.navButtonBackground || settings?.inputBackgroundColor || "#fafafa",
+                color: settings?.navButtonTextColor || "#374151",
+                borderRadius: settings?.navButtonBorderRadius ? `${settings.navButtonBorderRadius}px` : "12px",
+                fontSize: settings?.navButtonFontSize ? `${settings.navButtonFontSize}px` : "14px",
+                fontWeight: settings?.navButtonFontWeight || 500,
+                borderWidth: settings?.navButtonBorderWidth ? `${settings.navButtonBorderWidth}px` : "1px",
               }}
             >
               <Icons.mapPin className="h-4 w-4" style={{ color: accentColor }} />

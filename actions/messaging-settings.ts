@@ -33,6 +33,12 @@ export interface MessagingSettingsInput {
   whatsappInteractiveInviteText?: string | null;
   whatsappInteractiveReminderText?: string | null;
 
+  // Event Day & Thank You Templates
+  whatsappEventDayContentSid?: string | null;
+  whatsappEventDayTemplateText?: string | null;
+  whatsappThankYouContentSid?: string | null;
+  whatsappThankYouTemplateText?: string | null;
+
   // SMS Config
   smsProvider?: string | null;
   smsApiKey?: string | null;
@@ -145,6 +151,20 @@ export async function updateMessagingSettings(input: MessagingSettingsInput) {
     }
     if (input.whatsappInteractiveReminderText !== undefined) {
       updateData.whatsappInteractiveReminderText = input.whatsappInteractiveReminderText;
+    }
+
+    // Event Day & Thank You Templates
+    if ((input as any).whatsappEventDayContentSid !== undefined) {
+      updateData.whatsappEventDayContentSid = (input as any).whatsappEventDayContentSid;
+    }
+    if ((input as any).whatsappEventDayTemplateText !== undefined) {
+      updateData.whatsappEventDayTemplateText = (input as any).whatsappEventDayTemplateText;
+    }
+    if ((input as any).whatsappThankYouContentSid !== undefined) {
+      updateData.whatsappThankYouContentSid = (input as any).whatsappThankYouContentSid;
+    }
+    if ((input as any).whatsappThankYouTemplateText !== undefined) {
+      updateData.whatsappThankYouTemplateText = (input as any).whatsappThankYouTemplateText;
     }
 
     // SMS fields

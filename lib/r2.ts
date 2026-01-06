@@ -122,13 +122,34 @@ export async function deleteFromR2(key: string): Promise<void> {
 
 /**
  * Get public URL for an R2 object
- * For permanent files (invitations, templates), uses long-lived signed URL (1 year)
+ * Uses the R2 public domain for permanent URLs (no expiration)
+ *
+ * Requires CLOUDFLARE_R2_PUBLIC_DOMAIN env variable to be set.
+ * To get this:
+ * 1. Go to Cloudflare Dashboard > R2 > Your Bucket > Settings
+ * 2. Under "Public Access", click "Allow Access"
+ * 3. Copy the public URL (e.g., https://pub-xxx.r2.dev)
+ * 4. Set CLOUDFLARE_R2_PUBLIC_DOMAIN=https://pub-xxx.r2.dev in your .env
+ *
  * @param key - The object key (path) in the bucket
- * @returns A public URL for the object
+ * @returns A permanent public URL for the object
  */
 export async function getPublicR2Url(key: string): Promise<string> {
-  // For invitations and templates, we want long-lived URLs (1 year)
-  // This is more secure than making the bucket public
-  const ONE_YEAR = 365 * 24 * 60 * 60; // 1 year in seconds
-  return await getSignedR2Url(key, ONE_YEAR);
+  const publicDomain = process.env.CLOUDFLARE_R2_PUBLIC_DOMAIN;
+
+  if (publicDomain) {
+    // Use permanent public URL (no expiration)
+    // Remove trailing slash if present
+    const domain = publicDomain.replace(/\/$/, "");
+    return `${domain}/${key}`;
+  }
+
+  // Fallback to signed URL (7 days max)
+  // This is a temporary solution until public access is configured
+  console.warn(
+    "[R2] CLOUDFLARE_R2_PUBLIC_DOMAIN not set. Using signed URL (expires in 7 days). " +
+    "For permanent URLs, enable public access on your R2 bucket."
+  );
+  const SEVEN_DAYS = 7 * 24 * 60 * 60;
+  return await getSignedR2Url(key, SEVEN_DAYS);
 }

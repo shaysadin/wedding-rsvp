@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { getLocale } from "next-intl/server";
 import { UserRole } from "@prisma/client";
 
-import { sidebarLinks } from "@/config/dashboard";
+import { sidebarLinks, adminLinks } from "@/config/dashboard";
 import { getCurrentUser } from "@/lib/session";
 import { prisma } from "@/lib/db";
 import { SearchCommand } from "@/components/dashboard/search-command";
@@ -10,6 +10,7 @@ import {
   DashboardSidebar,
   MobileSheetSidebar,
 } from "@/components/layout/dashboard-sidebar";
+import { MobileBottomNav } from "@/components/layout/mobile-bottom-nav";
 import { ModeToggle } from "@/components/layout/mode-toggle";
 import { LanguageSwitcher } from "@/components/layout/language-switcher";
 import { UserAccountNav } from "@/components/layout/user-account-nav";
@@ -56,12 +57,17 @@ export default async function ProtectedLayout({ children }: ProtectedLayoutProps
     userEvents = events;
   }
 
-  const filteredLinks = sidebarLinks.map((section) => ({
+  // Combine admin links (for platform owners) with regular sidebar links
+  const allLinks = currentRole === UserRole.ROLE_PLATFORM_OWNER
+    ? [...adminLinks, ...sidebarLinks]
+    : sidebarLinks;
+
+  const filteredLinks = allLinks.map((section) => ({
     ...section,
     items: section.items.filter(
       ({ authorizeOnly }) => !authorizeOnly || authorizeOnly === currentRole,
     ),
-  }));
+  })).filter((section) => section.items.length > 0);
 
   // Check if user can switch roles (has multiple roles)
   const canSwitchRoles = userRoles.length > 1;
@@ -75,8 +81,8 @@ export default async function ProtectedLayout({ children }: ProtectedLayoutProps
         availableRoles={userRoles}
       />
 
-      <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border bg-background shadow-md p-2 m-3">
-        <header className="shrink-0 flex h-14 justify-between items-center border-b px-3 lg:h-[60px] xl:px-3">
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden md:rounded-xl md:border bg-background md:shadow-md md:p-2 md:m-3">
+        <header className="shrink-0 flex h-14 justify-between items-center border-b lg:h-[60px] pe-3">
           <MaxWidthWrapper className="flex justify-between w-full items-center gap-x-3 px-0">
             <MobileSheetSidebar
               links={filteredLinks}
@@ -90,19 +96,22 @@ export default async function ProtectedLayout({ children }: ProtectedLayoutProps
             </div>
 
             <div className="flex items-center flex-row-reverse">
-            <LanguageSwitcher />
-            <ModeToggle />
-            <UserAccountNav />
+              <LanguageSwitcher />
+              <ModeToggle />
+              <UserAccountNav />
             </div>
           </MaxWidthWrapper>
         </header>
 
-        <main className="flex min-h-0 flex-1 p-3 flex-col overflow-y-auto md:overflow-hidden">
-          <MaxWidthWrapper className="flex w-full min-h-0 flex-1 flex-col gap-4 px-0 lg:gap-6">
+        <main className="flex min-h-0 flex-1 flex-col overflow-auto md:overflow-hidden">
+          <MaxWidthWrapper className="flex w-full min-h-0 flex-1 flex-col gap-4 lg:gap-6">
             {children}
           </MaxWidthWrapper>
         </main>
       </div>
+
+      {/* Mobile Bottom Navigation */}
+      <MobileBottomNav currentRole={currentRole} />
     </div>
   );
 }

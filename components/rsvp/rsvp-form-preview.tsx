@@ -150,19 +150,22 @@ export function RsvpFormPreview({ settings, event, locale }: RsvpFormPreviewProp
             {/* Header Section */}
             <div className="text-center space-y-2">
               <h1
-                className="font-bold tracking-tight"
+                className="tracking-tight"
                 style={{
                   fontSize: settings.titleFontSize ? `${settings.titleFontSize}px` : "24px",
                   lineHeight: 1.2,
+                  color: settings.titleTextColor || undefined,
+                  fontWeight: settings.titleFontWeight || 700,
                 }}
               >
                 {settings.welcomeTitle || event.title}
               </h1>
               <p
-                className="text-muted-foreground leading-relaxed"
+                className="leading-relaxed"
                 style={{
                   color: settings.subtitleTextColor || undefined,
                   fontSize: settings.subtitleFontSize ? `${settings.subtitleFontSize}px` : "14px",
+                  fontWeight: settings.subtitleFontWeight || 400,
                 }}
               >
                 {settings.welcomeMessage || (isRTL
@@ -193,14 +196,19 @@ export function RsvpFormPreview({ settings, event, locale }: RsvpFormPreviewProp
               // Individual Date Text Colors
               dateDayOfWeekColor={settings.dateDayOfWeekColor || undefined}
               dateDayOfWeekFontSize={settings.dateDayOfWeekFontSize || 11}
+              dateDayOfWeekFontWeight={settings.dateDayOfWeekFontWeight || 500}
               dateDayNumberColor={settings.dateDayNumberColor || undefined}
+              dateDayFontWeight={settings.dateDayFontWeight || 700}
               dateMonthYearColor={settings.dateMonthYearColor || undefined}
+              dateMonthFontWeight={settings.dateMonthFontWeight || 500}
               // Time Section
               timeFontSize={settings.timeFontSize || 14}
+              timeFontWeight={settings.timeFontWeight || 600}
               timeSectionTextColor={settings.timeSectionTextColor || undefined}
               timeIconColor={settings.timeIconColor || undefined}
               // Address Section
               addressFontSize={settings.addressFontSize || 13}
+              addressFontWeight={settings.addressFontWeight || 500}
               addressSectionTextColor={settings.addressSectionTextColor || undefined}
               addressIconColor={settings.addressIconColor || undefined}
               // Countdown
@@ -208,7 +216,9 @@ export function RsvpFormPreview({ settings, event, locale }: RsvpFormPreviewProp
               countdownBoxTextColor={settings.countdownBoxTextColor || accentColor}
               countdownLabelColor={settings.countdownLabelColor || undefined}
               countdownNumberFontSize={settings.countdownNumberFontSize || 18}
+              countdownNumberFontWeight={settings.countdownNumberFontWeight || 700}
               countdownLabelFontSize={settings.countdownLabelFontSize || 9}
+              countdownLabelFontWeight={settings.countdownLabelFontWeight || 500}
               countdownBoxSize={44}
             />
 
@@ -217,11 +227,15 @@ export function RsvpFormPreview({ settings, event, locale }: RsvpFormPreviewProp
               <div className="flex gap-3">
                 {settings.showGoogleMaps !== false && (
                   <div
-                    className="flex flex-1 items-center justify-center gap-2 rounded-xl border px-4 py-3 text-sm font-medium"
+                    className="flex flex-1 items-center justify-center gap-2 border px-4 py-3"
                     style={{
-                      borderColor: settings.inputBorderColor || "#e5e7eb",
-                      backgroundColor: "#fafafa",
-                      color: "#374151",
+                      borderColor: settings.navButtonBorderColor || settings.inputBorderColor || "#e5e7eb",
+                      backgroundColor: settings.navButtonBackground || "#fafafa",
+                      color: settings.navButtonTextColor || "#374151",
+                      borderRadius: settings.navButtonBorderRadius ? `${settings.navButtonBorderRadius}px` : "12px",
+                      fontSize: settings.navButtonFontSize ? `${settings.navButtonFontSize}px` : "14px",
+                      fontWeight: settings.navButtonFontWeight || 500,
+                      borderWidth: settings.navButtonBorderWidth ? `${settings.navButtonBorderWidth}px` : "1px",
                     }}
                   >
                     <Icons.mapPin className="h-4 w-4" style={{ color: accentColor }} />
@@ -230,11 +244,15 @@ export function RsvpFormPreview({ settings, event, locale }: RsvpFormPreviewProp
                 )}
                 {settings.showWaze !== false && (
                   <div
-                    className="flex flex-1 items-center justify-center gap-2 rounded-xl border px-4 py-3 text-sm font-medium"
+                    className="flex flex-1 items-center justify-center gap-2 border px-4 py-3"
                     style={{
-                      borderColor: settings.inputBorderColor || "#e5e7eb",
-                      backgroundColor: "#fafafa",
-                      color: "#374151",
+                      borderColor: settings.navButtonBorderColor || settings.inputBorderColor || "#e5e7eb",
+                      backgroundColor: settings.navButtonBackground || "#fafafa",
+                      color: settings.navButtonTextColor || "#374151",
+                      borderRadius: settings.navButtonBorderRadius ? `${settings.navButtonBorderRadius}px` : "12px",
+                      fontSize: settings.navButtonFontSize ? `${settings.navButtonFontSize}px` : "14px",
+                      fontWeight: settings.navButtonFontWeight || 500,
+                      borderWidth: settings.navButtonBorderWidth ? `${settings.navButtonBorderWidth}px` : "1px",
                     }}
                   >
                     <Icons.mapPin className="h-4 w-4" style={{ color: accentColor }} />

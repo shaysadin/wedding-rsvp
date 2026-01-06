@@ -112,15 +112,27 @@ export function SearchCommand({ links, userEvents = [] }: SearchCommandProps) {
 
   return (
     <>
+      {/* Mobile: Icon button only */}
+      <Button
+        variant="ghost"
+        size="icon"
+        className="md:hidden size-9 shrink-0"
+        onClick={() => setOpen(true)}
+      >
+        <Icons.search className="h-5 w-5" />
+        <span className="sr-only">{isRTL ? "חיפוש" : "Search"}</span>
+      </Button>
+
+      {/* Desktop: Full search bar */}
       <Button
         variant="outline"
         className={cn(
-          "relative h-9 w-full justify-start rounded-md bg-muted/50 text-sm font-normal text-muted-foreground shadow-none sm:pr-12 md:w-72 lg:w-96",
+          "relative h-9 w-full justify-start rounded-md bg-muted/50 text-sm font-normal text-muted-foreground shadow-none sm:pr-12 md:w-72 lg:w-96 hidden md:flex",
           isRTL && "flex-row-reverse sm:pl-12 sm:pr-3"
         )}
         onClick={() => setOpen(true)}
       >
-        <Icons.search className={cn("h-4 w-4 shrink-0", isRTL ? "ml-2" : "mr-2")} />
+        <Icons.search className="h-4 w-4 shrink-0 me-2" />
         <span className={cn("truncate", isRTL && "text-right")}>
           {isRTL ? "חיפוש..." : "Search..."}
         </span>
@@ -155,7 +167,7 @@ export function SearchCommand({ links, userEvents = [] }: SearchCommandProps) {
                   }}
                   className={cn(isRTL && "flex-row-reverse")}
                 >
-                  <Icon className={cn("size-4", isRTL ? "ml-2" : "mr-2")} />
+                  <Icon className="size-4 me-2" />
                   <span>{action.title}</span>
                 </CommandItem>
               );
@@ -176,7 +188,7 @@ export function SearchCommand({ links, userEvents = [] }: SearchCommandProps) {
                     }}
                     className={cn(isRTL && "flex-row-reverse")}
                   >
-                    <Icons.calendar className={cn("size-4", isRTL ? "ml-2" : "mr-2")} />
+                    <Icons.calendar className={cn("size-4", isRTL ? "ms-2" : "me-2")} />
                     <span>{event.title}</span>
                   </CommandItem>
                 ))}
@@ -200,7 +212,7 @@ export function SearchCommand({ links, userEvents = [] }: SearchCommandProps) {
                       }}
                       className={cn(isRTL && "flex-row-reverse")}
                     >
-                      <Icon className={cn("size-4", isRTL ? "ml-2" : "mr-2")} />
+                      <Icon className={cn("size-4", isRTL ? "ms-2" : "me-2")} />
                       <span>{action.title}</span>
                     </CommandItem>
                   );
@@ -225,7 +237,7 @@ export function SearchCommand({ links, userEvents = [] }: SearchCommandProps) {
                     }}
                     className={cn(isRTL && "flex-row-reverse")}
                   >
-                    <Icon className={cn("size-4", isRTL ? "ml-2" : "mr-2")} />
+                    <Icon className={cn("size-4", isRTL ? "ms-2" : "me-2")} />
                     <span>{title}</span>
                   </CommandItem>
                 );

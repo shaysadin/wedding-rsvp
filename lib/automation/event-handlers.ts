@@ -67,14 +67,26 @@ export async function onRsvpStatusChanged(data: RsvpEventData): Promise<void> {
  * Called when an invitation or reminder is sent to a guest
  */
 export async function onNotificationSent(data: NotificationSentEventData): Promise<void> {
-  const { guestId, weddingEventId, sentAt } = data;
+  const { guestId, weddingEventId, notificationType, sentAt } = data;
+
+  console.log(`[onNotificationSent] Processing for guest ${guestId}, type: ${notificationType}`);
 
   // Find active "no response" flows for this event
+  // Include both legacy triggers and new flexible triggers
   const noResponseFlows = await prisma.automationFlow.findMany({
     where: {
       weddingEventId,
       trigger: {
-        in: ["NO_RESPONSE_24H", "NO_RESPONSE_48H", "NO_RESPONSE_72H"],
+        in: [
+          // New flexible triggers
+          "NO_RESPONSE_WHATSAPP",
+          "NO_RESPONSE_SMS",
+          "NO_RESPONSE",
+          // Legacy triggers (backward compatibility)
+          "NO_RESPONSE_24H",
+          "NO_RESPONSE_48H",
+          "NO_RESPONSE_72H",
+        ],
       },
       status: "ACTIVE",
     },
@@ -82,6 +94,8 @@ export async function onNotificationSent(data: NotificationSentEventData): Promi
       weddingEvent: true,
     },
   });
+
+  console.log(`[onNotificationSent] Found ${noResponseFlows.length} no-response flows`);
 
   // Get guest's current RSVP status
   const guest = await prisma.guest.findUnique({
@@ -91,16 +105,21 @@ export async function onNotificationSent(data: NotificationSentEventData): Promi
 
   // Only schedule if RSVP is still pending
   if (!guest || guest.rsvp?.status !== "PENDING") {
+    console.log(`[onNotificationSent] Guest not pending, skipping. Status: ${guest?.rsvp?.status}`);
     return;
   }
 
   // Schedule executions for each flow
   for (const flow of noResponseFlows) {
+    // For flexible triggers, use delayHours from the flow
     const scheduledFor = calculateScheduledTime(
       flow.trigger,
       flow.weddingEvent.dateTime,
-      sentAt
+      sentAt,
+      flow.delayHours // Pass delayHours for flexible triggers
     );
+
+    console.log(`[onNotificationSent] Flow ${flow.id} (${flow.trigger}): scheduledFor = ${scheduledFor}`);
 
     if (scheduledFor && scheduledFor > new Date()) {
       // Check if execution already exists
@@ -120,10 +139,11 @@ export async function onNotificationSent(data: NotificationSentEventData): Promi
             where: { id: existing.id },
             data: { scheduledFor },
           });
+          console.log(`[onNotificationSent] Updated execution ${existing.id}`);
         }
       } else {
         // Create new execution
-        await prisma.automationFlowExecution.create({
+        const newExecution = await prisma.automationFlowExecution.create({
           data: {
             flowId: flow.id,
             guestId,
@@ -131,6 +151,7 @@ export async function onNotificationSent(data: NotificationSentEventData): Promi
             scheduledFor,
           },
         });
+        console.log(`[onNotificationSent] Created execution ${newExecution.id} scheduled for ${scheduledFor}`);
       }
     }
   }
@@ -191,13 +212,19 @@ export async function onFlowActivated(flowId: string): Promise<void> {
     const scheduledFor = calculateScheduledTime(
       flow.trigger,
       flow.weddingEvent.dateTime,
-      lastNotification
+      lastNotification,
+      flow.delayHours // Pass delayHours for flexible triggers
     );
 
     // Check eligibility based on trigger type
     let isEligible = false;
 
     switch (flow.trigger) {
+      // New flexible no-response triggers
+      case "NO_RESPONSE_WHATSAPP":
+      case "NO_RESPONSE_SMS":
+      case "NO_RESPONSE":
+      // Legacy no-response triggers
       case "NO_RESPONSE_24H":
       case "NO_RESPONSE_48H":
       case "NO_RESPONSE_72H":
@@ -205,8 +232,19 @@ export async function onFlowActivated(flowId: string): Promise<void> {
         isEligible = guest.rsvp?.status === "PENDING" && lastNotification !== null;
         break;
 
+      // Before event triggers
+      case "BEFORE_EVENT":
+      case "EVENT_DAY_MORNING":
       case "EVENT_MORNING":
       case "HOURS_BEFORE_EVENT_2":
+        // Only for confirmed guests
+        isEligible = guest.rsvp?.status === "ACCEPTED";
+        break;
+
+      // After event triggers
+      case "AFTER_EVENT":
+      case "DAY_AFTER_MORNING":
+      case "DAY_AFTER_EVENT":
         // Only for confirmed guests
         isEligible = guest.rsvp?.status === "ACCEPTED";
         break;
@@ -341,7 +379,16 @@ async function cancelPendingNoResponseExecutions(guestId: string): Promise<void>
       status: "PENDING",
       flow: {
         trigger: {
-          in: ["NO_RESPONSE_24H", "NO_RESPONSE_48H", "NO_RESPONSE_72H"],
+          in: [
+            // New flexible triggers
+            "NO_RESPONSE_WHATSAPP",
+            "NO_RESPONSE_SMS",
+            "NO_RESPONSE",
+            // Legacy triggers
+            "NO_RESPONSE_24H",
+            "NO_RESPONSE_48H",
+            "NO_RESPONSE_72H",
+          ],
         },
       },
     },

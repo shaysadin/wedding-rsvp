@@ -88,7 +88,7 @@ export default function BentoGrid() {
                   </p>
                 </div>
               </div>
-              <div className="relative -mb-10 mr-2 mt-8 h-fit rounded-tl-xl border bg-muted/30 pt-6 sm:-ml-[1.5rem] sm:mt-auto">
+              <div className="relative -mb-10 me-2 mt-8 h-fit rounded-tl-xl border bg-muted/30 pt-6 sm:-ml-[1.5rem] sm:mt-auto">
                 <div className="absolute left-3 top-2 flex gap-1">
                   <span className="block size-2 rounded-full border border-border bg-green-500"></span>
                   <span className="block size-2 rounded-full border border-border bg-yellow-500"></span>

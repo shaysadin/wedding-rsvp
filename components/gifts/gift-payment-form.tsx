@@ -222,12 +222,12 @@ export function GiftPaymentForm({
         >
           {isSubmitting ? (
             <>
-              <Icons.spinner className="mr-2 h-5 w-5 animate-spin" />
+              <Icons.spinner className="me-2 h-5 w-5 animate-spin" />
               {isRTL ? "מעבד..." : "Processing..."}
             </>
           ) : (
             <>
-              <Icons.creditCard className="mr-2 h-5 w-5" />
+              <Icons.creditCard className="me-2 h-5 w-5" />
               {isRTL ? "המשך לתשלום" : "Continue to Payment"}
             </>
           )}

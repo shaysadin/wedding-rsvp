@@ -177,12 +177,12 @@ export function SyncDataSection({ eventId, syncStatus, onSync }: SyncDataSection
           <Button onClick={handleSync} disabled={isSyncing}>
             {isSyncing ? (
               <>
-                <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
+                <Icons.spinner className="me-2 h-4 w-4 animate-spin" />
                 {t("syncing")}
               </>
             ) : (
               <>
-                <Icons.refresh className="mr-2 h-4 w-4" />
+                <Icons.refresh className="me-2 h-4 w-4" />
                 {syncStatus?.lastSyncAt ? t("resync") : t("syncNow")}
               </>
             )}
@@ -193,7 +193,7 @@ export function SyncDataSection({ eventId, syncStatus, onSync }: SyncDataSection
               <Dialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen}>
                 <DialogTrigger asChild>
                   <Button variant="outline" onClick={handlePreview}>
-                    <Icons.eye className="mr-2 h-4 w-4" />
+                    <Icons.eye className="me-2 h-4 w-4" />
                     {t("preview")}
                   </Button>
                 </DialogTrigger>
@@ -230,7 +230,7 @@ export function SyncDataSection({ eventId, syncStatus, onSync }: SyncDataSection
               <AlertDialog>
                 <AlertDialogTrigger asChild>
                   <Button variant="outline" className="text-destructive hover:text-destructive">
-                    <Icons.trash className="mr-2 h-4 w-4" />
+                    <Icons.trash className="me-2 h-4 w-4" />
                     {t("clear")}
                   </Button>
                 </AlertDialogTrigger>
@@ -248,7 +248,7 @@ export function SyncDataSection({ eventId, syncStatus, onSync }: SyncDataSection
                       disabled={isClearing}
                       className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                     >
-                      {isClearing && <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />}
+                      {isClearing && <Icons.spinner className="me-2 h-4 w-4 animate-spin" />}
                       {t("clearConfirm")}
                     </AlertDialogAction>
                   </AlertDialogFooter>

@@ -27,16 +27,9 @@ interface TemplateField {
   fieldType: InvitationFieldType;
   label: string;
   labelHe: string | null;
-  positionX: number;
-  positionY: number;
-  fontSize: number;
-  fontFamily: string;
-  fontWeight: string;
-  textColor: string;
-  textAlign: string;
-  maxWidth: number | null;
+  placeholder: string | null;
   isRequired: boolean;
-  defaultValue: string | null;
+  originalValue: string;
   sortOrder: number;
 }
 
@@ -55,11 +48,27 @@ interface TemplateEditorPageProps {
 
 const FIELD_TYPES: { value: InvitationFieldType; labelEn: string; labelHe: string }[] = [
   { value: "GUEST_NAME", labelEn: "Guest Name", labelHe: "שם האורח" },
-  { value: "COUPLE_NAMES", labelEn: "Couple Names", labelHe: "שמות הזוג" },
+  { value: "COUPLE_NAMES", labelEn: "Couple Names", labelHe: "שמות בני הזוג" },
+  { value: "COUPLE_NAMES_ENGLISH", labelEn: "Couple Names (English)", labelHe: "שמות בני הזוג (אנגלית)" },
+  { value: "COUPLE_NAMES_HEBREW", labelEn: "Couple Names (Hebrew)", labelHe: "שמות בני הזוג (עברית)" },
   { value: "EVENT_DATE", labelEn: "Event Date", labelHe: "תאריך האירוע" },
+  { value: "EVENT_DATE_HEBREW", labelEn: "Hebrew Date", labelHe: "תאריך עברי" },
+  { value: "DAY_OF_WEEK", labelEn: "Day of Week", labelHe: "יום בשבוע" },
   { value: "EVENT_TIME", labelEn: "Event Time", labelHe: "שעת האירוע" },
-  { value: "VENUE_NAME", labelEn: "Venue", labelHe: "מקום האירוע" },
-  { value: "CUSTOM", labelEn: "Custom", labelHe: "מותאם" },
+  { value: "RECEPTION_TIME", labelEn: "Reception Time", labelHe: "שעת קבלת פנים" },
+  { value: "CEREMONY_TIME", labelEn: "Ceremony Time", labelHe: "שעת הטקס" },
+  { value: "VENUE_NAME", labelEn: "Venue Name", labelHe: "שם האולם" },
+  { value: "VENUE_ADDRESS", labelEn: "Venue Address", labelHe: "כתובת האולם" },
+  { value: "STREET_ADDRESS", labelEn: "Street Address", labelHe: "רחוב" },
+  { value: "CITY", labelEn: "City", labelHe: "עיר" },
+  { value: "BRIDE_PARENTS", labelEn: "Bride's Parents", labelHe: "הורי הכלה" },
+  { value: "GROOM_PARENTS", labelEn: "Groom's Parents", labelHe: "הורי החתן" },
+  { value: "BRIDE_FAMILY", labelEn: "Bride's Family", labelHe: "משפחת הכלה" },
+  { value: "GROOM_FAMILY", labelEn: "Groom's Family", labelHe: "משפחת החתן" },
+  { value: "EVENT_TYPE", labelEn: "Event Type", labelHe: "סוג האירוע" },
+  { value: "INVITATION_TEXT", labelEn: "Invitation Text", labelHe: "טקסט ההזמנה" },
+  { value: "BLESSING_QUOTE", labelEn: "Blessing/Quote", labelHe: "ברכה/ציטוט" },
+  { value: "CUSTOM", labelEn: "Custom Field", labelHe: "שדה מותאם" },
 ];
 
 const FONT_FAMILIES = ["Heebo", "Assistant", "Arial", "Times New Roman"];
@@ -85,16 +94,8 @@ export default function TemplateEditorPage({ params }: TemplateEditorPageProps) 
     fieldType: "GUEST_NAME" as InvitationFieldType,
     label: "",
     labelHe: "",
-    positionX: 50,
-    positionY: 50,
-    fontSize: 24,
-    fontFamily: "Heebo",
-    fontWeight: "normal",
-    textColor: "#000000",
-    textAlign: "center",
-    maxWidth: 400,
     isRequired: true,
-    defaultValue: "",
+    originalValue: "",
   });
 
   // Resolve params
@@ -141,16 +142,8 @@ export default function TemplateEditorPage({ params }: TemplateEditorPageProps) 
         fieldType: newField.fieldType,
         label: newField.label,
         labelHe: newField.labelHe || undefined,
-        positionX: newField.positionX,
-        positionY: newField.positionY,
-        fontSize: newField.fontSize,
-        fontFamily: newField.fontFamily,
-        fontWeight: newField.fontWeight,
-        textColor: newField.textColor,
-        textAlign: newField.textAlign,
-        maxWidth: newField.maxWidth || undefined,
         isRequired: newField.isRequired,
-        defaultValue: newField.defaultValue || undefined,
+        originalValue: newField.originalValue || "",
       });
 
       if (result.error) {
@@ -162,16 +155,8 @@ export default function TemplateEditorPage({ params }: TemplateEditorPageProps) 
           fieldType: "GUEST_NAME",
           label: "",
           labelHe: "",
-          positionX: 50,
-          positionY: 50,
-          fontSize: 24,
-          fontFamily: "Heebo",
-          fontWeight: "normal",
-          textColor: "#000000",
-          textAlign: "center",
-          maxWidth: 400,
           isRequired: true,
-          defaultValue: "",
+          originalValue: "",
         });
         loadTemplate();
       }
@@ -187,16 +172,11 @@ export default function TemplateEditorPage({ params }: TemplateEditorPageProps) 
 
     try {
       const result = await updateTemplateField(editingField.id, {
-        positionX: editingField.positionX,
-        positionY: editingField.positionY,
-        fontSize: editingField.fontSize,
-        fontFamily: editingField.fontFamily,
-        fontWeight: editingField.fontWeight,
-        textColor: editingField.textColor,
-        textAlign: editingField.textAlign,
-        maxWidth: editingField.maxWidth || undefined,
+        fieldType: editingField.fieldType,
+        label: editingField.label,
+        labelHe: editingField.labelHe || undefined,
         isRequired: editingField.isRequired,
-        defaultValue: editingField.defaultValue || undefined,
+        originalValue: editingField.originalValue || "",
       });
 
       if (result.error) {
@@ -307,98 +287,19 @@ export default function TemplateEditorPage({ params }: TemplateEditorPageProps) 
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>{isRTL ? "מיקום X (%)" : "Position X (%)"}</Label>
-                    <Input
-                      type="number"
-                      min="0"
-                      max="100"
-                      value={newField.positionX}
-                      onChange={(e) => setNewField({ ...newField, positionX: Number(e.target.value) })}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>{isRTL ? "מיקום Y (%)" : "Position Y (%)"}</Label>
-                    <Input
-                      type="number"
-                      min="0"
-                      max="100"
-                      value={newField.positionY}
-                      onChange={(e) => setNewField({ ...newField, positionY: Number(e.target.value) })}
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-3 gap-4">
-                  <div className="space-y-2">
-                    <Label>{isRTL ? "גודל גופן" : "Font Size"}</Label>
-                    <Input
-                      type="number"
-                      min="8"
-                      max="72"
-                      value={newField.fontSize}
-                      onChange={(e) => setNewField({ ...newField, fontSize: Number(e.target.value) })}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>{isRTL ? "גופן" : "Font Family"}</Label>
-                    <Select
-                      value={newField.fontFamily}
-                      onValueChange={(value) => setNewField({ ...newField, fontFamily: value })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {FONT_FAMILIES.map((font) => (
-                          <SelectItem key={font} value={font}>
-                            {font}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>{isRTL ? "יישור" : "Alignment"}</Label>
-                    <Select
-                      value={newField.textAlign}
-                      onValueChange={(value) => setNewField({ ...newField, textAlign: value })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {TEXT_ALIGNS.map((align) => (
-                          <SelectItem key={align} value={align}>
-                            {align}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>{isRTL ? "צבע טקסט" : "Text Color"}</Label>
-                    <Input
-                      type="color"
-                      value={newField.textColor}
-                      onChange={(e) => setNewField({ ...newField, textColor: e.target.value })}
-                      className="h-10"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>{isRTL ? "רוחב מקסימלי" : "Max Width"}</Label>
-                    <Input
-                      type="number"
-                      min="50"
-                      max="1000"
-                      value={newField.maxWidth}
-                      onChange={(e) => setNewField({ ...newField, maxWidth: Number(e.target.value) })}
-                    />
-                  </div>
+                <div className="space-y-2">
+                  <Label>{isRTL ? "טקסט מקורי בתבנית" : "Original Text in Template"}</Label>
+                  <Input
+                    value={newField.originalValue}
+                    onChange={(e) => setNewField({ ...newField, originalValue: e.target.value })}
+                    placeholder={isRTL ? "הטקסט שיוחלף בתמונה" : "Text to be replaced in image"}
+                    dir="rtl"
+                  />
+                  <p className="text-sm text-muted-foreground">
+                    {isRTL
+                      ? "הזינו את הטקסט המקורי שמופיע בתמונת התבנית ויוחלף בעת יצירת ההזמנה"
+                      : "Enter the original text from the template image that will be replaced when generating invitations"}
+                  </p>
                 </div>
 
                 <div className="flex items-center gap-2">
@@ -407,15 +308,6 @@ export default function TemplateEditorPage({ params }: TemplateEditorPageProps) 
                     onCheckedChange={(checked) => setNewField({ ...newField, isRequired: checked })}
                   />
                   <Label>{isRTL ? "שדה חובה" : "Required Field"}</Label>
-                </div>
-
-                <div className="space-y-2">
-                  <Label>{isRTL ? "ערך ברירת מחדל" : "Default Value"}</Label>
-                  <Input
-                    value={newField.defaultValue}
-                    onChange={(e) => setNewField({ ...newField, defaultValue: e.target.value })}
-                    placeholder={isRTL ? "אופציונלי" : "Optional"}
-                  />
                 </div>
               </div>
 
@@ -457,29 +349,12 @@ export default function TemplateEditorPage({ params }: TemplateEditorPageProps) 
                 </div>
               )}
 
-              {/* Field markers */}
-              {template.fields.map((field) => (
-                <div
-                  key={field.id}
-                  onClick={() => setSelectedFieldId(field.id)}
-                  className={cn(
-                    "absolute cursor-pointer transition-all",
-                    "border-2 border-dashed rounded px-2 py-1",
-                    selectedFieldId === field.id
-                      ? "border-primary bg-primary/20"
-                      : "border-blue-500 bg-blue-500/10 hover:bg-blue-500/20"
-                  )}
-                  style={{
-                    left: `${field.positionX}%`,
-                    top: `${field.positionY}%`,
-                    transform: "translate(-50%, -50%)",
-                    fontSize: `${Math.max(8, field.fontSize / 3)}px`,
-                    color: field.textColor,
-                  }}
-                >
-                  {isRTL && field.labelHe ? field.labelHe : field.label}
+              {/* Field count badge */}
+              {template.fields.length > 0 && (
+                <div className="absolute top-2 right-2 bg-primary text-primary-foreground px-2 py-1 rounded-full text-xs font-medium">
+                  {template.fields.length} {isRTL ? "שדות" : "fields"}
                 </div>
-              ))}
+              )}
             </div>
           </CardContent>
         </Card>
@@ -527,9 +402,11 @@ export default function TemplateEditorPage({ params }: TemplateEditorPageProps) 
                         <div className="text-sm text-muted-foreground">
                           {FIELD_TYPES.find((ft) => ft.value === field.fieldType)?.[isRTL ? "labelHe" : "labelEn"]}
                         </div>
-                        <div className="text-xs text-muted-foreground mt-1">
-                          X: {field.positionX}% | Y: {field.positionY}% | {field.fontSize}px
-                        </div>
+                        {field.originalValue && (
+                          <div className="text-xs text-muted-foreground mt-1">
+                            {isRTL ? "טקסט מקורי:" : "Original text:"} &quot;{field.originalValue}&quot;
+                          </div>
+                        )}
                       </div>
                       <div className="flex gap-1">
                         <Button
@@ -571,112 +448,63 @@ export default function TemplateEditorPage({ params }: TemplateEditorPageProps) 
 
           {editingField && (
             <div className="grid gap-4 py-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>{isRTL ? "מיקום X (%)" : "Position X (%)"}</Label>
-                  <Input
-                    type="number"
-                    min="0"
-                    max="100"
-                    value={editingField.positionX}
-                    onChange={(e) =>
-                      setEditingField({ ...editingField, positionX: Number(e.target.value) })
-                    }
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>{isRTL ? "מיקום Y (%)" : "Position Y (%)"}</Label>
-                  <Input
-                    type="number"
-                    min="0"
-                    max="100"
-                    value={editingField.positionY}
-                    onChange={(e) =>
-                      setEditingField({ ...editingField, positionY: Number(e.target.value) })
-                    }
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-3 gap-4">
-                <div className="space-y-2">
-                  <Label>{isRTL ? "גודל גופן" : "Font Size"}</Label>
-                  <Input
-                    type="number"
-                    min="8"
-                    max="72"
-                    value={editingField.fontSize}
-                    onChange={(e) =>
-                      setEditingField({ ...editingField, fontSize: Number(e.target.value) })
-                    }
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>{isRTL ? "גופן" : "Font Family"}</Label>
-                  <Select
-                    value={editingField.fontFamily}
-                    onValueChange={(value) =>
-                      setEditingField({ ...editingField, fontFamily: value })
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {FONT_FAMILIES.map((font) => (
-                        <SelectItem key={font} value={font}>
-                          {font}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label>{isRTL ? "יישור" : "Alignment"}</Label>
-                  <Select
-                    value={editingField.textAlign}
-                    onValueChange={(value) =>
-                      setEditingField({ ...editingField, textAlign: value })
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {TEXT_ALIGNS.map((align) => (
-                        <SelectItem key={align} value={align}>
-                          {align}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+              <div className="space-y-2">
+                <Label>{isRTL ? "סוג שדה" : "Field Type"}</Label>
+                <Select
+                  value={editingField.fieldType}
+                  onValueChange={(value) =>
+                    setEditingField({ ...editingField, fieldType: value as InvitationFieldType })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {FIELD_TYPES.map((ft) => (
+                      <SelectItem key={ft.value} value={ft.value}>
+                        {isRTL ? ft.labelHe : ft.labelEn}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>{isRTL ? "צבע טקסט" : "Text Color"}</Label>
+                  <Label>{isRTL ? "תווית (אנגלית)" : "Label (English)"}</Label>
                   <Input
-                    type="color"
-                    value={editingField.textColor}
+                    value={editingField.label}
                     onChange={(e) =>
-                      setEditingField({ ...editingField, textColor: e.target.value })
+                      setEditingField({ ...editingField, label: e.target.value })
                     }
-                    className="h-10"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>{isRTL ? "רוחב מקסימלי" : "Max Width"}</Label>
+                  <Label>{isRTL ? "תווית (עברית)" : "Label (Hebrew)"}</Label>
                   <Input
-                    type="number"
-                    min="50"
-                    max="1000"
-                    value={editingField.maxWidth || 0}
+                    value={editingField.labelHe || ""}
                     onChange={(e) =>
-                      setEditingField({ ...editingField, maxWidth: Number(e.target.value) || null })
+                      setEditingField({ ...editingField, labelHe: e.target.value || null })
                     }
+                    dir="rtl"
                   />
                 </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label>{isRTL ? "טקסט מקורי בתבנית" : "Original Text in Template"}</Label>
+                <Input
+                  value={editingField.originalValue}
+                  onChange={(e) =>
+                    setEditingField({ ...editingField, originalValue: e.target.value })
+                  }
+                  dir="rtl"
+                />
+                <p className="text-sm text-muted-foreground">
+                  {isRTL
+                    ? "הטקסט שמופיע בתמונת התבנית ויוחלף בעת יצירת ההזמנה"
+                    : "The text in the template image that will be replaced when generating invitations"}
+                </p>
               </div>
 
               <div className="flex items-center gap-2">

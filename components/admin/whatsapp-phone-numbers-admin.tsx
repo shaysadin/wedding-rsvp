@@ -231,7 +231,7 @@ export function WhatsAppPhoneNumbersAdmin({
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
               <Button onClick={() => handleOpenDialog()}>
-                <Plus className="mr-2 size-4" />
+                <Plus className="me-2 size-4" />
                 Add Phone Number
               </Button>
             </DialogTrigger>
@@ -300,7 +300,7 @@ export function WhatsAppPhoneNumbersAdmin({
                 <Button onClick={handleSubmit} disabled={isPending}>
                   {isPending ? (
                     <>
-                      <Loader2 className="mr-2 size-4 animate-spin" />
+                      <Loader2 className="me-2 size-4 animate-spin" />
                       Saving...
                     </>
                   ) : editingId ? (

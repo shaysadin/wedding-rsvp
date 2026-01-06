@@ -57,6 +57,9 @@ const ACTION_ICONS: Record<AutomationAction, string> = {
   SEND_TABLE_ASSIGNMENT: "🪑",
   SEND_CUSTOM_WHATSAPP: "✏️",
   SEND_CUSTOM_SMS: "📱",
+  // Event Day & Thank You
+  SEND_WHATSAPP_EVENT_DAY: "🎉",
+  SEND_WHATSAPP_THANK_YOU: "💝",
   // Legacy actions
   SEND_WHATSAPP_INTERACTIVE_INVITE: "🔘",
   SEND_WHATSAPP_TEMPLATE: "💬",
@@ -141,7 +144,7 @@ export function TemplateGallery({
                   isRTL ? "כבר קיים" : "Already exists"
                 ) : (
                   <>
-                    <Plus className={cn("h-4 w-4", isRTL ? "ml-2" : "mr-2")} />
+                    <Plus className={cn("h-4 w-4", isRTL ? "ml-2" : "me-2")} />
                     {isRTL ? "הוסף" : "Add"}
                   </>
                 )}

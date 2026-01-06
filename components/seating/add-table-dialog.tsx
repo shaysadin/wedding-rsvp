@@ -97,7 +97,7 @@ export function AddTableDialog({ eventId, open: controlledOpen, onOpenChange }: 
       {!isControlled && (
         <DialogTrigger asChild>
           <Button>
-            <Icons.add className="mr-2 h-4 w-4" />
+            <Icons.add className="me-2 h-4 w-4" />
             {t("addTable")}
           </Button>
         </DialogTrigger>
@@ -184,7 +184,7 @@ export function AddTableDialog({ eventId, open: controlledOpen, onOpenChange }: 
               </Button>
               <Button type="submit" disabled={isLoading}>
                 {isLoading && (
-                  <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
+                  <Icons.spinner className="me-2 h-4 w-4 animate-spin" />
                 )}
                 {tc("create")}
               </Button>

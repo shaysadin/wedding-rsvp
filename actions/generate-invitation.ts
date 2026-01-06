@@ -1,31 +1,34 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { UserRole, InvitationFieldType } from "@prisma/client";
+import { InvitationFieldType } from "@prisma/client";
+
 import { prisma } from "@/lib/db";
 import { getCurrentUser } from "@/lib/session";
-import { generateInvitation, validateFieldValues, type FieldValue } from "@/lib/invitations/generator";
+import { generateInvitationWithAI, InvitationField } from "@/lib/gemini";
 import { uploadToR2, getPublicR2Url } from "@/lib/r2";
 
 /**
- * Generate custom invitation for a wedding event
+ * Generate an invitation using AI
  */
-export async function generateCustomInvitation(params: {
+export async function generateInvitation(input: {
   eventId: string;
   templateId: string;
-  fieldValues: FieldValue[];
+  fieldValues: Array<{
+    fieldType: InvitationFieldType;
+    value: string;
+  }>;
 }) {
   try {
     const user = await getCurrentUser();
-
-    if (!user || user.role !== UserRole.ROLE_WEDDING_OWNER) {
+    if (!user) {
       return { error: "Unauthorized" };
     }
 
     // Verify event ownership
     const event = await prisma.weddingEvent.findFirst({
       where: {
-        id: params.eventId,
+        id: input.eventId,
         ownerId: user.id,
       },
     });
@@ -36,7 +39,7 @@ export async function generateCustomInvitation(params: {
 
     // Get template with fields
     const template = await prisma.invitationTemplate.findUnique({
-      where: { id: params.templateId },
+      where: { id: input.templateId },
       include: {
         fields: {
           orderBy: { sortOrder: "asc" },
@@ -48,106 +51,187 @@ export async function generateCustomInvitation(params: {
       return { error: "Template not found" };
     }
 
-    if (!template.isActive) {
-      return { error: "Template is not active" };
+    if (!template.imageUrl) {
+      return { error: "Template image not found" };
     }
 
-    // Validate field values
-    const validation = validateFieldValues(
-      {
-        ...template,
-        fields: template.fields.map((f) => ({
-          fieldType: f.fieldType,
-          cssClassName: f.cssClassName,
-          fontSize: f.fontSize,
-          fontFamily: f.fontFamily,
-          fontWeight: f.fontWeight,
-          textColor: f.textColor,
-          textAlign: f.textAlign,
-          lineHeight: f.lineHeight,
-          letterSpacing: f.letterSpacing,
-          top: f.top,
-          left: f.left,
-          right: f.right,
-          bottom: f.bottom,
-          width: f.width,
-          maxWidth: f.maxWidth,
-          defaultValue: f.defaultValue,
-        })),
-      },
-      params.fieldValues
-    );
-
-    if (!validation.valid) {
-      return {
-        error: `Missing required fields: ${validation.missingFields.join(", ")}`,
-        missingFields: validation.missingFields,
-      };
+    // Validate required fields
+    const requiredFields = template.fields.filter((f) => f.isRequired);
+    for (const field of requiredFields) {
+      const value = input.fieldValues.find((v) => v.fieldType === field.fieldType);
+      if (!value || !value.value.trim()) {
+        return { error: `Missing required field: ${field.labelHe || field.label}` };
+      }
     }
 
-    // Generate invitation PNG
-    const pngBuffer = await generateInvitation({
-      template: {
-        ...template,
-        fields: template.fields.map((f) => ({
-          fieldType: f.fieldType,
-          cssClassName: f.cssClassName,
-          fontSize: f.fontSize,
-          fontFamily: f.fontFamily,
-          fontWeight: f.fontWeight,
-          textColor: f.textColor,
-          textAlign: f.textAlign,
-          lineHeight: f.lineHeight,
-          letterSpacing: f.letterSpacing,
-          top: f.top,
-          left: f.left,
-          right: f.right,
-          bottom: f.bottom,
-          width: f.width,
-          maxWidth: f.maxWidth,
-          defaultValue: f.defaultValue,
-        })),
-      },
-      fieldValues: params.fieldValues,
+    // Fetch the template image
+    console.log("[generate-invitation] Fetching template image...");
+    const imageResponse = await fetch(template.imageUrl);
+    if (!imageResponse.ok) {
+      return { error: "Failed to fetch template image" };
+    }
+
+    const imageBuffer = await imageResponse.arrayBuffer();
+    const imageBase64 = Buffer.from(imageBuffer).toString("base64");
+    const imageMimeType = imageResponse.headers.get("content-type") || "image/png";
+
+    // Build field replacements for AI
+    const fieldsWithValues = template.fields
+      .map((field) => {
+        const newValue = input.fieldValues.find((v) => v.fieldType === field.fieldType)?.value;
+        if (!newValue) return null;
+
+        return {
+          fieldType: field.fieldType as string,
+          label: field.label,
+          labelHe: field.labelHe || field.label,
+          originalValue: field.originalValue,
+          newValue: newValue,
+        };
+      })
+      .filter((f): f is NonNullable<typeof f> => f !== null);
+
+    const fields: InvitationField[] = fieldsWithValues;
+
+    if (fields.length === 0) {
+      return { error: "No field values provided" };
+    }
+
+    // Generate invitation with AI - use Pro model for final generation
+    console.log("[generate-invitation] Calling Gemini API with Pro model...");
+    const result = await generateInvitationWithAI({
+      templateImageBase64: imageBase64,
+      templateImageMimeType: imageMimeType,
+      fields,
+      imageSize: "2K",
+      useProModel: true, // Use higher quality model for final generation
     });
 
-    // Upload generated PNG to R2
-    const timestamp = Date.now();
-    const pngKey = `generated-invitations/${params.eventId}-${timestamp}.png`;
-    await uploadToR2(pngKey, pngBuffer, "image/png");
-    const pngUrl = await getPublicR2Url(pngKey);
+    if (!result.success || !result.imageBase64) {
+      return { error: result.error || "Failed to generate invitation" };
+    }
 
-    // Save generation record
+    // Upload generated image to R2
+    console.log("[generate-invitation] Uploading to R2...");
+    const timestamp = Date.now();
+    const imageKey = `generated-invitations/${event.id}/${timestamp}.png`;
+    const imageBuffer2 = Buffer.from(result.imageBase64, "base64");
+
+    await uploadToR2(imageKey, imageBuffer2, result.imageMimeType || "image/png");
+    const pngUrl = await getPublicR2Url(imageKey);
+
+    // Save to database (don't auto-set as active - user should choose)
     const generation = await prisma.generatedInvitation.create({
       data: {
-        weddingEventId: params.eventId,
-        templateId: params.templateId,
+        weddingEventId: event.id,
+        templateId: template.id,
         pngUrl,
-        fieldValues: params.fieldValues as any, // Prisma Json type
+        fieldValues: input.fieldValues,
       },
     });
 
-    // Update event with invitation URL
-    await prisma.weddingEvent.update({
-      where: { id: params.eventId },
-      data: {
-        invitationImageUrl: pngUrl,
-      },
-    });
-
-    revalidatePath(`/dashboard/events/${params.eventId}`);
-    revalidatePath(`/dashboard/events/${params.eventId}/invitations`);
+    revalidatePath(`/[locale]/dashboard/events/${event.id}`);
+    revalidatePath(`/[locale]/dashboard/events/${event.id}/invitations`);
 
     return {
       success: true,
       pngUrl,
+      id: generation.id,
       generation,
     };
   } catch (error) {
     console.error("Error generating invitation:", error);
+    return { error: error instanceof Error ? error.message : "Failed to generate invitation" };
+  }
+}
+
+/**
+ * Preview an invitation (without saving)
+ */
+export async function previewInvitation(input: {
+  templateId: string;
+  fieldValues: Array<{
+    fieldType: InvitationFieldType;
+    value: string;
+  }>;
+}) {
+  try {
+    const user = await getCurrentUser();
+    if (!user) {
+      return { error: "Unauthorized" };
+    }
+
+    // Get template with fields
+    const template = await prisma.invitationTemplate.findUnique({
+      where: { id: input.templateId },
+      include: {
+        fields: {
+          orderBy: { sortOrder: "asc" },
+        },
+      },
+    });
+
+    if (!template) {
+      return { error: "Template not found" };
+    }
+
+    if (!template.imageUrl) {
+      return { error: "Template image not found" };
+    }
+
+    // Fetch the template image
+    const imageResponse = await fetch(template.imageUrl);
+    if (!imageResponse.ok) {
+      return { error: "Failed to fetch template image" };
+    }
+
+    const imageBuffer = await imageResponse.arrayBuffer();
+    const imageBase64 = Buffer.from(imageBuffer).toString("base64");
+    const imageMimeType = imageResponse.headers.get("content-type") || "image/png";
+
+    // Build field replacements for AI
+    const previewFieldsWithValues = template.fields
+      .map((field) => {
+        const newValue = input.fieldValues.find((v) => v.fieldType === field.fieldType)?.value;
+        if (!newValue) return null;
+
+        return {
+          fieldType: field.fieldType as string,
+          label: field.label,
+          labelHe: field.labelHe || field.label,
+          originalValue: field.originalValue,
+          newValue: newValue,
+        };
+      })
+      .filter((f): f is NonNullable<typeof f> => f !== null);
+
+    const fields: InvitationField[] = previewFieldsWithValues;
+
+    if (fields.length === 0) {
+      return { error: "No field values provided" };
+    }
+
+    // Generate preview with AI - use faster model for previews
+    console.log("[preview-invitation] Calling Gemini API for preview...");
+    const result = await generateInvitationWithAI({
+      templateImageBase64: imageBase64,
+      templateImageMimeType: imageMimeType,
+      fields,
+      imageSize: "1K", // Lower quality for faster preview
+      useProModel: false, // Use faster model for previews
+    });
+
+    if (!result.success || !result.imageBase64) {
+      return { error: result.error || "Failed to generate preview" };
+    }
+
     return {
-      error: `Failed to generate invitation: ${error instanceof Error ? error.message : "Unknown error"}`,
+      success: true,
+      previewUrl: `data:${result.imageMimeType || "image/png"};base64,${result.imageBase64}`,
     };
+  } catch (error) {
+    console.error("Error generating preview:", error);
+    return { error: error instanceof Error ? error.message : "Failed to generate preview" };
   }
 }
 
@@ -157,8 +241,7 @@ export async function generateCustomInvitation(params: {
 export async function getEventInvitations(eventId: string) {
   try {
     const user = await getCurrentUser();
-
-    if (!user || user.role !== UserRole.ROLE_WEDDING_OWNER) {
+    if (!user) {
       return { error: "Unauthorized" };
     }
 
@@ -181,17 +264,14 @@ export async function getEventInvitations(eventId: string) {
           select: {
             name: true,
             nameHe: true,
-            eventType: true,
+            thumbnailUrl: true,
           },
         },
       },
       orderBy: { createdAt: "desc" },
     });
 
-    return {
-      success: true,
-      invitations,
-    };
+    return { invitations };
   } catch (error) {
     console.error("Error fetching invitations:", error);
     return { error: "Failed to fetch invitations" };
@@ -199,71 +279,371 @@ export async function getEventInvitations(eventId: string) {
 }
 
 /**
- * Preview invitation without saving
+ * Delete a generated invitation
  */
-export async function previewInvitation(params: {
-  templateId: string;
-  fieldValues: FieldValue[];
-}) {
+export async function deleteGeneratedInvitation(invitationId: string) {
   try {
     const user = await getCurrentUser();
-
-    if (!user || user.role !== UserRole.ROLE_WEDDING_OWNER) {
+    if (!user) {
       return { error: "Unauthorized" };
     }
 
-    // Get template
-    const template = await prisma.invitationTemplate.findUnique({
-      where: { id: params.templateId },
+    // Verify ownership through event
+    const invitation = await prisma.generatedInvitation.findFirst({
+      where: { id: invitationId },
       include: {
-        fields: {
-          orderBy: { sortOrder: "asc" },
+        weddingEvent: {
+          select: { ownerId: true, id: true },
         },
       },
     });
 
-    if (!template) {
-      return { error: "Template not found" };
+    if (!invitation || invitation.weddingEvent.ownerId !== user.id) {
+      return { error: "Invitation not found or unauthorized" };
     }
 
-    // Generate preview PNG
-    const pngBuffer = await generateInvitation({
-      template: {
-        ...template,
-        fields: template.fields.map((f) => ({
-          fieldType: f.fieldType,
-          cssClassName: f.cssClassName,
-          fontSize: f.fontSize,
-          fontFamily: f.fontFamily,
-          fontWeight: f.fontWeight,
-          textColor: f.textColor,
-          textAlign: f.textAlign,
-          lineHeight: f.lineHeight,
-          letterSpacing: f.letterSpacing,
-          top: f.top,
-          left: f.left,
-          right: f.right,
-          bottom: f.bottom,
-          width: f.width,
-          maxWidth: f.maxWidth,
-          defaultValue: f.defaultValue,
-        })),
-      },
-      fieldValues: params.fieldValues,
+    await prisma.generatedInvitation.delete({
+      where: { id: invitationId },
     });
 
-    // Convert to base64 for preview
-    const base64 = pngBuffer.toString("base64");
-    const dataUrl = `data:image/png;base64,${base64}`;
-
-    return {
-      success: true,
-      previewUrl: dataUrl,
-    };
+    revalidatePath(`/[locale]/dashboard/events/${invitation.weddingEvent.id}/invitations`);
+    return { success: true };
   } catch (error) {
-    console.error("Error previewing invitation:", error);
-    return {
-      error: `Failed to preview invitation: ${error instanceof Error ? error.message : "Unknown error"}`,
-    };
+    console.error("Error deleting invitation:", error);
+    return { error: "Failed to delete invitation" };
+  }
+}
+
+/**
+ * Get the current invitation image URL for an event
+ */
+export async function getInvitationImage(eventId: string) {
+  try {
+    const user = await getCurrentUser();
+    if (!user) {
+      console.log("[getInvitationImage] No user found");
+      return { error: "Unauthorized" };
+    }
+
+    console.log("[getInvitationImage] Fetching for eventId:", eventId, "userId:", user.id);
+
+    const event = await prisma.weddingEvent.findFirst({
+      where: {
+        id: eventId,
+        ownerId: user.id,
+      },
+      select: {
+        invitationImageUrl: true,
+      },
+    });
+
+    console.log("[getInvitationImage] Event found:", event);
+
+    if (!event) {
+      return { error: "Event not found or unauthorized" };
+    }
+
+    return { imageUrl: event.invitationImageUrl };
+  } catch (error) {
+    console.error("Error fetching invitation image:", error);
+    return { error: "Failed to fetch invitation image" };
+  }
+}
+
+/**
+ * Get guests for invitation sending
+ */
+export async function getGuestsForInvitations(eventId: string) {
+  try {
+    const user = await getCurrentUser();
+    if (!user) {
+      return { error: "Unauthorized" };
+    }
+
+    const event = await prisma.weddingEvent.findFirst({
+      where: {
+        id: eventId,
+        ownerId: user.id,
+      },
+    });
+
+    if (!event) {
+      return { error: "Event not found or unauthorized" };
+    }
+
+    const guests = await prisma.guest.findMany({
+      where: { weddingEventId: eventId },
+      select: {
+        id: true,
+        name: true,
+        phoneNumber: true,
+        side: true,
+        groupName: true,
+        expectedGuests: true,
+        rsvp: {
+          select: {
+            status: true,
+            guestCount: true,
+          },
+        },
+        notificationLogs: {
+          where: { type: "IMAGE_INVITE" },
+          orderBy: { createdAt: "desc" },
+          take: 1,
+          select: {
+            status: true,
+            sentAt: true,
+          },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    // Transform to include invitation status fields
+    const guestsWithInvitationStatus = guests.map((guest) => {
+      const imageInviteLog = guest.notificationLogs[0];
+      return {
+        id: guest.id,
+        name: guest.name,
+        phoneNumber: guest.phoneNumber,
+        side: guest.side,
+        groupName: guest.groupName,
+        expectedGuests: guest.expectedGuests,
+        rsvp: guest.rsvp,
+        imageInvitationSent: imageInviteLog?.status === "SENT",
+        imageInvitationStatus: imageInviteLog?.status || null,
+        imageInvitationSentAt: imageInviteLog?.sentAt || null,
+      };
+    });
+
+    return { guests: guestsWithInvitationStatus };
+  } catch (error) {
+    console.error("Error fetching guests:", error);
+    return { error: "Failed to fetch guests" };
+  }
+}
+
+/**
+ * Send invitation image to a single guest via WhatsApp
+ */
+export async function sendImageInvitation(guestId: string) {
+  try {
+    const user = await getCurrentUser();
+    if (!user) {
+      return { error: "Unauthorized" };
+    }
+
+    const guest = await prisma.guest.findFirst({
+      where: { id: guestId },
+      include: {
+        weddingEvent: {
+          select: {
+            id: true,
+            ownerId: true,
+            invitationImageUrl: true,
+            title: true,
+          },
+        },
+      },
+    });
+
+    if (!guest || guest.weddingEvent.ownerId !== user.id) {
+      return { error: "Guest not found or unauthorized" };
+    }
+
+    if (!guest.phoneNumber) {
+      return { error: "Guest has no phone number" };
+    }
+
+    if (!guest.weddingEvent.invitationImageUrl) {
+      return { error: "No invitation image available" };
+    }
+
+    // Import and use the WhatsApp sending function
+    const { sendWhatsAppImage } = await import("@/lib/notifications/whatsapp");
+
+    const result = await sendWhatsAppImage({
+      to: guest.phoneNumber,
+      imageUrl: guest.weddingEvent.invitationImageUrl,
+      caption: `הזמנה ל${guest.weddingEvent.title}`,
+    });
+
+    if (!result.success) {
+      return { error: result.error || "Failed to send invitation" };
+    }
+
+    // Create notification log entry
+    await prisma.notificationLog.create({
+      data: {
+        guestId: guestId,
+        type: "IMAGE_INVITE",
+        channel: "WHATSAPP",
+        status: "SENT",
+        sentAt: new Date(),
+      },
+    });
+
+    revalidatePath(`/[locale]/dashboard/events/${guest.weddingEvent.id}/invitations`);
+    return { success: true };
+  } catch (error) {
+    console.error("Error sending invitation:", error);
+    return { error: error instanceof Error ? error.message : "Failed to send invitation" };
+  }
+}
+
+/**
+ * Send invitation image to multiple guests via WhatsApp
+ */
+export async function sendBulkImageInvitations(guestIds: string[]) {
+  try {
+    const user = await getCurrentUser();
+    if (!user) {
+      return { error: "Unauthorized" };
+    }
+
+    if (guestIds.length === 0) {
+      return { error: "No guests selected" };
+    }
+
+    // Get all guests and verify ownership
+    const guests = await prisma.guest.findMany({
+      where: { id: { in: guestIds } },
+      include: {
+        weddingEvent: {
+          select: {
+            id: true,
+            ownerId: true,
+            invitationImageUrl: true,
+            title: true,
+          },
+        },
+      },
+    });
+
+    // Verify all guests belong to the user
+    const invalidGuests = guests.filter((g) => g.weddingEvent.ownerId !== user.id);
+    if (invalidGuests.length > 0) {
+      return { error: "Some guests not found or unauthorized" };
+    }
+
+    // Check for invitation image
+    const eventWithImage = guests.find((g) => g.weddingEvent.invitationImageUrl);
+    if (!eventWithImage) {
+      return { error: "No invitation image available" };
+    }
+
+    const { sendWhatsAppImage } = await import("@/lib/notifications/whatsapp");
+
+    let sent = 0;
+    let failed = 0;
+
+    for (const guest of guests) {
+      if (!guest.phoneNumber || !guest.weddingEvent.invitationImageUrl) {
+        failed++;
+        continue;
+      }
+
+      try {
+        const result = await sendWhatsAppImage({
+          to: guest.phoneNumber,
+          imageUrl: guest.weddingEvent.invitationImageUrl,
+          caption: `הזמנה ל${guest.weddingEvent.title}`,
+        });
+
+        if (result.success) {
+          await prisma.notificationLog.create({
+            data: {
+              guestId: guest.id,
+              type: "IMAGE_INVITE",
+              channel: "WHATSAPP",
+              status: "SENT",
+              sentAt: new Date(),
+            },
+          });
+          sent++;
+        } else {
+          failed++;
+        }
+      } catch {
+        failed++;
+      }
+
+      // Small delay to avoid rate limiting
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    }
+
+    const eventId = guests[0]?.weddingEvent.id;
+    if (eventId) {
+      revalidatePath(`/[locale]/dashboard/events/${eventId}/invitations`);
+    }
+
+    return { success: true, sent, failed, total: guests.length };
+  } catch (error) {
+    console.error("Error sending bulk invitations:", error);
+    return { error: error instanceof Error ? error.message : "Failed to send invitations" };
+  }
+}
+
+/**
+ * Set a specific generated invitation as the active one for the event
+ * Uploads to Cloudinary for WhatsApp compatibility
+ */
+export async function setActiveInvitation(invitationId: string) {
+  try {
+    const user = await getCurrentUser();
+    if (!user) {
+      return { error: "Unauthorized" };
+    }
+
+    const invitation = await prisma.generatedInvitation.findFirst({
+      where: { id: invitationId },
+      include: {
+        weddingEvent: {
+          select: { id: true, ownerId: true },
+        },
+      },
+    });
+
+    if (!invitation || invitation.weddingEvent.ownerId !== user.id) {
+      return { error: "Invitation not found or unauthorized" };
+    }
+
+    if (!invitation.pngUrl) {
+      return { error: "Invitation image not found" };
+    }
+
+    // Fetch the image from R2 and upload to Cloudinary
+    // WhatsApp templates require Cloudinary URLs
+    console.log("[setActiveInvitation] Fetching image from R2:", invitation.pngUrl);
+    const imageResponse = await fetch(invitation.pngUrl);
+    if (!imageResponse.ok) {
+      return { error: "Failed to fetch invitation image" };
+    }
+
+    const imageBuffer = await imageResponse.arrayBuffer();
+    const imageBase64 = Buffer.from(imageBuffer).toString("base64");
+    const mimeType = imageResponse.headers.get("content-type") || "image/png";
+
+    // Upload to Cloudinary
+    console.log("[setActiveInvitation] Uploading to Cloudinary...");
+    const { uploadImage } = await import("@/lib/cloudinary");
+    const cloudinaryResult = await uploadImage(
+      `data:${mimeType};base64,${imageBase64}`,
+      `invitations/${invitation.weddingEvent.id}`
+    );
+
+    console.log("[setActiveInvitation] Cloudinary URL:", cloudinaryResult.url);
+
+    // Update event with Cloudinary URL
+    await prisma.weddingEvent.update({
+      where: { id: invitation.weddingEvent.id },
+      data: { invitationImageUrl: cloudinaryResult.url },
+    });
+
+    revalidatePath(`/[locale]/dashboard/events/${invitation.weddingEvent.id}/invitations`);
+    return { success: true, cloudinaryUrl: cloudinaryResult.url };
+  } catch (error) {
+    console.error("Error setting active invitation:", error);
+    return { error: error instanceof Error ? error.message : "Failed to set active invitation" };
   }
 }
