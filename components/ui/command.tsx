@@ -34,9 +34,9 @@ const CommandDialog = ({ children, isRTL, ...props }: CommandDialogProps) => {
         size="auto"
         hideCloseButton
         noWrapper
+        dir={isRTL ? "rtl" : "ltr"}
         className={cn(
-          "overflow-hidden p-0 shadow-2xl sm:min-w-[450px] sm:max-w-[550px]",
-          isRTL && "direction-rtl"
+          "overflow-hidden p-0 shadow-2xl sm:min-w-[450px] sm:max-w-[550px]"
         )}
       >
         <DialogTitle className="sr-only">{isRTL ? "חיפוש" : "Search"}</DialogTitle>
@@ -46,8 +46,7 @@ const CommandDialog = ({ children, isRTL, ...props }: CommandDialogProps) => {
         <Command
           loop
           className={cn(
-            "pointer-events-auto [&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:text-muted-foreground [&_[cmdk-group]:not([hidden])_~[cmdk-group]]:pt-0 [&_[cmdk-group]]:px-2 [&_[cmdk-input-wrapper]_svg]:size-5 [&_[cmdk-input]]:h-12 [&_[cmdk-item]]:px-2 [&_[cmdk-item]]:py-3 [&_[cmdk-item]_svg]:size-5 [&_[cmdk-item]]:cursor-pointer [&_[cmdk-item]]:pointer-events-auto",
-            isRTL && "[&_[cmdk-group-heading]]:text-right"
+            "pointer-events-auto [&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:text-muted-foreground [&_[cmdk-group]:not([hidden])_~[cmdk-group]]:pt-0 [&_[cmdk-group]]:px-2 [&_[cmdk-input-wrapper]_svg]:size-5 [&_[cmdk-input]]:h-12 [&_[cmdk-item]]:px-2 [&_[cmdk-item]]:py-3 [&_[cmdk-item]_svg]:size-5 [&_[cmdk-item]]:cursor-pointer [&_[cmdk-item]]:pointer-events-auto"
           )}
         >
           {children}

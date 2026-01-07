@@ -147,7 +147,6 @@ export function SearchCommand({ links, userEvents = [] }: SearchCommandProps) {
       <CommandDialog open={open} onOpenChange={setOpen} isRTL={isRTL}>
         <CommandInput
           placeholder={isRTL ? "חפש דפים, אירועים, פעולות..." : "Search pages, events, actions..."}
-          className={cn(isRTL && "text-right")}
         />
         <CommandList>
           <CommandEmpty>
@@ -165,7 +164,6 @@ export function SearchCommand({ links, userEvents = [] }: SearchCommandProps) {
                   onSelect={() => {
                     runCommand(() => router.push(action.href));
                   }}
-                  className={cn(isRTL && "flex-row-reverse")}
                 >
                   <Icon className="size-4 me-2" />
                   <span>{action.title}</span>
@@ -186,9 +184,8 @@ export function SearchCommand({ links, userEvents = [] }: SearchCommandProps) {
                     onSelect={() => {
                       runCommand(() => router.push(`/${locale}/dashboard/events/${event.id}`));
                     }}
-                    className={cn(isRTL && "flex-row-reverse")}
                   >
-                    <Icons.calendar className={cn("size-4", isRTL ? "ms-2" : "me-2")} />
+                    <Icons.calendar className="size-4 me-2" />
                     <span>{event.title}</span>
                   </CommandItem>
                 ))}
@@ -210,9 +207,8 @@ export function SearchCommand({ links, userEvents = [] }: SearchCommandProps) {
                       onSelect={() => {
                         runCommand(() => router.push(action.href));
                       }}
-                      className={cn(isRTL && "flex-row-reverse")}
                     >
-                      <Icon className={cn("size-4", isRTL ? "ms-2" : "me-2")} />
+                      <Icon className="size-4 me-2" />
                       <span>{action.title}</span>
                     </CommandItem>
                   );
@@ -235,9 +231,8 @@ export function SearchCommand({ links, userEvents = [] }: SearchCommandProps) {
                     onSelect={() => {
                       runCommand(() => router.push(`/${locale}${item.href}`));
                     }}
-                    className={cn(isRTL && "flex-row-reverse")}
                   >
-                    <Icon className={cn("size-4", isRTL ? "ms-2" : "me-2")} />
+                    <Icon className="size-4 me-2" />
                     <span>{title}</span>
                   </CommandItem>
                 );
@@ -268,6 +263,14 @@ function getHebrewTitle(titleKey: string): string {
     "navigation.voiceAgent": "סוכן קולי",
     "navigation.billing": "חיוב",
     "navigation.settings": "הגדרות",
+    "navigation.rsvp": "אישורי הגעה",
+    "navigation.automations": "אוטומציות",
+    "navigation.tasks": "משימות",
+    "navigation.gifts": "מתנות",
+    "navigation.archives": "ארכיון",
+    "navigation.invitationTemplates": "תבניות הזמנה",
+    "navigation.payments": "תשלומים",
+    "navigation.adminSettings": "הגדרות מערכת",
   };
   return hebrewTitles[titleKey] || titleKey;
 }
