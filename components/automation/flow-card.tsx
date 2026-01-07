@@ -110,8 +110,8 @@ export function FlowCard({ flow, onActivate, onPause, onDelete, onEdit }: FlowCa
       />
 
       <CardHeader className="pb-2">
-        <div className={cn("flex items-start justify-between", isRTL && "flex-row-reverse")}>
-          <div className={cn("space-y-1", isRTL && "text-right")}>
+        <div className="flex items-start justify-between">
+          <div className="space-y-1 text-start">
             <h3 className="text-lg font-semibold">{flow.name}</h3>
             <Badge variant={statusConfig.variant} className="text-xs">
               {isRTL ? statusConfig.label.he : statusConfig.label.en}
@@ -127,18 +127,18 @@ export function FlowCard({ flow, onActivate, onPause, onDelete, onEdit }: FlowCa
             <DropdownMenuContent align={isRTL ? "start" : "end"}>
               {flow.status === "ACTIVE" ? (
                 <DropdownMenuItem onClick={() => onPause(flow.id)}>
-                  <Pause className={cn("h-4 w-4", isRTL ? "ml-2" : "me-2")} />
+                  <Pause className="h-4 w-4 me-2" />
                   {isRTL ? "השהה" : "Pause"}
                 </DropdownMenuItem>
               ) : flow.status !== "ARCHIVED" ? (
                 <DropdownMenuItem onClick={() => onActivate(flow.id)}>
-                  <Play className={cn("h-4 w-4", isRTL ? "ml-2" : "me-2")} />
+                  <Play className="h-4 w-4 me-2" />
                   {isRTL ? "הפעל" : "Activate"}
                 </DropdownMenuItem>
               ) : null}
               {onEdit && flow.status !== "ARCHIVED" && (
                 <DropdownMenuItem onClick={() => onEdit(flow.id)}>
-                  <Edit className={cn("h-4 w-4", isRTL ? "ml-2" : "me-2")} />
+                  <Edit className="h-4 w-4 me-2" />
                   {isRTL ? "ערוך" : "Edit"}
                 </DropdownMenuItem>
               )}
@@ -147,7 +147,7 @@ export function FlowCard({ flow, onActivate, onPause, onDelete, onEdit }: FlowCa
                 onClick={() => onDelete(flow.id)}
                 className="text-destructive focus:text-destructive"
               >
-                <Trash2 className={cn("h-4 w-4", isRTL ? "ml-2" : "me-2")} />
+                <Trash2 className="h-4 w-4 me-2" />
                 {isRTL ? "מחק" : "Delete"}
               </DropdownMenuItem>
             </DropdownMenuContent>
@@ -157,7 +157,7 @@ export function FlowCard({ flow, onActivate, onPause, onDelete, onEdit }: FlowCa
 
       <CardContent className="space-y-4">
         {/* Trigger & Action */}
-        <div className={cn("flex items-center gap-2 text-sm", isRTL && "flex-row-reverse")}>
+        <div className="flex items-center gap-2 text-sm">
           <span className="text-lg">{triggerLabel.icon}</span>
           <span className="text-muted-foreground">
             {isRTL ? triggerLabel.he : triggerLabel.en}
@@ -171,20 +171,20 @@ export function FlowCard({ flow, onActivate, onPause, onDelete, onEdit }: FlowCa
 
         {/* Stats */}
         {flow.stats.total > 0 && (
-          <div className={cn("flex items-center gap-4 text-xs", isRTL && "flex-row-reverse")}>
-            <div className={cn("flex items-center gap-1", isRTL && "flex-row-reverse")}>
+          <div className="flex items-center gap-4 text-xs">
+            <div className="flex items-center gap-1">
               <Clock className="h-3 w-3 text-yellow-500" />
               <span>{flow.stats.pending}</span>
             </div>
-            <div className={cn("flex items-center gap-1", isRTL && "flex-row-reverse")}>
+            <div className="flex items-center gap-1">
               <CheckCircle2 className="h-3 w-3 text-green-500" />
               <span>{flow.stats.completed}</span>
             </div>
-            <div className={cn("flex items-center gap-1", isRTL && "flex-row-reverse")}>
+            <div className="flex items-center gap-1">
               <XCircle className="h-3 w-3 text-red-500" />
               <span>{flow.stats.failed}</span>
             </div>
-            <div className={cn("flex items-center gap-1", isRTL && "flex-row-reverse")}>
+            <div className="flex items-center gap-1">
               <AlertCircle className="h-3 w-3 text-gray-400" />
               <span>{flow.stats.skipped}</span>
             </div>

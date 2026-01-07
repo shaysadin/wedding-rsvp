@@ -543,7 +543,7 @@ const Card = ({
           )}
 
           {dueDate && !isEditing && (
-            <p className={cn("text-xs mt-1 ml-6", colors.accent)}>
+            <p className={cn("text-xs mt-1 ms-6", colors.accent)}>
               {new Date(dueDate).toLocaleDateString()}
             </p>
           )}

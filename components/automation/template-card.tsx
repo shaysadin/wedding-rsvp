@@ -69,9 +69,9 @@ export function TemplateCard({ template, isUsed, isLoading, onSelect }: Template
 
       <CardContent className="p-4 pt-6">
         {/* Header */}
-        <div className={cn("flex items-start justify-between mb-3", isRTL && "flex-row-reverse")}>
-          <div className={cn("space-y-1", isRTL && "text-right")}>
-            <div className={cn("flex items-center gap-2", isRTL && "flex-row-reverse")}>
+        <div className="flex items-start justify-between mb-3">
+          <div className="space-y-1 text-start">
+            <div className="flex items-center gap-2">
               <Sparkles className="h-4 w-4 text-purple-500" />
               <h3 className="font-semibold">
                 {isRTL ? template.nameHe : template.name}
@@ -92,7 +92,7 @@ export function TemplateCard({ template, isUsed, isLoading, onSelect }: Template
                 </Button>
               </TooltipTrigger>
               <TooltipContent side={isRTL ? "left" : "right"} className="max-w-[200px]">
-                <p className={cn("text-xs", isRTL && "text-right")}>
+                <p className="text-xs text-start">
                   {isRTL ? template.descriptionHe : template.description}
                 </p>
               </TooltipContent>
@@ -101,10 +101,7 @@ export function TemplateCard({ template, isUsed, isLoading, onSelect }: Template
         </div>
 
         {/* Description */}
-        <p className={cn(
-          "text-xs text-muted-foreground mb-4 line-clamp-2 min-h-[2.5em]",
-          isRTL && "text-right"
-        )}>
+        <p className="text-xs text-muted-foreground mb-4 line-clamp-2 min-h-[2.5em] text-start">
           {isRTL ? template.descriptionHe : template.description}
         </p>
 

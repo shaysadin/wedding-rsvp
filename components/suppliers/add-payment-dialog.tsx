@@ -173,7 +173,7 @@ export function AddPaymentDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle className={cn(isRTL && "text-right")}>
+          <DialogTitle className="text-start">
             {isEditing
               ? isRTL
                 ? "עריכת תשלום"
@@ -182,7 +182,7 @@ export function AddPaymentDialog({
                 ? "רישום תשלום"
                 : "Record Payment"}
           </DialogTitle>
-          <p className={cn("text-sm text-muted-foreground", isRTL && "text-right")}>
+          <p className="text-sm text-muted-foreground text-start">
             {supplierName}
           </p>
         </DialogHeader>
@@ -195,7 +195,7 @@ export function AddPaymentDialog({
               name="amount"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className={cn(isRTL && "text-right block")}>
+                  <FormLabel className="text-start block">
                     {isRTL ? "סכום *" : "Amount *"} ({formatCurrency(currency)})
                   </FormLabel>
                   <FormControl>
@@ -219,12 +219,12 @@ export function AddPaymentDialog({
               name="method"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className={cn(isRTL && "text-right block")}>
+                  <FormLabel className="text-start block">
                     {isRTL ? "אמצעי תשלום" : "Payment Method"}
                   </FormLabel>
                   <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
-                      <SelectTrigger className={cn(isRTL && "text-right")}>
+                      <SelectTrigger className="text-start">
                         <SelectValue />
                       </SelectTrigger>
                     </FormControl>
@@ -233,7 +233,7 @@ export function AddPaymentDialog({
                         <SelectItem
                           key={value}
                           value={value}
-                          className={cn(isRTL && "text-right")}
+                          className="text-start"
                         >
                           {isRTL ? config.labelHe : config.label}
                         </SelectItem>
@@ -251,14 +251,14 @@ export function AddPaymentDialog({
               name="description"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className={cn(isRTL && "text-right block")}>
+                  <FormLabel className="text-start block">
                     {isRTL ? "תיאור" : "Description"}
                   </FormLabel>
                   <FormControl>
                     <Input
                       {...field}
                       placeholder={isRTL ? "לדוגמה: מקדמה, תשלום סופי" : "e.g., Deposit, Final payment"}
-                      className={cn(isRTL && "text-right")}
+                      className="text-start"
                       dir={isRTL ? "rtl" : "ltr"}
                     />
                   </FormControl>
@@ -274,7 +274,7 @@ export function AddPaymentDialog({
                 name="paidAt"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className={cn(isRTL && "text-right block")}>
+                    <FormLabel className="text-start block">
                       {isRTL ? "תאריך תשלום *" : "Payment Date *"}
                     </FormLabel>
                     <FormControl>
@@ -304,7 +304,7 @@ export function AddPaymentDialog({
                 name="dueDate"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className={cn(isRTL && "text-right block")}>
+                    <FormLabel className="text-start block">
                       {isRTL ? "תאריך יעד" : "Due Date"}
                     </FormLabel>
                     <FormControl>
@@ -336,7 +336,7 @@ export function AddPaymentDialog({
               name="receiptUrl"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className={cn(isRTL && "text-right block")}>
+                  <FormLabel className="text-start block">
                     {isRTL ? "קישור לקבלה" : "Receipt URL"}
                   </FormLabel>
                   <FormControl>
@@ -358,14 +358,14 @@ export function AddPaymentDialog({
               name="notes"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className={cn(isRTL && "text-right block")}>
+                  <FormLabel className="text-start block">
                     {isRTL ? "הערות" : "Notes"}
                   </FormLabel>
                   <FormControl>
                     <Textarea
                       {...field}
                       placeholder={isRTL ? "הערות נוספות..." : "Additional notes..."}
-                      className={cn("resize-none", isRTL && "text-right")}
+                      className="resize-none text-start"
                       dir={isRTL ? "rtl" : "ltr"}
                       rows={2}
                     />
@@ -376,7 +376,7 @@ export function AddPaymentDialog({
             />
 
             {/* Submit Buttons */}
-            <div className={cn("flex gap-3 pt-4", isRTL && "flex-row-reverse")}>
+            <div className="flex gap-3 pt-4">
               <Button
                 type="button"
                 variant="outline"

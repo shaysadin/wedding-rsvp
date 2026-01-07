@@ -70,7 +70,7 @@ export function BudgetCategoryChart({ data, currency = "ILS" }: BudgetCategoryCh
     return (
       <Card className="h-full">
         <CardHeader className="pb-2">
-          <CardTitle className={cn("text-sm font-medium", isRTL && "text-right")}>
+          <CardTitle className="text-sm font-medium text-start">
             {isRTL ? "התפלגות לפי קטגוריה" : "Budget by Category"}
           </CardTitle>
         </CardHeader>
@@ -114,14 +114,11 @@ export function BudgetCategoryChart({ data, currency = "ILS" }: BudgetCategoryCh
 
   const renderLegend = () => {
     return (
-      <div className={cn(
-        "flex flex-wrap gap-2 mt-2 justify-center",
-        isRTL && "flex-row-reverse"
-      )}>
+      <div className="flex flex-wrap gap-2 mt-2 justify-center">
         {chartData.slice(0, 5).map((entry) => (
           <div
             key={entry.category}
-            className={cn("flex items-center gap-1 text-xs", isRTL && "flex-row-reverse")}
+            className="flex items-center gap-1 text-xs"
           >
             <div
               className="w-2 h-2 rounded-full"
@@ -142,7 +139,7 @@ export function BudgetCategoryChart({ data, currency = "ILS" }: BudgetCategoryCh
   return (
     <Card className="h-full">
       <CardHeader className="pb-2">
-        <CardTitle className={cn("text-sm font-medium", isRTL && "text-right")}>
+        <CardTitle className="text-sm font-medium text-start">
           {isRTL ? "התפלגות לפי קטגוריה" : "Budget by Category"}
         </CardTitle>
       </CardHeader>

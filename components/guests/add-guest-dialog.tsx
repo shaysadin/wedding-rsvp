@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useLocale, useTranslations } from "next-intl";
+import { useTranslations } from "next-intl";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
@@ -47,8 +47,6 @@ export function AddGuestDialog({ eventId }: AddGuestDialogProps) {
   const tc = useTranslations("common");
   const ts = useTranslations("success");
   const te = useTranslations("errors");
-  const locale = useLocale();
-  const isRTL = locale === "he";
   const [open, setOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [showCustomGroup, setShowCustomGroup] = useState(false);
@@ -133,7 +131,7 @@ export function AddGuestDialog({ eventId }: AddGuestDialogProps) {
           {t("add")}
         </Button>
       </DialogTrigger>
-      <DialogContent dir={isRTL ? "rtl" : "ltr"}>
+      <DialogContent>
         <DialogHeader className="shrink-0">
           <DialogTitle>{t("add")}</DialogTitle>
         </DialogHeader>

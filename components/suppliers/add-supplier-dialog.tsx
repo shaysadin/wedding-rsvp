@@ -177,7 +177,7 @@ export function AddSupplierDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className={cn(isRTL && "text-right")}>
+          <DialogTitle className="text-start">
             {isEditing
               ? isRTL
                 ? "עריכת ספק"
@@ -197,14 +197,14 @@ export function AddSupplierDialog({
                 name="name"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className={cn(isRTL && "text-right block")}>
+                    <FormLabel className="text-start block">
                       {isRTL ? "שם הספק *" : "Supplier Name *"}
                     </FormLabel>
                     <FormControl>
                       <Input
                         {...field}
                         placeholder={isRTL ? "לדוגמה: אולם גן האירועים" : "e.g., Garden Event Hall"}
-                        className={cn(isRTL && "text-right")}
+                        className="text-start"
                         dir={isRTL ? "rtl" : "ltr"}
                       />
                     </FormControl>
@@ -219,7 +219,7 @@ export function AddSupplierDialog({
                   name="category"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className={cn(isRTL && "text-right block")}>
+                      <FormLabel className="text-start block">
                         {isRTL ? "קטגוריה *" : "Category *"}
                       </FormLabel>
                       <Select
@@ -227,7 +227,7 @@ export function AddSupplierDialog({
                         value={field.value}
                       >
                         <FormControl>
-                          <SelectTrigger className={cn(isRTL && "text-right")}>
+                          <SelectTrigger className="text-start">
                             <SelectValue />
                           </SelectTrigger>
                         </FormControl>
@@ -236,7 +236,7 @@ export function AddSupplierDialog({
                             <SelectItem
                               key={option.value}
                               value={option.value}
-                              className={cn(isRTL && "text-right")}
+                              className="text-start"
                             >
                               {option.label}
                             </SelectItem>
@@ -253,7 +253,7 @@ export function AddSupplierDialog({
                   name="status"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className={cn(isRTL && "text-right block")}>
+                      <FormLabel className="text-start block">
                         {isRTL ? "סטטוס" : "Status"}
                       </FormLabel>
                       <Select
@@ -261,7 +261,7 @@ export function AddSupplierDialog({
                         value={field.value}
                       >
                         <FormControl>
-                          <SelectTrigger className={cn(isRTL && "text-right")}>
+                          <SelectTrigger className="text-start">
                             <SelectValue />
                           </SelectTrigger>
                         </FormControl>
@@ -270,7 +270,7 @@ export function AddSupplierDialog({
                             <SelectItem
                               key={option.value}
                               value={option.value}
-                              className={cn(isRTL && "text-right")}
+                              className="text-start"
                             >
                               {option.label}
                             </SelectItem>
@@ -286,7 +286,7 @@ export function AddSupplierDialog({
 
             {/* Contact Info Section */}
             <div className="space-y-4 pt-2">
-              <h4 className={cn("text-sm font-medium text-muted-foreground", isRTL && "text-right")}>
+              <h4 className="text-sm font-medium text-muted-foreground text-start">
                 {isRTL ? "פרטי התקשרות" : "Contact Information"}
               </h4>
 
@@ -295,14 +295,14 @@ export function AddSupplierDialog({
                 name="contactName"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className={cn(isRTL && "text-right block")}>
+                    <FormLabel className="text-start block">
                       {isRTL ? "איש קשר" : "Contact Name"}
                     </FormLabel>
                     <FormControl>
                       <Input
                         {...field}
                         placeholder={isRTL ? "שם איש הקשר" : "Contact person name"}
-                        className={cn(isRTL && "text-right")}
+                        className="text-start"
                         dir={isRTL ? "rtl" : "ltr"}
                       />
                     </FormControl>
@@ -317,7 +317,7 @@ export function AddSupplierDialog({
                   name="phoneNumber"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className={cn(isRTL && "text-right block")}>
+                      <FormLabel className="text-start block">
                         {isRTL ? "טלפון" : "Phone"}
                       </FormLabel>
                       <FormControl>
@@ -338,7 +338,7 @@ export function AddSupplierDialog({
                   name="email"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className={cn(isRTL && "text-right block")}>
+                      <FormLabel className="text-start block">
                         {isRTL ? "אימייל" : "Email"}
                       </FormLabel>
                       <FormControl>
@@ -360,7 +360,7 @@ export function AddSupplierDialog({
                 name="website"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className={cn(isRTL && "text-right block")}>
+                    <FormLabel className="text-start block">
                       {isRTL ? "אתר אינטרנט" : "Website"}
                     </FormLabel>
                     <FormControl>
@@ -379,7 +379,7 @@ export function AddSupplierDialog({
 
             {/* Financial Section */}
             <div className="space-y-4 pt-2">
-              <h4 className={cn("text-sm font-medium text-muted-foreground", isRTL && "text-right")}>
+              <h4 className="text-sm font-medium text-muted-foreground text-start">
                 {isRTL ? "פרטים כספיים" : "Financial Details"}
               </h4>
 
@@ -389,7 +389,7 @@ export function AddSupplierDialog({
                   name="estimatedCost"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className={cn(isRTL && "text-right block")}>
+                      <FormLabel className="text-start block">
                         {isRTL ? "עלות משוערת" : "Estimated"}
                       </FormLabel>
                       <FormControl>
@@ -416,7 +416,7 @@ export function AddSupplierDialog({
                   name="agreedPrice"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className={cn(isRTL && "text-right block")}>
+                      <FormLabel className="text-start block">
                         {isRTL ? "מחיר סוגר" : "Agreed Price"}
                       </FormLabel>
                       <FormControl>
@@ -443,7 +443,7 @@ export function AddSupplierDialog({
                   name="currency"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className={cn(isRTL && "text-right block")}>
+                      <FormLabel className="text-start block">
                         {isRTL ? "מטבע" : "Currency"}
                       </FormLabel>
                       <Select
@@ -472,7 +472,7 @@ export function AddSupplierDialog({
                 name="bookedAt"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className={cn(isRTL && "text-right block")}>
+                    <FormLabel className="text-start block">
                       {isRTL ? "תאריך הזמנה" : "Booking Date"}
                     </FormLabel>
                     <FormControl>
@@ -502,7 +502,7 @@ export function AddSupplierDialog({
                 name="contractUrl"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className={cn(isRTL && "text-right block")}>
+                    <FormLabel className="text-start block">
                       {isRTL ? "קישור לחוזה" : "Contract URL"}
                     </FormLabel>
                     <FormControl>
@@ -525,14 +525,14 @@ export function AddSupplierDialog({
               name="notes"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className={cn(isRTL && "text-right block")}>
+                  <FormLabel className="text-start block">
                     {isRTL ? "הערות" : "Notes"}
                   </FormLabel>
                   <FormControl>
                     <Textarea
                       {...field}
                       placeholder={isRTL ? "הערות נוספות..." : "Additional notes..."}
-                      className={cn("resize-none", isRTL && "text-right")}
+                      className="resize-none text-start"
                       dir={isRTL ? "rtl" : "ltr"}
                       rows={3}
                     />
@@ -543,7 +543,7 @@ export function AddSupplierDialog({
             />
 
             {/* Submit Button */}
-            <div className={cn("flex gap-3 pt-4", isRTL && "flex-row-reverse")}>
+            <div className="flex gap-3 pt-4">
               <Button
                 type="button"
                 variant="outline"

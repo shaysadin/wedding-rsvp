@@ -215,19 +215,19 @@ export function SuppliersTable({
       <Table>
         <TableHeader>
           <TableRow className="bg-muted/50">
-            <TableHead className={cn(isRTL && "text-right")}>
+            <TableHead className="text-start">
               {isRTL ? "שם" : "Name"}
             </TableHead>
-            <TableHead className={cn(isRTL && "text-right")}>
+            <TableHead className="text-start">
               {isRTL ? "קטגוריה" : "Category"}
             </TableHead>
-            <TableHead className={cn(isRTL && "text-right")}>
+            <TableHead className="text-start">
               {isRTL ? "סטטוס" : "Status"}
             </TableHead>
-            <TableHead className={cn(isRTL ? "text-right" : "text-center")}>
+            <TableHead className="text-center">
               {isRTL ? "מחיר סגור" : "Agreed Price"}
             </TableHead>
-            <TableHead className={cn(isRTL && "text-right")}>
+            <TableHead className="text-start">
               {isRTL ? "התקדמות תשלום" : "Payment Progress"}
             </TableHead>
             <TableHead className="w-16"></TableHead>
@@ -248,8 +248,8 @@ export function SuppliersTable({
                 onClick={() => onViewDetails(supplier)}
               >
                 <TableCell>
-                  <div className={cn("flex flex-col gap-0.5", isRTL && "items-end")}>
-                    <div className={cn("flex items-center gap-2", isRTL && "flex-row-reverse")}>
+                  <div className="flex flex-col gap-0.5">
+                    <div className="flex items-center gap-2">
                       <span className="font-medium">{supplier.name}</span>
                       {supplier.hasOverdue && (
                         <AlertTriangle className="h-4 w-4 text-amber-500" />
@@ -272,7 +272,7 @@ export function SuppliersTable({
                 <TableCell>
                   <SupplierStatusBadge status={supplier.status} locale={locale} />
                 </TableCell>
-                <TableCell className={cn(isRTL ? "text-right" : "text-center")}>
+                <TableCell className="text-center">
                   {supplier.agreedPrice ? (
                     <span className="font-medium">
                       {formatCurrency(Number(supplier.agreedPrice))}
@@ -283,15 +283,9 @@ export function SuppliersTable({
                 </TableCell>
                 <TableCell>
                   {supplier.agreedPrice ? (
-                    <div className={cn(
-                      "flex items-center gap-2",
-                      isRTL && "flex-row-reverse"
-                    )}>
-                      <Progress value={supplier.paidPercent} className={cn("h-2 w-16 sm:w-24 shrink-0", isRTL && "rotate-180")} />
-                      <span className={cn(
-                        "text-xs text-muted-foreground whitespace-nowrap",
-                        isRTL ? "text-start" : "text-end"
-                      )}>
+                    <div className="flex items-center gap-2">
+                      <Progress value={supplier.paidPercent} className="h-2 w-16 sm:w-24 shrink-0" />
+                      <span className="text-xs text-muted-foreground whitespace-nowrap">
                         {formatCurrency(supplier.totalPaid)} / {formatCurrency(Number(supplier.agreedPrice))}
                       </span>
                     </div>
@@ -301,7 +295,7 @@ export function SuppliersTable({
                 </TableCell>
                 <TableCell>
                   <div
-                    className={cn("flex items-center gap-1", isRTL && "flex-row-reverse")}
+                    className="flex items-center gap-1"
                     onClick={(e) => e.stopPropagation()}
                   >
                     <DropdownMenu>
@@ -314,19 +308,19 @@ export function SuppliersTable({
                           <MoreHorizontal className="h-4 w-4" />
                         </Button>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent align={isRTL ? "start" : "end"} className={cn(isRTL && "text-right")}>
-                        <DropdownMenuLabel className={cn(isRTL && "text-right")}>
+                      <DropdownMenuContent align={isRTL ? "start" : "end"} className="text-start">
+                        <DropdownMenuLabel className="text-start">
                           {isRTL ? "פעולות" : "Actions"}
                         </DropdownMenuLabel>
                         <DropdownMenuSeparator />
 
-                        <DropdownMenuItem onClick={() => onViewDetails(supplier)} className={cn(isRTL && "flex-row-reverse")}>
-                          <ChevronRight className={cn("h-4 w-4", isRTL ? "ms-2 rotate-180" : "me-2")} />
+                        <DropdownMenuItem onClick={() => onViewDetails(supplier)}>
+                          <ChevronRight className="h-4 w-4 me-2 rtl:rotate-180" />
                           {isRTL ? "פרטים" : "View Details"}
                         </DropdownMenuItem>
 
-                        <DropdownMenuItem onClick={() => onEdit(supplier)} className={cn(isRTL && "flex-row-reverse")}>
-                          <Edit className={cn("h-4 w-4", isRTL ? "ms-2" : "me-2")} />
+                        <DropdownMenuItem onClick={() => onEdit(supplier)}>
+                          <Edit className="h-4 w-4 me-2" />
                           {isRTL ? "עריכה" : "Edit"}
                         </DropdownMenuItem>
 
@@ -335,9 +329,8 @@ export function SuppliersTable({
                             onClick={() =>
                               window.open(`tel:${supplier.phoneNumber}`, "_self")
                             }
-                            className={cn(isRTL && "flex-row-reverse")}
                           >
-                            <Phone className={cn("h-4 w-4", isRTL ? "ms-2" : "me-2")} />
+                            <Phone className="h-4 w-4 me-2" />
                             {isRTL ? "התקשר" : "Call"}
                           </DropdownMenuItem>
                         )}
@@ -347,9 +340,8 @@ export function SuppliersTable({
                             onClick={() =>
                               window.open(`mailto:${supplier.email}`, "_blank")
                             }
-                            className={cn(isRTL && "flex-row-reverse")}
                           >
-                            <Mail className={cn("h-4 w-4", isRTL ? "ms-2" : "me-2")} />
+                            <Mail className="h-4 w-4 me-2" />
                             {isRTL ? "שלח מייל" : "Send Email"}
                           </DropdownMenuItem>
                         )}
@@ -359,9 +351,8 @@ export function SuppliersTable({
                             onClick={() =>
                               window.open(supplier.website!, "_blank")
                             }
-                            className={cn(isRTL && "flex-row-reverse")}
                           >
-                            <ExternalLink className={cn("h-4 w-4", isRTL ? "ms-2" : "me-2")} />
+                            <ExternalLink className="h-4 w-4 me-2" />
                             {isRTL ? "אתר" : "Website"}
                           </DropdownMenuItem>
                         )}
@@ -370,9 +361,9 @@ export function SuppliersTable({
 
                         <DropdownMenuItem
                           onClick={() => handleDelete(supplier.id, supplier.name)}
-                          className={cn("text-destructive", isRTL && "flex-row-reverse")}
+                          className="text-destructive"
                         >
-                          <Trash2 className={cn("h-4 w-4", isRTL ? "ms-2" : "me-2")} />
+                          <Trash2 className="h-4 w-4 me-2" />
                           {isRTL ? "מחק" : "Delete"}
                         </DropdownMenuItem>
                       </DropdownMenuContent>
@@ -414,7 +405,7 @@ export function SuppliersTable({
           />
         </div>
 
-        <div className={cn("flex gap-2", isRTL && "flex-row-reverse")}>
+        <div className="flex gap-2">
           <Select value={categoryFilter} onValueChange={setCategoryFilter}>
             <SelectTrigger className="flex-1 sm:w-[160px] sm:flex-none">
               <SelectValue placeholder={isRTL ? "קטגוריה" : "Category"} />
@@ -452,10 +443,7 @@ export function SuppliersTable({
     {/* Expanded Modal */}
     <Dialog open={isTableExpanded} onOpenChange={setIsTableExpanded}>
       <DialogContent size="full" className="flex h-[90vh] max-h-[90vh] flex-col gap-0 [&>div]:p-0" dir={isRTL ? "rtl" : "ltr"}>
-        <DialogHeader className={cn(
-          "flex shrink-0 flex-row items-center justify-between border-b px-6 py-4",
-          isRTL && "flex-row-reverse"
-        )}>
+        <DialogHeader className="flex shrink-0 flex-row items-center justify-between border-b px-6 py-4">
           <DialogTitle>{isRTL ? "ספקים" : "Suppliers"}</DialogTitle>
           <Button
             variant="ghost"
@@ -480,7 +468,7 @@ export function SuppliersTable({
               />
             </div>
 
-            <div className={cn("flex gap-2", isRTL && "flex-row-reverse")}>
+            <div className="flex gap-2">
               <Select value={categoryFilter} onValueChange={setCategoryFilter}>
                 <SelectTrigger className="flex-1 sm:w-[160px] sm:flex-none">
                   <SelectValue placeholder={isRTL ? "קטגוריה" : "Category"} />

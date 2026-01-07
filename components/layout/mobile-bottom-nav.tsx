@@ -18,7 +18,6 @@ export function MobileBottomNav({ currentRole }: MobileBottomNavProps) {
 
   // Extract locale from path
   const locale = path?.split("/")[1] || "he";
-  const isRTL = locale === "he";
 
   // Define navigation items based on role
   const isAdmin = currentRole === UserRole.ROLE_PLATFORM_OWNER;

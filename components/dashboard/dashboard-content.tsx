@@ -202,10 +202,7 @@ export function DashboardContent({ userName, events, stats, locale, usageData }:
               stat.borderColor
             )}>
               <CardContent className="p-5">
-                <div className={cn(
-                  "flex items-center gap-4",
-                  isRTL && "flex-row-reverse"
-                )}>
+                <div className="flex items-center gap-4">
                   {/* Icon */}
                   <div
                     className={cn(
@@ -217,7 +214,7 @@ export function DashboardContent({ userName, events, stats, locale, usageData }:
                   </div>
 
                   {/* Content */}
-                  <div className={cn("flex-1 min-w-0", isRTL && "text-right")}>
+                  <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-muted-foreground truncate">
                       {stat.title}
                     </p>
@@ -242,13 +239,10 @@ export function DashboardContent({ userName, events, stats, locale, usageData }:
               : "border-border/50"
           )}>
             <CardContent className="p-5">
-              <div className={cn("flex flex-col gap-4", isRTL && "text-right")}>
+              <div className="flex flex-col gap-4">
                 {/* Header */}
-                <div className={cn(
-                  "flex items-center justify-between",
-                  isRTL && "flex-row"
-                )}>
-                  <div className={cn("flex items-center gap-3", isRTL && "flex-row-reverse")}>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
                     <div>
                       <h3 className="font-semibold">
                         {isRTL ? "מעקב שימוש" : "Usage Tracking"}
@@ -273,11 +267,8 @@ export function DashboardContent({ userName, events, stats, locale, usageData }:
                 )}>
                   {/* WhatsApp Usage */}
                   <div className="space-y-2">
-                    <div className={cn(
-                      "flex items-center justify-between text-sm",
-                      isRTL && "flex-row-reverse"
-                    )}>
-                      <span className={cn("flex items-center gap-2", isRTL && "flex-row-reverse")}>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="flex items-center gap-2">
                         <MessageSquare className="h-4 w-4 text-green-500" />
                         WhatsApp
                       </span>
@@ -301,11 +292,8 @@ export function DashboardContent({ userName, events, stats, locale, usageData }:
 
                   {/* SMS Usage */}
                   <div className="space-y-2">
-                    <div className={cn(
-                      "flex items-center justify-between text-sm",
-                      isRTL && "flex-row-reverse"
-                    )}>
-                      <span className={cn("flex items-center gap-2", isRTL && "flex-row-reverse")}>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="flex items-center gap-2">
                         <Send className="h-4 w-4 text-blue-500" />
                         SMS
                       </span>
@@ -330,11 +318,8 @@ export function DashboardContent({ userName, events, stats, locale, usageData }:
                   {/* Phone Calls Usage */}
                   {usageData.calls && (
                     <div className="space-y-2">
-                      <div className={cn(
-                        "flex items-center justify-between text-sm",
-                        isRTL && "flex-row-reverse"
-                      )}>
-                        <span className={cn("flex items-center gap-2", isRTL && "flex-row-reverse")}>
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="flex items-center gap-2">
                           <Phone className="h-4 w-4 text-purple-500" />
                           {isRTL ? "שיחות" : "Calls"}
                         </span>
@@ -358,12 +343,9 @@ export function DashboardContent({ userName, events, stats, locale, usageData }:
 
                 {/* Upgrade Banner for Free Users */}
                 {!usageData.canSendMessages && (
-                  <div className={cn(
-                    "flex items-center gap-3 rounded-lg border border-amber-200 bg-amber-50 p-3 dark:border-amber-800 dark:bg-amber-900/30",
-                    isRTL && "flex-row-reverse"
-                  )}>
+                  <div className="flex items-center gap-3 rounded-lg border border-amber-200 bg-amber-50 p-3 dark:border-amber-800 dark:bg-amber-900/30">
                     <AlertCircle className="h-5 w-5 shrink-0 text-amber-600 dark:text-amber-400" />
-                    <div className={cn("flex-1", isRTL && "text-right")}>
+                    <div className="flex-1">
                       <p className="text-sm font-medium text-amber-800 dark:text-amber-200">
                         {isRTL ? "שדרג כדי לשלוח הודעות" : "Upgrade to send messages"}
                       </p>
@@ -389,10 +371,7 @@ export function DashboardContent({ userName, events, stats, locale, usageData }:
 
       {/* Quick Actions - Card Style */}
       <motion.div variants={itemVariants}>
-        <div className={cn(
-          "grid gap-4 sm:grid-cols-2",
-          isRTL && "direction-rtl"
-        )}>
+        <div className="grid gap-4 sm:grid-cols-2">
           {/* Create Event Card */}
           <motion.div
             whileHover={{ y: -2 }}
@@ -402,20 +381,17 @@ export function DashboardContent({ userName, events, stats, locale, usageData }:
           >
             <button
               onClick={() => setShowAddEventModal(true)}
-              className="w-full text-left"
+              className="w-full text-start"
             >
               <div className="group relative overflow-hidden rounded-xl border border-border/50 bg-card p-5 shadow-sm transition-all duration-300 hover:border-border hover:shadow-lg">
-                <div className={cn(
-                  "flex items-center gap-4",
-                  isRTL && "flex-row-reverse"
-                )}>
+                <div className="flex items-center gap-4">
                   {/* Icon */}
                   <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground transition-transform duration-300 group-hover:scale-105">
                     <Plus className="h-6 w-6" />
                   </div>
 
                   {/* Content */}
-                  <div className={cn("flex-1", isRTL && "text-right")}>
+                  <div className="flex-1">
                     <h3 className="font-semibold text-foreground">
                       {t("createEvent")}
                     </h3>
@@ -443,17 +419,14 @@ export function DashboardContent({ userName, events, stats, locale, usageData }:
           >
             <Link href={`/${locale}/dashboard/events`}>
               <div className="group relative overflow-hidden rounded-xl border border-border/50 bg-card p-5 shadow-sm transition-all duration-300 hover:border-border hover:shadow-lg">
-                <div className={cn(
-                  "flex items-center gap-4",
-                  isRTL && "flex-row-reverse"
-                )}>
+                <div className="flex items-center gap-4">
                   {/* Icon */}
                   <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-muted text-foreground transition-transform duration-300 group-hover:scale-105">
                     <Send className="h-5 w-5" />
                   </div>
 
                   {/* Content */}
-                  <div className={cn("flex-1", isRTL && "text-right")}>
+                  <div className="flex-1">
                     <h3 className="font-semibold text-foreground">
                       {isRTL ? "שלח הזמנות" : "Send Invitations"}
                     </h3>
@@ -476,10 +449,7 @@ export function DashboardContent({ userName, events, stats, locale, usageData }:
 
       {/* Events Section */}
       <motion.div variants={itemVariants} className="space-y-4">
-        <div className={cn(
-          "flex items-center justify-between",
-          isRTL && "flex-row"
-        )}>
+        <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold">{t("upcomingEvents")}</h2>
           {events.length > 0 && (
             <Button variant="ghost" size="sm" asChild className="gap-1">
@@ -572,19 +542,13 @@ const EventCard = React.memo(function EventCard({
 
           <CardContent className="p-5">
             {/* Header */}
-            <div className={cn(
-              "flex items-start justify-between gap-3",
-              isRTL && "flex-row-reverse"
-            )}>
-              <div className={cn("flex-1 min-w-0", isRTL && "text-right")}>
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex-1 min-w-0">
                 <h3 className="font-semibold truncate group-hover:text-primary transition-colors">
                   {event.title}
                 </h3>
                 {event.venue && (
-                  <p className={cn(
-                    "mt-1 flex items-center gap-1 text-xs text-muted-foreground truncate",
-                    isRTL && "flex-row-reverse justify-end"
-                  )}>
+                  <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground truncate">
                     <MapPin className="h-3 w-3 shrink-0" />
                     <span className="truncate">{event.venue}</span>
                   </p>
@@ -598,10 +562,7 @@ const EventCard = React.memo(function EventCard({
             </div>
 
             {/* Date & Time */}
-            <div className={cn(
-              "mt-4 flex items-center gap-2 rounded-lg bg-muted/50 p-2.5",
-              isRTL && "flex-row-reverse"
-            )}>
+            <div className="mt-4 flex items-center gap-2 rounded-lg bg-muted/50 p-2.5">
               <div className="flex h-10 w-10 flex-col items-center justify-center rounded-md bg-background shadow-sm">
                 <span className="text-[10px] font-medium uppercase text-muted-foreground">
                   {eventDate.toLocaleDateString(locale === "he" ? "he-IL" : "en-US", { month: "short" })}
@@ -610,7 +571,7 @@ const EventCard = React.memo(function EventCard({
                   {eventDate.getDate()}
                 </span>
               </div>
-              <div className={cn("flex-1", isRTL && "text-right")}>
+              <div className="flex-1">
                 <p className="text-sm font-medium">{formattedDate}</p>
                 <p className="text-xs text-muted-foreground">{formattedTime}</p>
               </div>
@@ -631,10 +592,7 @@ const EventCard = React.memo(function EventCard({
             </div>
 
             {/* Stats */}
-            <div className={cn(
-              "mt-4 grid grid-cols-3 gap-2 text-center",
-              isRTL && "direction-rtl"
-            )}>
+            <div className="mt-4 grid grid-cols-3 gap-2 text-center">
               <div className="rounded-md bg-muted/30 p-2">
                 <p className="text-lg font-semibold">{event.stats.total}</p>
                 <p className="text-[10px] text-muted-foreground">
@@ -661,10 +619,7 @@ const EventCard = React.memo(function EventCard({
 
             {/* Progress bar */}
             <div className="mt-4">
-              <div className={cn(
-                "mb-1 flex items-center justify-between text-xs",
-                isRTL && "flex-row-reverse"
-              )}>
+              <div className="mb-1 flex items-center justify-between text-xs">
                 <span className="text-muted-foreground">
                   {isRTL ? "אחוז אישורים" : "Response rate"}
                 </span>

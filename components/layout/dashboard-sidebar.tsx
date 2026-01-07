@@ -100,10 +100,7 @@ export function DashboardSidebar({ links, userEvents = [], currentRole, availabl
         )}
       >
         {/* Fixed Header - Logo */}
-        <div className={cn(
-          "flex h-14 shrink-0 items-center p-4 lg:h-[60px]",
-          isRTL && "flex-row-reverse"
-        )}>
+        <div className="flex h-14 shrink-0 items-center p-4 lg:h-[60px]">
           <Link
             href={`/${locale}/dashboard`}
             className="flex items-center"
@@ -114,7 +111,7 @@ export function DashboardSidebar({ links, userEvents = [], currentRole, availabl
           <Button
             variant="ghost"
             size="icon"
-            className={cn("size-9 lg:size-8", isRTL ? "me-auto" : "ms-auto")}
+            className="size-9 lg:size-8 ms-auto"
             onClick={toggleSidebar}
           >
             {isSidebarExpanded ? (
@@ -152,7 +149,7 @@ export function DashboardSidebar({ links, userEvents = [], currentRole, availabl
                     className="flex flex-col gap-0.5"
                   >
                     {isSidebarExpanded ? (
-                      <p className={cn("text-xs text-muted-foreground", isRTL && "text-right")}>
+                      <p className="text-xs text-muted-foreground">
                         {getTitle(section.titleKey, section.title)}
                       </p>
                     ) : (
@@ -172,15 +169,11 @@ export function DashboardSidebar({ links, userEvents = [], currentRole, availabl
                             onOpenChange={setEventsOpen}
                           >
                             <div className="flex flex-col">
-                              <div className={cn(
-                                "flex items-center gap-1",
-                                isRTL && "flex-row-reverse"
-                              )}>
+                              <div className="flex items-center gap-1">
                                 <Link
                                   href={`/${locale}${item.href}`}
                                   className={cn(
                                     "flex flex-1 items-center gap-3 rounded-md p-2 text-sm font-medium hover:bg-muted",
-                                    isRTL && "flex-row-reverse text-right",
                                     isPathActive(item.href) || isEventsPage
                                       ? "bg-background/90"
                                       : "text-muted-foreground hover:text-accent-foreground",
@@ -200,17 +193,13 @@ export function DashboardSidebar({ links, userEvents = [], currentRole, availabl
                                 </CollapsibleTrigger>
                               </div>
                               <CollapsibleContent>
-                                <div className={cn(
-                                  "flex flex-col gap-0.5 mt-1",
-                                  isRTL ? "mr-4 pr-2 border-r" : "ml-4 pl-2 border-l"
-                                )}>
+                                <div className="flex flex-col gap-0.5 mt-1 ms-4 ps-2 border-s">
                                   {userEvents.map((event) => (
                                     <Link
                                       key={event.id}
                                       href={`/${locale}/dashboard/events/${event.id}`}
                                       className={cn(
                                         "flex items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted",
-                                        isRTL && "flex-row-reverse text-right",
                                         isEventActive(event.id)
                                           ? "bg-background/80 font-medium"
                                           : "text-muted-foreground hover:text-accent-foreground",
@@ -236,7 +225,6 @@ export function DashboardSidebar({ links, userEvents = [], currentRole, availabl
                                 href={item.disabled ? "#" : `/${locale}${item.href}`}
                                 className={cn(
                                   "flex items-center gap-3 rounded-md p-2 text-sm font-medium hover:bg-muted",
-                                  isRTL && "flex-row-reverse text-right",
                                   isPathActive(item.href)
                                     ? "bg-background/80"
                                     : "text-muted-foreground hover:text-accent-foreground",
@@ -380,7 +368,7 @@ export function MobileSheetSidebar({ links, userEvents = [], currentRole, availa
                     key={section.title}
                     className="flex flex-col gap-0.5"
                   >
-                    <p className={cn("text-xs text-muted-foreground", isRTL && "text-right")}>
+                    <p className="text-xs text-muted-foreground">
                       {getTitle(section.titleKey, section.title)}
                     </p>
 
@@ -398,16 +386,12 @@ export function MobileSheetSidebar({ links, userEvents = [], currentRole, availa
                             onOpenChange={setEventsOpen}
                           >
                             <div className="flex flex-col">
-                              <div className={cn(
-                                "flex items-center gap-1",
-                                isRTL && "flex-row-reverse"
-                              )}>
+                              <div className="flex items-center gap-1">
                                 <Link
                                   onClick={() => setOpen(false)}
                                   href={`/${locale}${item.href}`}
                                   className={cn(
                                     "flex flex-1 items-center gap-3 rounded-md p-2 text-sm font-medium hover:bg-muted",
-                                    isRTL && "flex-row-reverse text-right",
                                     isPathActive(item.href) || isEventsPage
                                       ? "bg-background/80"
                                       : "text-muted-foreground hover:text-accent-foreground",
@@ -427,10 +411,7 @@ export function MobileSheetSidebar({ links, userEvents = [], currentRole, availa
                                 </CollapsibleTrigger>
                               </div>
                               <CollapsibleContent>
-                                <div className={cn(
-                                  "flex flex-col gap-0.5 mt-1",
-                                  isRTL ? "mr-4 pr-2 border-r" : "ml-4 pl-2 border-l"
-                                )}>
+                                <div className="flex flex-col gap-0.5 mt-1 ms-4 ps-2 border-s">
                                   {userEvents.map((event) => (
                                     <Link
                                       key={event.id}
@@ -438,7 +419,6 @@ export function MobileSheetSidebar({ links, userEvents = [], currentRole, availa
                                       href={`/${locale}/dashboard/events/${event.id}`}
                                       className={cn(
                                         "flex items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted",
-                                        isRTL && "flex-row-reverse text-right",
                                         isEventActive(event.id)
                                           ? "bg-background/80 font-medium"
                                           : "text-muted-foreground hover:text-accent-foreground",
@@ -466,7 +446,6 @@ export function MobileSheetSidebar({ links, userEvents = [], currentRole, availa
                               href={item.disabled ? "#" : `/${locale}${item.href}`}
                               className={cn(
                                 "flex items-center gap-3 rounded-md p-2 text-sm font-medium hover:bg-muted",
-                                isRTL && "flex-row-reverse text-right",
                                 isPathActive(item.href)
                                   ? "bg-background/80"
                                   : "text-muted-foreground hover:text-accent-foreground",

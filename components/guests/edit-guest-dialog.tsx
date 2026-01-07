@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useLocale, useTranslations } from "next-intl";
+import { useTranslations } from "next-intl";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
@@ -54,8 +54,6 @@ export function EditGuestDialog({ guest, open, onOpenChange }: EditGuestDialogPr
   const tc = useTranslations("common");
   const ts = useTranslations("success");
   const te = useTranslations("errors");
-  const locale = useLocale();
-  const isRTL = locale === "he";
   const [isLoading, setIsLoading] = useState(false);
   const [showCustomGroup, setShowCustomGroup] = useState(false);
   const [customGroupValue, setCustomGroupValue] = useState("");
@@ -129,7 +127,7 @@ export function EditGuestDialog({ guest, open, onOpenChange }: EditGuestDialogPr
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent dir={isRTL ? "rtl" : "ltr"}>
+      <DialogContent>
         <DialogHeader className="shrink-0">
           <DialogTitle>{t("edit")}</DialogTitle>
         </DialogHeader>

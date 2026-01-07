@@ -1,11 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useLocale, useTranslations } from "next-intl";
+import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 
 import { getDuplicatePhoneGuests, deleteGuest } from "@/actions/guests";
-import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -45,8 +44,6 @@ export function DuplicatePhoneWarning({ eventId, onEditGuest }: DuplicatePhoneWa
   const t = useTranslations("guests");
   const tc = useTranslations("common");
   const ts = useTranslations("success");
-  const locale = useLocale();
-  const isRTL = locale === "he";
 
   const [duplicateGroups, setDuplicateGroups] = useState<DuplicateGroup[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -119,12 +116,9 @@ export function DuplicatePhoneWarning({ eventId, onEditGuest }: DuplicatePhoneWa
         <div className="mt-6 rounded-lg border-2 border-orange-500/50 bg-orange-500/10 p-4">
           <CollapsibleTrigger asChild>
             <button
-              className={cn(
-                "flex w-full items-center justify-between text-start",
-                isRTL && "flex-row-reverse text-end"
-              )}
+              className="flex w-full items-center justify-between text-start"
             >
-              <div className={cn("flex items-center gap-3", isRTL && "flex-row-reverse")}>
+              <div className="flex items-center gap-3">
                 <div className="flex h-10 w-10 items-center justify-center rounded-full bg-orange-500/20">
                   <Icons.alertTriangle className="h-5 w-5 text-orange-600" />
                 </div>
@@ -138,10 +132,9 @@ export function DuplicatePhoneWarning({ eventId, onEditGuest }: DuplicatePhoneWa
                 </div>
               </div>
               <Icons.chevronDown
-                className={cn(
-                  "h-5 w-5 text-orange-600 transition-transform",
-                  isOpen && "rotate-180"
-                )}
+                className={`h-5 w-5 text-orange-600 transition-transform ${
+                  isOpen ? "rotate-180" : ""
+                }`}
               />
             </button>
           </CollapsibleTrigger>
@@ -152,7 +145,7 @@ export function DuplicatePhoneWarning({ eventId, onEditGuest }: DuplicatePhoneWa
                 key={groupIndex}
                 className="rounded-md border border-orange-500/30 bg-background p-3"
               >
-                <div className={cn("mb-2 flex items-center gap-2 text-sm font-medium", isRTL && "flex-row-reverse")}>
+                <div className="mb-2 flex items-center gap-2 text-sm font-medium">
                   <Icons.phone className="h-4 w-4 text-muted-foreground" />
                   <span dir="ltr">{group.phoneNumber}</span>
                   <Badge variant="secondary" className="text-xs">
@@ -164,12 +157,9 @@ export function DuplicatePhoneWarning({ eventId, onEditGuest }: DuplicatePhoneWa
                   {group.guests.map((guest) => (
                     <div
                       key={guest.id}
-                      className={cn(
-                        "flex items-center justify-between rounded-md bg-muted/50 px-3 py-2",
-                        isRTL && "flex-row-reverse"
-                      )}
+                      className="flex items-center justify-between rounded-md bg-muted/50 px-3 py-2"
                     >
-                      <div className={cn("flex items-center gap-2", isRTL && "flex-row-reverse")}>
+                      <div className="flex items-center gap-2">
                         <span className="font-medium">{guest.name}</span>
                         {guest.side && (
                           <Badge variant="outline" className="text-xs">
@@ -182,7 +172,7 @@ export function DuplicatePhoneWarning({ eventId, onEditGuest }: DuplicatePhoneWa
                           </Badge>
                         )}
                       </div>
-                      <div className={cn("flex items-center gap-1", isRTL && "flex-row-reverse")}>
+                      <div className="flex items-center gap-1">
                         {onEditGuest && (
                           <Button
                             variant="ghost"

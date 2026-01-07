@@ -193,19 +193,21 @@ export function UserSettingsForm({ user }: UserSettingsFormProps) {
               </div>
             </div>
 
-            <Button type="submit" disabled={isPending}>
-              {isPending ? (
-                <>
-                  <Icons.spinner className="me-2 h-4 w-4 animate-spin" />
-                  {t("saving")}
-                </>
-              ) : (
-                <>
-                  <Icons.check className="me-2 h-4 w-4" />
-                  {tc("saveChanges")}
-                </>
-              )}
-            </Button>
+            <div>
+              <Button type="submit" disabled={isPending}>
+                {isPending ? (
+                  <>
+                    <Icons.spinner className="me-2 h-4 w-4 animate-spin" />
+                    {t("saving")}
+                  </>
+                ) : (
+                  <>
+                    <Icons.check className="me-2 h-4 w-4" />
+                    {tc("saveChanges")}
+                  </>
+                )}
+              </Button>
+            </div>
           </form>
         </CardContent>
       </Card>

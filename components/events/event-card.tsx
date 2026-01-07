@@ -74,19 +74,13 @@ export function EventCard({ event, locale }: EventCardProps) {
 
         <CardContent className="p-5">
           {/* Header */}
-          <div className={cn(
-            "flex items-start justify-between gap-3",
-            isRTL && "flex-row-reverse"
-          )}>
-            <div className={cn("flex-1 min-w-0", isRTL && "text-right")}>
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex-1 min-w-0 text-start">
               <h3 className="font-semibold truncate group-hover:text-primary transition-colors">
                 {event.title}
               </h3>
               {event.venue && (
-                <p className={cn(
-                  "mt-1 flex items-center gap-1 text-xs text-muted-foreground truncate",
-                  isRTL && "flex-row-reverse justify-end"
-                )}>
+                <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground truncate">
                   <MapPin className="h-3 w-3 shrink-0" />
                   <span className="truncate">{event.venue}</span>
                 </p>
@@ -141,10 +135,7 @@ export function EventCard({ event, locale }: EventCardProps) {
           </div>
 
           {/* Date & Time */}
-          <div className={cn(
-            "mt-4 flex items-center gap-2 rounded-lg bg-muted/50 p-2.5",
-            isRTL && "flex-row-reverse"
-          )}>
+          <div className="mt-4 flex items-center gap-2 rounded-lg bg-muted/50 p-2.5">
             <div className="flex h-10 w-10 flex-col items-center justify-center rounded-md bg-background shadow-sm">
               <span className="text-[10px] font-medium uppercase text-muted-foreground">
                 {eventDate.toLocaleDateString(isRTL ? "he-IL" : "en-US", { month: "short" })}
@@ -153,7 +144,7 @@ export function EventCard({ event, locale }: EventCardProps) {
                 {eventDate.getDate()}
               </span>
             </div>
-            <div className={cn("flex-1", isRTL && "text-right")}>
+            <div className="flex-1 text-start">
               <p className="text-sm font-medium">{formattedDate}</p>
               <p className="text-xs text-muted-foreground">{formattedTime}</p>
             </div>
@@ -174,10 +165,7 @@ export function EventCard({ event, locale }: EventCardProps) {
           </div>
 
           {/* Stats */}
-          <div className={cn(
-            "mt-4 grid grid-cols-3 gap-2 text-center",
-            isRTL && "direction-rtl"
-          )}>
+          <div className="mt-4 grid grid-cols-3 gap-2 text-center">
             <div className="rounded-md bg-muted/30 p-2">
               <p className="text-lg font-semibold">{event.stats.total}</p>
               <p className="text-[10px] text-muted-foreground">
@@ -204,10 +192,7 @@ export function EventCard({ event, locale }: EventCardProps) {
 
           {/* Progress bar */}
           <div className="mt-4">
-            <div className={cn(
-              "mb-1 flex items-center justify-between text-xs",
-              isRTL && "flex-row-reverse"
-            )}>
+            <div className="mb-1 flex items-center justify-between text-xs">
               <span className="text-muted-foreground">
                 {isRTL ? "אחוז אישורים" : "Response rate"}
               </span>

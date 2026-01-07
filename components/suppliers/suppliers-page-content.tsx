@@ -164,7 +164,7 @@ export function SuppliersPageContent({ eventId, events, locale }: SuppliersPageC
     <PageFadeIn>
       {/* Header with Event Dropdown */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between mb-6">
-        <div className={cn("space-y-1", isRTL && "text-right")}>
+        <div className="space-y-1 text-start">
           <h1 className="text-2xl font-bold tracking-tight">
             {isRTL ? "ניהול ספקים" : "Suppliers"}
           </h1>
@@ -172,7 +172,7 @@ export function SuppliersPageContent({ eventId, events, locale }: SuppliersPageC
             {isRTL ? "נהלו את הספקים, התקציב והתשלומים" : "Manage suppliers, budget and payments"}
           </p>
         </div>
-        <div className={cn("flex flex-wrap items-center gap-2", isRTL && "flex-row-reverse")}>
+        <div className="flex flex-wrap items-center gap-2">
           <EventDropdownSelector
             events={events}
             selectedEventId={eventId}
@@ -257,13 +257,13 @@ export function SuppliersPageContent({ eventId, events, locale }: SuppliersPageC
       <Dialog open={budgetDialogOpen} onOpenChange={setBudgetDialogOpen}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle className={cn(isRTL && "text-right")}>
+            <DialogTitle className="text-start">
               {isRTL ? "הגדרת תקציב" : "Set Budget"}
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label className={cn(isRTL && "text-right block")}>
+              <Label className="text-start block">
                 {isRTL ? "תקציב כולל (₪)" : "Total Budget (₪)"}
               </Label>
               <Input
@@ -273,14 +273,14 @@ export function SuppliersPageContent({ eventId, events, locale }: SuppliersPageC
                 placeholder="0"
                 dir="ltr"
               />
-              <p className={cn("text-xs text-muted-foreground", isRTL && "text-right")}>
+              <p className="text-xs text-muted-foreground text-start">
                 {isRTL
                   ? "הזינו את התקציב הכולל לאירוע"
                   : "Enter your total event budget"}
               </p>
             </div>
           </div>
-          <DialogFooter className={cn(isRTL && "flex-row-reverse")}>
+          <DialogFooter>
             <Button
               variant="outline"
               onClick={() => setBudgetDialogOpen(false)}

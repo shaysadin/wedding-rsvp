@@ -192,13 +192,13 @@ export function FlowEditorDialog({
       </DialogTrigger>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className={cn("flex items-center gap-2", isRTL && "flex-row-reverse")}>
+          <DialogTitle className="flex items-center gap-2">
             <Sparkles className="h-5 w-5 text-purple-500" />
             {editMode
               ? (isRTL ? "עריכת אוטומציה" : "Edit Automation")
               : (isRTL ? "יצירת אוטומציה חדשה" : "Create New Automation")}
           </DialogTitle>
-          <DialogDescription className={isRTL ? "text-right" : ""}>
+          <DialogDescription className="text-start">
             {isRTL
               ? "הגדירו תהליך אוטומטי שיופעל כאשר תנאי מסוים מתקיים"
               : "Set up an automated flow that triggers when a condition is met"}
@@ -208,7 +208,7 @@ export function FlowEditorDialog({
         <div className="space-y-6 py-4">
           {/* Flow Name */}
           <div className="space-y-2">
-            <Label htmlFor="name" className={isRTL ? "text-right block" : ""}>
+            <Label htmlFor="name" className="text-start block">
               {isRTL ? "שם האוטומציה" : "Automation Name"}
             </Label>
             <Input
@@ -217,13 +217,13 @@ export function FlowEditorDialog({
               onChange={(e) => setName(e.target.value)}
               placeholder={isRTL ? "לדוגמה: תזכורת יומית" : "e.g., Daily Reminder"}
               disabled={!!editMode}
-              className={isRTL ? "text-right" : ""}
+              className="text-start"
             />
           </div>
 
           {/* Visual Flow Builder */}
           <div className="space-y-2">
-            <Label className={isRTL ? "text-right block" : ""}>
+            <Label className="text-start block">
               {isRTL ? "תהליך האוטומציה" : "Automation Flow"}
             </Label>
             <div className="rounded-xl border-2 border-dashed border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-900/50 p-6">
@@ -262,7 +262,7 @@ export function FlowEditorDialog({
                             value={option.value}
                             disabled={isUsed && !editMode}
                           >
-                            <div className={cn("flex items-center gap-2", isRTL && "flex-row-reverse")}>
+                            <div className="flex items-center gap-2">
                               <Icon className="h-4 w-4" />
                               <div className="flex flex-col items-start">
                                 <span>{option.label}</span>
@@ -289,7 +289,7 @@ export function FlowEditorDialog({
                 {requiresDelay && (
                   <div className="w-full max-w-sm animate-in slide-in-from-top-2 duration-200">
                     <div className="rounded-xl border-2 border-orange-200 dark:border-orange-800 bg-orange-50/50 dark:bg-orange-900/20 p-4">
-                      <div className={cn("flex items-center gap-2 mb-3", isRTL && "flex-row-reverse")}>
+                      <div className="flex items-center gap-2 mb-3">
                         <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-orange-100 dark:bg-orange-900/50">
                           <Zap className="h-4 w-4 text-orange-600 dark:text-orange-400" />
                         </div>
@@ -351,7 +351,7 @@ export function FlowEditorDialog({
                         const Icon = option.icon;
                         return (
                           <SelectItem key={option.value} value={option.value}>
-                            <div className={cn("flex items-center gap-2", isRTL && "flex-row-reverse")}>
+                            <div className="flex items-center gap-2">
                               <Icon className="h-4 w-4" />
                               <div className="flex flex-col items-start">
                                 <span>{option.label}</span>
@@ -376,7 +376,7 @@ export function FlowEditorDialog({
           {isNewTriggerUsed && (
             <Alert variant="destructive">
               <Info className="h-4 w-4" />
-              <AlertDescription className={isRTL ? "text-right" : ""}>
+              <AlertDescription className="text-start">
                 {isRTL
                   ? "טריגר זה כבר קיים. כל טריגר יכול להיות פעיל פעם אחת בלבד."
                   : "This trigger already exists. Each trigger can only be active once."}
@@ -387,8 +387,8 @@ export function FlowEditorDialog({
           {/* Custom Message - Required for custom actions, optional for template actions */}
           {action && (
             <div className="space-y-2">
-              <div className={cn("flex items-center justify-between", isRTL && "flex-row-reverse")}>
-                <Label htmlFor="message" className={isRTL ? "text-right" : ""}>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="message" className="text-start">
                   {showCustomMessageEditor
                     ? (isRTL ? "תוכן ההודעה *" : "Message Content *")
                     : (isRTL ? "הודעה מותאמת (אופציונלי)" : "Custom Message (Optional)")}
@@ -398,7 +398,7 @@ export function FlowEditorDialog({
               {showCustomMessageEditor && (
                 <Alert className="border-orange-200 bg-orange-50 dark:border-orange-800 dark:bg-orange-900/20">
                   <Info className="h-4 w-4 text-orange-600" />
-                  <AlertDescription className={cn("text-xs text-orange-700 dark:text-orange-300", isRTL && "text-right")}>
+                  <AlertDescription className="text-xs text-orange-700 dark:text-orange-300 text-start">
                     {isRTL
                       ? "הודעה זו חובה כאשר נבחרה פעולה עם הודעה מותאמת אישית"
                       : "This message is required when using a custom message action"}
@@ -407,7 +407,7 @@ export function FlowEditorDialog({
               )}
 
               {/* Variable buttons */}
-              <div className={cn("flex flex-wrap gap-1", isRTL && "flex-row-reverse")}>
+              <div className="flex flex-wrap gap-1">
                 {MESSAGE_VARIABLES.map((variable) => (
                   <Button
                     key={variable.key}
@@ -430,15 +430,14 @@ export function FlowEditorDialog({
                   ? "שלום {guestName}, תודה על אישור ההגעה לאירוע שלנו ב{venue}!"
                   : "Hi {guestName}, thank you for confirming your attendance at {venue}!"}
                 className={cn(
-                  "min-h-[100px] resize-none",
-                  isRTL && "text-right",
+                  "min-h-[100px] resize-none text-start",
                   showCustomMessageEditor && "border-orange-300 focus:border-orange-400"
                 )}
                 dir={isRTL ? "rtl" : "ltr"}
               />
 
               {!showCustomMessageEditor && (
-                <p className={cn("text-xs text-muted-foreground", isRTL && "text-right")}>
+                <p className="text-xs text-muted-foreground text-start">
                   {isRTL
                     ? "השאירו ריק כדי להשתמש בהודעת ברירת המחדל"
                     : "Leave empty to use the default message template"}
@@ -448,7 +447,7 @@ export function FlowEditorDialog({
           )}
         </div>
 
-        <DialogFooter className={isRTL ? "flex-row-reverse" : ""}>
+        <DialogFooter>
           <Button variant="outline" onClick={() => setOpen(false)} disabled={isLoading}>
             {isRTL ? "ביטול" : "Cancel"}
           </Button>

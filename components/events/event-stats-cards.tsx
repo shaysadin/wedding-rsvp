@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useTranslations, useLocale } from "next-intl";
+import { useTranslations } from "next-intl";
 import { motion } from "framer-motion";
 import { Users, Clock, CheckCircle2, XCircle, UserCheck } from "lucide-react";
 
@@ -24,11 +24,9 @@ interface EventStatsCardsProps {
 
 export function EventStatsCards({ stats, eventId, activeFilter, basePath: customBasePath }: EventStatsCardsProps) {
   const pathname = usePathname();
-  const locale = useLocale();
   const tGuests = useTranslations("guests");
   const tStatus = useTranslations("status");
   const tEvents = useTranslations("events");
-  const isRTL = locale === "he";
 
   // Get base path without query params (use custom if provided)
   const basePath = customBasePath || pathname?.split("?")[0] || `/dashboard/events/${eventId}`;
@@ -102,10 +100,7 @@ export function EventStatsCards({ stats, eventId, activeFilter, basePath: custom
                 )}
               >
                 <CardContent className="p-4 sm:p-5">
-                  <div className={cn(
-                    "flex items-center gap-3 sm:gap-4",
-                    isRTL && "flex-row-reverse"
-                  )}>
+                  <div className="flex items-center gap-3 sm:gap-4">
                     {/* Icon */}
                     <div
                       className={cn(
@@ -117,7 +112,7 @@ export function EventStatsCards({ stats, eventId, activeFilter, basePath: custom
                     </div>
 
                     {/* Content */}
-                    <div className={cn("flex-1 min-w-0", isRTL && "text-right")}>
+                    <div className="flex-1 min-w-0 text-start">
                       <p className="text-xs font-medium text-muted-foreground truncate sm:text-sm">
                         {card.label}
                       </p>
@@ -147,17 +142,14 @@ export function EventStatsCards({ stats, eventId, activeFilter, basePath: custom
             "border-violet-200/50 dark:border-violet-800/30"
           )}>
             <CardContent className="p-4 sm:p-5">
-              <div className={cn(
-                "flex items-center gap-3 sm:gap-4",
-                isRTL && "flex-row-reverse"
-              )}>
+              <div className="flex items-center gap-3 sm:gap-4">
                 {/* Icon */}
                 <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-violet-500 transition-transform duration-150 hover:scale-105 sm:h-11 sm:w-11">
                   <UserCheck className="h-4 w-4 text-white sm:h-5 sm:w-5" />
                 </div>
 
                 {/* Content */}
-                <div className={cn("flex-1 min-w-0", isRTL && "text-right")}>
+                <div className="flex-1 min-w-0 text-start">
                   <p className="text-xs font-medium text-muted-foreground truncate sm:text-sm">
                     {tEvents("totalAttending")}
                   </p>
