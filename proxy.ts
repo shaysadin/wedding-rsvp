@@ -9,7 +9,7 @@ const intlMiddleware = createMiddleware({
   localePrefix: "always",
 });
 
-export default async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Skip i18n for API routes, static files, and public RSVP pages

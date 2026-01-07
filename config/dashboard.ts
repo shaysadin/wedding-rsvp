@@ -1,6 +1,6 @@
 import { UserRole } from "@prisma/client";
 
-import { SidebarNavItem } from "types";
+import { SidebarNavItem } from "@/types";
 
 // Admin panel links (shown only to platform owners)
 export const adminLinks: SidebarNavItem[] = [
