@@ -913,7 +913,12 @@
     },
     "preferences": {
       "language": "Language",
-      "languageNote": "Choose your preferred language for the dashboard"
+      "languageNote": "Choose your preferred language for the dashboard",
+      "theme": "Theme",
+      "themeNote": "Choose your preferred theme",
+      "themeLight": "Light",
+      "themeDark": "Dark",
+      "themeSystem": "System"
     },
     "account": {
       "title": "Account Information",

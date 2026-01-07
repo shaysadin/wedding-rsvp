@@ -913,7 +913,12 @@
     },
     "preferences": {
       "language": "שפה",
-      "languageNote": "בחר את השפה המועדפת עליך ללוח הבקרה"
+      "languageNote": "בחר את השפה המועדפת עליך ללוח הבקרה",
+      "theme": "עיצוב",
+      "themeNote": "בחר את העיצוב המועדף עליך",
+      "themeLight": "בהיר",
+      "themeDark": "כהה",
+      "themeSystem": "לפי מערכת"
     },
     "account": {
       "title": "פרטי חשבון",

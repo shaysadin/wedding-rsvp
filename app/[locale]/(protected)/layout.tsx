@@ -11,8 +11,6 @@ import {
   MobileSheetSidebar,
 } from "@/components/layout/dashboard-sidebar";
 import { MobileBottomNav } from "@/components/layout/mobile-bottom-nav";
-import { ModeToggle } from "@/components/layout/mode-toggle";
-import { LanguageSwitcher } from "@/components/layout/language-switcher";
 import { UserAccountNav } from "@/components/layout/user-account-nav";
 import { RoleSwitcher } from "@/components/dashboard/role-switcher";
 import MaxWidthWrapper from "@/components/shared/max-width-wrapper";
@@ -95,9 +93,7 @@ export default async function ProtectedLayout({ children }: ProtectedLayoutProps
               <SearchCommand links={filteredLinks} userEvents={userEvents} />
             </div>
 
-            <div className="flex items-center flex-row-reverse">
-              <LanguageSwitcher />
-              <ModeToggle />
+            <div className="flex items-center">
               <UserAccountNav />
             </div>
           </MaxWidthWrapper>
