@@ -134,7 +134,7 @@ export function GeneratedInvitationsGallery({
             <Icons.media className="h-5 w-5" />
             {isRTL ? "הזמנות שנוצרו" : "Generated Invitations"}
           </CardTitle>
-          <CardDescription className={cn(isRTL && "text-right")}>
+          <CardDescription>
             {isRTL
               ? `${invitations.length} הזמנות נוצרו. לחצו על תמונה לצפייה מורחבת.`
               : `${invitations.length} invitations created. Click on an image to view.`}
@@ -274,7 +274,7 @@ export function GeneratedInvitationsGallery({
                       target="_blank"
                       rel="noopener noreferrer"
                     >
-                      <Icons.download className={cn("h-4 w-4", isRTL ? "ml-2" : "me-2")} />
+                      <Icons.download className="h-4 w-4 me-2" />
                       {isRTL ? "הורדה" : "Download"}
                     </a>
                   </Button>
@@ -288,9 +288,9 @@ export function GeneratedInvitationsGallery({
                       disabled={isSettingActive === selectedInvitation.id}
                     >
                       {isSettingActive === selectedInvitation.id ? (
-                        <Icons.spinner className={cn("h-4 w-4 animate-spin", isRTL ? "ml-2" : "me-2")} />
+                        <Icons.spinner className="h-4 w-4 animate-spin me-2" />
                       ) : (
-                        <Icons.check className={cn("h-4 w-4", isRTL ? "ml-2" : "me-2")} />
+                        <Icons.check className="h-4 w-4 me-2" />
                       )}
                       {isRTL ? "הגדר כהזמנה הפעילה" : "Set as Active Invitation"}
                     </Button>
@@ -304,7 +304,7 @@ export function GeneratedInvitationsGallery({
                       setSelectedInvitation(null);
                     }}
                   >
-                    <Icons.trash className={cn("h-4 w-4", isRTL ? "ml-2" : "me-2")} />
+                    <Icons.trash className="h-4 w-4 me-2" />
                     {isRTL ? "מחק" : "Delete"}
                   </Button>
                 </div>

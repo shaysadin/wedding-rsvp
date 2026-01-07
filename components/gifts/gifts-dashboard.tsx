@@ -245,11 +245,11 @@ export function GiftsDashboard({
       </div>
 
       {/* Actions */}
-      <div className={cn("flex flex-wrap gap-3", isRTL && "flex-row-reverse")}>
+      <div className="flex flex-wrap gap-3">
         <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
           <DialogTrigger asChild>
             <Button>
-              <Icons.add className={cn("h-4 w-4", isRTL ? "ml-2" : "me-2")} />
+              <Icons.add className="h-4 w-4 me-2" />
               {isRTL ? "הוסף מתנה במזומן" : "Add Cash Gift"}
             </Button>
           </DialogTrigger>
@@ -302,7 +302,7 @@ export function GiftsDashboard({
         <Dialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
           <DialogTrigger asChild>
             <Button variant="outline">
-              <Icons.settings className={cn("h-4 w-4", isRTL ? "ml-2" : "me-2")} />
+              <Icons.settings className="h-4 w-4 me-2" />
               {isRTL ? "הגדרות" : "Settings"}
             </Button>
           </DialogTrigger>
@@ -393,7 +393,7 @@ export function GiftsDashboard({
                     <TableCell className="font-medium">
                       {gift.guestName || (isRTL ? "אנונימי" : "Anonymous")}
                       {gift.isManual && (
-                        <Badge variant="outline" className="ml-2">
+                        <Badge variant="outline" className="ms-2">
                           {isRTL ? "מזומן" : "Cash"}
                         </Badge>
                       )}

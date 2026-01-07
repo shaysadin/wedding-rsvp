@@ -9,7 +9,6 @@ import { Icons } from "@/components/shared/icons";
 import { PageFadeIn } from "@/components/shared/page-fade-in";
 import { GiftsDashboard } from "@/components/gifts/gifts-dashboard";
 import { EventDropdownSelector, type EventOption } from "@/components/events/event-dropdown-selector";
-import { cn } from "@/lib/utils";
 
 interface GiftsPageContentProps {
   eventId: string;
@@ -57,7 +56,7 @@ export function GiftsPageContent({ eventId, events, locale }: GiftsPageContentPr
     <PageFadeIn>
       {/* Header with Event Dropdown */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between mb-6">
-        <div className={cn("space-y-1", isRTL && "text-right")}>
+        <div className="space-y-1">
           <h1 className="text-2xl font-bold tracking-tight">
             {isRTL ? "מתנות" : "Gifts"}
           </h1>

@@ -18,7 +18,6 @@ import { AssignGuestsDialog } from "@/components/seating/assign-guests-dialog";
 import { EditTableDialog } from "@/components/seating/edit-table-dialog";
 import { PageFadeIn } from "@/components/shared/page-fade-in";
 import { EventDropdownSelector, type EventOption } from "@/components/events/event-dropdown-selector";
-import { cn } from "@/lib/utils";
 
 // Lazy load the heavy TableFloorPlan component
 const TableFloorPlan = dynamic(
@@ -90,7 +89,6 @@ interface SeatingPageContentProps {
 
 export function SeatingPageContent({ eventId, events, locale }: SeatingPageContentProps) {
   const t = useTranslations("seating");
-  const isRTL = locale === "he";
 
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const [tables, setTables] = useState<Table[]>([]);
@@ -175,14 +173,11 @@ export function SeatingPageContent({ eventId, events, locale }: SeatingPageConte
     <PageFadeIn>
       {/* Header with Event Dropdown */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div className={cn("space-y-1", isRTL && "text-right")}>
+        <div className="space-y-1">
           <h1 className="text-2xl font-bold tracking-tight">{t("title")}</h1>
           <p className="text-muted-foreground">{t("description")}</p>
         </div>
-        <div className={cn(
-          "flex flex-wrap items-center gap-2",
-          isRTL && "flex-row-reverse"
-        )}>
+        <div className="flex flex-wrap items-center gap-2">
           <EventDropdownSelector
             events={events}
             selectedEventId={eventId}

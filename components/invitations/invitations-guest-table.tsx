@@ -347,18 +347,18 @@ export function InvitationsGuestTable({
 
       {/* Stats Cards */}
       <div className="grid gap-4 md:grid-cols-3">
-        <div className={cn("rounded-lg border bg-card p-4", isRTL && "text-right")}>
+        <div className="rounded-lg border bg-card p-4">
           <div className="text-sm text-muted-foreground">{t("stats.total")}</div>
           <div className="text-2xl font-bold">{guestsWithPhone}</div>
           <div className="text-xs text-muted-foreground">
             {tg("withPhone")}
           </div>
         </div>
-        <div className={cn("rounded-lg border bg-card p-4", isRTL && "text-right")}>
+        <div className="rounded-lg border bg-card p-4">
           <div className="text-sm text-muted-foreground">{t("stats.sent")}</div>
           <div className="text-2xl font-bold text-green-600">{sentCount}</div>
         </div>
-        <div className={cn("rounded-lg border bg-card p-4", isRTL && "text-right")}>
+        <div className="rounded-lg border bg-card p-4">
           <div className="text-sm text-muted-foreground">{t("stats.pending")}</div>
           <div className="text-2xl font-bold text-yellow-600">{notSentCount}</div>
         </div>
@@ -463,7 +463,7 @@ export function InvitationsGuestTable({
       {/* Bulk Actions Bar */}
       {selectedIds.size > 0 && (
         <div className="flex flex-col gap-3 rounded-lg border-2 border-primary/20 bg-primary/5 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className={cn("flex items-center gap-2", isRTL && "flex-row-reverse")}>
+          <div className="flex items-center gap-2">
             <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground">
               {selectedIds.size}
             </div>
@@ -471,7 +471,7 @@ export function InvitationsGuestTable({
               {tg("selectedCount", { count: selectedIds.size })}
             </p>
           </div>
-          <div className={cn("flex flex-wrap items-center gap-2", isRTL && "flex-row-reverse")}>
+          <div className="flex flex-wrap items-center gap-2">
             <Button
               size="sm"
               onClick={confirmSendBulk}
@@ -633,7 +633,7 @@ export function InvitationsGuestTable({
     {/* Expanded Modal */}
     <Dialog open={isTableExpanded} onOpenChange={setIsTableExpanded}>
       <DialogContent size="full" className="flex h-[90vh] max-h-[90vh] flex-col gap-0 [&>div]:p-0" dir={isRTL ? "rtl" : "ltr"}>
-        <DialogHeader className={cn("flex shrink-0 flex-row items-center justify-between border-b px-6 py-4", isRTL && "flex-row-reverse")}>
+        <DialogHeader className="flex shrink-0 flex-row items-center justify-between border-b px-6 py-4">
           <DialogTitle>{t("title")}</DialogTitle>
           <Button
             variant="ghost"
@@ -647,18 +647,18 @@ export function InvitationsGuestTable({
         <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-auto p-6">
           {/* Stats Cards */}
           <div className="grid gap-4 md:grid-cols-3">
-            <div className={cn("rounded-lg border bg-card p-4", isRTL && "text-right")}>
+            <div className="rounded-lg border bg-card p-4">
               <div className="text-sm text-muted-foreground">{t("stats.total")}</div>
               <div className="text-2xl font-bold">{guestsWithPhone}</div>
               <div className="text-xs text-muted-foreground">
                 {tg("withPhone")}
               </div>
             </div>
-            <div className={cn("rounded-lg border bg-card p-4", isRTL && "text-right")}>
+            <div className="rounded-lg border bg-card p-4">
               <div className="text-sm text-muted-foreground">{t("stats.sent")}</div>
               <div className="text-2xl font-bold text-green-600">{sentCount}</div>
             </div>
-            <div className={cn("rounded-lg border bg-card p-4", isRTL && "text-right")}>
+            <div className="rounded-lg border bg-card p-4">
               <div className="text-sm text-muted-foreground">{t("stats.pending")}</div>
               <div className="text-2xl font-bold text-yellow-600">{notSentCount}</div>
             </div>

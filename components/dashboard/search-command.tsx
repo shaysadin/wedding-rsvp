@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { useLocale } from "next-intl";
 import { SidebarNavItem } from "@/types";
 
-import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
   CommandDialog,
@@ -126,20 +125,14 @@ export function SearchCommand({ links, userEvents = [] }: SearchCommandProps) {
       {/* Desktop: Full search bar */}
       <Button
         variant="outline"
-        className={cn(
-          "relative h-9 w-full justify-start rounded-md bg-muted/50 text-sm font-normal text-muted-foreground shadow-none sm:pr-12 md:w-72 lg:w-96 hidden md:flex",
-          isRTL && "flex-row-reverse sm:pl-12 sm:pr-3"
-        )}
+        className="relative h-9 w-full justify-start rounded-md bg-muted/50 text-sm font-normal text-muted-foreground shadow-none sm:pe-12 md:w-72 lg:w-96 hidden md:flex"
         onClick={() => setOpen(true)}
       >
         <Icons.search className="h-4 w-4 shrink-0 me-2" />
-        <span className={cn("truncate", isRTL && "text-right")}>
+        <span className="truncate text-start">
           {isRTL ? "חיפוש..." : "Search..."}
         </span>
-        <kbd className={cn(
-          "pointer-events-none absolute top-[0.45rem] hidden h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium opacity-100 sm:flex",
-          isRTL ? "left-[0.3rem]" : "right-[0.3rem]"
-        )}>
+        <kbd className="pointer-events-none absolute top-[0.45rem] end-[0.3rem] hidden h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium opacity-100 sm:flex">
           <span className="text-xs">⌘</span>K
         </kbd>
       </Button>

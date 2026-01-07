@@ -10,7 +10,6 @@ import { DuplicatePhoneWarning } from "@/components/guests/duplicate-phone-warni
 import { PageFadeIn } from "@/components/shared/page-fade-in";
 import { Icons } from "@/components/shared/icons";
 import { EventDropdownSelector, type EventOption } from "@/components/events/event-dropdown-selector";
-import { cn } from "@/lib/utils";
 
 // Lazy load the heavy GuestsTable component
 const GuestsTable = dynamic(
@@ -58,7 +57,7 @@ export function RsvpPageContent({
     <PageFadeIn className="md:h-full">
       {/* Header with Event Dropdown */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div className={cn("space-y-1", isRTL && "text-right")}>
+        <div className="space-y-1">
           <h1 className="text-2xl font-bold tracking-tight">{t("title")}</h1>
           <p className="text-muted-foreground">{t("description")}</p>
         </div>

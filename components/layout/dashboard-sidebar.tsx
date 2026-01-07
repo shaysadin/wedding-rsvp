@@ -149,7 +149,7 @@ export function DashboardSidebar({ links, userEvents = [], currentRole, availabl
                     className="flex flex-col gap-0.5"
                   >
                     {isSidebarExpanded ? (
-                      <p className="text-xs text-muted-foreground">
+                      <p className="text-xs text-muted-foreground rtl:text-end">
                         {getTitle(section.titleKey, section.title)}
                       </p>
                     ) : (
@@ -173,7 +173,7 @@ export function DashboardSidebar({ links, userEvents = [], currentRole, availabl
                                 <Link
                                   href={`/${locale}${item.href}`}
                                   className={cn(
-                                    "flex flex-1 items-center gap-3 rounded-md p-2 text-sm font-medium hover:bg-muted",
+                                    "flex flex-1 items-center gap-3 rounded-md p-2 text-sm font-medium hover:bg-muted rtl:flex-row-reverse",
                                     isPathActive(item.href) || isEventsPage
                                       ? "bg-background/90"
                                       : "text-muted-foreground hover:text-accent-foreground",
@@ -199,7 +199,7 @@ export function DashboardSidebar({ links, userEvents = [], currentRole, availabl
                                       key={event.id}
                                       href={`/${locale}/dashboard/events/${event.id}`}
                                       className={cn(
-                                        "flex items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted",
+                                        "flex items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted rtl:flex-row-reverse",
                                         isEventActive(event.id)
                                           ? "bg-background/80 font-medium"
                                           : "text-muted-foreground hover:text-accent-foreground",
@@ -224,7 +224,7 @@ export function DashboardSidebar({ links, userEvents = [], currentRole, availabl
                                 key={`link-${item.title}`}
                                 href={item.disabled ? "#" : `/${locale}${item.href}`}
                                 className={cn(
-                                  "flex items-center gap-3 rounded-md p-2 text-sm font-medium hover:bg-muted",
+                                  "flex items-center gap-3 rounded-md p-2 text-sm font-medium hover:bg-muted rtl:flex-row-reverse",
                                   isPathActive(item.href)
                                     ? "bg-background/80"
                                     : "text-muted-foreground hover:text-accent-foreground",
@@ -235,7 +235,7 @@ export function DashboardSidebar({ links, userEvents = [], currentRole, availabl
                                 <Icon className="size-5 shrink-0" />
                                 {itemTitle}
                                 {item.badge && (
-                                  <Badge className="me-auto flex size-5 shrink-0 items-center justify-center rounded-full">
+                                  <Badge className="ms-auto flex size-5 shrink-0 items-center justify-center rounded-full">
                                     {item.badge}
                                   </Badge>
                                 )}
@@ -368,7 +368,7 @@ export function MobileSheetSidebar({ links, userEvents = [], currentRole, availa
                     key={section.title}
                     className="flex flex-col gap-0.5"
                   >
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-xs text-muted-foreground rtl:text-end">
                       {getTitle(section.titleKey, section.title)}
                     </p>
 
@@ -391,7 +391,7 @@ export function MobileSheetSidebar({ links, userEvents = [], currentRole, availa
                                   onClick={() => setOpen(false)}
                                   href={`/${locale}${item.href}`}
                                   className={cn(
-                                    "flex flex-1 items-center gap-3 rounded-md p-2 text-sm font-medium hover:bg-muted",
+                                    "flex flex-1 items-center gap-3 rounded-md p-2 text-sm font-medium hover:bg-muted rtl:flex-row-reverse",
                                     isPathActive(item.href) || isEventsPage
                                       ? "bg-background/80"
                                       : "text-muted-foreground hover:text-accent-foreground",
@@ -418,7 +418,7 @@ export function MobileSheetSidebar({ links, userEvents = [], currentRole, availa
                                       onClick={() => setOpen(false)}
                                       href={`/${locale}/dashboard/events/${event.id}`}
                                       className={cn(
-                                        "flex items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted",
+                                        "flex items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted rtl:flex-row-reverse",
                                         isEventActive(event.id)
                                           ? "bg-background/80 font-medium"
                                           : "text-muted-foreground hover:text-accent-foreground",
@@ -445,7 +445,7 @@ export function MobileSheetSidebar({ links, userEvents = [], currentRole, availa
                               }}
                               href={item.disabled ? "#" : `/${locale}${item.href}`}
                               className={cn(
-                                "flex items-center gap-3 rounded-md p-2 text-sm font-medium hover:bg-muted",
+                                "flex items-center gap-3 rounded-md p-2 text-sm font-medium hover:bg-muted rtl:flex-row-reverse",
                                 isPathActive(item.href)
                                   ? "bg-background/80"
                                   : "text-muted-foreground hover:text-accent-foreground",
@@ -456,7 +456,7 @@ export function MobileSheetSidebar({ links, userEvents = [], currentRole, availa
                               <Icon className="size-5 shrink-0" />
                               {itemTitle}
                               {item.badge && (
-                                <Badge className="me-auto flex size-5 shrink-0 items-center justify-center rounded-full">
+                                <Badge className="ms-auto flex size-5 shrink-0 items-center justify-center rounded-full">
                                   {item.badge}
                                 </Badge>
                               )}

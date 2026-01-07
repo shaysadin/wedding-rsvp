@@ -193,7 +193,7 @@ export function UserSettingsForm({ user }: UserSettingsFormProps) {
               </div>
             </div>
 
-            <div>
+            <div className="flex justify-end">
               <Button type="submit" disabled={isPending}>
                 {isPending ? (
                   <>
