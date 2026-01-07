@@ -23,6 +23,7 @@ export function AppLogo({ size = "md", className }: AppLogoProps) {
       width={width}
       height={height}
       className={cn("object-contain", className)}
+      style={{ height: "auto" }}
       priority
     />
   );
