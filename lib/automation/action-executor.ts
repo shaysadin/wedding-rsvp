@@ -1,6 +1,7 @@
 import { AutomationAction } from "@prisma/client";
 import { AutomationContext, ExecutionResult } from "./types";
 import { prisma } from "@/lib/db";
+import { onNotificationSent } from "./event-handlers";
 
 /**
  * Format phone number to international format (E.164)
@@ -276,15 +277,25 @@ async function sendWhatsAppWithTemplate(
 
     // Log the notification (skip for test guests)
     if (!guestId.startsWith("test-")) {
+      const sentAt = new Date();
       await prisma.notificationLog.create({
         data: {
           guestId,
           type: "REMINDER",
           channel: "WHATSAPP",
           status: "SENT",
-          sentAt: new Date(),
+          sentAt,
           providerResponse: message.sid,
         },
+      });
+
+      // Trigger NO_RESPONSE automation scheduling for this new notification
+      // This ensures that if guest doesn't respond to this reminder, they get another follow-up
+      await onNotificationSent({
+        guestId,
+        weddingEventId,
+        notificationType: "REMINDER",
+        sentAt,
       });
     }
 
@@ -367,16 +378,27 @@ async function sendCustomWhatsApp(
 
     // Log the notification (skip for test guests)
     if (!guestId.startsWith("test-")) {
+      const sentAt = new Date();
       await prisma.notificationLog.create({
         data: {
           guestId,
           type: "REMINDER",
           channel: "WHATSAPP",
           status: "SENT",
-          sentAt: new Date(),
+          sentAt,
           providerResponse: message.sid,
         },
       });
+
+      // Trigger NO_RESPONSE automation scheduling for this new notification
+      if (context.weddingEventId) {
+        await onNotificationSent({
+          guestId,
+          weddingEventId: context.weddingEventId,
+          notificationType: "REMINDER",
+          sentAt,
+        });
+      }
     }
 
     return {
@@ -464,16 +486,27 @@ async function sendCustomSms(
 
     // Log the notification (skip for test guests)
     if (!guestId.startsWith("test-")) {
+      const sentAt = new Date();
       await prisma.notificationLog.create({
         data: {
           guestId,
           type: "REMINDER",
           channel: "SMS",
           status: "SENT",
-          sentAt: new Date(),
+          sentAt,
           providerResponse: message.sid,
         },
       });
+
+      // Trigger NO_RESPONSE automation scheduling for this new notification
+      if (context.weddingEventId) {
+        await onNotificationSent({
+          guestId,
+          weddingEventId: context.weddingEventId,
+          notificationType: "REMINDER",
+          sentAt,
+        });
+      }
     }
 
     return {
@@ -573,15 +606,24 @@ async function sendSmsReminder(
 
     // Log the notification (skip for test guests)
     if (!guestId.startsWith("test-")) {
+      const sentAt = new Date();
       await prisma.notificationLog.create({
         data: {
           guestId,
           type: "REMINDER",
           channel: "SMS",
           status: "SENT",
-          sentAt: new Date(),
+          sentAt,
           providerResponse: smsMessage.sid,
         },
+      });
+
+      // Trigger NO_RESPONSE automation scheduling for this new notification
+      await onNotificationSent({
+        guestId,
+        weddingEventId,
+        notificationType: "REMINDER",
+        sentAt,
       });
     }
 
