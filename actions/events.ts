@@ -20,7 +20,9 @@ export async function createEvent(input: CreateEventInput) {
   try {
     const user = await getCurrentUser();
 
-    if (!user || !user.id || user.role !== UserRole.ROLE_WEDDING_OWNER) {
+    // Check if user has ROLE_WEDDING_OWNER in their roles array
+    const hasWeddingOwnerRole = user?.roles?.includes(UserRole.ROLE_WEDDING_OWNER);
+    if (!user || !user.id || !hasWeddingOwnerRole) {
       return { error: "Unauthorized" };
     }
 
@@ -135,7 +137,9 @@ export async function updateEvent(input: UpdateEventInput) {
   try {
     const user = await getCurrentUser();
 
-    if (!user || user.role !== UserRole.ROLE_WEDDING_OWNER) {
+    // Check if user has ROLE_WEDDING_OWNER in their roles array
+    const hasWeddingOwnerRole = user?.roles?.includes(UserRole.ROLE_WEDDING_OWNER);
+    if (!user || !hasWeddingOwnerRole) {
       return { error: "Unauthorized" };
     }
 
@@ -175,7 +179,9 @@ export async function deleteEvent(eventId: string) {
   try {
     const user = await getCurrentUser();
 
-    if (!user || user.role !== UserRole.ROLE_WEDDING_OWNER) {
+    // Check if user has ROLE_WEDDING_OWNER in their roles array
+    const hasWeddingOwnerRole = user?.roles?.includes(UserRole.ROLE_WEDDING_OWNER);
+    if (!user || !hasWeddingOwnerRole) {
       return { error: "Unauthorized" };
     }
 
@@ -217,7 +223,9 @@ export async function getEventById(eventId: string) {
   try {
     const user = await getCurrentUser();
 
-    if (!user || user.role !== UserRole.ROLE_WEDDING_OWNER) {
+    // Check if user has ROLE_WEDDING_OWNER in their roles array
+    const hasWeddingOwnerRole = user?.roles?.includes(UserRole.ROLE_WEDDING_OWNER);
+    if (!user || !hasWeddingOwnerRole) {
       return { error: "Unauthorized" };
     }
 
@@ -269,7 +277,9 @@ export async function getUserEvents(workspaceId?: string) {
   try {
     const user = await getCurrentUser();
 
-    if (!user || user.role !== UserRole.ROLE_WEDDING_OWNER) {
+    // Check if user has ROLE_WEDDING_OWNER in their roles array
+    const hasWeddingOwnerRole = user?.roles?.includes(UserRole.ROLE_WEDDING_OWNER);
+    if (!user || !hasWeddingOwnerRole) {
       return { error: "Unauthorized" };
     }
 
@@ -361,7 +371,9 @@ export async function getEventsForSelector() {
   try {
     const user = await getCurrentUser();
 
-    if (!user || user.role !== UserRole.ROLE_WEDDING_OWNER) {
+    // Check if user has ROLE_WEDDING_OWNER in their roles array
+    const hasWeddingOwnerRole = user?.roles?.includes(UserRole.ROLE_WEDDING_OWNER);
+    if (!user || !hasWeddingOwnerRole) {
       return { error: "Unauthorized" };
     }
 

@@ -102,7 +102,15 @@ export function NavBar({ scroll = false }: NavBarProps) {
 
           {session ? (
             <Link
-              href={session.user.role === UserRole.ROLE_PLATFORM_OWNER ? "/admin" : "/dashboard"}
+              href={
+                // Check if user has wedding owner role in roles array
+                // Users with both roles should go to dashboard (not admin)
+                session.user.roles?.includes(UserRole.ROLE_WEDDING_OWNER)
+                  ? "/dashboard"
+                  : session.user.roles?.includes(UserRole.ROLE_PLATFORM_OWNER)
+                    ? "/admin"
+                    : "/dashboard"
+              }
               className="hidden md:block"
             >
               <Button

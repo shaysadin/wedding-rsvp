@@ -31,7 +31,8 @@ const SelectTrigger = React.forwardRef<
       ref={ref}
       dir={dir}
       className={cn(
-        "flex h-10 w-full items-center justify-between rounded-lg border border-input bg-card px-3 py-2 text-sm ring-offset-background transition-colors data-[placeholder]:text-muted-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50 [&>span]:line-clamp-1",
+        // Use text-base (16px) on mobile to prevent iOS zoom on focus, text-sm on larger screens
+        "flex h-10 w-full items-center justify-between rounded-lg border border-input bg-card px-3 py-2 text-base sm:text-sm ring-offset-background transition-colors data-[placeholder]:text-muted-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50 [&>span]:line-clamp-1",
         className
       )}
       {...props}

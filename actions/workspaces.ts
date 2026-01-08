@@ -26,7 +26,9 @@ export async function createWorkspace(input: CreateWorkspaceInput) {
   try {
     const user = await getCurrentUser();
 
-    if (!user || !user.id || user.role !== UserRole.ROLE_WEDDING_OWNER) {
+    // Check if user has ROLE_WEDDING_OWNER in their roles array
+    const hasWeddingOwnerRole = user?.roles?.includes(UserRole.ROLE_WEDDING_OWNER);
+    if (!user || !user.id || !hasWeddingOwnerRole) {
       return { error: "Unauthorized" };
     }
 
@@ -174,7 +176,9 @@ export async function updateWorkspace(input: UpdateWorkspaceInput) {
   try {
     const user = await getCurrentUser();
 
-    if (!user || !user.id || user.role !== UserRole.ROLE_WEDDING_OWNER) {
+    // Check if user has ROLE_WEDDING_OWNER in their roles array
+    const hasWeddingOwnerRole = user?.roles?.includes(UserRole.ROLE_WEDDING_OWNER);
+    if (!user || !user.id || !hasWeddingOwnerRole) {
       return { error: "Unauthorized" };
     }
 
@@ -243,7 +247,9 @@ export async function deleteWorkspace(id: string) {
   try {
     const user = await getCurrentUser();
 
-    if (!user || !user.id || user.role !== UserRole.ROLE_WEDDING_OWNER) {
+    // Check if user has ROLE_WEDDING_OWNER in their roles array
+    const hasWeddingOwnerRole = user?.roles?.includes(UserRole.ROLE_WEDDING_OWNER);
+    if (!user || !user.id || !hasWeddingOwnerRole) {
       return { error: "Unauthorized" };
     }
 
@@ -310,7 +316,9 @@ export async function setDefaultWorkspace(id: string) {
   try {
     const user = await getCurrentUser();
 
-    if (!user || !user.id || user.role !== UserRole.ROLE_WEDDING_OWNER) {
+    // Check if user has ROLE_WEDDING_OWNER in their roles array
+    const hasWeddingOwnerRole = user?.roles?.includes(UserRole.ROLE_WEDDING_OWNER);
+    if (!user || !user.id || !hasWeddingOwnerRole) {
       return { error: "Unauthorized" };
     }
 
@@ -499,7 +507,9 @@ export async function moveEventsToWorkspace(eventIds: string[], targetWorkspaceI
   try {
     const user = await getCurrentUser();
 
-    if (!user || !user.id || user.role !== UserRole.ROLE_WEDDING_OWNER) {
+    // Check if user has ROLE_WEDDING_OWNER in their roles array
+    const hasWeddingOwnerRole = user?.roles?.includes(UserRole.ROLE_WEDDING_OWNER);
+    if (!user || !user.id || !hasWeddingOwnerRole) {
       return { error: "Unauthorized" };
     }
 

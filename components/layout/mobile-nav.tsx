@@ -50,7 +50,14 @@ export function NavMobile() {
         {/* User/Login icon */}
         {session ? (
           <Link
-            href={session.user.role === UserRole.ROLE_PLATFORM_OWNER ? "/admin" : "/dashboard"}
+            href={
+              // Check if user has wedding owner role - users with both roles go to dashboard
+              session.user.roles?.includes(UserRole.ROLE_WEDDING_OWNER)
+                ? "/dashboard"
+                : session.user.roles?.includes(UserRole.ROLE_PLATFORM_OWNER)
+                  ? "/admin"
+                  : "/dashboard"
+            }
             className="rounded-full p-2 transition-colors hover:bg-muted"
           >
             <User className="size-5 text-muted-foreground" />
@@ -120,7 +127,8 @@ export function NavMobile() {
 
           {session ? (
             <>
-              {session.user.role === UserRole.ROLE_PLATFORM_OWNER && (
+              {/* Show admin link only for users with platform owner role */}
+              {session.user.roles?.includes(UserRole.ROLE_PLATFORM_OWNER) && (
                 <li className="py-3">
                   <Link
                     href="/admin"
@@ -133,16 +141,19 @@ export function NavMobile() {
                 </li>
               )}
 
-              <li className="py-3">
-                <Link
-                  href="/dashboard"
-                  onClick={() => setOpen(false)}
-                  className="flex w-full items-center gap-2 font-medium capitalize"
-                >
-                  <Icons.dashboard className="size-4" />
-                  {tCommon("dashboard")}
-                </Link>
-              </li>
+              {/* Show dashboard link for users with wedding owner role */}
+              {session.user.roles?.includes(UserRole.ROLE_WEDDING_OWNER) && (
+                <li className="py-3">
+                  <Link
+                    href="/dashboard"
+                    onClick={() => setOpen(false)}
+                    className="flex w-full items-center gap-2 font-medium capitalize"
+                  >
+                    <Icons.dashboard className="size-4" />
+                    {tCommon("dashboard")}
+                  </Link>
+                </li>
+              )}
             </>
           ) : (
             <>
