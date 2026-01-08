@@ -165,9 +165,9 @@ export function UserSettingsForm({ user }: UserSettingsFormProps) {
 
               <div className="space-y-2">
                 <Label htmlFor="theme">{t("preferences.theme")}</Label>
-                <Select value={mounted ? (theme || "system") : "system"} onValueChange={setTheme}>
+                <Select value={theme ?? "system"} onValueChange={setTheme} disabled={!mounted}>
                   <SelectTrigger id="theme">
-                    <SelectValue placeholder={t("preferences.themeSystem")} />
+                    <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="light">
