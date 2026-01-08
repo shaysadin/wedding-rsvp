@@ -442,7 +442,7 @@ export function SuppliersTable({
 
     {/* Expanded Modal */}
     <Dialog open={isTableExpanded} onOpenChange={setIsTableExpanded}>
-      <DialogContent size="full" className="flex h-[90vh] max-h-[90vh] flex-col gap-0 [&>div]:p-0" dir={isRTL ? "rtl" : "ltr"}>
+      <DialogContent size="full" className="flex flex-col gap-0 sm:h-[90vh] sm:max-h-[90vh] [&>div]:p-0" dir={isRTL ? "rtl" : "ltr"}>
         <DialogHeader className="flex shrink-0 flex-row items-center justify-between border-b px-6 py-4">
           <DialogTitle>{isRTL ? "ספקים" : "Suppliers"}</DialogTitle>
           <Button

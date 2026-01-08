@@ -52,7 +52,7 @@ export function ExpandableTableWrapper({
         <DialogContent
           size="full"
           className={cn(
-            "flex h-[90vh] max-h-[90vh] flex-col gap-0 [&>div]:p-0",
+            "flex flex-col gap-0 sm:h-[90vh] sm:max-h-[90vh] [&>div]:p-0",
             expandedClassName
           )}
         >
@@ -142,7 +142,7 @@ export function ExpandableTableContainer({
             <DialogContent
               size="full"
               className={cn(
-                "flex h-[90vh] max-h-[90vh] flex-col gap-0 [&>div]:p-0",
+                "flex flex-col gap-0 sm:h-[90vh] sm:max-h-[90vh] [&>div]:p-0",
                 expandedClassName
               )}
             >

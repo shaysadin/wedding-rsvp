@@ -190,7 +190,7 @@ export function EditEventModal({ event, variant = "button" }: EditEventModalProp
           </Button>
         )}
       </DialogTrigger>
-      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-[600px]">
+      <DialogContent className="sm:max-w-[600px]">
         <DialogHeader className="shrink-0">
           <DialogTitle className="text-lg font-semibold sm:text-xl">
             {isHebrew ? "עריכת פרטי האירוע" : "Edit Event Details"}

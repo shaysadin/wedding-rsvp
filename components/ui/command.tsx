@@ -32,7 +32,6 @@ const CommandDialog = ({ children, isRTL, ...props }: CommandDialogProps) => {
     <Dialog {...props}>
       <DialogContent
         size="auto"
-        hideCloseButton
         noWrapper
         dir={isRTL ? "rtl" : "ltr"}
         className={cn(
@@ -81,7 +80,7 @@ const CommandList = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <CommandPrimitive.List
     ref={ref}
-    className={cn("max-h-[300px] overflow-y-auto overflow-x-hidden", className)}
+    className={cn("max-h-[60vh] sm:max-h-[300px] overflow-y-auto overflow-x-hidden", className)}
     {...props}
   />
 ))

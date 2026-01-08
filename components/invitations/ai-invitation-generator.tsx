@@ -247,7 +247,7 @@ export function AIInvitationGenerator({
 
       {/* Template Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh]">
+        <DialogContent className="sm:max-w-4xl">
           <DialogHeader>
             <DialogTitle>
               {selectedTemplate && (isRTL ? selectedTemplate.nameHe : selectedTemplate.name)}
