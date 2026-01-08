@@ -411,39 +411,41 @@ export function DashboardContent({ userName, events, stats, locale, usageData }:
           </motion.div>
 
           {/* Send Invitations Card */}
-          <motion.div
-            whileHover={{ y: -2 }}
-            whileTap={{ scale: 0.98 }}
-            transition={{ duration: 0.1 }}
-            style={{ willChange: "transform" }}
-          >
-            <Link href={`/${locale}/dashboard/events`}>
-              <div className="group relative overflow-hidden rounded-xl border border-border/50 bg-card p-5 shadow-sm transition-all duration-300 hover:border-border hover:shadow-lg">
-                <div className="flex items-center gap-4">
-                  {/* Icon */}
-                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-muted text-foreground transition-transform duration-300 group-hover:scale-105">
-                    <Send className="h-5 w-5" />
-                  </div>
+          {events.length > 0 && (
+            <motion.div
+              whileHover={{ y: -2 }}
+              whileTap={{ scale: 0.98 }}
+              transition={{ duration: 0.1 }}
+              style={{ willChange: "transform" }}
+            >
+              <Link href={`/${locale}/events/${events[0].id}/invitations`}>
+                <div className="group relative overflow-hidden rounded-xl border border-border/50 bg-card p-5 shadow-sm transition-all duration-300 hover:border-border hover:shadow-lg">
+                  <div className="flex items-center gap-4">
+                    {/* Icon */}
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-muted text-foreground transition-transform duration-300 group-hover:scale-105">
+                      <Send className="h-5 w-5" />
+                    </div>
 
-                  {/* Content */}
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-foreground">
-                      {isRTL ? "שלח הזמנות" : "Send Invitations"}
-                    </h3>
-                    <p className="mt-0.5 text-sm text-muted-foreground">
-                      {isRTL ? "הזמן את האורחים שלך" : "Invite your guests"}
-                    </p>
-                  </div>
+                    {/* Content */}
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-foreground">
+                        {isRTL ? "שלח הזמנות" : "Send Invitations"}
+                      </h3>
+                      <p className="mt-0.5 text-sm text-muted-foreground">
+                        {isRTL ? "הזמן את האורחים שלך" : "Invite your guests"}
+                      </p>
+                    </div>
 
-                  {/* Arrow */}
-                  <ArrowRight className={cn(
-                    "h-5 w-5 text-muted-foreground transition-all duration-300 group-hover:text-foreground",
-                    isRTL ? "rotate-180 group-hover:-translate-x-1" : "group-hover:translate-x-1"
-                  )} />
+                    {/* Arrow */}
+                    <ArrowRight className={cn(
+                      "h-5 w-5 text-muted-foreground transition-all duration-300 group-hover:text-foreground",
+                      isRTL ? "rotate-180 group-hover:-translate-x-1" : "group-hover:translate-x-1"
+                    )} />
+                  </div>
                 </div>
-              </div>
-            </Link>
-          </motion.div>
+              </Link>
+            </motion.div>
+          )}
         </div>
       </motion.div>
 
@@ -451,14 +453,6 @@ export function DashboardContent({ userName, events, stats, locale, usageData }:
       <motion.div variants={itemVariants} className="space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold">{t("upcomingEvents")}</h2>
-          {events.length > 0 && (
-            <Button variant="ghost" size="sm" asChild className="gap-1">
-              <Link href={`/${locale}/dashboard/events`}>
-                {isRTL ? "הצג הכל" : "View all"}
-                <ArrowRight className={cn("h-4 w-4", isRTL && "rotate-180")} />
-              </Link>
-            </Button>
-          )}
         </div>
 
         {!events || events.length === 0 ? (
@@ -535,7 +529,7 @@ const EventCard = React.memo(function EventCard({
       whileHover={{ y: -3, transition: { duration: 0.1 } }}
       style={{ willChange: "transform" }}
     >
-      <Link href={`/${locale}/dashboard/events/${event.id}`}>
+      <Link href={`/${locale}/events/${event.id}`}>
         <Card className="group relative overflow-hidden transition-all hover:shadow-lg">
           {/* Decorative top gradient */}
           <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-pink-500 via-rose-500 to-red-500" />

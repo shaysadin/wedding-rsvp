@@ -97,7 +97,18 @@
     "designInvitations": "Design & Invitations",
     "rsvpCommunication": "RSVP & Communication",
     "accountSettings": "Account & Settings",
-    "adminPanel": "Admin Panel"
+    "adminPanel": "Admin Panel",
+    "main": "Main",
+    "myEvents": "My Events",
+    "backToLobby": "Back to Events",
+    "switchEvent": "Switch Event",
+    "eventDashboard": "Event Dashboard",
+    "overview": "Overview",
+    "planning": "Planning",
+    "communication": "Communication",
+    "more": "More",
+    "lobby": "My Events",
+    "account": "Account"
   },
   "auth": {
     "signIn": "Sign In",

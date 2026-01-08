@@ -97,7 +97,18 @@
     "designInvitations": "עיצוב והזמנות",
     "rsvpCommunication": "אישורי הגעה ותקשורת",
     "accountSettings": "ניהול חשבון והגדרות",
-    "adminPanel": "ניהול מערכת"
+    "adminPanel": "ניהול מערכת",
+    "main": "ראשי",
+    "myEvents": "האירועים שלי",
+    "backToLobby": "חזרה לאירועים",
+    "switchEvent": "החלף אירוע",
+    "eventDashboard": "לוח בקרה",
+    "overview": "סקירה",
+    "planning": "תכנון",
+    "communication": "תקשורת",
+    "more": "עוד",
+    "lobby": "האירועים שלי",
+    "account": "חשבון"
   },
   "auth": {
     "signIn": "כניסה",

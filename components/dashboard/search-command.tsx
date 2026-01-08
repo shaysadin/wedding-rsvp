@@ -17,17 +17,11 @@ import {
 } from "@/components/ui/command";
 import { Icons } from "@/components/shared/icons";
 
-interface UserEvent {
-  id: string;
-  title: string;
-}
-
 interface SearchCommandProps {
   links: SidebarNavItem[];
-  userEvents?: UserEvent[];
 }
 
-export function SearchCommand({ links, userEvents = [] }: SearchCommandProps) {
+export function SearchCommand({ links }: SearchCommandProps) {
   const [open, setOpen] = useState(false);
   const router = useRouter();
   const locale = useLocale();
@@ -52,10 +46,10 @@ export function SearchCommand({ links, userEvents = [] }: SearchCommandProps) {
   // Quick actions
   const quickActions = useMemo(() => [
     {
-      title: isRTL ? "צור אירוע חדש" : "Create New Event",
-      icon: "add" as const,
-      href: `/${locale}/dashboard/events`,
-      keywords: ["create", "new", "event", "add", "צור", "חדש", "אירוע"],
+      title: isRTL ? "האירועים שלי" : "My Events",
+      icon: "home" as const,
+      href: `/${locale}/dashboard`,
+      keywords: ["events", "home", "אירועים", "בית"],
     },
     {
       title: isRTL ? "הגדרות" : "Settings",
@@ -70,44 +64,6 @@ export function SearchCommand({ links, userEvents = [] }: SearchCommandProps) {
       keywords: ["billing", "payment", "subscription", "חיוב", "תשלום"],
     },
   ], [isRTL, locale]);
-
-  // Event-specific actions (when events exist)
-  const eventActions = useMemo(() => {
-    if (userEvents.length === 0) return [];
-
-    return userEvents.flatMap((event) => [
-      {
-        title: isRTL ? `אורחים - ${event.title}` : `Guests - ${event.title}`,
-        icon: "users" as const,
-        href: `/${locale}/dashboard/events/${event.id}`,
-        keywords: ["guests", "אורחים", event.title.toLowerCase()],
-      },
-      {
-        title: isRTL ? `ספקים - ${event.title}` : `Suppliers - ${event.title}`,
-        icon: "suppliers" as const,
-        href: `/${locale}/dashboard/events/${event.id}/suppliers`,
-        keywords: ["suppliers", "vendors", "ספקים", event.title.toLowerCase()],
-      },
-      {
-        title: isRTL ? `סידור ישיבה - ${event.title}` : `Seating - ${event.title}`,
-        icon: "layoutGrid" as const,
-        href: `/${locale}/dashboard/events/${event.id}/seating`,
-        keywords: ["seating", "tables", "ישיבה", "שולחנות", event.title.toLowerCase()],
-      },
-      {
-        title: isRTL ? `הזמנות - ${event.title}` : `Invitations - ${event.title}`,
-        icon: "mail" as const,
-        href: `/${locale}/dashboard/events/${event.id}/invitations`,
-        keywords: ["invitations", "send", "הזמנות", "שלח", event.title.toLowerCase()],
-      },
-      {
-        title: isRTL ? `עיצוב - ${event.title}` : `Design - ${event.title}`,
-        icon: "palette" as const,
-        href: `/${locale}/dashboard/events/${event.id}/customize`,
-        keywords: ["design", "customize", "theme", "עיצוב", "התאמה", event.title.toLowerCase()],
-      },
-    ]);
-  }, [userEvents, isRTL, locale]);
 
   return (
     <>
@@ -164,51 +120,6 @@ export function SearchCommand({ links, userEvents = [] }: SearchCommandProps) {
               );
             })}
           </CommandGroup>
-
-          {/* User Events */}
-          {userEvents.length > 0 && (
-            <>
-              <CommandSeparator />
-              <CommandGroup heading={isRTL ? "האירועים שלי" : "My Events"}>
-                {userEvents.map((event) => (
-                  <CommandItem
-                    key={event.id}
-                    value={`event ${event.title}`}
-                    onSelect={() => {
-                      runCommand(() => router.push(`/${locale}/dashboard/events/${event.id}`));
-                    }}
-                  >
-                    <Icons.calendar className="size-4 me-2" />
-                    <span>{event.title}</span>
-                  </CommandItem>
-                ))}
-              </CommandGroup>
-            </>
-          )}
-
-          {/* Event-specific actions */}
-          {eventActions.length > 0 && (
-            <>
-              <CommandSeparator />
-              <CommandGroup heading={isRTL ? "ניהול אירועים" : "Event Management"}>
-                {eventActions.map((action) => {
-                  const Icon = Icons[action.icon];
-                  return (
-                    <CommandItem
-                      key={action.href}
-                      value={`${action.title} ${action.keywords.join(" ")}`}
-                      onSelect={() => {
-                        runCommand(() => router.push(action.href));
-                      }}
-                    >
-                      <Icon className="size-4 me-2" />
-                      <span>{action.title}</span>
-                    </CommandItem>
-                  );
-                })}
-              </CommandGroup>
-            </>
-          )}
 
           {/* Navigation Links */}
           <CommandSeparator />

@@ -67,7 +67,7 @@ export function EventCard({ event, locale }: EventCardProps) {
 
   return (
     <>
-      <Link href={`/${locale}/dashboard/events/${event.id}`}>
+      <Link href={`/${locale}/events/${event.id}`}>
         <Card className="group relative overflow-hidden transition-all hover:shadow-lg hover:-translate-y-1 duration-200">
         {/* Decorative top gradient */}
         <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-pink-500 via-rose-500 to-red-500" />
@@ -100,7 +100,7 @@ export function EventCard({ event, locale }: EventCardProps) {
                   <DropdownMenuItem
                     onClick={(e) => {
                       e.preventDefault();
-                      router.push(`/${locale}/dashboard/events/${event.id}`);
+                      router.push(`/${locale}/events/${event.id}`);
                     }}
                   >
                     <ExternalLink className="me-2 h-4 w-4" />
@@ -109,7 +109,7 @@ export function EventCard({ event, locale }: EventCardProps) {
                   <DropdownMenuItem
                     onClick={(e) => {
                       e.preventDefault();
-                      router.push(`/${locale}/dashboard/events/${event.id}?edit=true`);
+                      router.push(`/${locale}/events/${event.id}?edit=true`);
                     }}
                   >
                     <Pencil className="me-2 h-4 w-4" />

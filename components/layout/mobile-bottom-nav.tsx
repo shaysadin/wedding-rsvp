@@ -30,10 +30,9 @@ export function MobileBottomNav({ currentRole }: MobileBottomNavProps) {
         { href: "/dashboard/settings", icon: Icons.settings, labelKey: "navigation.settings" },
       ]
     : [
-        { href: "/dashboard", icon: Icons.dashboard, labelKey: "navigation.dashboard" },
-        { href: "/dashboard/events", icon: Icons.calendar, labelKey: "navigation.events" },
-        { href: "/dashboard/invitations", icon: Icons.mail, labelKey: "navigation.invitations" },
-        { href: "/dashboard/automations", icon: Icons.sparkles, labelKey: "navigation.automations" },
+        { href: "/dashboard", icon: Icons.home, labelKey: "navigation.myEvents" },
+        { href: "/dashboard/billing", icon: Icons.creditCard, labelKey: "navigation.billing" },
+        { href: "/dashboard/settings", icon: Icons.settings, labelKey: "navigation.settings" },
       ];
 
   // Check if current path matches the item href

@@ -28,6 +28,8 @@ npx prisma studio             # Database GUI
 
 # Other
 npm run email        # Email template dev server (port 3333)
+
+# Note: No test suite configured yet
 ```
 
 ---
@@ -47,6 +49,7 @@ npm run email        # Email template dev server (port 3333)
 - **Tailwind CSS 3.4** + **shadcn/ui** (Radix primitives)
 - **Framer Motion** for animations
 - **next-themes** for dark mode
+- **Contentlayer** for blog/docs MDX content
 
 ### Communications
 - **Twilio** - SMS and WhatsApp messaging
@@ -70,6 +73,9 @@ app/
   [locale]/           # Localized routes (en/he)
     (protected)/      # Auth-required pages (dashboard, admin)
     (public)/         # Public pages (login, register)
+  (public)/           # Non-localized public routes
+    rsvp/[slug]/      # Guest RSVP pages (public-facing)
+    gift/[guestSlug]/ # Gift payment pages
   api/                # API routes (cron, stripe, twilio, vapi webhooks)
 
 actions/              # Server Actions (mutation logic)
@@ -78,6 +84,7 @@ components/
   shared/             # Reusable components (Icons, MaxWidthWrapper)
   [feature]/          # Feature-specific components
 config/               # App configuration (site, dashboard nav, plans)
+content/              # MDX content for blog/docs (via Contentlayer)
 lib/
   automation/         # Automation flow engine
   invitations/        # Invitation generation system
@@ -119,7 +126,8 @@ export type CreateGuestInput = z.input<typeof createGuestSchema>;
 Actions return `{ error: string }` or `{ success: true, data }` pattern.
 
 ### Component Pattern
-- PascalCase file names: `AddGuestDialog.tsx`
+- kebab-case file names: `add-guest-dialog.tsx`
+- Components exported as PascalCase: `AddGuestDialog`
 - Client components marked with `"use client";`
 - Server components are default
 - Heavy components use `dynamic()` with loading skeletons
@@ -145,11 +153,10 @@ const locale = await getLocale();
 ## Coding Conventions
 
 ### Naming
-- **Files**: kebab-case (`add-guest-dialog.tsx`)
-- **Components**: PascalCase (`AddGuestDialog`)
-- **Actions**: camelCase (`createGuest`, `updateGuest`)
+- **Files**: kebab-case (`add-guest-dialog.tsx`, `guest-actions.ts`)
+- **Components/Types**: PascalCase (`AddGuestDialog`, `CreateGuestInput`)
+- **Functions/Actions**: camelCase (`createGuest`, `updateGuest`)
 - **Database columns**: snake_case via `@map()`
-- **Types**: PascalCase (`CreateGuestInput`)
 
 ### Imports
 - Use `@/` alias for absolute imports

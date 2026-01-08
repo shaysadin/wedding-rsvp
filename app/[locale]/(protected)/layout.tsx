@@ -44,17 +44,6 @@ export default async function ProtectedLayout({ children }: ProtectedLayoutProps
   const currentRole = dbUser?.role || user.role;
   const userRoles = dbUser?.roles || [currentRole];
 
-  // Fetch user's events for sidebar (only for wedding owners)
-  let userEvents: { id: string; title: string }[] = [];
-  if (currentRole === UserRole.ROLE_WEDDING_OWNER) {
-    const events = await prisma.weddingEvent.findMany({
-      where: { ownerId: user.id },
-      select: { id: true, title: true },
-      orderBy: { dateTime: "asc" },
-    });
-    userEvents = events;
-  }
-
   // Combine admin links (for platform owners) with regular sidebar links
   const allLinks = currentRole === UserRole.ROLE_PLATFORM_OWNER
     ? [...adminLinks, ...sidebarLinks]
@@ -74,7 +63,6 @@ export default async function ProtectedLayout({ children }: ProtectedLayoutProps
     <div className="fixed inset-0 flex w-full overflow-hidden bg-sidebar">
       <DashboardSidebar
         links={filteredLinks}
-        userEvents={userEvents}
         currentRole={currentRole}
         availableRoles={userRoles}
       />
@@ -84,13 +72,12 @@ export default async function ProtectedLayout({ children }: ProtectedLayoutProps
           <MaxWidthWrapper className="flex justify-between w-full items-center gap-x-3 px-0">
             <MobileSheetSidebar
               links={filteredLinks}
-              userEvents={userEvents}
               currentRole={currentRole}
               availableRoles={userRoles}
             />
 
             <div className="w-full flex-1">
-              <SearchCommand links={filteredLinks} userEvents={userEvents} />
+              <SearchCommand links={filteredLinks} />
             </div>
 
             <div className="flex items-center">
