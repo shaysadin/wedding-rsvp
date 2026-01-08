@@ -42,6 +42,8 @@ export async function getAllUsers() {
       orderBy: { createdAt: "desc" },
     });
 
+    // Note: voiceCallsAddOn and giftSystemEnabled are already included via the User model
+
     // Calculate total guests and add plan limits for each user
     const usersWithStats = users.map((u) => {
       const planLimits = PLAN_LIMITS[u.plan];
@@ -138,7 +140,8 @@ export async function changeUserPlan(
   userId: string,
   plan: PlanTier,
   resetUsage: boolean = false,
-  syncWithStripe: boolean = false
+  syncWithStripe: boolean = false,
+  includeVoice: boolean = false
 ) {
   try {
     const currentUser = await requirePlatformOwner();
@@ -154,6 +157,7 @@ export async function changeUserPlan(
         stripeSubscriptionId: true,
         stripeCustomerId: true,
         stripePriceId: true,
+        giftSystemEnabled: true,
       },
     });
 
@@ -172,8 +176,13 @@ export async function changeUserPlan(
         const isYearly = currentPriceId?.includes("yearly") || false;
 
         // Get the appropriate price ID for the new plan
-        const planKey = plan as "BASIC" | "ADVANCED" | "PREMIUM";
-        const newPriceId = getPriceId(planKey, isYearly ? "yearly" : "monthly");
+        // Note: BUSINESS plan is monthly only, so we force monthly for BUSINESS
+        const planKey = plan as "BASIC" | "ADVANCED" | "PREMIUM" | "BUSINESS";
+        const interval = plan === "BUSINESS" ? "monthly" : (isYearly ? "yearly" : "monthly");
+        const newPriceId = getPriceId(planKey, interval, {
+          giftSystemEnabled: targetUser.giftSystemEnabled,
+          includeVoice: plan === "BUSINESS" ? includeVoice : false,
+        });
 
         if (newPriceId && subscription.status === "active") {
           // Update the Stripe subscription
@@ -206,10 +215,18 @@ export async function changeUserPlan(
     // Update user plan in database
     const updateData: {
       plan: PlanTier;
+      voiceCallsAddOn?: boolean;
       stripeSubscriptionId?: null;
       stripePriceId?: null;
       stripeCurrentPeriodEnd?: null;
     } = { plan };
+
+    // Set voiceCallsAddOn for BUSINESS plan, reset for other plans
+    if (plan === "BUSINESS") {
+      updateData.voiceCallsAddOn = includeVoice;
+    } else {
+      updateData.voiceCallsAddOn = false;
+    }
 
     // If setting to FREE, clear Stripe fields
     if (plan === "FREE") {

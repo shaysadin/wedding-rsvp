@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { Archive, CreditCard, Lock, LogOut, Settings } from "lucide-react";
+import { Archive, ArrowLeftRight, CreditCard, LayoutDashboard, Lock, LogOut, Settings } from "lucide-react";
 import { signOut, useSession } from "next-auth/react";
 import { Drawer } from "vaul";
 
@@ -24,7 +24,16 @@ interface UserAccountNavProps {
     email?: string | null;
     image?: string | null;
     role?: string;
+    roles?: string[];
   };
+}
+
+// Helper to check if user has admin role (handles both single role and roles array)
+function isAdmin(user: UserAccountNavProps["user"]): boolean {
+  if (!user) return false;
+  if (user.roles?.includes("ROLE_PLATFORM_OWNER")) return true;
+  if (user.role === "ROLE_PLATFORM_OWNER") return true;
+  return false;
 }
 
 export function UserAccountNav({ user: propUser }: UserAccountNavProps = {}) {
@@ -81,15 +90,19 @@ export function UserAccountNav({ user: propUser }: UserAccountNavProps = {}) {
             </div>
 
             <ul role="list" className="mb-14 mt-1 w-full text-muted-foreground">
-              {user.role === "ROLE_PLATFORM_OWNER" ? (
+              {isAdmin(user) ? (
                 <li className="rounded-lg text-foreground hover:bg-muted">
                   <Link
-                    href={`/${locale}/admin`}
+                    href={pathname?.includes("/admin") ? `/${locale}/dashboard` : `/${locale}/admin`}
                     onClick={closeDrawer}
                     className="flex w-full items-center gap-3 px-2.5 py-2"
                   >
-                    <Lock className="size-4" />
-                    <p className="text-sm">{t("common.admin")}</p>
+                    <ArrowLeftRight className="size-4" />
+                    <p className="text-sm">
+                      {pathname?.includes("/admin")
+                        ? t("common.switchToDashboard")
+                        : t("common.switchToAdmin")}
+                    </p>
                   </Link>
                 </li>
               ) : null}
@@ -170,11 +183,18 @@ export function UserAccountNav({ user: propUser }: UserAccountNavProps = {}) {
         </div>
         <DropdownMenuSeparator />
 
-        {user.role === "ROLE_PLATFORM_OWNER" ? (
+        {isAdmin(user) ? (
           <DropdownMenuItem asChild>
-            <Link href={`/${locale}/admin`} className="flex items-center space-x-2.5">
-              <Lock className="size-4" />
-              <p className="text-sm">{t("common.admin")}</p>
+            <Link
+              href={pathname?.includes("/admin") ? `/${locale}/dashboard` : `/${locale}/admin`}
+              className="flex items-center space-x-2.5"
+            >
+              <ArrowLeftRight className="size-4" />
+              <p className="text-sm">
+                {pathname?.includes("/admin")
+                  ? t("common.switchToDashboard")
+                  : t("common.switchToAdmin")}
+              </p>
             </Link>
           </DropdownMenuItem>
         ) : null}

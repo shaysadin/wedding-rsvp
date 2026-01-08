@@ -45,7 +45,7 @@ export type DocsConfig = {
   sidebarNav: SidebarNavItem[];
 };
 
-// subcriptions
+// subscriptions
 export type SubscriptionPlan = {
   title: string;
   description: string;
@@ -54,11 +54,21 @@ export type SubscriptionPlan = {
   prices: {
     monthly: number;
     yearly: number;
+    // Business plan only - with voice pricing (monthly only)
+    monthlyWithVoice?: number;
   };
   stripeIds: {
     monthly: string | null;
     yearly: string | null;
+    // Business plan extended stripe IDs (monthly only)
+    monthlyWithVoice?: string | null;
+    // No-gift pricing variants (100% higher, monthly only for Business)
+    monthlyNoGift?: string | null;
+    yearlyNoGift?: string | null;
+    monthlyNoGiftWithVoice?: string | null;
   };
+  monthlyOnly?: boolean; // If true, yearly billing is not available (e.g., Business plan)
+  giftDiscountNote?: string; // Note about gift system discount
 };
 
 export type UserSubscriptionPlan = SubscriptionPlan & {

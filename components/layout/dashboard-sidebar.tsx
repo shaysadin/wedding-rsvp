@@ -24,6 +24,7 @@ import { RoleSwitcher } from "@/components/dashboard/role-switcher";
 import { UpgradeCard } from "@/components/dashboard/upgrade-card";
 import { AppLogo } from "@/components/shared/app-logo";
 import { Icons } from "@/components/shared/icons";
+import { WorkspaceSelectorClient } from "@/components/workspaces/workspace-selector-client";
 
 interface DashboardSidebarProps {
   links: SidebarNavItem[];
@@ -118,6 +119,13 @@ export function DashboardSidebar({ links, currentRole, availableRoles = [] }: Da
               availableRoles={availableRoles}
               expanded={isSidebarExpanded}
             />
+          </div>
+        )}
+
+        {/* Workspace Selector - for Business plan users with multiple workspaces */}
+        {isSidebarExpanded && (
+          <div className="shrink-0 px-4 pb-2">
+            <WorkspaceSelectorClient />
           </div>
         )}
 
@@ -274,6 +282,11 @@ export function MobileSheetSidebar({ links, currentRole, availableRoles = [] }: 
                 />
               </div>
             )}
+
+            {/* Workspace Selector - for Business plan users with multiple workspaces */}
+            <div className="mt-4">
+              <WorkspaceSelectorClient />
+            </div>
           </div>
 
           {/* Scrollable Navigation */}

@@ -6,6 +6,7 @@ import { sidebarLinks } from "@/config/dashboard";
 import { SearchCommand } from "@/components/dashboard/search-command";
 import { UserAccountNav } from "@/components/layout/user-account-nav";
 import { HomeButton } from "@/components/layout/home-button";
+import { WorkspaceSelectorClient } from "@/components/workspaces/workspace-selector-client";
 
 export function ProtectedHeader() {
   const pathname = usePathname();
@@ -21,6 +22,9 @@ export function ProtectedHeader() {
       {/* Mobile */}
       <div className="flex md:hidden w-full items-center gap-3">
         <HomeButton />
+        <div className="shrink-0">
+          <WorkspaceSelectorClient />
+        </div>
         <div className="flex-1 min-w-0">
           <SearchCommand links={sidebarLinks} fullWidth />
         </div>
@@ -31,6 +35,7 @@ export function ProtectedHeader() {
       {/* Desktop */}
       <div className="hidden md:flex w-full items-center gap-4">
         <HomeButton />
+        <WorkspaceSelectorClient />
         <div className="flex-1" />
         <div className="w-72 lg:w-96">
           <SearchCommand links={sidebarLinks} fullWidth />

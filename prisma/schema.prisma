@@ -83,6 +83,9 @@ model User {
   pendingPlanChangeDate   DateTime?                @map("pending_plan_change_date")
   vapiPhoneNumberId       String?                  @map("vapi_phone_number_id")
   whatsappPhoneNumberId   String?                  @map("whatsapp_phone_number_id")
+  // Workspace & Business Plan fields
+  giftSystemEnabled       Boolean                  @default(true) @map("gift_system_enabled")
+  voiceCallsAddOn         Boolean                  @default(false) @map("voice_calls_add_on")
   accounts                Account[]
   bulkMessageJobs         BulkMessageJob[]
   emailVerificationTokens EmailVerificationToken[]
@@ -93,6 +96,7 @@ model User {
   vapiPhoneNumber         VapiPhoneNumber?         @relation(fields: [vapiPhoneNumberId], references: [id], onDelete: SetNull)
   whatsappPhoneNumber     WhatsAppPhoneNumber?     @relation(fields: [whatsappPhoneNumberId], references: [id], onDelete: SetNull)
   weddingEvents           WeddingEvent[]
+  workspaces              Workspace[]
 
   @@index([vapiPhoneNumberId])
   @@index([whatsappPhoneNumberId])
@@ -117,9 +121,31 @@ model UsageTracking {
   @@map("usage_tracking")
 }
 
+// ============================================
+// WORKSPACE MODEL
+// ============================================
+
+model Workspace {
+  id          String         @id @default(cuid())
+  name        String
+  slug        String         @unique
+  ownerId     String         @map("owner_id")
+  isDefault   Boolean        @default(false) @map("is_default")
+  createdAt   DateTime       @default(now()) @map("created_at")
+  updatedAt   DateTime       @default(now()) @updatedAt @map("updated_at")
+
+  owner       User           @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  events      WeddingEvent[]
+
+  @@index([ownerId])
+  @@index([slug])
+  @@map("workspaces")
+}
+
 model WeddingEvent {
   id                      String             @id @default(cuid())
   ownerId                 String             @map("owner_id")
+  workspaceId             String?            @map("workspace_id")
   title                   String
   description             String?
   dateTime                DateTime           @map("date_time")
@@ -145,6 +171,7 @@ model WeddingEvent {
   vapiSettings            VapiEventSettings?
   venueBlocks             VenueBlock[]
   owner                   User               @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  workspace               Workspace?         @relation(fields: [workspaceId], references: [id], onDelete: SetNull)
   tables                  WeddingTable[]
   tasks                   WeddingTask[]
   // New module relations
@@ -154,6 +181,7 @@ model WeddingEvent {
   giftPayments            GiftPayment[]
 
   @@index([ownerId])
+  @@index([workspaceId])
   @@map("wedding_events")
 }
 

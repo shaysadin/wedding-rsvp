@@ -8,12 +8,26 @@ import React, {
   FormEvent,
   useRef,
   useEffect,
+  createContext,
+  useContext,
+  TouchEvent as ReactTouchEvent,
 } from "react";
 import { Plus, Trash2, Flame, GripVertical, ChevronDown, ChevronUp, X, Pencil, Check, StickyNote } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 
 export type ColumnType = "BACKLOG" | "TODO" | "DOING" | "DONE";
+
+// Context for touch drag state
+interface TouchDragContextType {
+  draggedCard: CardType | null;
+  setDraggedCard: (card: CardType | null) => void;
+}
+
+const TouchDragContext = createContext<TouchDragContextType>({
+  draggedCard: null,
+  setDraggedCard: () => {},
+});
 
 export type CardNoteType = {
   id: string;
@@ -115,10 +129,14 @@ export function KanbanBoard({
     notePlaceholder: "Write a note...",
   },
 }: KanbanBoardProps) {
+  const [draggedCard, setDraggedCard] = useState<CardType | null>(null);
+
   return (
-    <div className="flex-1 w-full p-4">
-      <div className="flex w-full gap-3 items-stretch">
-        <Column
+    <TouchDragContext.Provider value={{ draggedCard, setDraggedCard }}>
+      <div className="flex-1 w-full p-2 sm:p-4">
+        {/* Vertical on mobile, horizontal on md+ */}
+        <div className="flex flex-col gap-4 md:flex-row md:gap-3 md:items-stretch">
+          <Column
           title={translations.backlog}
           column="BACKLOG"
           headingColor="text-muted-foreground"
@@ -183,8 +201,9 @@ export function KanbanBoard({
           onCardDelete={onCardDelete}
           translations={translations}
         />
+        </div>
       </div>
-    </div>
+    </TouchDragContext.Provider>
   );
 }
 
@@ -220,9 +239,43 @@ const Column = ({
   isLoading,
 }: ColumnProps) => {
   const [active, setActive] = useState(false);
+  const { draggedCard, setDraggedCard } = useContext(TouchDragContext);
+  const columnRef = useRef<HTMLDivElement>(null);
 
   const handleDragStart = (e: DragEvent, card: CardType) => {
     e.dataTransfer.setData("cardId", card.id);
+  };
+
+  // Handle touch drop on this column
+  const handleTouchDrop = async () => {
+    if (!draggedCard || draggedCard.column === column) {
+      // If same column, just reset
+      if (draggedCard?.column === column) {
+        setDraggedCard(null);
+        setActive(false);
+      }
+      return;
+    }
+
+    const cardId = draggedCard.id;
+    let copy = [...cards];
+    let cardToTransfer = copy.find((c) => c.id === cardId);
+    if (!cardToTransfer) return;
+
+    const oldColumn = cardToTransfer.column;
+    cardToTransfer = { ...cardToTransfer, column };
+    copy = copy.filter((c) => c.id !== cardId);
+    copy.push(cardToTransfer);
+
+    const newPosition = copy.filter(c => c.column === column).length - 1;
+    setCards(copy);
+
+    if (onCardMove) {
+      await onCardMove(cardId, column, newPosition);
+    }
+
+    setDraggedCard(null);
+    setActive(false);
   };
 
   const handleDragEnd = async (e: DragEvent) => {
@@ -327,21 +380,26 @@ const Column = ({
 
   const filteredCards = cards.filter((c) => c.column === column);
 
+  // Show active state when dragged card is from different column
+  const showDropTarget = draggedCard && draggedCard.column !== column;
+
   return (
-    <div className="flex-1 flex flex-col min-w-[150px]">
-      <div className="mb-3 flex items-center justify-between">
-        <h3 className={cn("font-medium", headingColor)}>{title}</h3>
-        <span className="rounded text-sm text-muted-foreground">
+    <div className="w-full md:flex-1 md:min-w-[140px]">
+      <div className="mb-2 flex items-center justify-between">
+        <h3 className={cn("font-medium text-sm md:text-base", headingColor)}>{title}</h3>
+        <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
           {filteredCards.length}
         </span>
       </div>
       <div
+        ref={columnRef}
         onDrop={handleDragEnd}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
+        onClick={showDropTarget ? handleTouchDrop : undefined}
         className={cn(
-          "w-full rounded-lg border-2 border-dashed transition-colors p-1.5 min-h-[80px] space-y-2",
-          active
+          "w-full rounded-lg border-2 border-dashed transition-colors p-1.5 min-h-[60px] md:min-h-[80px] space-y-2",
+          active || showDropTarget
             ? "border-primary/50 bg-primary/5"
             : "border-transparent bg-[#aeaeae15]"
         )}
@@ -404,8 +462,50 @@ const Card = ({
   const [editedTitle, setEditedTitle] = useState(title);
   const [newNote, setNewNote] = useState("");
   const [isAddingNote, setIsAddingNote] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const colors = stageColors[column];
+  const { draggedCard, setDraggedCard } = useContext(TouchDragContext);
+  const longPressTimer = useRef<NodeJS.Timeout | null>(null);
+
+  // Check if this card is being dragged
+  const isBeingDragged = draggedCard?.id === id;
+
+  // Handle touch start - start long press timer
+  const handleTouchStart = () => {
+    if (isEditing) return;
+    longPressTimer.current = setTimeout(() => {
+      setIsDragging(true);
+      setDraggedCard({ id, title, column, description, dueDate, notes });
+      // Haptic feedback if available
+      if (navigator.vibrate) {
+        navigator.vibrate(50);
+      }
+    }, 300); // 300ms long press to start drag
+  };
+
+  // Handle touch end - clear timer or complete drag
+  const handleTouchEnd = () => {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
+    setIsDragging(false);
+  };
+
+  // Handle touch move - cancel if moved before long press
+  const handleTouchMove = () => {
+    if (longPressTimer.current && !isDragging) {
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
+  };
+
+  // Cancel drag button
+  const handleCancelDrag = () => {
+    setDraggedCard(null);
+    setIsDragging(false);
+  };
 
   useEffect(() => {
     if (isEditing && inputRef.current) {
@@ -449,20 +549,38 @@ const Card = ({
         layout
         layoutId={id}
         className={cn(
-          "rounded-lg border backdrop-blur-md shadow-lg transition-all",
+          "rounded-lg border backdrop-blur-md shadow-lg transition-all relative",
           colors.glass,
           colors.border,
           colors.glow,
-          "hover:shadow-xl"
+          "hover:shadow-xl",
+          isBeingDragged && "ring-2 ring-primary opacity-70"
         )}
       >
+        {/* Cancel drag button - shown when card is being dragged */}
+        {isBeingDragged && (
+          <button
+            onClick={handleCancelDrag}
+            className="absolute -top-2 -right-2 z-10 flex h-6 w-6 items-center justify-center rounded-full bg-red-500 text-white shadow-md"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        )}
+
         {/* Main card header - draggable */}
         <div
           draggable={!isEditing}
           onDragStart={(e: React.DragEvent<HTMLDivElement>) =>
             handleDragStart(e, { title, id, column, description, dueDate, notes })
           }
-          className={cn("px-3 py-2", !isEditing && "cursor-grab active:cursor-grabbing")}
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
+          onTouchMove={handleTouchMove}
+          className={cn(
+            "px-3 py-2 select-none",
+            !isEditing && "cursor-grab active:cursor-grabbing",
+            isBeingDragged && "cursor-move"
+          )}
         >
           {isEditing ? (
             <div className="space-y-2">
@@ -656,6 +774,10 @@ const BurnBarrel = ({
   translations?: KanbanBoardProps["translations"];
 }) => {
   const [active, setActive] = useState(false);
+  const { draggedCard, setDraggedCard } = useContext(TouchDragContext);
+
+  // Show active state when a card is being dragged (touch)
+  const showDeleteTarget = !!draggedCard;
 
   const handleDragOver = (e: DragEvent) => {
     e.preventDefault();
@@ -664,6 +786,20 @@ const BurnBarrel = ({
 
   const handleDragLeave = () => {
     setActive(false);
+  };
+
+  // Handle touch delete
+  const handleTouchDelete = async () => {
+    if (!draggedCard) return;
+
+    const cardId = draggedCard.id;
+    setCards((pv) => pv.filter((c) => c.id !== cardId));
+
+    if (onCardDelete) {
+      await onCardDelete(cardId);
+    }
+
+    setDraggedCard(null);
   };
 
   const handleDragEnd = async (e: DragEvent) => {
@@ -679,23 +815,32 @@ const BurnBarrel = ({
   };
 
   return (
-    <div className="flex-1 flex flex-col min-w-[150px]">
-      <div className="mb-3 h-6" />
+    <div className="w-full md:flex-1 md:min-w-[100px]">
+      <div className="hidden md:block mb-2 h-6" />
       <div
         onDrop={handleDragEnd}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
+        onClick={showDeleteTarget ? handleTouchDelete : undefined}
         className={cn(
-          "flex-1 min-h-[80px] grid place-content-center rounded-lg border-2 border-dashed transition-colors",
-          active
+          "min-h-[50px] md:min-h-[80px] md:flex-1 flex items-center justify-center gap-2 rounded-lg border-2 border-dashed transition-colors",
+          active || showDeleteTarget
             ? "border-red-500 bg-red-500/10 text-red-500"
             : "border-muted-foreground/30 bg-muted/30 text-muted-foreground"
         )}
       >
         {active ? (
           <Flame className="animate-bounce" size={20} />
+        ) : showDeleteTarget ? (
+          <>
+            <Trash2 size={18} className="animate-pulse" />
+            <span className="text-sm">{translations?.deleteZone}</span>
+          </>
         ) : (
-          <Trash2 size={20} />
+          <>
+            <Trash2 size={18} />
+            <span className="text-sm md:hidden">{translations?.deleteZone}</span>
+          </>
         )}
       </div>
     </div>

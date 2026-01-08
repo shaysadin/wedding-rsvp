@@ -24,6 +24,7 @@ interface EventWithStats {
   createdAt: Date;
   updatedAt: Date;
   ownerId: string;
+  workspaceId: string | null;
   invitationImageUrl: string | null;
   invitationImagePublicId: string | null;
   totalBudget: any;

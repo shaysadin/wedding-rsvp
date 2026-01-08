@@ -35,8 +35,8 @@ export default async function ProtectedLayout({ children }: ProtectedLayoutProps
   // Layout for all protected pages
   // ProtectedHeader client component handles showing/hiding based on route
   return (
-    <div className="fixed inset-0 flex w-full overflow-hidden bg-background">
-      <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+    <div className="fixed inset-0 flex w-full overflow-hidden bg-sidebar">
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden md:rounded-xl md:border bg-background md:shadow-md md:p-2 md:m-3">
         <ProtectedHeader />
 
         <main

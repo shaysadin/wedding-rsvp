@@ -219,10 +219,16 @@ export function SupplierStatsCards({ stats, currency = "ILS" }: SupplierStatsCar
   );
 
   return (
-    <div className="space-y-4">
-      {/* Budget Stats Row */}
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-2 sm:gap-4 lg:grid-cols-5">
-        {budgetCards.map((card, index) => renderCard(card, index))}
+    <div className="space-y-4 w-full">
+      {/* Budget Stats Row - Horizontal scroll on mobile */}
+      <div className="overflow-x-auto pe-4 sm:mx-0 sm:px-0 sm:overflow-visible pb-2 sm:pb-0">
+        <div className="flex gap-2 sm:grid sm:grid-cols-2 sm:gap-3 lg:grid-cols-5 min-w-max sm:min-w-0">
+          {budgetCards.map((card, index) => (
+            <div key={card.key} className="w-[140px] sm:w-auto shrink-0 sm:shrink">
+              {renderCard(card, index)}
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* Guest Cost Analytics Row */}
@@ -231,8 +237,14 @@ export function SupplierStatsCards({ stats, currency = "ILS" }: SupplierStatsCar
           <h3 className="text-sm font-medium text-muted-foreground px-1 text-start">
             {isRTL ? "ניתוח עלות לאורח" : "Guest Cost Analysis"}
           </h3>
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-4">
-            {guestCostCards.map((card, index) => renderCard(card, index, budgetCards.length))}
+          <div className="overflow-x-auto pe-4 sm:mx-0 sm:px-0 sm:overflow-visible pb-2 sm:pb-0">
+            <div className="flex gap-2 sm:grid sm:grid-cols-3 sm:gap-3 min-w-max sm:min-w-0">
+              {guestCostCards.map((card, index) => (
+                <div key={card.key} className="w-[140px] sm:w-auto shrink-0 sm:shrink">
+                  {renderCard(card, index, budgetCards.length)}
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       )}

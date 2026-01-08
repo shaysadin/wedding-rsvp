@@ -75,24 +75,32 @@ export const pricingData: SubscriptionPlan[] = [
     description: "For wedding planners & venues",
     benefits: [
       "Unlimited events",
-      "Unlimited WhatsApp messages",
-      "Unlimited SMS messages",
+      "Unlimited workspaces",
+      "3000 WhatsApp messages",
+      "1000 SMS messages",
+      "2000 voice calls (optional add-on)",
+      "Unlimited invitation generations",
       "Full template customization",
       "Advanced analytics & reports",
-      "Team collaboration",
-      "White-label branding",
+      "Team collaboration (workspaces)",
       "24/7 priority support",
-      "API access",
     ],
     limitations: [],
     prices: {
-      monthly: -1, // Contact sales
-      yearly: -1,
+      monthly: 585, // Base price with gift system enabled
+      yearly: 0, // No yearly option for Business plan
+      monthlyWithVoice: 750, // With voice calls
     },
     stripeIds: {
       monthly: null,
-      yearly: null,
+      yearly: null, // Not used - Business is monthly only
+      monthlyWithVoice: null,
+      // No-gift pricing variants (monthly only)
+      monthlyNoGift: null,
+      monthlyNoGiftWithVoice: null,
     },
+    monthlyOnly: true, // Business plan does not have yearly billing
+    giftDiscountNote: "Prices shown include 50% gift system discount. Disable gift payments to see full pricing.",
   },
 ];
 
@@ -100,9 +108,16 @@ export const pricingData: SubscriptionPlan[] = [
 export const comparePlans: PlansRow[] = [
   {
     feature: "Wedding Events",
+    basic: "2",
+    advanced: "3",
+    premium: "4",
+    business: "Unlimited",
+  },
+  {
+    feature: "Workspaces",
     basic: "1",
-    advanced: "2",
-    premium: "3",
+    advanced: "1",
+    premium: "1",
     business: "Unlimited",
   },
   {
@@ -110,13 +125,27 @@ export const comparePlans: PlansRow[] = [
     basic: "650",
     advanced: "750",
     premium: "1000",
-    business: "Unlimited",
+    business: "3000",
   },
   {
     feature: "SMS Messages",
     basic: "–",
     advanced: "30",
     premium: "50",
+    business: "1000",
+  },
+  {
+    feature: "Voice Calls",
+    basic: "10",
+    advanced: "20",
+    premium: "40",
+    business: "2000*",
+  },
+  {
+    feature: "Invitation Generations",
+    basic: "10",
+    advanced: "20",
+    premium: "Unlimited",
     business: "Unlimited",
   },
   {
@@ -141,25 +170,11 @@ export const comparePlans: PlansRow[] = [
     business: true,
   },
   {
-    feature: "Team Collaboration",
-    basic: false,
-    advanced: false,
-    premium: false,
-    business: true,
-  },
-  {
-    feature: "White-label Branding",
-    basic: false,
-    advanced: false,
-    premium: false,
-    business: true,
-  },
-  {
-    feature: "API Access",
-    basic: false,
-    advanced: false,
-    premium: false,
-    business: true,
+    feature: "Gift System Discount",
+    basic: "–",
+    advanced: "50% off",
+    premium: "50% off",
+    business: "50% off",
   },
   {
     feature: "Priority Support",
@@ -169,3 +184,5 @@ export const comparePlans: PlansRow[] = [
     business: "24/7",
   },
 ];
+
+// Note: Business plan voice calls marked with * indicates optional add-on ($165/mo)

@@ -1,84 +1,196 @@
 # Current State
 
+**Last Updated**: January 2026
+
+## Feature Completion Status
+
+### Fully Complete
+
+| Feature | Backend | Frontend | Notes |
+|---------|---------|----------|-------|
+| Authentication | ✅ | ✅ | Google OAuth + magic link |
+| User Management | ✅ | ✅ | Roles, profiles, settings |
+| Event Management | ✅ | ✅ | CRUD, archival |
+| Guest Management | ✅ | ✅ | Excel import, filtering |
+| RSVP System | ✅ | ✅ | Public pages, customization |
+| Notification System | ✅ | ✅ | WhatsApp, SMS, Email |
+| Bulk Messaging | ✅ | ✅ | Progress tracking |
+| Automation Flows | ✅ | ✅ | Triggers, actions, execution |
+| Seating Planner | ✅ | ✅ | Drag-and-drop tables |
+| Task Management | ✅ | ✅ | Kanban board |
+| Supplier Management | ✅ | ✅ | Payments, budget |
+| Voice AI (VAPI) | ✅ | ✅ | Calls, RSVP updates |
+| Invitation Generation | ✅ | ✅ | AI creation, gallery, sending |
+| Billing (Stripe) | ✅ | ✅ | Subscriptions, portal |
+| Admin Panel | ✅ | ✅ | User/system management |
+
+### Partially Complete
+
+| Feature | Backend | Frontend | Notes |
+|---------|---------|----------|-------|
+| Gift Payments | ✅ | ⚠️ | Needs Meshulam credentials |
+
+> **Note**: Invitation Generation is fully complete (backend + UI with AI generation, gallery, and sending).
+
+### Not Started
+
+| Feature | Notes |
+|---------|-------|
+| Test Suite | No automated tests |
+| Multi-language invitations | Hebrew/English toggle |
+| Template marketplace | Public template gallery |
+
+---
+
 ## Recently Completed
 
-Based on recent commits and changes:
-- **Invitation Generation System** (January 2026) - Complete backend implementation:
-  - PDF template upload and conversion to PNG
-  - Smart text region erasing with background color matching
-  - HTML to PNG rendering with Puppeteer
-  - Template field management with CSS positioning
-  - Custom invitation generation for wedding owners
-  - Support for 24+ field types (see `InvitationFieldType` enum)
-  - Server actions: `uploadPdfTemplate`, `processPdfTemplate`, `generateCustomInvitation`, `previewInvitation`
-  - Comprehensive documentation in `INVITATION_SYSTEM.md`
-- **Automation Confirmation Messages** - Fixed to use custom pre-made RSVP confirmation messages
+### January 2026
+
+**UI/UX Improvements**:
+- Quick Stats Bar layout improvements for better readability
+- DialogContent components updated for responsive design
+- Theme selection disabled until mounted (hydration fix)
+- Search functionality added to mobile header
+- SelectTrigger enhanced for RTL support
+- User menu improvements in navigation
+- Mobile navigation component enhancements
+- Image responsive handling improvements
+- Pathname-based dynamic headers
+
+**Invitation System Backend**:
+- Complete PDF to PNG conversion pipeline
+- Smart text region erasing with background matching
+- HTML to PNG rendering with Puppeteer
+- Template field management with CSS positioning
+- Custom invitation generation for wedding owners
+- Support for 24+ field types (see `InvitationFieldType` enum)
+- Server actions: `uploadPdfTemplate`, `processPdfTemplate`, `generateCustomInvitation`, `previewInvitation`
+- Comprehensive documentation in `INVITATION_SYSTEM.md`
+
+**Automation System**:
+- Fixed to use custom pre-made RSVP confirmation messages
+- Trigger split by channel (NO_RESPONSE_WHATSAPP, NO_RESPONSE_SMS)
+- Per-guest execution tracking with retry logic
+
+**Other**:
 - Bulk messaging with progress animation
 - Admin "Built by Groom" message feature
-- Task management Kanban board
 - Event archiving system
 - WhatsApp phone number management per user
-- Automation flow triggers split by channel (NO_RESPONSE_WHATSAPP, NO_RESPONSE_SMS)
-- **UI Improvements**: Fixed z-index hierarchy (dialogs, selects, popovers), increased guest table height
+- Z-index hierarchy standardization (dialogs, selects, popovers)
+- Increased guest table height for better UX
 
-## In Progress / Incomplete
+---
 
-### Invitation System
-- **Backend**: ✅ COMPLETE
-  - `lib/invitations/` - All utilities implemented
-  - `actions/invitation-templates-new.ts` - Platform owner actions
-  - `actions/generate-invitation.ts` - Wedding owner actions
-  - Database schema updated with expanded field types
-- **Frontend**: ❌ NOT STARTED
-  - Admin template upload UI with visual region marker
-  - Wedding owner template browser and form builder
-  - See `INVITATION_SYSTEM.md` for UI requirements
+## Known TODOs in Codebase
 
-### Automation Module
-- ✅ System automation messages per event (rsvpConfirmedMessage, rsvpDeclinedMessage)
-- ✅ Custom message editor functional
-- ✅ Cron processor running hourly
-- ✅ WhatsApp webhook using custom messages
-- ✅ RSVP action using real notification service
+| File | Line | Issue |
+|------|------|-------|
+| `actions/generate-user-stripe.ts` | 3 | Stripe session generation stub |
+| `actions/invitations.ts` | 266 | WhatsApp image template sending incomplete |
+| `actions/invitations.ts` | 352 | Status hardcoded to SENT, should be PENDING |
+| `lib/subscription.ts` | 64 | `isCanceled: false` hardcoded |
+| `api/vapi/webhook/route.ts` | 24 | Signature verification not implemented |
+| `components/forms/user-role-form.tsx` | 83 | Option value state issue |
+| `components/modals/delete-account-modal.tsx` | 71 | Subscription display not implemented |
 
-### Gift Payments
-- Schema complete (`GiftPayment`, `GiftPaymentSettings`)
-- Meshulam provider structure in `lib/payments/`
-- Public pages exist (`/gift/[guestSlug]`)
-- Webhook route at `api/payments/gift/webhook/meshulam`
+**Legacy Code to Remove**:
+- `actions/invitation-templates.ts:108` - PDF field extraction superseded by new system
+- `lib/pdf/` directory - Legacy PDF utilities replaced by `lib/invitations/`
 
-## Known TODOs
-
-| File | Issue |
-|------|-------|
-| `actions/generate-user-stripe.ts:3` | Stripe session generation stub |
-| `actions/invitations.ts:266` | WhatsApp image template sending incomplete |
-| `actions/invitations.ts:352` | Status hardcoded to SENT, should be PENDING |
-| `lib/subscription.ts:64` | `isCanceled: false` hardcoded |
-| `api/vapi/webhook/route.ts:24` | Signature verification not implemented |
-| `components/forms/user-role-form.tsx:83` | Option value state issue |
-| `components/modals/delete-account-modal.tsx:71` | Subscription display not implemented |
-
-**Note**: `actions/invitation-templates.ts:108` (PDF field extraction) is superseded by the new invitation system in `lib/invitations/` and `actions/invitation-templates-new.ts`.
+---
 
 ## Blocked / Waiting
 
 ### External Dependencies
 - **Meshulam API credentials** - Gift payments require production credentials
-- **VAPI configuration** - Voice agent needs phone number provisioning per user
+- **VAPI webhook signature** - Verification not implemented
 
 ### Schema Migrations
 - Many `@deprecated` enum values remain for backward compatibility
 - Cannot remove until data migration confirms no usage
 
+---
+
 ## Technical Debt
 
-1. **Inconsistent error returns** - Some actions return `{ error }`, others throw
-2. **Mixed notification types** - Legacy `NotificationType` values still in use
-3. **Legacy invitation code** - Old `lib/pdf/` and `actions/invitation-templates.ts` can be removed once new system UI is built
-4. **Hardcoded Hebrew strings** - Some components have inline Hebrew text
-5. **Z-index hierarchy** - Recently standardized but needs testing across all dialogs/overlays
+### High Priority
+1. **Missing tests** - No test suite configured
+2. **Hardcoded Hebrew strings** - Some components have inline Hebrew text
 
-## Test Coverage
+### Medium Priority
+4. **Inconsistent error returns** - Some actions return `{ error }`, others throw
+5. **Mixed notification types** - Legacy `NotificationType` values still in use
+6. **VAPI signature verification** - Webhook security incomplete
 
-No test files found in repository. Testing appears manual.
+### Low Priority
+7. **Legacy invitation code** - Old `lib/pdf/` and `actions/invitation-templates.ts`
+8. **Z-index hierarchy** - Recently standardized, needs full testing
+9. **Deprecated enums** - Backward compatibility items in schema
+
+---
+
+## API Endpoints Status
+
+### Fully Functional
+- `/api/auth/[...nextauth]` - Authentication
+- `/api/stripe/*` - All 9 payment endpoints
+- `/api/twilio/whatsapp` - WhatsApp webhook
+- `/api/vapi/webhook` - Voice AI events
+- `/api/vapi/tools/*` - Voice AI tools
+- `/api/bulk-messages/*` - Batch messaging
+- `/api/cron/*` - All 3 cron jobs
+- `/api/admin/*` - Admin endpoints
+
+### Needs Work
+- `/api/payments/gift/webhook/meshulam` - Waiting for credentials
+
+---
+
+## Database Statistics
+
+- **Schema size**: 1,427 lines
+- **Models**: 33+
+- **Enums**: 20+
+- **Indexes**: Comprehensive coverage
+- **Migrations**: Using `db push` (no migration files)
+
+---
+
+## Performance Observations
+
+### Good
+- Puppeteer singleton pattern for invitation generation
+- Dynamic imports for heavy components
+- Rate limiting on all actions
+- R2 storage with no egress fees
+
+### Needs Improvement
+- First invitation generation slow (~2-3s) due to Puppeteer startup
+- Large guest tables could benefit from virtualization
+- No caching strategy for frequently accessed data
+
+---
+
+## Security Status
+
+### Implemented
+- Role-based access control (RBAC)
+- Resource ownership verification
+- Stripe webhook signature verification
+- Rate limiting
+- Input validation (Zod)
+- JWT session strategy
+
+### Needs Attention
+- VAPI webhook signature verification
+- Meshulam webhook security (pending integration)
+
+---
+
+## Next Steps (Recommended)
+
+1. **Add Meshulam credentials** - Enable gift payments
+2. **Implement VAPI signature verification** - Security fix
+3. **Set up test framework** - Jest + Vitest + React Testing Library
+4. **Clean up legacy code** - Remove old PDF utilities

@@ -198,9 +198,11 @@ export function SuppliersPageContent({ eventId, events, locale }: SuppliersPageC
       ) : (
         <div className="space-y-6">
           {stats && (
-            <div className="grid gap-6 lg:grid-cols-[1fr_minmax(280px,350px)] max-w-full">
-              <SupplierStatsCards stats={stats} />
-              <div className="hidden lg:block">
+            <div className="grid gap-4 sm:gap-6 lg:grid-cols-[1fr_minmax(280px,350px)]">
+              <div className="min-w-0">
+                <SupplierStatsCards stats={stats} />
+              </div>
+              <div className="hidden lg:block min-w-0">
                 <BudgetCategoryChart
                   data={stats.byCategory.map((c) => ({
                     category: c.category as any,
