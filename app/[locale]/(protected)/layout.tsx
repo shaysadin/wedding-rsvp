@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { headers } from "next/headers";
 import { getLocale } from "next-intl/server";
 import { UserRole } from "@prisma/client";
 
@@ -12,7 +13,6 @@ import {
 } from "@/components/layout/dashboard-sidebar";
 import { MobileBottomNav } from "@/components/layout/mobile-bottom-nav";
 import { UserAccountNav } from "@/components/layout/user-account-nav";
-import { RoleSwitcher } from "@/components/dashboard/role-switcher";
 import MaxWidthWrapper from "@/components/shared/max-width-wrapper";
 
 // Force dynamic rendering to avoid caching issues with role switching
@@ -25,6 +25,8 @@ interface ProtectedLayoutProps {
 export default async function ProtectedLayout({ children }: ProtectedLayoutProps) {
   const user = await getCurrentUser();
   const locale = await getLocale();
+  const headersList = await headers();
+  const pathname = headersList.get("x-pathname") || "";
 
   if (!user) redirect(`/${locale}/login`);
 
@@ -41,6 +43,15 @@ export default async function ProtectedLayout({ children }: ProtectedLayoutProps
     redirect(`/${locale}/login?error=EmailNotVerified`);
   }
 
+  // Check if we're on an event-scoped route
+  // Event routes have their own layout with EventSidebar and EventMobileNav
+  const isEventRoute = pathname.includes("/events/");
+
+  // For event routes, render minimal layout - event layout handles the rest
+  if (isEventRoute) {
+    return <>{children}</>;
+  }
+
   const currentRole = dbUser?.role || user.role;
   const userRoles = dbUser?.roles || [currentRole];
 
@@ -55,9 +66,6 @@ export default async function ProtectedLayout({ children }: ProtectedLayoutProps
       ({ authorizeOnly }) => !authorizeOnly || authorizeOnly === currentRole,
     ),
   })).filter((section) => section.items.length > 0);
-
-  // Check if user can switch roles (has multiple roles)
-  const canSwitchRoles = userRoles.length > 1;
 
   return (
     <div className="fixed inset-0 flex w-full overflow-hidden bg-sidebar">

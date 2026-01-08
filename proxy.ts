@@ -17,16 +17,20 @@ export async function proxy(request: NextRequest) {
     pathname.startsWith("/api") ||
     pathname.startsWith("/_next") ||
     pathname.startsWith("/rsvp") ||
+    pathname.startsWith("/gift") ||
     pathname.includes(".");
 
   if (shouldSkipI18n) {
-    console.log("[middleware] Skipping for:", pathname);
     return NextResponse.next();
   }
 
   // Apply i18n middleware
-  console.log("[middleware] Applying i18n for:", pathname);
-  return intlMiddleware(request);
+  const response = intlMiddleware(request);
+
+  // Add pathname header for layout detection
+  response.headers.set("x-pathname", pathname);
+
+  return response;
 }
 
 export const config = {

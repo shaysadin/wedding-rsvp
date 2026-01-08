@@ -1,42 +1,36 @@
 import { redirect, notFound } from "next/navigation";
+import { headers } from "next/headers";
 import { getLocale } from "next-intl/server";
 import { UserRole } from "@prisma/client";
 
 import { getCurrentUser } from "@/lib/session";
 import { prisma } from "@/lib/db";
 import { EventProvider, EventOption } from "@/contexts/event-context";
-import { EventSidebar, MobileSheetEventSidebar } from "@/components/layout/event-sidebar";
+import { EventSidebar } from "@/components/layout/event-sidebar";
 import { EventMobileHeader } from "@/components/layout/event-mobile-header";
 import { EventMobileBottomNav } from "@/components/layout/event-mobile-bottom-nav";
+import { SearchCommand } from "@/components/dashboard/search-command";
 import { UserAccountNav } from "@/components/layout/user-account-nav";
 import MaxWidthWrapper from "@/components/shared/max-width-wrapper";
+import { sidebarLinks } from "@/config/dashboard";
 
-export const dynamic = "force-dynamic";
-
-interface EventLayoutProps {
+interface EventsLayoutProps {
   children: React.ReactNode;
-  params: Promise<{ eventId: string }>;
+  params: Promise<{ locale: string; eventId: string }>;
 }
 
-export default async function EventLayout({ children, params }: EventLayoutProps) {
+export default async function EventsLayout({ children, params }: EventsLayoutProps) {
   const { eventId } = await params;
   const user = await getCurrentUser();
   const locale = await getLocale();
 
-  if (!user) {
-    redirect(`/${locale}/login`);
-  }
-
-  if (user.role !== UserRole.ROLE_WEDDING_OWNER) {
+  if (!user || user.role !== UserRole.ROLE_WEDDING_OWNER) {
     redirect(`/${locale}/dashboard`);
   }
 
-  // Fetch the specific event with ownership check
+  // Fetch current event
   const event = await prisma.weddingEvent.findFirst({
-    where: {
-      id: eventId,
-      ownerId: user.id
-    },
+    where: { id: eventId, ownerId: user.id },
     select: {
       id: true,
       title: true,
@@ -50,8 +44,8 @@ export default async function EventLayout({ children, params }: EventLayoutProps
     notFound();
   }
 
-  // Fetch all user's events for the switcher
-  const allEvents = await prisma.weddingEvent.findMany({
+  // Fetch all user events for the event switcher
+  const userEvents = await prisma.weddingEvent.findMany({
     where: { ownerId: user.id },
     select: {
       id: true,
@@ -71,7 +65,7 @@ export default async function EventLayout({ children, params }: EventLayoutProps
     venue: event.venue,
   };
 
-  const events: EventOption[] = allEvents.map((e) => ({
+  const events: EventOption[] = userEvents.map((e) => ({
     id: e.id,
     title: e.title,
     dateTime: e.dateTime,
@@ -91,14 +85,11 @@ export default async function EventLayout({ children, params }: EventLayoutProps
 
         <div className="flex min-h-0 flex-1 flex-col overflow-hidden md:rounded-xl md:border bg-background md:shadow-md md:p-2 md:m-3">
           {/* Desktop Header */}
-          <header className="hidden shrink-0 md:flex h-14 justify-between items-center border-b lg:h-[60px] pe-3 ps-3">
+          <header className="hidden md:flex shrink-0 h-14 justify-between items-center border-b lg:h-[60px] pe-3 ps-3 sm:ps-0">
             <MaxWidthWrapper className="flex justify-between w-full items-center gap-x-3 px-0">
-              <MobileSheetEventSidebar
-                currentEvent={currentEvent}
-                events={events}
-                locale={locale}
-              />
-              <div className="flex-1" />
+              <div className="w-full flex-1">
+                <SearchCommand links={sidebarLinks} />
+              </div>
               <div className="flex items-center">
                 <UserAccountNav />
               </div>
@@ -112,7 +103,6 @@ export default async function EventLayout({ children, params }: EventLayoutProps
             locale={locale}
           />
 
-          {/* Main Content */}
           <main className="flex min-h-0 flex-1 flex-col overflow-auto md:overflow-hidden">
             <MaxWidthWrapper className="flex w-full min-h-0 flex-1 pb-[74px] md:pb-0 flex-col gap-4 lg:gap-6">
               {children}
