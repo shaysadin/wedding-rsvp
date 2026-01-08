@@ -15,12 +15,13 @@ import {
   MapPin,
   Plus,
   Sparkles,
-  ArrowRight,
   Send,
   MessageSquare,
   Phone,
   AlertCircle,
   ArrowUpRight,
+  LayoutGrid,
+  List,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -112,6 +113,20 @@ export function DashboardContent({ userName, events, stats, locale, usageData }:
   const tPlans = useTranslations("plans");
   const isRTL = locale === "he";
   const [showAddEventModal, setShowAddEventModal] = useState(false);
+  const [viewMode, setViewMode] = useState<"grid" | "list">(() => {
+    if (typeof window !== "undefined") {
+      return (localStorage.getItem("dashboard-events-view") as "grid" | "list") || "grid";
+    }
+    return "grid";
+  });
+
+  // Save view mode to localStorage
+  const handleViewModeChange = (mode: "grid" | "list") => {
+    setViewMode(mode);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("dashboard-events-view", mode);
+    }
+  };
 
   const getUsagePercent = (sent: number, total: number) => {
     if (total === 0) return 0;
@@ -169,22 +184,38 @@ export function DashboardContent({ userName, events, stats, locale, usageData }:
       animate="visible"
       dir={isRTL ? "rtl" : "ltr"}
     >
-      {/* Welcome Header */}
-      <motion.div variants={itemVariants} className="space-y-1">
-        <h1 className="text-2xl font-bold tracking-tight md:text-3xl">
-          {t("welcome")}, {userName}
-          <span className="ms-2 inline-block">
-            <Sparkles className="h-6 w-6 text-amber-500" />
-          </span>
-        </h1>
-        <p className="text-muted-foreground">
-          {isRTL ? "הנה סקירה של האירועים שלך" : "Here's an overview of your events"}
-        </p>
+      {/* Welcome Header with Action Buttons */}
+      <motion.div variants={itemVariants} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="space-y-1">
+          <h1 className="text-2xl font-bold tracking-tight md:text-3xl">
+            {t("welcome")}, {userName}
+            <span className="ms-2 inline-block">
+              <Sparkles className="h-6 w-6 text-amber-500" />
+            </span>
+          </h1>
+          <p className="text-muted-foreground">
+            {isRTL ? "הנה סקירה של האירועים שלך" : "Here's an overview of your events"}
+          </p>
+        </div>
+        <div className="flex gap-2 shrink-0">
+          <Button onClick={() => setShowAddEventModal(true)}>
+            <Plus className="h-4 w-4 me-2" />
+            {t("createEvent")}
+          </Button>
+          {events.length > 0 && (
+            <Button variant="outline" asChild>
+              <Link href={`/${locale}/events/${events[0].id}/invitations`}>
+                <Send className="h-4 w-4 me-2" />
+                {isRTL ? "שלח הזמנות" : "Send Invitations"}
+              </Link>
+            </Button>
+          )}
+        </div>
       </motion.div>
 
-      {/* Stats Grid */}
+      {/* Stats Grid - Always 1 row */}
       <motion.div
-        className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4"
+        className="grid grid-cols-4 gap-2 sm:gap-3"
         variants={itemVariants}
       >
         {statCards.map((stat, index) => (
@@ -201,24 +232,24 @@ export function DashboardContent({ userName, events, stats, locale, usageData }:
               stat.cardBg,
               stat.borderColor
             )}>
-              <CardContent className="p-5">
-                <div className="flex items-center gap-4">
+              <CardContent className="p-2 sm:p-4">
+                <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-3">
                   {/* Icon */}
                   <div
                     className={cn(
-                      "flex h-11 w-11 shrink-0 items-center justify-center rounded-xl transition-transform duration-150 hover:scale-105",
+                      "flex h-8 w-8 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-lg sm:rounded-xl transition-transform duration-150 hover:scale-105",
                       stat.iconBg
                     )}
                   >
-                    <stat.icon className="h-5 w-5 text-white" />
+                    <stat.icon className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
                   </div>
 
                   {/* Content */}
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-muted-foreground truncate">
+                  <div className="flex-1 min-w-0 text-center sm:text-start">
+                    <p className="hidden sm:block text-xs sm:text-sm font-medium text-muted-foreground truncate">
                       {stat.title}
                     </p>
-                    <p className="mt-0.5 text-2xl font-bold tracking-tight">
+                    <p className="text-lg sm:text-xl font-bold tracking-tight">
                       {stat.value}
                     </p>
                   </div>
@@ -243,6 +274,9 @@ export function DashboardContent({ userName, events, stats, locale, usageData }:
                 {/* Header */}
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-500 text-white">
+                      <MessageSquare className="h-5 w-5" />
+                    </div>
                     <div>
                       <h3 className="font-semibold">
                         {isRTL ? "מעקב שימוש" : "Usage Tracking"}
@@ -250,9 +284,6 @@ export function DashboardContent({ userName, events, stats, locale, usageData }:
                       <p className="text-sm text-muted-foreground">
                         {isRTL ? "סטטוס השימוש החודשי שלך" : "Your monthly usage status"}
                       </p>
-                    </div>
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-500 text-white">
-                      <MessageSquare className="h-5 w-5" />
                     </div>
                   </div>
                   <Badge className={planColors[usageData.plan]}>
@@ -369,90 +400,30 @@ export function DashboardContent({ userName, events, stats, locale, usageData }:
         </motion.div>
       )}
 
-      {/* Quick Actions - Card Style */}
-      <motion.div variants={itemVariants}>
-        <div className="grid gap-4 sm:grid-cols-2">
-          {/* Create Event Card */}
-          <motion.div
-            whileHover={{ y: -2 }}
-            whileTap={{ scale: 0.98 }}
-            transition={{ duration: 0.1 }}
-            style={{ willChange: "transform" }}
-          >
-            <button
-              onClick={() => setShowAddEventModal(true)}
-              className="w-full text-start"
-            >
-              <div className="group relative overflow-hidden rounded-xl border border-border/50 bg-card p-5 shadow-sm transition-all duration-300 hover:border-border hover:shadow-lg">
-                <div className="flex items-center gap-4">
-                  {/* Icon */}
-                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground transition-transform duration-300 group-hover:scale-105">
-                    <Plus className="h-6 w-6" />
-                  </div>
-
-                  {/* Content */}
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-foreground">
-                      {t("createEvent")}
-                    </h3>
-                    <p className="mt-0.5 text-sm text-muted-foreground">
-                      {isRTL ? "התחל לתכנן את החתונה שלך" : "Start planning your wedding"}
-                    </p>
-                  </div>
-
-                  {/* Arrow */}
-                  <ArrowRight className={cn(
-                    "h-5 w-5 text-muted-foreground transition-all duration-300 group-hover:text-foreground",
-                    isRTL ? "rotate-180 group-hover:-translate-x-1" : "group-hover:translate-x-1"
-                  )} />
-                </div>
-              </div>
-            </button>
-          </motion.div>
-
-          {/* Send Invitations Card */}
-          {events.length > 0 && (
-            <motion.div
-              whileHover={{ y: -2 }}
-              whileTap={{ scale: 0.98 }}
-              transition={{ duration: 0.1 }}
-              style={{ willChange: "transform" }}
-            >
-              <Link href={`/${locale}/events/${events[0].id}/invitations`}>
-                <div className="group relative overflow-hidden rounded-xl border border-border/50 bg-card p-5 shadow-sm transition-all duration-300 hover:border-border hover:shadow-lg">
-                  <div className="flex items-center gap-4">
-                    {/* Icon */}
-                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-muted text-foreground transition-transform duration-300 group-hover:scale-105">
-                      <Send className="h-5 w-5" />
-                    </div>
-
-                    {/* Content */}
-                    <div className="flex-1">
-                      <h3 className="font-semibold text-foreground">
-                        {isRTL ? "שלח הזמנות" : "Send Invitations"}
-                      </h3>
-                      <p className="mt-0.5 text-sm text-muted-foreground">
-                        {isRTL ? "הזמן את האורחים שלך" : "Invite your guests"}
-                      </p>
-                    </div>
-
-                    {/* Arrow */}
-                    <ArrowRight className={cn(
-                      "h-5 w-5 text-muted-foreground transition-all duration-300 group-hover:text-foreground",
-                      isRTL ? "rotate-180 group-hover:-translate-x-1" : "group-hover:translate-x-1"
-                    )} />
-                  </div>
-                </div>
-              </Link>
-            </motion.div>
-          )}
-        </div>
-      </motion.div>
-
       {/* Events Section */}
       <motion.div variants={itemVariants} className="space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold">{t("upcomingEvents")}</h2>
+          {events && events.length > 0 && (
+            <div className="flex gap-1 border rounded-lg p-1">
+              <Button
+                variant={viewMode === "grid" ? "secondary" : "ghost"}
+                size="sm"
+                className="h-7 w-7 p-0"
+                onClick={() => handleViewModeChange("grid")}
+              >
+                <LayoutGrid className="h-4 w-4" />
+              </Button>
+              <Button
+                variant={viewMode === "list" ? "secondary" : "ghost"}
+                size="sm"
+                className="h-7 w-7 p-0"
+                onClick={() => handleViewModeChange("list")}
+              >
+                <List className="h-4 w-4" />
+              </Button>
+            </div>
+          )}
         </div>
 
         {!events || events.length === 0 ? (
@@ -467,7 +438,7 @@ export function DashboardContent({ userName, events, stats, locale, usageData }:
               {t("createEvent")}
             </Button>
           </EmptyPlaceholder>
-        ) : (
+        ) : viewMode === "grid" ? (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {events.slice(0, 6).map((event, index) => (
               <EventCard
@@ -476,6 +447,19 @@ export function DashboardContent({ userName, events, stats, locale, usageData }:
                 locale={locale}
                 index={index}
                 isRTL={isRTL}
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="rounded-lg border">
+            {events.slice(0, 10).map((event, index) => (
+              <EventListItem
+                key={event.id}
+                event={event}
+                locale={locale}
+                index={index}
+                isRTL={isRTL}
+                isLast={index === Math.min(events.length - 1, 9)}
               />
             ))}
           </div>
@@ -630,6 +614,114 @@ const EventCard = React.memo(function EventCard({
             </div>
           </CardContent>
         </Card>
+      </Link>
+    </motion.div>
+  );
+});
+
+const EventListItem = React.memo(function EventListItem({
+  event,
+  locale,
+  index,
+  isRTL,
+  isLast
+}: {
+  event: EventData;
+  locale: string;
+  index: number;
+  isRTL: boolean;
+  isLast: boolean;
+}) {
+  const eventDate = new Date(event.dateTime);
+  const isUpcoming = eventDate > new Date();
+  const daysUntil = Math.ceil((eventDate.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
+
+  const formattedDate = eventDate.toLocaleDateString(locale === "he" ? "he-IL" : "en-US", {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+  });
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, x: isRTL ? 12 : -12 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ delay: index * 0.03, duration: 0.15 }}
+    >
+      <Link href={`/${locale}/events/${event.id}`}>
+        <div className={cn(
+          "flex items-center gap-4 p-4 hover:bg-muted/50 transition-colors",
+          !isLast && "border-b"
+        )}>
+          {/* Date badge */}
+          <div className="flex h-12 w-12 flex-col items-center justify-center rounded-lg bg-muted shrink-0">
+            <span className="text-[10px] font-medium uppercase text-muted-foreground">
+              {eventDate.toLocaleDateString(locale === "he" ? "he-IL" : "en-US", { month: "short" })}
+            </span>
+            <span className="text-lg font-bold leading-none">
+              {eventDate.getDate()}
+            </span>
+          </div>
+
+          {/* Event info */}
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2">
+              <h3 className="font-semibold truncate">{event.title}</h3>
+              {isUpcoming && daysUntil <= 7 && (
+                <span className={cn(
+                  "rounded-full px-2 py-0.5 text-[10px] font-medium shrink-0",
+                  daysUntil <= 3
+                    ? "bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400"
+                    : "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
+                )}>
+                  {daysUntil === 0
+                    ? (isRTL ? "היום!" : "Today!")
+                    : daysUntil === 1
+                      ? (isRTL ? "מחר" : "Tomorrow")
+                      : (isRTL ? `עוד ${daysUntil} ימים` : `${daysUntil}d`)}
+                </span>
+              )}
+            </div>
+            <p className="text-sm text-muted-foreground truncate">
+              {formattedDate} {event.venue && `• ${event.venue}`}
+            </p>
+          </div>
+
+          {/* Stats */}
+          <div className="hidden sm:flex items-center gap-4 shrink-0">
+            <div className="text-center">
+              <p className="text-sm font-semibold">{event.stats.total}</p>
+              <p className="text-[10px] text-muted-foreground">
+                {isRTL ? "אורחים" : "Guests"}
+              </p>
+            </div>
+            <div className="text-center">
+              <p className="text-sm font-semibold text-emerald-600 dark:text-emerald-400">
+                {event.stats.accepted}
+              </p>
+              <p className="text-[10px] text-emerald-600/70 dark:text-emerald-400/70">
+                {isRTL ? "מאושר" : "Confirmed"}
+              </p>
+            </div>
+            <div className="text-center">
+              <p className="text-sm font-semibold text-amber-600 dark:text-amber-400">
+                {event.stats.pending}
+              </p>
+              <p className="text-[10px] text-amber-600/70 dark:text-amber-400/70">
+                {isRTL ? "ממתין" : "Pending"}
+              </p>
+            </div>
+          </div>
+
+          {/* Mobile stats */}
+          <div className="flex sm:hidden items-center gap-2 text-xs shrink-0">
+            <span className="text-emerald-600 dark:text-emerald-400 font-medium">
+              {event.stats.accepted}
+            </span>
+            <span className="text-muted-foreground">/</span>
+            <span>{event.stats.total}</span>
+          </div>
+        </div>
       </Link>
     </motion.div>
   );
