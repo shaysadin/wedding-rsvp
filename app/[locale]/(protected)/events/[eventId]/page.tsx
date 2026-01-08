@@ -151,8 +151,8 @@ export default async function EventDashboardPage({ params }: EventDashboardPageP
 
       {/* Quick Stats Bar */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <div className="rounded-lg border bg-card p-4">
-          <div className="flex items-center gap-2">
+        <div className="rounded-lg border bg-card p-4 text-center">
+          <div className="flex items-center justify-center gap-2">
             <Icons.users className="h-5 w-5 text-primary" />
             <span className="text-2xl font-bold">{guestStats.total}</span>
           </div>
@@ -160,8 +160,8 @@ export default async function EventDashboardPage({ params }: EventDashboardPageP
             {isRTL ? "סה״כ אורחים" : "Total Guests"}
           </p>
         </div>
-        <div className="rounded-lg border bg-card p-4">
-          <div className="flex items-center gap-2">
+        <div className="rounded-lg border bg-card p-4 text-center">
+          <div className="flex items-center justify-center gap-2">
             <Icons.checkCircle className="h-5 w-5 text-green-600" />
             <span className="text-2xl font-bold">{guestStats.accepted}</span>
           </div>
@@ -169,8 +169,8 @@ export default async function EventDashboardPage({ params }: EventDashboardPageP
             {isRTL ? "אישרו הגעה" : "Confirmed"}
           </p>
         </div>
-        <div className="rounded-lg border bg-card p-4">
-          <div className="flex items-center gap-2">
+        <div className="rounded-lg border bg-card p-4 text-center">
+          <div className="flex items-center justify-center gap-2">
             <Icons.clock className="h-5 w-5 text-yellow-600" />
             <span className="text-2xl font-bold">{guestStats.pending}</span>
           </div>
@@ -178,8 +178,8 @@ export default async function EventDashboardPage({ params }: EventDashboardPageP
             {isRTL ? "ממתינים" : "Pending"}
           </p>
         </div>
-        <div className="rounded-lg border bg-card p-4">
-          <div className="flex items-center gap-2">
+        <div className="rounded-lg border bg-card p-4 text-center">
+          <div className="flex items-center justify-center gap-2">
             <Icons.partyPopper className="h-5 w-5 text-purple-600" />
             <span className="text-2xl font-bold">{guestStats.totalAttending}</span>
           </div>
