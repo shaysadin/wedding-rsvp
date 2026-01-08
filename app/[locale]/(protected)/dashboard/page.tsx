@@ -17,8 +17,13 @@ export default async function DashboardPage() {
   const locale = await getLocale();
   const t = await getTranslations("dashboard");
 
-  // For Platform Owners, show admin redirect
-  if (user?.role === UserRole.ROLE_PLATFORM_OWNER) {
+  // Check if user has wedding owner role in their roles array
+  const hasWeddingOwnerRole = user?.roles?.includes(UserRole.ROLE_WEDDING_OWNER);
+  const hasPlatformOwnerRole = user?.roles?.includes(UserRole.ROLE_PLATFORM_OWNER);
+
+  // For Platform Owners who DON'T have wedding owner role, show admin redirect
+  // Users with both roles should see the regular dashboard
+  if (hasPlatformOwnerRole && !hasWeddingOwnerRole) {
     return (
       <>
         <DashboardHeader heading={t("title")} text={`${t("welcome")}, ${user?.name}`} />
