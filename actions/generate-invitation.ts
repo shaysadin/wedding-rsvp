@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { InvitationFieldType } from "@prisma/client";
+import { InvitationFieldType, UserRole } from "@prisma/client";
 
 import { prisma } from "@/lib/db";
 import { getCurrentUser } from "@/lib/session";
@@ -21,7 +21,8 @@ export async function generateInvitation(input: {
 }) {
   try {
     const user = await getCurrentUser();
-    if (!user) {
+    const hasWeddingOwnerRole = user?.roles?.includes(UserRole.ROLE_WEDDING_OWNER);
+    if (!user || !hasWeddingOwnerRole) {
       return { error: "Unauthorized" };
     }
 
@@ -157,7 +158,8 @@ export async function previewInvitation(input: {
 }) {
   try {
     const user = await getCurrentUser();
-    if (!user) {
+    const hasWeddingOwnerRole = user?.roles?.includes(UserRole.ROLE_WEDDING_OWNER);
+    if (!user || !hasWeddingOwnerRole) {
       return { error: "Unauthorized" };
     }
 
@@ -241,7 +243,8 @@ export async function previewInvitation(input: {
 export async function getEventInvitations(eventId: string) {
   try {
     const user = await getCurrentUser();
-    if (!user) {
+    const hasWeddingOwnerRole = user?.roles?.includes(UserRole.ROLE_WEDDING_OWNER);
+    if (!user || !hasWeddingOwnerRole) {
       return { error: "Unauthorized" };
     }
 
@@ -284,7 +287,8 @@ export async function getEventInvitations(eventId: string) {
 export async function deleteGeneratedInvitation(invitationId: string) {
   try {
     const user = await getCurrentUser();
-    if (!user) {
+    const hasWeddingOwnerRole = user?.roles?.includes(UserRole.ROLE_WEDDING_OWNER);
+    if (!user || !hasWeddingOwnerRole) {
       return { error: "Unauthorized" };
     }
 
@@ -320,8 +324,9 @@ export async function deleteGeneratedInvitation(invitationId: string) {
 export async function getInvitationImage(eventId: string) {
   try {
     const user = await getCurrentUser();
-    if (!user) {
-      console.log("[getInvitationImage] No user found");
+    const hasWeddingOwnerRole = user?.roles?.includes(UserRole.ROLE_WEDDING_OWNER);
+    if (!user || !hasWeddingOwnerRole) {
+      console.log("[getInvitationImage] No user found or missing role");
       return { error: "Unauthorized" };
     }
 
@@ -356,7 +361,8 @@ export async function getInvitationImage(eventId: string) {
 export async function getGuestsForInvitations(eventId: string) {
   try {
     const user = await getCurrentUser();
-    if (!user) {
+    const hasWeddingOwnerRole = user?.roles?.includes(UserRole.ROLE_WEDDING_OWNER);
+    if (!user || !hasWeddingOwnerRole) {
       return { error: "Unauthorized" };
     }
 
@@ -429,7 +435,8 @@ export async function getGuestsForInvitations(eventId: string) {
 export async function sendImageInvitation(guestId: string) {
   try {
     const user = await getCurrentUser();
-    if (!user) {
+    const hasWeddingOwnerRole = user?.roles?.includes(UserRole.ROLE_WEDDING_OWNER);
+    if (!user || !hasWeddingOwnerRole) {
       return { error: "Unauthorized" };
     }
 
@@ -497,7 +504,8 @@ export async function sendImageInvitation(guestId: string) {
 export async function sendBulkImageInvitations(guestIds: string[]) {
   try {
     const user = await getCurrentUser();
-    if (!user) {
+    const hasWeddingOwnerRole = user?.roles?.includes(UserRole.ROLE_WEDDING_OWNER);
+    if (!user || !hasWeddingOwnerRole) {
       return { error: "Unauthorized" };
     }
 
@@ -591,7 +599,8 @@ export async function sendBulkImageInvitations(guestIds: string[]) {
 export async function setActiveInvitation(invitationId: string) {
   try {
     const user = await getCurrentUser();
-    if (!user) {
+    const hasWeddingOwnerRole = user?.roles?.includes(UserRole.ROLE_WEDDING_OWNER);
+    if (!user || !hasWeddingOwnerRole) {
       return { error: "Unauthorized" };
     }
 
