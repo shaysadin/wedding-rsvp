@@ -1,19 +1,9 @@
 import { redirect } from "next/navigation";
-import { headers } from "next/headers";
 import { getLocale } from "next-intl/server";
-import { UserRole } from "@prisma/client";
 
-import { sidebarLinks, adminLinks } from "@/config/dashboard";
 import { getCurrentUser } from "@/lib/session";
 import { prisma } from "@/lib/db";
-import { SearchCommand } from "@/components/dashboard/search-command";
-import {
-  DashboardSidebar,
-  MobileSheetSidebar,
-} from "@/components/layout/dashboard-sidebar";
-import { MobileBottomNav } from "@/components/layout/mobile-bottom-nav";
-import { UserAccountNav } from "@/components/layout/user-account-nav";
-import MaxWidthWrapper from "@/components/shared/max-width-wrapper";
+import { ProtectedHeader } from "@/components/layout/protected-header";
 
 // Force dynamic rendering to avoid caching issues with role switching
 export const dynamic = "force-dynamic";
@@ -25,16 +15,13 @@ interface ProtectedLayoutProps {
 export default async function ProtectedLayout({ children }: ProtectedLayoutProps) {
   const user = await getCurrentUser();
   const locale = await getLocale();
-  const headersList = await headers();
-  const pathname = headersList.get("x-pathname") || "";
 
   if (!user) redirect(`/${locale}/login`);
 
   // Get user data including email verification status and roles
-  // Also fetch current role from DB to ensure role switches are reflected immediately
   const dbUser = await prisma.user.findUnique({
     where: { id: user.id },
-    select: { emailVerified: true, role: true, roles: true, accounts: true },
+    select: { emailVerified: true, role: true, accounts: true },
   });
 
   // If user has no OAuth accounts and email is not verified, block access
@@ -43,108 +30,19 @@ export default async function ProtectedLayout({ children }: ProtectedLayoutProps
     redirect(`/${locale}/login?error=EmailNotVerified`);
   }
 
-  // Check if we're on an event-scoped route
-  // Event routes have their own layout with EventSidebar and EventMobileNav
-  const isEventRoute = pathname.includes("/events/");
-
-  // For event routes, render minimal layout - event layout handles the rest
-  if (isEventRoute) {
-    return <>{children}</>;
-  }
-
-  // Check if we're on the dashboard/lobby page (My Events)
-  // This page should not have a sidebar - just header with user avatar
-  const isDashboardLobby = pathname.match(/^\/[a-z]{2}\/dashboard\/?$/) !== null;
-
-  const currentRole = dbUser?.role || user.role;
-
-  // For dashboard lobby, render layout without sidebar
-  if (isDashboardLobby) {
-    return (
-      <div className="fixed inset-0 flex w-full overflow-hidden bg-background">
-        <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-          <header className="shrink-0 flex h-14 items-center border-b lg:h-[60px] px-4">
-            {/* Mobile: full width search bar */}
-            <div className="flex md:hidden w-full items-center gap-3">
-              <div className="flex-1 min-w-0">
-                <SearchCommand links={sidebarLinks} fullWidth />
-              </div>
-              <div className="shrink-0">
-                <UserAccountNav />
-              </div>
-            </div>
-            {/* Desktop: centered search bar */}
-            <div className="hidden md:flex w-full items-center justify-between">
-              <div className="flex-1" />
-              <div className="w-72 lg:w-96">
-                <SearchCommand links={sidebarLinks} fullWidth />
-              </div>
-              <div className="flex-1 flex justify-end">
-                <UserAccountNav />
-              </div>
-            </div>
-          </header>
-
-          <main className="flex min-h-0 flex-1 flex-col overflow-auto">
-            <div className="flex w-full min-h-0 flex-1 flex-col gap-4 lg:gap-6 py-4 px-4 sm:px-6 lg:px-8">
-              {children}
-            </div>
-          </main>
-        </div>
-      </div>
-    );
-  }
-
-  const userRoles = dbUser?.roles || [currentRole];
-
-  // Combine admin links (for platform owners) with regular sidebar links
-  const allLinks = currentRole === UserRole.ROLE_PLATFORM_OWNER
-    ? [...adminLinks, ...sidebarLinks]
-    : sidebarLinks;
-
-  const filteredLinks = allLinks.map((section) => ({
-    ...section,
-    items: section.items.filter(
-      ({ authorizeOnly }) => !authorizeOnly || authorizeOnly === currentRole,
-    ),
-  })).filter((section) => section.items.length > 0);
-
+  // Layout for all protected pages
+  // ProtectedHeader client component handles showing/hiding based on route
   return (
-    <div className="fixed inset-0 flex w-full overflow-hidden bg-sidebar">
-      <DashboardSidebar
-        links={filteredLinks}
-        currentRole={currentRole}
-        availableRoles={userRoles}
-      />
+    <div className="fixed inset-0 flex w-full overflow-hidden bg-background">
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+        <ProtectedHeader />
 
-      <div className="flex min-h-0 flex-1 flex-col overflow-hidden md:rounded-xl md:border bg-background md:shadow-md md:p-2 md:m-3">
-        <header className="shrink-0 flex h-14 justify-between items-center border-b lg:h-[60px] pe-3 ps-3 sm:ps-0">
-          <MaxWidthWrapper className="flex justify-between w-full items-center gap-x-3 px-0">
-            <MobileSheetSidebar
-              links={filteredLinks}
-              currentRole={currentRole}
-              availableRoles={userRoles}
-            />
-
-            <div className="w-full flex-1">
-              <SearchCommand links={filteredLinks} />
-            </div>
-
-            <div className="flex items-center">
-              <UserAccountNav />
-            </div>
-          </MaxWidthWrapper>
-        </header>
-
-        <main className="flex min-h-0 flex-1 flex-col overflow-auto md:overflow-hidden">
-          <MaxWidthWrapper className="flex w-full min-h-0 flex-1 pb-[74px] sm:pb-0 flex-col gap-4 lg:gap-6">
+        <main className="flex min-h-0 flex-1 flex-col overflow-auto">
+          <div className="flex w-full min-h-0 flex-1 flex-col gap-4 lg:gap-6 py-4 px-4 sm:px-6 lg:px-8">
             {children}
-          </MaxWidthWrapper>
+          </div>
         </main>
       </div>
-
-      {/* Mobile Bottom Navigation */}
-      <MobileBottomNav currentRole={currentRole} />
     </div>
   );
 }

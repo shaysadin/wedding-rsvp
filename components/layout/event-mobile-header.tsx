@@ -4,7 +4,7 @@ import * as React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { ArrowLeft, ArrowRight, ChevronDown } from "lucide-react";
+import { ChevronDown, Home } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/drawer";
 import { EventOption } from "@/contexts/event-context";
 import { EventSwitcherInline } from "./event-switcher-inline";
+import { UserAccountNav } from "./user-account-nav";
 
 interface EventMobileHeaderProps {
   currentEvent: EventOption;
@@ -30,7 +31,6 @@ export function EventMobileHeader({ currentEvent, events, locale }: EventMobileH
   const [drawerOpen, setDrawerOpen] = React.useState(false);
 
   const isRTL = locale === "he";
-  const BackIcon = isRTL ? ArrowRight : ArrowLeft;
 
   // Get the current page title based on path
   const getPageTitle = () => {
@@ -60,34 +60,13 @@ export function EventMobileHeader({ currentEvent, events, locale }: EventMobileH
 
   return (
     <header className="flex shrink-0 md:hidden h-14 items-center justify-between border-b px-3 bg-background">
-      {/* Back Button */}
-      <div className="w-10">
-        {isSubPage ? (
-          <Button
-            variant="ghost"
-            size="icon"
-            asChild
-            className="size-9"
-          >
-            <Link href={`/${locale}/events/${currentEvent.id}`}>
-              <BackIcon className="size-5" />
-              <span className="sr-only">{t("common.back")}</span>
-            </Link>
-          </Button>
-        ) : (
-          <Button
-            variant="ghost"
-            size="icon"
-            asChild
-            className="size-9"
-          >
-            <Link href={`/${locale}/dashboard`}>
-              <BackIcon className="size-5" />
-              <span className="sr-only">{t("navigation.lobby")}</span>
-            </Link>
-          </Button>
-        )}
-      </div>
+      {/* Left - Home Button */}
+      <Button variant="ghost" size="icon" asChild className="size-9 shrink-0">
+        <Link href={`/${locale}/dashboard`}>
+          <Home className="size-5" />
+          <span className="sr-only">{t("navigation.lobby")}</span>
+        </Link>
+      </Button>
 
       {/* Center - Event Name / Page Title with Switcher */}
       <Drawer open={drawerOpen} onOpenChange={setDrawerOpen}>
@@ -124,8 +103,10 @@ export function EventMobileHeader({ currentEvent, events, locale }: EventMobileH
         </DrawerContent>
       </Drawer>
 
-      {/* Right side - placeholder for balance */}
-      <div className="w-10" />
+      {/* Right - User Avatar */}
+      <div className="shrink-0">
+        <UserAccountNav />
+      </div>
     </header>
   );
 }

@@ -1,7 +1,8 @@
 import { redirect, notFound } from "next/navigation";
-import { headers } from "next/headers";
 import { getLocale } from "next-intl/server";
 import { UserRole } from "@prisma/client";
+import Link from "next/link";
+import { Home } from "lucide-react";
 
 import { getCurrentUser } from "@/lib/session";
 import { prisma } from "@/lib/db";
@@ -11,6 +12,7 @@ import { EventMobileHeader } from "@/components/layout/event-mobile-header";
 import { EventMobileBottomNav } from "@/components/layout/event-mobile-bottom-nav";
 import { SearchCommand } from "@/components/dashboard/search-command";
 import { UserAccountNav } from "@/components/layout/user-account-nav";
+import { Button } from "@/components/ui/button";
 import MaxWidthWrapper from "@/components/shared/max-width-wrapper";
 import { sidebarLinks } from "@/config/dashboard";
 
@@ -85,15 +87,21 @@ export default async function EventsLayout({ children, params }: EventsLayoutPro
 
         <div className="flex min-h-0 flex-1 flex-col overflow-hidden md:rounded-xl md:border bg-background md:shadow-md md:p-2 md:m-3">
           {/* Desktop Header */}
-          <header className="hidden md:flex shrink-0 h-14 justify-between items-center border-b lg:h-[60px] pe-3 ps-3 sm:ps-0">
-            <MaxWidthWrapper className="flex justify-between w-full items-center gap-x-3 px-0">
-              <div className="w-full flex-1">
-                <SearchCommand links={sidebarLinks} />
-              </div>
-              <div className="flex items-center">
-                <UserAccountNav />
-              </div>
-            </MaxWidthWrapper>
+          <header className="hidden md:flex shrink-0 h-14 items-center border-b lg:h-[60px] px-4 gap-4">
+            <Button variant="ghost" size="icon" asChild className="size-9 shrink-0">
+              <Link href={`/${locale}/dashboard`}>
+                <Home className="size-5" />
+                <span className="sr-only">Dashboard</span>
+              </Link>
+            </Button>
+            <div className="flex-1" />
+            <div className="w-72 lg:w-96">
+              <SearchCommand links={sidebarLinks} fullWidth />
+            </div>
+            <div className="flex-1" />
+            <div className="shrink-0">
+              <UserAccountNav />
+            </div>
           </header>
 
           {/* Mobile Header */}
