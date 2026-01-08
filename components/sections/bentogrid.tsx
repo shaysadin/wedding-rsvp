@@ -150,6 +150,7 @@ export default function BentoGrid() {
                         width={100}
                         height={100}
                         className="size-full rounded-full border"
+                        style={{ width: "auto", height: "auto" }}
                         src="https://randomuser.me/api/portraits/women/4.jpg"
                         alt="guest-avatar"
                       />
@@ -161,6 +162,7 @@ export default function BentoGrid() {
                         width={100}
                         height={100}
                         className="size-full rounded-full border"
+                        style={{ width: "auto", height: "auto" }}
                         src="https://randomuser.me/api/portraits/men/6.jpg"
                         alt="guest-avatar"
                       />
@@ -178,6 +180,7 @@ export default function BentoGrid() {
                         width={100}
                         height={100}
                         className="size-full rounded-full border"
+                        style={{ width: "auto", height: "auto" }}
                         src="https://randomuser.me/api/portraits/women/2.jpg"
                         alt="guest-avatar"
                       />

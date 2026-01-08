@@ -62,6 +62,7 @@ export default function InfoLanding({
           <div className="aspect-video">
             <Image
               className="size-full object-cover object-center"
+              style={{ width: "auto", height: "auto" }}
               src={image}
               alt={t("title")}
               width={1000}
