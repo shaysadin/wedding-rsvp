@@ -235,7 +235,9 @@ export async function getGiftPaymentSettings(eventId: string) {
   try {
     const user = await getCurrentUser();
 
-    if (!user || user.role !== UserRole.ROLE_WEDDING_OWNER) {
+    // Check if user has ROLE_WEDDING_OWNER in their roles array
+    const hasWeddingOwnerRole = user?.roles?.includes(UserRole.ROLE_WEDDING_OWNER);
+    if (!user || !hasWeddingOwnerRole) {
       return { error: "Unauthorized" };
     }
 
@@ -277,7 +279,9 @@ export async function updateGiftPaymentSettings(
   try {
     const user = await getCurrentUser();
 
-    if (!user || user.role !== UserRole.ROLE_WEDDING_OWNER) {
+    // Check if user has ROLE_WEDDING_OWNER in their roles array
+    const hasWeddingOwnerRole = user?.roles?.includes(UserRole.ROLE_WEDDING_OWNER);
+    if (!user || !hasWeddingOwnerRole) {
       return { error: "Unauthorized" };
     }
 
@@ -316,7 +320,9 @@ export async function getEventGifts(eventId: string) {
   try {
     const user = await getCurrentUser();
 
-    if (!user || user.role !== UserRole.ROLE_WEDDING_OWNER) {
+    // Check if user has ROLE_WEDDING_OWNER in their roles array
+    const hasWeddingOwnerRole = user?.roles?.includes(UserRole.ROLE_WEDDING_OWNER);
+    if (!user || !hasWeddingOwnerRole) {
       return { error: "Unauthorized" };
     }
 
@@ -386,7 +392,9 @@ export async function addManualGift(
   try {
     const user = await getCurrentUser();
 
-    if (!user || user.role !== UserRole.ROLE_WEDDING_OWNER) {
+    // Check if user has ROLE_WEDDING_OWNER in their roles array
+    const hasWeddingOwnerRole = user?.roles?.includes(UserRole.ROLE_WEDDING_OWNER);
+    if (!user || !hasWeddingOwnerRole) {
       return { error: "Unauthorized" };
     }
 
@@ -431,7 +439,9 @@ export async function deleteGift(giftId: string) {
   try {
     const user = await getCurrentUser();
 
-    if (!user || user.role !== UserRole.ROLE_WEDDING_OWNER) {
+    // Check if user has ROLE_WEDDING_OWNER in their roles array
+    const hasWeddingOwnerRole = user?.roles?.includes(UserRole.ROLE_WEDDING_OWNER);
+    if (!user || !hasWeddingOwnerRole) {
       return { error: "Unauthorized" };
     }
 

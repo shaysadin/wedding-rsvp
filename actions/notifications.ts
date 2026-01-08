@@ -149,7 +149,9 @@ export async function getCurrentUserUsage() {
   try {
     const user = await getCurrentUser();
 
-    if (!user || user.role !== UserRole.ROLE_WEDDING_OWNER) {
+    // Check if user has ROLE_WEDDING_OWNER in their roles array
+    const hasWeddingOwnerRole = user?.roles?.includes(UserRole.ROLE_WEDDING_OWNER);
+    if (!user || !hasWeddingOwnerRole) {
       return { error: "Unauthorized" };
     }
 
@@ -268,7 +270,9 @@ export async function sendInvite(guestId: string, channel: ChannelType = "AUTO")
   try {
     const user = await getCurrentUser();
 
-    if (!user || user.role !== UserRole.ROLE_WEDDING_OWNER) {
+    // Check if user has ROLE_WEDDING_OWNER in their roles array
+    const hasWeddingOwnerRole = user?.roles?.includes(UserRole.ROLE_WEDDING_OWNER);
+    if (!user || !hasWeddingOwnerRole) {
       return { error: "Unauthorized" };
     }
 
@@ -342,7 +346,9 @@ export async function sendReminder(guestId: string, channel: ChannelType = "AUTO
   try {
     const user = await getCurrentUser();
 
-    if (!user || user.role !== UserRole.ROLE_WEDDING_OWNER) {
+    // Check if user has ROLE_WEDDING_OWNER in their roles array
+    const hasWeddingOwnerRole = user?.roles?.includes(UserRole.ROLE_WEDDING_OWNER);
+    if (!user || !hasWeddingOwnerRole) {
       return { error: "Unauthorized" };
     }
 
@@ -421,7 +427,9 @@ export async function sendBulkReminders(eventId: string) {
   try {
     const user = await getCurrentUser();
 
-    if (!user || !user.id || user.role !== UserRole.ROLE_WEDDING_OWNER) {
+    // Check if user has ROLE_WEDDING_OWNER in their roles array
+    const hasWeddingOwnerRole = user?.roles?.includes(UserRole.ROLE_WEDDING_OWNER);
+    if (!user || !user.id || !hasWeddingOwnerRole) {
       return { error: "Unauthorized" };
     }
 
@@ -525,7 +533,9 @@ export async function sendBulkInvites(eventId: string) {
   try {
     const user = await getCurrentUser();
 
-    if (!user || !user.id || user.role !== UserRole.ROLE_WEDDING_OWNER) {
+    // Check if user has ROLE_WEDDING_OWNER in their roles array
+    const hasWeddingOwnerRole = user?.roles?.includes(UserRole.ROLE_WEDDING_OWNER);
+    if (!user || !user.id || !hasWeddingOwnerRole) {
       return { error: "Unauthorized" };
     }
 
@@ -644,7 +654,9 @@ export async function sendInteractiveInvite(guestId: string, includeImage: boole
   try {
     const user = await getCurrentUser();
 
-    if (!user || user.role !== UserRole.ROLE_WEDDING_OWNER) {
+    // Check if user has ROLE_WEDDING_OWNER in their roles array
+    const hasWeddingOwnerRole = user?.roles?.includes(UserRole.ROLE_WEDDING_OWNER);
+    if (!user || !hasWeddingOwnerRole) {
       return { error: "Unauthorized" };
     }
 
@@ -720,7 +732,9 @@ export async function sendInteractiveReminder(guestId: string, includeImage: boo
   try {
     const user = await getCurrentUser();
 
-    if (!user || user.role !== UserRole.ROLE_WEDDING_OWNER) {
+    // Check if user has ROLE_WEDDING_OWNER in their roles array
+    const hasWeddingOwnerRole = user?.roles?.includes(UserRole.ROLE_WEDDING_OWNER);
+    if (!user || !hasWeddingOwnerRole) {
       return { error: "Unauthorized" };
     }
 

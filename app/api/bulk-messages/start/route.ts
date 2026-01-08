@@ -14,7 +14,9 @@ export async function POST(req: NextRequest) {
   try {
     const user = await getCurrentUser();
 
-    if (!user || !user.id || user.role !== UserRole.ROLE_WEDDING_OWNER) {
+    // Check if user has ROLE_WEDDING_OWNER in their roles array
+    const hasWeddingOwnerRole = user?.roles?.includes(UserRole.ROLE_WEDDING_OWNER);
+    if (!user || !user.id || !hasWeddingOwnerRole) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 

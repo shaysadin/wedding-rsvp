@@ -30,7 +30,10 @@ export default async function CustomizePage({ params }: CustomizePageProps) {
   const isRTL = locale === "he";
 
   // Allow both wedding owners and platform owners (admins)
-  if (!user || (user.role !== UserRole.ROLE_WEDDING_OWNER && user.role !== UserRole.ROLE_PLATFORM_OWNER)) {
+  // Check if user has ROLE_WEDDING_OWNER or ROLE_PLATFORM_OWNER in their roles array
+  const hasWeddingOwnerRole = user?.roles?.includes(UserRole.ROLE_WEDDING_OWNER);
+  const hasPlatformOwnerRole = user?.roles?.includes(UserRole.ROLE_PLATFORM_OWNER);
+  if (!user || (!hasWeddingOwnerRole && !hasPlatformOwnerRole)) {
     redirect(`/${locale}/dashboard`);
   }
 

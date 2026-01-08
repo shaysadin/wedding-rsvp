@@ -43,7 +43,9 @@ export async function createGuest(input: CreateGuestInput) {
   try {
     const user = await getCurrentUser();
 
-    if (!user || user.role !== UserRole.ROLE_WEDDING_OWNER) {
+    // Check if user has ROLE_WEDDING_OWNER in their roles array
+    const hasWeddingOwnerRole = user?.roles?.includes(UserRole.ROLE_WEDDING_OWNER);
+    if (!user || !hasWeddingOwnerRole) {
       return { error: "Unauthorized" };
     }
 
@@ -119,7 +121,9 @@ export async function updateGuest(input: UpdateGuestInput) {
   try {
     const user = await getCurrentUser();
 
-    if (!user || user.role !== UserRole.ROLE_WEDDING_OWNER) {
+    // Check if user has ROLE_WEDDING_OWNER in their roles array
+    const hasWeddingOwnerRole = user?.roles?.includes(UserRole.ROLE_WEDDING_OWNER);
+    if (!user || !hasWeddingOwnerRole) {
       return { error: "Unauthorized" };
     }
 
@@ -203,7 +207,9 @@ export async function deleteGuest(guestId: string) {
   try {
     const user = await getCurrentUser();
 
-    if (!user || user.role !== UserRole.ROLE_WEDDING_OWNER) {
+    // Check if user has ROLE_WEDDING_OWNER in their roles array
+    const hasWeddingOwnerRole = user?.roles?.includes(UserRole.ROLE_WEDDING_OWNER);
+    if (!user || !hasWeddingOwnerRole) {
       return { error: "Unauthorized" };
     }
 
@@ -234,7 +240,9 @@ export async function deleteGuests(guestIds: string[]) {
   try {
     const user = await getCurrentUser();
 
-    if (!user || user.role !== UserRole.ROLE_WEDDING_OWNER) {
+    // Check if user has ROLE_WEDDING_OWNER in their roles array
+    const hasWeddingOwnerRole = user?.roles?.includes(UserRole.ROLE_WEDDING_OWNER);
+    if (!user || !hasWeddingOwnerRole) {
       return { error: "Unauthorized" };
     }
 
@@ -278,7 +286,9 @@ export async function bulkImportGuests(input: BulkImportGuestInput) {
   try {
     const user = await getCurrentUser();
 
-    if (!user || user.role !== UserRole.ROLE_WEDDING_OWNER) {
+    // Check if user has ROLE_WEDDING_OWNER in their roles array
+    const hasWeddingOwnerRole = user?.roles?.includes(UserRole.ROLE_WEDDING_OWNER);
+    if (!user || !hasWeddingOwnerRole) {
       return { error: "Unauthorized" };
     }
 
@@ -436,7 +446,9 @@ export async function getEventGuests(eventId: string) {
   try {
     const user = await getCurrentUser();
 
-    if (!user || user.role !== UserRole.ROLE_WEDDING_OWNER) {
+    // Check if user has ROLE_WEDDING_OWNER in their roles array
+    const hasWeddingOwnerRole = user?.roles?.includes(UserRole.ROLE_WEDDING_OWNER);
+    if (!user || !hasWeddingOwnerRole) {
       return { error: "Unauthorized" };
     }
 
@@ -484,7 +496,9 @@ export async function checkDuplicatePhone(
   try {
     const user = await getCurrentUser();
 
-    if (!user || user.role !== UserRole.ROLE_WEDDING_OWNER) {
+    // Check if user has ROLE_WEDDING_OWNER in their roles array
+    const hasWeddingOwnerRole = user?.roles?.includes(UserRole.ROLE_WEDDING_OWNER);
+    if (!user || !hasWeddingOwnerRole) {
       return { error: "Unauthorized" };
     }
 
@@ -537,7 +551,9 @@ export async function getDuplicatePhoneGuests(eventId: string) {
   try {
     const user = await getCurrentUser();
 
-    if (!user || user.role !== UserRole.ROLE_WEDDING_OWNER) {
+    // Check if user has ROLE_WEDDING_OWNER in their roles array
+    const hasWeddingOwnerRole = user?.roles?.includes(UserRole.ROLE_WEDDING_OWNER);
+    if (!user || !hasWeddingOwnerRole) {
       return { error: "Unauthorized" };
     }
 

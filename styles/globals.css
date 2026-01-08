@@ -120,6 +120,38 @@
     @apply bg-background text-foreground;
     font-feature-settings: "rlig" 1, "calt" 1;
   }
+
+  /* Prevent iOS Safari elastic scrolling on fixed app layouts (dashboard, etc.) */
+  body:has(.app-shell) {
+    height: 100%;
+    overflow: hidden;
+    position: fixed;
+    width: 100%;
+    overscroll-behavior: none;
+  }
+
+  html:has(.app-shell) {
+    height: 100%;
+    overflow: hidden;
+  }
+}
+
+/* App shell - fixed layout container for dashboard/protected pages */
+@layer utilities {
+  .app-shell {
+    position: fixed;
+    inset: 0;
+    overflow: hidden;
+    /* iOS-specific fixes */
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .app-shell-content {
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+  }
 }
 
 @layer utilities {

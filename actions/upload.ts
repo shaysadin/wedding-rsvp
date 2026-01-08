@@ -19,9 +19,8 @@ export async function uploadBackgroundImage(base64Data: string) {
       return { error: "Unauthorized" };
     }
 
-    // Check roles array (users can have multiple roles)
-    const hasWeddingOwnerRole = user.roles?.includes(UserRole.ROLE_WEDDING_OWNER) ||
-                                 user.role === UserRole.ROLE_WEDDING_OWNER;
+    // Check if user has ROLE_WEDDING_OWNER in their roles array
+    const hasWeddingOwnerRole = user?.roles?.includes(UserRole.ROLE_WEDDING_OWNER);
 
     if (!hasWeddingOwnerRole) {
       return { error: "Unauthorized" };
@@ -78,9 +77,8 @@ export async function deleteBackgroundImage(publicId: string) {
       return { error: "Unauthorized" };
     }
 
-    // Check roles array (users can have multiple roles)
-    const hasWeddingOwnerRole = user.roles?.includes(UserRole.ROLE_WEDDING_OWNER) ||
-                                 user.role === UserRole.ROLE_WEDDING_OWNER;
+    // Check if user has ROLE_WEDDING_OWNER in their roles array
+    const hasWeddingOwnerRole = user?.roles?.includes(UserRole.ROLE_WEDDING_OWNER);
 
     if (!hasWeddingOwnerRole) {
       return { error: "Unauthorized" };
@@ -120,9 +118,8 @@ export async function uploadInvitationImage(eventId: string, base64Data: string)
       return { error: "Unauthorized" };
     }
 
-    // Check roles array (users can have multiple roles)
-    const hasWeddingOwnerRole = user.roles?.includes(UserRole.ROLE_WEDDING_OWNER) ||
-                                 user.role === UserRole.ROLE_WEDDING_OWNER;
+    // Check if user has ROLE_WEDDING_OWNER in their roles array
+    const hasWeddingOwnerRole = user?.roles?.includes(UserRole.ROLE_WEDDING_OWNER);
 
     if (!hasWeddingOwnerRole) {
       console.log("[uploadInvitationImage] User doesn't have ROLE_WEDDING_OWNER");
@@ -232,9 +229,8 @@ export async function deleteInvitationImage(eventId: string) {
       return { error: "Unauthorized" };
     }
 
-    // Check roles array (users can have multiple roles)
-    const hasWeddingOwnerRole = user.roles?.includes(UserRole.ROLE_WEDDING_OWNER) ||
-                                 user.role === UserRole.ROLE_WEDDING_OWNER;
+    // Check if user has ROLE_WEDDING_OWNER in their roles array
+    const hasWeddingOwnerRole = user?.roles?.includes(UserRole.ROLE_WEDDING_OWNER);
 
     if (!hasWeddingOwnerRole) {
       return { error: "Unauthorized" };

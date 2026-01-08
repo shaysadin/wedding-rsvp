@@ -34,7 +34,9 @@ export default async function GuestsPage({ params, searchParams }: GuestsPagePro
   const locale = await getLocale();
   const tGuests = await getTranslations("guests");
 
-  if (!user || user.role !== UserRole.ROLE_WEDDING_OWNER) {
+  // Check if user has ROLE_WEDDING_OWNER in their roles array
+  const hasWeddingOwnerRole = user?.roles?.includes(UserRole.ROLE_WEDDING_OWNER);
+  if (!user || !hasWeddingOwnerRole) {
     redirect(`/${locale}/dashboard`);
   }
 

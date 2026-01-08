@@ -20,7 +20,9 @@ export default async function TasksPage({ params }: TasksPageProps) {
   const t = await getTranslations("tasks");
   const isRTL = locale === "he";
 
-  if (!user || user.role !== UserRole.ROLE_WEDDING_OWNER) {
+  // Check if user has ROLE_WEDDING_OWNER in their roles array
+  const hasWeddingOwnerRole = user?.roles?.includes(UserRole.ROLE_WEDDING_OWNER);
+  if (!user || !hasWeddingOwnerRole) {
     redirect(`/${locale}/dashboard`);
   }
 

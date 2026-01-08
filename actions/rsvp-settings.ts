@@ -141,7 +141,9 @@ export async function updateRsvpPageSettings(input: RsvpPageSettingsInput) {
   try {
     const user = await getCurrentUser();
 
-    if (!user || user.role !== UserRole.ROLE_WEDDING_OWNER) {
+    // Check if user has ROLE_WEDDING_OWNER in their roles array
+    const hasWeddingOwnerRole = user?.roles?.includes(UserRole.ROLE_WEDDING_OWNER);
+    if (!user || !hasWeddingOwnerRole) {
       return { error: "Unauthorized" };
     }
 
@@ -196,13 +198,16 @@ export async function getRsvpPageSettings(eventId: string) {
   try {
     const user = await getCurrentUser();
 
-    if (!user || (user.role !== UserRole.ROLE_WEDDING_OWNER && user.role !== UserRole.ROLE_PLATFORM_OWNER)) {
+    // Check if user has ROLE_WEDDING_OWNER or ROLE_PLATFORM_OWNER in their roles array
+    const hasWeddingOwnerRole = user?.roles?.includes(UserRole.ROLE_WEDDING_OWNER);
+    const hasPlatformOwnerRole = user?.roles?.includes(UserRole.ROLE_PLATFORM_OWNER);
+    if (!user || (!hasWeddingOwnerRole && !hasPlatformOwnerRole)) {
       return { error: "Unauthorized" };
     }
 
     // Verify event ownership (platform owners can access any event)
     const event = await prisma.weddingEvent.findFirst({
-      where: user.role === UserRole.ROLE_PLATFORM_OWNER
+      where: hasPlatformOwnerRole
         ? { id: eventId }
         : { id: eventId, ownerId: user.id },
       include: { rsvpPageSettings: true },
@@ -310,6 +315,9 @@ export async function updateRsvpTemplate(
       return { error: "Unauthorized" };
     }
 
+    // Check if user has ROLE_PLATFORM_OWNER in their roles array
+    const hasPlatformOwnerRole = user?.roles?.includes(UserRole.ROLE_PLATFORM_OWNER);
+
     // Verify template ownership (unless it's a system template being updated by platform owner)
     const existingTemplate = await prisma.rsvpTemplate.findFirst({
       where: {
@@ -318,7 +326,7 @@ export async function updateRsvpTemplate(
           { ownerId: user.id },
           {
             isSystem: true,
-            ...(user.role === UserRole.ROLE_PLATFORM_OWNER ? {} : { id: "never" }),
+            ...(hasPlatformOwnerRole ? {} : { id: "never" }),
           },
         ],
       },
@@ -429,7 +437,9 @@ export async function applyTemplateToEvent(eventId: string, templateId: string) 
   try {
     const user = await getCurrentUser();
 
-    if (!user || user.role !== UserRole.ROLE_WEDDING_OWNER) {
+    // Check if user has ROLE_WEDDING_OWNER in their roles array
+    const hasWeddingOwnerRole = user?.roles?.includes(UserRole.ROLE_WEDDING_OWNER);
+    if (!user || !hasWeddingOwnerRole) {
       return { error: "Unauthorized" };
     }
 
@@ -503,7 +513,9 @@ export async function saveSettingsAsTemplate(
   try {
     const user = await getCurrentUser();
 
-    if (!user || user.role !== UserRole.ROLE_WEDDING_OWNER) {
+    // Check if user has ROLE_WEDDING_OWNER in their roles array
+    const hasWeddingOwnerRole = user?.roles?.includes(UserRole.ROLE_WEDDING_OWNER);
+    if (!user || !hasWeddingOwnerRole) {
       return { error: "Unauthorized" };
     }
 

@@ -26,7 +26,9 @@ export default async function EventsLayout({ children, params }: EventsLayoutPro
   const user = await getCurrentUser();
   const locale = await getLocale();
 
-  if (!user || user.role !== UserRole.ROLE_WEDDING_OWNER) {
+  // Check if user has ROLE_WEDDING_OWNER in their roles array
+  const hasWeddingOwnerRole = user?.roles?.includes(UserRole.ROLE_WEDDING_OWNER);
+  if (!user || !hasWeddingOwnerRole) {
     redirect(`/${locale}/dashboard`);
   }
 
@@ -77,7 +79,8 @@ export default async function EventsLayout({ children, params }: EventsLayoutPro
 
   return (
     <EventProvider event={currentEvent} events={events} locale={locale}>
-      <div className="fixed inset-0 flex w-full overflow-hidden bg-sidebar">
+      {/* This layout is nested inside the protected layout's app-shell */}
+      <div className="app-shell flex w-full bg-sidebar">
         {/* Desktop Sidebar */}
         <EventSidebar
           currentEvent={currentEvent}
@@ -111,7 +114,7 @@ export default async function EventsLayout({ children, params }: EventsLayoutPro
             locale={locale}
           />
 
-          <main className="flex min-h-0 flex-1 flex-col overflow-auto md:overflow-hidden">
+          <main className="app-shell-content flex min-h-0 flex-1 flex-col md:overflow-hidden">
             <MaxWidthWrapper className="flex w-full min-h-0 flex-1 pb-[74px] md:pb-0 flex-col gap-4 lg:gap-6">
               {children}
             </MaxWidthWrapper>
