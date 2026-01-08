@@ -88,6 +88,7 @@ const DialogContent = React.forwardRef<
       <DialogPrimitive.Content
         ref={ref}
         dir={dir || autoDir}
+        aria-describedby={undefined}
         className={cn(dialogContentVariants({ size }), className)}
         {...props}
       >
