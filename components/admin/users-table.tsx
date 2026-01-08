@@ -63,6 +63,8 @@ type UserWithStats = User & {
   stripeCustomerId: string | null;
   vapiPhoneNumber: VapiPhoneNumber | null;
   whatsappPhoneNumberId: string | null;
+  voiceCallsAddOn: boolean;
+  giftSystemEnabled: boolean;
 };
 
 type PhoneNumberOption = {
@@ -141,9 +143,15 @@ export function AdminUsersTable({ users, vapiPhoneNumbers = [], whatsappPhoneNum
     }
   };
 
-  const handlePlanChange = async (userId: string, plan: PlanTier, resetUsage: boolean = false, syncWithStripe: boolean = false) => {
+  const handlePlanChange = async (
+    userId: string,
+    plan: PlanTier,
+    resetUsage: boolean = false,
+    syncWithStripe: boolean = false,
+    includeVoice: boolean = false
+  ) => {
     setLoading(userId);
-    const result = await changeUserPlan(userId, plan, resetUsage, syncWithStripe);
+    const result = await changeUserPlan(userId, plan, resetUsage, syncWithStripe, includeVoice);
     setLoading(null);
 
     if (result.error) {
@@ -349,8 +357,18 @@ export function AdminUsersTable({ users, vapiPhoneNumbers = [], whatsappPhoneNum
                   <TableCell>
                     <div className="flex items-center gap-1.5">
                       <Badge className={planColors[user.plan]} variant="secondary">
-                        {tPlans(user.plan.toLowerCase() as "free" | "basic" | "advanced" | "premium")}
+                        {tPlans(user.plan.toLowerCase() as "free" | "basic" | "advanced" | "premium" | "business")}
                       </Badge>
+                      {user.plan === "BUSINESS" && user.voiceCallsAddOn && (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Icons.phone className="h-3.5 w-3.5 text-purple-500" />
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>{t("voiceCalls")}</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      )}
                       {user.stripeSubscriptionId ? (
                         <Tooltip>
                           <TooltipTrigger asChild>
@@ -373,10 +391,12 @@ export function AdminUsersTable({ users, vapiPhoneNumbers = [], whatsappPhoneNum
                     </div>
                   </TableCell>
                   <TableCell className="text-center">
-                    <span className={user._count.weddingEvents >= user.planLimits.maxEvents ? "text-destructive font-medium" : ""}>
+                    <span className={user.planLimits.maxEvents !== -1 && user._count.weddingEvents >= user.planLimits.maxEvents ? "text-destructive font-medium" : ""}>
                       {user._count.weddingEvents}
                     </span>
-                    <span className="text-muted-foreground">/{user.planLimits.maxEvents}</span>
+                    <span className="text-muted-foreground">
+                      /{user.planLimits.maxEvents === -1 ? "∞" : user.planLimits.maxEvents}
+                    </span>
                   </TableCell>
                   <TableCell className="text-center">
                     {user.totalGuests}
@@ -486,7 +506,7 @@ export function AdminUsersTable({ users, vapiPhoneNumbers = [], whatsappPhoneNum
                           </DropdownMenuSubTrigger>
                           <DropdownMenuPortal>
                             <DropdownMenuSubContent>
-                              {Object.values(PlanTier).map((plan) => (
+                              {Object.values(PlanTier).filter(plan => plan !== "BUSINESS").map((plan) => (
                                 <DropdownMenuItem
                                   key={plan}
                                   onClick={() => handlePlanChange(user.id, plan, false, user.stripeSubscriptionId ? true : false)}
@@ -495,11 +515,39 @@ export function AdminUsersTable({ users, vapiPhoneNumbers = [], whatsappPhoneNum
                                   <Badge className={planColors[plan]} variant="secondary">
                                     {tPlans(plan.toLowerCase() as "free" | "basic" | "advanced" | "premium")}
                                   </Badge>
-                                  {user.stripeSubscriptionId && plan !== "FREE" && plan !== "BUSINESS" && (
+                                  {user.stripeSubscriptionId && plan !== "FREE" && (
                                     <Icons.creditCard className="ms-auto h-3.5 w-3.5 text-green-500" />
                                   )}
                                 </DropdownMenuItem>
                               ))}
+                              <DropdownMenuSeparator />
+                              <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">
+                                {tPlans("business")}
+                              </DropdownMenuLabel>
+                              <DropdownMenuItem
+                                onClick={() => handlePlanChange(user.id, PlanTier.BUSINESS, false, user.stripeSubscriptionId ? true : false, false)}
+                                disabled={user.plan === "BUSINESS" && !user.voiceCallsAddOn}
+                              >
+                                <Badge className={planColors.BUSINESS} variant="secondary">
+                                  {tPlans("business")}
+                                </Badge>
+                                <span className="ms-2 text-xs text-muted-foreground">$585/mo</span>
+                                {user.stripeSubscriptionId && (
+                                  <Icons.creditCard className="ms-auto h-3.5 w-3.5 text-green-500" />
+                                )}
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => handlePlanChange(user.id, PlanTier.BUSINESS, false, user.stripeSubscriptionId ? true : false, true)}
+                                disabled={user.plan === "BUSINESS" && user.voiceCallsAddOn}
+                              >
+                                <Badge className={planColors.BUSINESS} variant="secondary">
+                                  {tPlans("business")}
+                                </Badge>
+                                <span className="ms-2 text-xs text-muted-foreground">+ {t("voiceCalls")} $750/mo</span>
+                                {user.stripeSubscriptionId && (
+                                  <Icons.creditCard className="ms-auto h-3.5 w-3.5 text-green-500" />
+                                )}
+                              </DropdownMenuItem>
                               {user.stripeSubscriptionId && (
                                 <>
                                   <DropdownMenuSeparator />

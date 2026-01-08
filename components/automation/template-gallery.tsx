@@ -106,11 +106,11 @@ export function TemplateGallery({
             )}
           >
             <CardHeader className="pb-2">
-              <div className={cn("flex items-start gap-3", isRTL && "flex-row-reverse")}>
+              <div className="flex items-start gap-3">
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-lg">
                   {triggerIcon}
                 </div>
-                <div className={cn("flex-1 space-y-1", isRTL && "text-right")}>
+                <div className="flex-1 space-y-1 text-start">
                   <CardTitle className="text-base">
                     {isRTL ? template.nameHe : template.name}
                   </CardTitle>
@@ -123,12 +123,7 @@ export function TemplateGallery({
 
             <CardContent className="space-y-4">
               {/* Flow visualization */}
-              <div
-                className={cn(
-                  "flex items-center gap-2 rounded-lg bg-muted/50 p-2 text-sm",
-                  isRTL && "flex-row-reverse"
-                )}
-              >
+              <div className="flex items-center gap-2 rounded-lg bg-muted/50 p-2 text-sm">
                 <span className="text-base">{triggerIcon}</span>
                 <span className="text-muted-foreground">→</span>
                 <span className="text-base">{actionIcon}</span>
@@ -144,7 +139,7 @@ export function TemplateGallery({
                   isRTL ? "כבר קיים" : "Already exists"
                 ) : (
                   <>
-                    <Plus className={cn("h-4 w-4", isRTL ? "ml-2" : "me-2")} />
+                    <Plus className="h-4 w-4 me-2" />
                     {isRTL ? "הוסף" : "Add"}
                   </>
                 )}

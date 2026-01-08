@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useLocale, useTranslations } from "next-intl";
+import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 
 import { createGuest } from "@/actions/guests";
@@ -63,8 +63,6 @@ const createEmptyRow = (): GuestRow => ({
 export function BulkAddGuestsDialog({ eventId }: BulkAddGuestsDialogProps) {
   const t = useTranslations("guests");
   const tc = useTranslations("common");
-  const locale = useLocale();
-  const isRTL = locale === "he";
   const [open, setOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [rows, setRows] = useState<GuestRow[]>([createEmptyRow(), createEmptyRow(), createEmptyRow()]);
@@ -181,7 +179,7 @@ export function BulkAddGuestsDialog({ eventId }: BulkAddGuestsDialogProps) {
           {t("bulkAdd")}
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-4xl" dir={isRTL ? "rtl" : "ltr"}>
+      <DialogContent className="sm:max-w-4xl">
         <DialogHeader>
           <DialogTitle>{t("bulkAdd")}</DialogTitle>
           <DialogDescription>
@@ -190,8 +188,8 @@ export function BulkAddGuestsDialog({ eventId }: BulkAddGuestsDialogProps) {
         </DialogHeader>
 
         <div className="mt-4 space-y-4">
-          <ScrollArea className="h-[400px] rounded-md border" dir={isRTL ? "rtl" : "ltr"}>
-            <Table dir={isRTL ? "rtl" : "ltr"}>
+          <ScrollArea className="h-[400px] rounded-md border">
+            <Table>
               <TableHeader>
                 <TableRow className="bg-muted/50">
                   <TableHead className="w-[180px] text-start">{t("name")} *</TableHead>

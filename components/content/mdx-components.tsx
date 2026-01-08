@@ -219,6 +219,7 @@ export function Mdx({ code, images }: MdxProps) {
           {...props}
           blurDataURL={blurDataURL}
           className="size-full object-cover object-center"
+          style={{ width: "auto", height: "auto" }}
         />
       </div>
     );

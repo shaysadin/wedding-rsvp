@@ -197,10 +197,10 @@ export function SupplierDetailsDrawer({
           className="w-full sm:max-w-lg p-0"
         >
           <SheetHeader className="p-6 pb-4 border-b">
-            <div className={cn("flex items-start justify-between", isRTL && "flex-row-reverse")}>
-              <div className={cn("flex-1 space-y-1", isRTL && "text-right")}>
+            <div className="flex items-start justify-between">
+              <div className="flex-1 space-y-1 text-start">
                 <SheetTitle className="text-xl">{supplier.name}</SheetTitle>
-                <div className={cn("flex items-center gap-2 flex-wrap", isRTL && "flex-row-reverse")}>
+                <div className="flex items-center gap-2 flex-wrap">
                   <SupplierCategoryBadge
                     category={supplier.category}
                     locale={locale}
@@ -226,22 +226,19 @@ export function SupplierDetailsDrawer({
                 supplier.email ||
                 supplier.website) && (
                 <div className="space-y-3">
-                  <h4 className={cn("text-sm font-medium text-muted-foreground", isRTL && "text-right")}>
+                  <h4 className="text-sm font-medium text-muted-foreground text-start">
                     {isRTL ? "פרטי התקשרות" : "Contact"}
                   </h4>
                   <div className="space-y-2">
                     {supplier.contactName && (
-                      <p className={cn("text-sm", isRTL && "text-right")}>
+                      <p className="text-sm text-start">
                         {supplier.contactName}
                       </p>
                     )}
                     {supplier.phoneNumber && (
                       <a
                         href={`tel:${supplier.phoneNumber}`}
-                        className={cn(
-                          "flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors",
-                          isRTL && "flex-row-reverse"
-                        )}
+                        className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
                       >
                         <Phone className="h-4 w-4" />
                         <span dir="ltr">{supplier.phoneNumber}</span>
@@ -250,10 +247,7 @@ export function SupplierDetailsDrawer({
                     {supplier.email && (
                       <a
                         href={`mailto:${supplier.email}`}
-                        className={cn(
-                          "flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors",
-                          isRTL && "flex-row-reverse"
-                        )}
+                        className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
                       >
                         <Mail className="h-4 w-4" />
                         <span>{supplier.email}</span>
@@ -264,10 +258,7 @@ export function SupplierDetailsDrawer({
                         href={supplier.website}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className={cn(
-                          "flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors",
-                          isRTL && "flex-row-reverse"
-                        )}
+                        className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
                       >
                         <Globe className="h-4 w-4" />
                         <span className="truncate">{supplier.website}</span>
@@ -282,24 +273,24 @@ export function SupplierDetailsDrawer({
 
               {/* Financial Summary */}
               <div className="space-y-4">
-                <h4 className={cn("text-sm font-medium text-muted-foreground", isRTL && "text-right")}>
+                <h4 className="text-sm font-medium text-muted-foreground text-start">
                   {isRTL ? "סיכום כספי" : "Financial Summary"}
                 </h4>
 
                 {agreedPrice > 0 ? (
                   <>
                     <div className="space-y-2">
-                      <div className={cn("flex justify-between text-sm", isRTL && "flex-row-reverse")}>
+                      <div className="flex justify-between text-sm">
                         <span>{isRTL ? "מחיר סגור" : "Agreed Price"}</span>
                         <span className="font-medium">{formatCurrency(agreedPrice)}</span>
                       </div>
-                      <div className={cn("flex justify-between text-sm", isRTL && "flex-row-reverse")}>
+                      <div className="flex justify-between text-sm">
                         <span>{isRTL ? "שולם" : "Paid"}</span>
                         <span className="font-medium text-emerald-600">
                           {formatCurrency(totalPaid)}
                         </span>
                       </div>
-                      <div className={cn("flex justify-between text-sm", isRTL && "flex-row-reverse")}>
+                      <div className="flex justify-between text-sm">
                         <span>{isRTL ? "נותר" : "Remaining"}</span>
                         <span className={cn("font-medium", remaining > 0 && "text-amber-600")}>
                           {formatCurrency(remaining)}
@@ -309,7 +300,7 @@ export function SupplierDetailsDrawer({
 
                     <div className="space-y-1.5">
                       <Progress value={paidPercent} className="h-2" />
-                      <p className={cn("text-xs text-muted-foreground", isRTL && "text-right")}>
+                      <p className="text-xs text-muted-foreground text-start">
                         {Math.round(paidPercent)}% {isRTL ? "שולם" : "paid"}
                       </p>
                     </div>
@@ -325,7 +316,7 @@ export function SupplierDetailsDrawer({
                 )}
 
                 {supplier.estimatedCost && (
-                  <p className={cn("text-xs text-muted-foreground", isRTL && "text-right")}>
+                  <p className="text-xs text-muted-foreground text-start">
                     {isRTL ? "עלות משוערת" : "Estimated"}: {formatCurrency(Number(supplier.estimatedCost))}
                   </p>
                 )}
@@ -335,7 +326,7 @@ export function SupplierDetailsDrawer({
 
               {/* Payments */}
               <div className="space-y-3">
-                <div className={cn("flex items-center justify-between", isRTL && "flex-row-reverse")}>
+                <div className="flex items-center justify-between">
                   <h4 className="text-sm font-medium text-muted-foreground">
                     {isRTL ? "תשלומים" : "Payments"} ({supplier.payments.length})
                   </h4>
@@ -350,10 +341,7 @@ export function SupplierDetailsDrawer({
                 </div>
 
                 {overduePayments.length > 0 && (
-                  <div className={cn(
-                    "flex items-center gap-2 rounded-lg bg-amber-50 dark:bg-amber-950/30 p-3 text-sm text-amber-700 dark:text-amber-400",
-                    isRTL && "flex-row-reverse"
-                  )}>
+                  <div className="flex items-center gap-2 rounded-lg bg-amber-50 dark:bg-amber-950/30 p-3 text-sm text-amber-700 dark:text-amber-400">
                     <AlertTriangle className="h-4 w-4" />
                     <span>
                       {overduePayments.length} {isRTL ? "תשלומים באיחור" : "overdue payments"}
@@ -387,9 +375,9 @@ export function SupplierDetailsDrawer({
                               isOverdue && "border-amber-300 bg-amber-50/50 dark:border-amber-800 dark:bg-amber-950/20"
                             )}
                           >
-                            <div className={cn("flex items-start justify-between", isRTL && "flex-row-reverse")}>
-                              <div className={cn("space-y-1", isRTL && "text-right")}>
-                                <div className={cn("flex items-center gap-2", isRTL && "flex-row-reverse")}>
+                            <div className="flex items-start justify-between">
+                              <div className="space-y-1 text-start">
+                                <div className="flex items-center gap-2">
                                   <span className="font-medium">
                                     {formatCurrency(Number(payment.amount))}
                                   </span>
@@ -440,11 +428,8 @@ export function SupplierDetailsDrawer({
                               </DropdownMenu>
                             </div>
 
-                            <div className={cn(
-                              "flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground",
-                              isRTL && "flex-row-reverse"
-                            )}>
-                              <span className={cn("flex items-center gap-1", isRTL && "flex-row-reverse")}>
+                            <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                              <span className="flex items-center gap-1">
                                 <Calendar className="h-3 w-3" />
                                 {formatDate(payment.paidAt)}
                               </span>
@@ -471,12 +456,12 @@ export function SupplierDetailsDrawer({
                 <>
                   <Separator />
                   <div className="space-y-3">
-                    <h4 className={cn("text-sm font-medium text-muted-foreground", isRTL && "text-right")}>
+                    <h4 className="text-sm font-medium text-muted-foreground text-start">
                       {isRTL ? "מסמכים ותאריכים" : "Documents & Dates"}
                     </h4>
                     <div className="space-y-2">
                       {supplier.bookedAt && (
-                        <div className={cn("flex items-center gap-2 text-sm", isRTL && "flex-row-reverse")}>
+                        <div className="flex items-center gap-2 text-sm">
                           <Calendar className="h-4 w-4 text-muted-foreground" />
                           <span>
                             {isRTL ? "הוזמן" : "Booked"}: {formatDate(supplier.bookedAt)}
@@ -488,10 +473,7 @@ export function SupplierDetailsDrawer({
                           href={supplier.contractUrl}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className={cn(
-                            "flex items-center gap-2 text-sm text-primary hover:underline",
-                            isRTL && "flex-row-reverse"
-                          )}
+                          className="flex items-center gap-2 text-sm text-primary hover:underline"
                         >
                           <FileText className="h-4 w-4" />
                           <span>{isRTL ? "צפה בחוזה" : "View Contract"}</span>
@@ -508,10 +490,10 @@ export function SupplierDetailsDrawer({
                 <>
                   <Separator />
                   <div className="space-y-2">
-                    <h4 className={cn("text-sm font-medium text-muted-foreground", isRTL && "text-right")}>
+                    <h4 className="text-sm font-medium text-muted-foreground text-start">
                       {isRTL ? "הערות" : "Notes"}
                     </h4>
-                    <p className={cn("text-sm whitespace-pre-wrap", isRTL && "text-right")}>
+                    <p className="text-sm whitespace-pre-wrap text-start">
                       {supplier.notes}
                     </p>
                   </div>
@@ -521,8 +503,8 @@ export function SupplierDetailsDrawer({
           </ScrollArea>
 
           {/* Footer Actions */}
-          <div className={cn("absolute bottom-0 left-0 right-0 border-t bg-background p-4", isRTL && "flex-row-reverse")}>
-            <div className={cn("flex gap-2", isRTL && "flex-row-reverse")}>
+          <div className="absolute bottom-0 inset-inline-0 border-t bg-background p-4">
+            <div className="flex gap-2">
               <Button
                 variant="outline"
                 className="flex-1"

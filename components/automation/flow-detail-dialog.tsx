@@ -375,8 +375,8 @@ export function FlowDetailDialog({
           {/* Header */}
           <div className="border-b px-6 py-4">
             <SheetHeader>
-              <div className={cn("flex items-start justify-between", isRTL && "flex-row-reverse")}>
-                <div className={cn("space-y-1", isRTL && "text-right")}>
+              <div className="flex items-start justify-between">
+                <div className="space-y-1 text-start">
                   <SheetTitle className="flex items-center gap-2">
                     <Sparkles className="h-5 w-5 text-purple-500" />
                     {isEditing ? (
@@ -395,7 +395,7 @@ export function FlowDetailDialog({
                 </div>
 
                 {/* Status Badge & Actions */}
-                <div className={cn("flex items-center gap-2", isRTL && "flex-row-reverse")}>
+                <div className="flex items-center gap-2">
                   <Badge
                     variant={flow.status === "ACTIVE" ? "default" : "secondary"}
                     className={cn(
@@ -501,7 +501,7 @@ export function FlowDetailDialog({
                 {/* Success Rate */}
                 {flow.stats.total > 0 && (
                   <div className="space-y-2">
-                    <div className={cn("flex justify-between text-sm", isRTL && "flex-row-reverse")}>
+                    <div className="flex justify-between text-sm">
                       <span className="text-muted-foreground">
                         {isRTL ? "אחוז הצלחה" : "Success Rate"}
                       </span>
@@ -515,7 +515,7 @@ export function FlowDetailDialog({
 
                 {/* Flow Configuration */}
                 <div className="space-y-4">
-                  <div className={cn("flex items-center justify-between", isRTL && "flex-row-reverse")}>
+                  <div className="flex items-center justify-between">
                     <h3 className="font-semibold">
                       {isRTL ? "הגדרות התהליך" : "Flow Configuration"}
                     </h3>
@@ -569,7 +569,7 @@ export function FlowDetailDialog({
                                       value={option.value}
                                       disabled={isUsed}
                                     >
-                                      <div className={cn("flex items-center gap-2", isRTL && "flex-row-reverse")}>
+                                      <div className="flex items-center gap-2">
                                         <Icon className="h-4 w-4" />
                                         <span>{option.label}</span>
                                         {isUsed && (
@@ -604,7 +604,7 @@ export function FlowDetailDialog({
                                   const Icon = option.icon;
                                   return (
                                     <SelectItem key={option.value} value={option.value}>
-                                      <div className={cn("flex items-center gap-2", isRTL && "flex-row-reverse")}>
+                                      <div className="flex items-center gap-2">
                                         <Icon className="h-4 w-4" />
                                         <span>{option.label}</span>
                                       </div>
@@ -693,7 +693,7 @@ export function FlowDetailDialog({
               {/* Message Tab */}
               <TabsContent value="message" className="m-0 p-6 space-y-6">
                 <div className="space-y-4">
-                  <div className={cn("flex items-center justify-between", isRTL && "flex-row-reverse")}>
+                  <div className="flex items-center justify-between">
                     <h3 className="font-semibold">
                       {isRTL ? "תוכן ההודעה" : "Message Content"}
                     </h3>
@@ -714,7 +714,7 @@ export function FlowDetailDialog({
                     <Label className="text-sm">
                       {isRTL ? "משתנים זמינים (לחץ להוספה)" : "Available Variables (click to insert)"}
                     </Label>
-                    <div className={cn("flex flex-wrap gap-1.5", isRTL && "flex-row-reverse")}>
+                    <div className="flex flex-wrap gap-1.5">
                       {MESSAGE_VARIABLES.map((variable) => (
                         <Button
                           key={variable.key}
@@ -739,7 +739,7 @@ export function FlowDetailDialog({
                       placeholder={isRTL
                         ? "שלום {guestName}, תודה על אישור ההגעה לאירוע שלנו ב{venue}!"
                         : "Hi {guestName}, thank you for confirming your attendance at {venue}!"}
-                      className={cn("min-h-[150px] resize-none", isRTL && "text-right")}
+                      className="min-h-[150px] resize-none text-start"
                       dir={isRTL ? "rtl" : "ltr"}
                     />
                     <p className="text-xs text-muted-foreground">
@@ -758,10 +758,7 @@ export function FlowDetailDialog({
                         </CardTitle>
                       </CardHeader>
                       <CardContent>
-                        <div className={cn(
-                          "rounded-lg bg-background p-4 text-sm whitespace-pre-wrap",
-                          isRTL && "text-right"
-                        )}>
+                        <div className="rounded-lg bg-background p-4 text-sm whitespace-pre-wrap text-start">
                           {getMessagePreview()}
                         </div>
                       </CardContent>
@@ -782,7 +779,7 @@ export function FlowDetailDialog({
 
               {/* History Tab */}
               <TabsContent value="history" className="m-0 p-6 space-y-4">
-                <div className={cn("flex items-center justify-between", isRTL && "flex-row-reverse")}>
+                <div className="flex items-center justify-between">
                   <h3 className="font-semibold">
                     {isRTL ? "היסטוריית הרצות" : "Execution History"}
                   </h3>
@@ -818,14 +815,11 @@ export function FlowDetailDialog({
                           hasError && execution.status === "PENDING" && "border-amber-500/50 bg-amber-500/5"
                         )}>
                           <CardContent className="p-3">
-                            <div className={cn(
-                              "flex items-start justify-between gap-3",
-                              isRTL && "flex-row-reverse"
-                            )}>
+                            <div className="flex items-start justify-between gap-3">
                               {/* Left side - Guest info */}
-                              <div className={cn("flex items-start gap-3", isRTL && "flex-row-reverse")}>
+                              <div className="flex items-start gap-3">
                                 <StatusIcon className={cn("h-5 w-5 mt-0.5", statusConfig.color)} />
-                                <div className={isRTL ? "text-right" : ""}>
+                                <div className="text-start">
                                   <p className="font-medium flex items-center gap-2">
                                     <User className="h-3 w-3 text-muted-foreground" />
                                     {execution.guest.name}
@@ -840,7 +834,7 @@ export function FlowDetailDialog({
                               </div>
 
                               {/* Right side - Status and actions */}
-                              <div className={cn("flex flex-col items-end gap-2", isRTL && "items-start")}>
+                              <div className="flex flex-col items-end gap-2">
                                 <div className="flex items-center gap-2">
                                   {hasRetries && (
                                     <Badge variant="outline" className="text-amber-600 border-amber-400 text-xs">
@@ -892,10 +886,7 @@ export function FlowDetailDialog({
 
                             {/* Error message - full width below */}
                             {hasError && (
-                              <div className={cn(
-                                "mt-2 p-2 rounded bg-red-500/10 border border-red-500/20",
-                                isRTL && "text-right"
-                              )}>
+                              <div className="mt-2 p-2 rounded bg-red-500/10 border border-red-500/20 text-start">
                                 <p className="text-xs text-red-600 dark:text-red-400">
                                   <span className="font-medium">{isRTL ? "שגיאה: " : "Error: "}</span>
                                   {execution.errorMessage}

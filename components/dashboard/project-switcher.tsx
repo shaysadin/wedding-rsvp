@@ -54,14 +54,14 @@ export default function ProjectSwitcher({
             variant={openPopover ? "secondary" : "ghost"}
             onClick={() => setOpenPopover(!openPopover)}
           >
-            <div className="flex items-center space-x-3 pr-2">
+            <div className="flex items-center gap-3 pe-2">
               <div
                 className={cn(
                   "size-3 shrink-0 rounded-full",
                   selected.color,
                 )}
               />
-              <div className="flex items-center space-x-3">
+              <div className="flex items-center gap-3">
                 <span
                   className={cn(
                     "inline-block truncate text-sm font-medium xl:max-w-[120px]",
@@ -122,7 +122,7 @@ function ProjectList({
             {slug}
           </span>
           {selected.slug === slug && (
-            <span className="absolute inset-y-0 right-0 flex items-center pr-3 text-foreground">
+            <span className="absolute inset-y-0 end-0 flex items-center pe-3 text-foreground">
               <Check size={18} aria-hidden="true" />
             </span>
           )}
@@ -135,7 +135,7 @@ function ProjectList({
           setOpenPopover(false);
         }}
       >
-        <Plus size={18} className="absolute left-2.5 top-2" />
+        <Plus size={18} className="absolute start-2.5 top-2" />
         <span className="flex-1 truncate text-center">New Project</span>
       </Button>
     </div>
@@ -144,7 +144,7 @@ function ProjectList({
 
 function ProjectSwitcherPlaceholder() {
   return (
-    <div className="flex animate-pulse items-center space-x-1.5 rounded-lg px-1.5 py-2 sm:w-60">
+    <div className="flex animate-pulse items-center gap-1.5 rounded-lg px-1.5 py-2 sm:w-60">
       <div className="h-8 w-36 animate-pulse rounded-md bg-muted xl:w-[180px]" />
     </div>
   );

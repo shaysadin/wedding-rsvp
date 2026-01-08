@@ -4,6 +4,7 @@ import NextAuth from "next-auth";
 
 import { prisma } from "@/lib/db";
 import { getUserById } from "@/lib/user";
+import { ensureDefaultWorkspace } from "@/actions/auth";
 
 export const {
   handlers: { GET, POST },
@@ -78,6 +79,9 @@ export const {
         }).catch(() => {
           // User might not exist yet (first time OAuth), that's fine
         });
+
+        // Ensure user has a default workspace (named after them)
+        await ensureDefaultWorkspace(user.id, user.name || user.email?.split("@")[0] || "My Events");
       }
 
       // For magic link (nodemailer) sign-in, auto-verify the email
@@ -86,11 +90,15 @@ export const {
           where: { email: user.email },
         });
 
-        if (existingUser && !existingUser.emailVerified) {
-          await prisma.user.update({
-            where: { id: existingUser.id },
-            data: { emailVerified: new Date() },
-          });
+        if (existingUser) {
+          if (!existingUser.emailVerified) {
+            await prisma.user.update({
+              where: { id: existingUser.id },
+              data: { emailVerified: new Date() },
+            });
+          }
+          // Ensure user has a default workspace (named after them)
+          await ensureDefaultWorkspace(existingUser.id, existingUser.name || user.email.split("@")[0]);
         }
       }
 

@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { LayoutDashboard, Lock, LogOut, Settings } from "lucide-react";
+import { Archive, ArrowLeftRight, CreditCard, LayoutDashboard, Lock, LogOut, Settings } from "lucide-react";
 import { signOut, useSession } from "next-auth/react";
 import { Drawer } from "vaul";
 
@@ -24,7 +24,16 @@ interface UserAccountNavProps {
     email?: string | null;
     image?: string | null;
     role?: string;
+    roles?: string[];
   };
+}
+
+// Helper to check if user has admin role (handles both single role and roles array)
+function isAdmin(user: UserAccountNavProps["user"]): boolean {
+  if (!user) return false;
+  if (user.roles?.includes("ROLE_PLATFORM_OWNER")) return true;
+  if (user.role === "ROLE_PLATFORM_OWNER") return true;
+  return false;
 }
 
 export function UserAccountNav({ user: propUser }: UserAccountNavProps = {}) {
@@ -63,6 +72,8 @@ export function UserAccountNav({ user: propUser }: UserAccountNavProps = {}) {
             onClick={closeDrawer}
           />
           <Drawer.Content className="fixed inset-x-0 bottom-0 z-50 mt-24 overflow-hidden rounded-t-[10px] border bg-background px-3 text-sm">
+            <Drawer.Title className="sr-only">{t("common.userMenu")}</Drawer.Title>
+            <Drawer.Description className="sr-only">{t("common.userMenu")}</Drawer.Description>
             <div className="sticky top-0 z-20 flex w-full items-center justify-center bg-inherit">
               <div className="my-3 h-1.5 w-16 rounded-full bg-muted-foreground/20" />
             </div>
@@ -79,27 +90,42 @@ export function UserAccountNav({ user: propUser }: UserAccountNavProps = {}) {
             </div>
 
             <ul role="list" className="mb-14 mt-1 w-full text-muted-foreground">
-              {user.role === "ROLE_PLATFORM_OWNER" ? (
+              {isAdmin(user) ? (
                 <li className="rounded-lg text-foreground hover:bg-muted">
                   <Link
-                    href={`/${locale}/admin`}
+                    href={pathname?.includes("/admin") ? `/${locale}/dashboard` : `/${locale}/admin`}
                     onClick={closeDrawer}
                     className="flex w-full items-center gap-3 px-2.5 py-2"
                   >
-                    <Lock className="size-4" />
-                    <p className="text-sm">{t("common.admin")}</p>
+                    <ArrowLeftRight className="size-4" />
+                    <p className="text-sm">
+                      {pathname?.includes("/admin")
+                        ? t("common.switchToDashboard")
+                        : t("common.switchToAdmin")}
+                    </p>
                   </Link>
                 </li>
               ) : null}
 
               <li className="rounded-lg text-foreground hover:bg-muted">
                 <Link
-                  href={`/${locale}/dashboard`}
+                  href={`/${locale}/dashboard/archives`}
                   onClick={closeDrawer}
                   className="flex w-full items-center gap-3 px-2.5 py-2"
                 >
-                  <LayoutDashboard className="size-4" />
-                  <p className="text-sm">{t("common.dashboard")}</p>
+                  <Archive className="size-4" />
+                  <p className="text-sm">{t("navigation.archives")}</p>
+                </Link>
+              </li>
+
+              <li className="rounded-lg text-foreground hover:bg-muted">
+                <Link
+                  href={`/${locale}/dashboard/billing`}
+                  onClick={closeDrawer}
+                  className="flex w-full items-center gap-3 px-2.5 py-2"
+                >
+                  <CreditCard className="size-4" />
+                  <p className="text-sm">{t("navigation.billing")}</p>
                 </Link>
               </li>
 
@@ -157,19 +183,33 @@ export function UserAccountNav({ user: propUser }: UserAccountNavProps = {}) {
         </div>
         <DropdownMenuSeparator />
 
-        {user.role === "ROLE_PLATFORM_OWNER" ? (
+        {isAdmin(user) ? (
           <DropdownMenuItem asChild>
-            <Link href={`/${locale}/admin`} className="flex items-center space-x-2.5">
-              <Lock className="size-4" />
-              <p className="text-sm">{t("common.admin")}</p>
+            <Link
+              href={pathname?.includes("/admin") ? `/${locale}/dashboard` : `/${locale}/admin`}
+              className="flex items-center space-x-2.5"
+            >
+              <ArrowLeftRight className="size-4" />
+              <p className="text-sm">
+                {pathname?.includes("/admin")
+                  ? t("common.switchToDashboard")
+                  : t("common.switchToAdmin")}
+              </p>
             </Link>
           </DropdownMenuItem>
         ) : null}
 
         <DropdownMenuItem asChild>
-          <Link href={`/${locale}/dashboard`} className="flex items-center space-x-2.5">
-            <LayoutDashboard className="size-4" />
-            <p className="text-sm">{t("common.dashboard")}</p>
+          <Link href={`/${locale}/dashboard/archives`} className="flex items-center space-x-2.5">
+            <Archive className="size-4" />
+            <p className="text-sm">{t("navigation.archives")}</p>
+          </Link>
+        </DropdownMenuItem>
+
+        <DropdownMenuItem asChild>
+          <Link href={`/${locale}/dashboard/billing`} className="flex items-center space-x-2.5">
+            <CreditCard className="size-4" />
+            <p className="text-sm">{t("navigation.billing")}</p>
           </Link>
         </DropdownMenuItem>
 

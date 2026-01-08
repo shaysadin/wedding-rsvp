@@ -176,7 +176,7 @@ export function InvitationsPageContent({ eventId, events, locale }: InvitationsP
     <PageFadeIn>
       {/* Header with Event Dropdown */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between mb-6">
-        <div className={cn("space-y-1", isRTL && "text-right")}>
+        <div className="space-y-1">
           <h1 className="text-2xl font-bold tracking-tight">{t("title")}</h1>
           <p className="text-muted-foreground">{t("description")}</p>
         </div>
@@ -206,10 +206,7 @@ export function InvitationsPageContent({ eventId, events, locale }: InvitationsP
           {/* Current Invitation Image Card */}
           <Card className="overflow-hidden border-0 bg-gradient-to-br from-background to-muted/30 shadow-lg">
             <CardContent className="p-0">
-              <div className={cn(
-                "flex flex-col md:flex-row",
-                isRTL ? "md:flex-row-reverse" : ""
-              )}>
+              <div className="flex flex-col md:flex-row">
                 {/* Image Preview */}
                 <div className="relative flex items-center justify-center bg-gradient-to-br from-muted/50 to-muted p-6 md:p-8">
                   <div className="relative">
@@ -242,9 +239,9 @@ export function InvitationsPageContent({ eventId, events, locale }: InvitationsP
                 </div>
 
                 {/* Content */}
-                <div className={cn("flex flex-1 flex-col justify-center p-6 md:p-8", isRTL && "text-right")}>
+                <div className="flex flex-1 flex-col justify-center p-6 md:p-8">
                   <div className="mb-4">
-                    <div className={cn("mb-1 flex items-center gap-2", isRTL && "flex-row-reverse justify-end")}>
+                    <div className="mb-1 flex items-center gap-2">
                       <h3 className="text-lg font-semibold">
                         {isRTL ? "הזמנה פעילה" : "Active Invitation"}
                       </h3>
@@ -261,7 +258,7 @@ export function InvitationsPageContent({ eventId, events, locale }: InvitationsP
                     </p>
                   </div>
 
-                  <div className={cn("flex flex-wrap gap-2", isRTL && "flex-row-reverse justify-end")}>
+                  <div className="flex flex-wrap gap-2">
                     <Button
                       variant={imageUrl ? "outline" : "default"}
                       size="sm"
@@ -335,7 +332,7 @@ export function InvitationsPageContent({ eventId, events, locale }: InvitationsP
                     <Icons.sparkles className="h-5 w-5" />
                     {isRTL ? "יצירת הזמנה עם AI" : "Create Invitation with AI"}
                   </CardTitle>
-                  <CardDescription className={cn(isRTL && "text-right")}>
+                  <CardDescription>
                     {isRTL
                       ? "עקבו אחר השלבים ליצירת הזמנה מותאמת אישית עם בינה מלאכותית"
                       : "Follow the steps to create a personalized invitation with AI"}

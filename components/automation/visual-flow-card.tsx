@@ -159,9 +159,9 @@ export function VisualFlowCard({
 
       <CardContent className="p-4 pt-6">
         {/* Header */}
-        <div className={cn("flex items-start justify-between mb-4", isRTL && "flex-row-reverse")}>
-          <div className={cn("flex-1", isRTL && "text-right")}>
-            <div className={cn("flex items-center gap-2 mb-1", isRTL && "flex-row-reverse")}>
+        <div className="flex items-start justify-between mb-4">
+          <div className="flex-1 text-start">
+            <div className="flex items-center gap-2 mb-1">
               <h3 className="text-lg font-semibold">{flow.name}</h3>
               {isActive && (
                 <span className="relative flex h-2 w-2">
@@ -193,30 +193,30 @@ export function VisualFlowCard({
             <DropdownMenuContent align={isRTL ? "start" : "end"} data-no-click>
               {onViewDetails && (
                 <DropdownMenuItem onClick={() => onViewDetails(flow.id)}>
-                  <Settings className={cn("h-4 w-4", isRTL ? "ml-2" : "me-2")} />
+                  <Settings className="h-4 w-4 me-2" />
                   {isRTL ? "הגדרות ופרטים" : "Settings & Details"}
                 </DropdownMenuItem>
               )}
               {flow.status === "ACTIVE" ? (
                 <DropdownMenuItem onClick={() => onPause(flow.id)}>
-                  <Pause className={cn("h-4 w-4", isRTL ? "ml-2" : "me-2")} />
+                  <Pause className="h-4 w-4 me-2" />
                   {isRTL ? "השהה" : "Pause"}
                 </DropdownMenuItem>
               ) : flow.status !== "ARCHIVED" ? (
                 <DropdownMenuItem onClick={() => onActivate(flow.id)}>
-                  <Play className={cn("h-4 w-4", isRTL ? "ml-2" : "me-2")} />
+                  <Play className="h-4 w-4 me-2" />
                   {isRTL ? "הפעל" : "Activate"}
                 </DropdownMenuItem>
               ) : null}
               {onEdit && flow.status !== "ARCHIVED" && (
                 <DropdownMenuItem onClick={() => onEdit(flow.id)}>
-                  <Edit className={cn("h-4 w-4", isRTL ? "ml-2" : "me-2")} />
+                  <Edit className="h-4 w-4 me-2" />
                   {isRTL ? "ערוך הודעה" : "Edit Message"}
                 </DropdownMenuItem>
               )}
               {onTest && flow.status !== "ARCHIVED" && (
                 <DropdownMenuItem onClick={() => onTest(flow.id)}>
-                  <Zap className={cn("h-4 w-4", isRTL ? "ml-2" : "me-2")} />
+                  <Zap className="h-4 w-4 me-2" />
                   {isRTL ? "בדוק אוטומציה" : "Test Automation"}
                 </DropdownMenuItem>
               )}
@@ -225,7 +225,7 @@ export function VisualFlowCard({
                 onClick={() => onDelete(flow.id)}
                 className="text-destructive focus:text-destructive"
               >
-                <Trash2 className={cn("h-4 w-4", isRTL ? "ml-2" : "me-2")} />
+                <Trash2 className="h-4 w-4 me-2" />
                 {isRTL ? "מחק" : "Delete"}
               </DropdownMenuItem>
             </DropdownMenuContent>
@@ -246,10 +246,7 @@ export function VisualFlowCard({
           <Collapsible open={isExpanded} onOpenChange={setIsExpanded} data-no-click>
             <div className="space-y-3">
               {/* Quick Stats */}
-              <div className={cn(
-                "grid grid-cols-4 gap-2 text-center",
-                isRTL && "direction-rtl"
-              )}>
+              <div className="grid grid-cols-4 gap-2 text-center">
                 <div className="rounded-lg bg-amber-50 dark:bg-amber-900/20 p-2">
                   <div className="flex items-center justify-center gap-1">
                     <Clock className="h-3 w-3 text-amber-600 dark:text-amber-400" />
@@ -320,10 +317,7 @@ export function VisualFlowCard({
               <CollapsibleContent className="space-y-3">
                 {/* Success Rate */}
                 <div className="space-y-1">
-                  <div className={cn(
-                    "flex items-center justify-between text-xs",
-                    isRTL && "flex-row-reverse"
-                  )}>
+                  <div className="flex items-center justify-between text-xs">
                     <span className="text-muted-foreground">
                       {isRTL ? "אחוז הצלחה" : "Success Rate"}
                     </span>
@@ -334,10 +328,7 @@ export function VisualFlowCard({
 
                 {/* Custom Message Preview */}
                 {flow.customMessage && (
-                  <div className={cn(
-                    "text-xs p-2 rounded-lg bg-muted/50",
-                    isRTL && "text-right"
-                  )}>
+                  <div className="text-xs p-2 rounded-lg bg-muted/50 text-start">
                     <span className="text-muted-foreground block mb-1">
                       {isRTL ? "הודעה מותאמת:" : "Custom message:"}
                     </span>

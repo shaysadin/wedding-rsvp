@@ -471,12 +471,12 @@ export function TestAutomationDialog({
           >
             {isTesting ? (
               <>
-                <Icons.spinner className={cn("h-4 w-4 animate-spin", isRTL ? "ml-2" : "me-2")} />
+                <Icons.spinner className="h-4 w-4 animate-spin me-2" />
                 {isRTL ? "מריץ סימולציה..." : "Running simulation..."}
               </>
             ) : (
               <>
-                <Zap className={cn("h-4 w-4", isRTL ? "ml-2" : "me-2")} />
+                <Zap className="h-4 w-4 me-2" />
                 {isRTL ? "הרץ סימולציה" : "Run Simulation"}
               </>
             )}

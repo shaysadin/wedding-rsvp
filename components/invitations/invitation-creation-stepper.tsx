@@ -251,9 +251,9 @@ export function InvitationCreationStepper({
     <div className="space-y-6" dir={isRTL ? "rtl" : "ltr"}>
       {/* Step Indicator */}
       <div className="flex items-center justify-center">
-        <div className={cn("flex items-center gap-2", isRTL && "flex-row-reverse")}>
+        <div className="flex items-center gap-2">
           {STEPS.map((step, index) => (
-            <div key={step.id} className={cn("flex items-center", isRTL && "flex-row-reverse")}>
+            <div key={step.id} className="flex items-center">
               <div
                 className={cn(
                   "flex h-10 w-10 items-center justify-center rounded-full border-2 font-semibold transition-all duration-300",
@@ -382,7 +382,7 @@ export function InvitationCreationStepper({
                   </div>
                   <div className="flex justify-start pt-4">
                     <Button variant="outline" onClick={handleBack}>
-                      <Icons.arrowLeft className={cn("h-4 w-4", isRTL ? "ml-2 rotate-180" : "me-2")} />
+                      <Icons.arrowLeft className="h-4 w-4 me-2 rtl:rotate-180" />
                       {isRTL ? "חזור" : "Back"}
                     </Button>
                   </div>
@@ -447,12 +447,12 @@ export function InvitationCreationStepper({
 
               <div className="flex justify-between pt-4">
                 <Button variant="outline" onClick={handleBack}>
-                  <Icons.arrowLeft className={cn("h-4 w-4", isRTL ? "ml-2 rotate-180" : "me-2")} />
+                  <Icons.arrowLeft className="h-4 w-4 me-2 rtl:rotate-180" />
                   {isRTL ? "חזור" : "Back"}
                 </Button>
                 <Button onClick={handleProceedToGenerate} size="lg">
                   {isRTL ? "המשך ליצירה" : "Continue to Generate"}
-                  <Icons.arrowRight className={cn("h-4 w-4", isRTL ? "me-2 rotate-180" : "ml-2")} />
+                  <Icons.arrowRight className="h-4 w-4 ms-2 rtl:rotate-180" />
                 </Button>
               </div>
             </div>
@@ -509,7 +509,7 @@ export function InvitationCreationStepper({
                       </Button>
 
                       <Button variant="ghost" onClick={handleBack} className="text-muted-foreground">
-                        <Icons.arrowLeft className={cn("h-4 w-4", isRTL ? "ml-2 rotate-180" : "me-2")} />
+                        <Icons.arrowLeft className="h-4 w-4 me-2 rtl:rotate-180" />
                         {isRTL ? "חזור לעריכה" : "Back to edit"}
                       </Button>
                     </CardContent>
@@ -752,7 +752,7 @@ export function InvitationCreationStepper({
 
                     <Button variant="ghost" size="sm" onClick={handleDone} className="gap-2 text-muted-foreground">
                       {isRTL ? "לגלריה" : "Go to Gallery"}
-                      <Icons.arrowRight className={cn("h-4 w-4", isRTL && "rotate-180")} />
+                      <Icons.arrowRight className="h-4 w-4 rtl:rotate-180" />
                     </Button>
                   </motion.div>
                 </motion.div>
@@ -790,7 +790,7 @@ export function InvitationCreationStepper({
               <div className="shrink-0 flex justify-center gap-3 border-t bg-muted/30 p-4">
                 <Button variant="outline" asChild>
                   <a href={generatedUrl} download="invitation.png" target="_blank" rel="noopener noreferrer">
-                    <Icons.download className={cn("h-4 w-4", isRTL ? "ml-2" : "me-2")} />
+                    <Icons.download className="h-4 w-4 me-2" />
                     {isRTL ? "הורדה" : "Download"}
                   </a>
                 </Button>
@@ -803,9 +803,9 @@ export function InvitationCreationStepper({
                   disabled={isSettingActive}
                 >
                   {isSettingActive ? (
-                    <Icons.spinner className={cn("h-4 w-4 animate-spin", isRTL ? "ml-2" : "me-2")} />
+                    <Icons.spinner className="h-4 w-4 animate-spin me-2" />
                   ) : (
-                    <Icons.check className={cn("h-4 w-4", isRTL ? "ml-2" : "me-2")} />
+                    <Icons.check className="h-4 w-4 me-2" />
                   )}
                   {isRTL ? "הגדר כהזמנה הפעילה" : "Set as Active Invitation"}
                 </Button>

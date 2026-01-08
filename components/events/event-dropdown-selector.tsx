@@ -92,17 +92,11 @@ export function EventDropdownSelector({
             className
           )}
         >
-          <div className={cn(
-            "flex items-center gap-2 truncate",
-            isRTL && "flex-row-reverse"
-          )}>
+          <div className="flex items-center gap-2 truncate">
             <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-primary/10">
               <Calendar className="h-4 w-4 text-primary" />
             </div>
-            <div className={cn(
-              "flex flex-col items-start text-start truncate",
-              isRTL && "items-end text-end"
-            )}>
+            <div className="flex flex-col items-start text-start truncate">
               <span className="font-medium truncate max-w-[180px]">
                 {selectedEvent?.title}
               </span>
@@ -160,20 +154,14 @@ export function EventDropdownSelector({
                     )}>
                       <Calendar className="h-5 w-5" />
                     </div>
-                    <div className={cn(
-                      "flex-1 min-w-0",
-                      isRTL && "text-right"
-                    )}>
+                    <div className="flex-1 min-w-0 text-start">
                       <p className={cn(
                         "font-medium truncate",
                         event.id === selectedEventId && "text-primary"
                       )}>
                         {event.title}
                       </p>
-                      <div className={cn(
-                        "flex items-center gap-1 text-xs text-muted-foreground",
-                        isRTL && "flex-row-reverse justify-end"
-                      )}>
+                      <div className="flex items-center gap-1 text-xs text-muted-foreground">
                         <MapPin className="h-3 w-3" />
                         <span className="truncate">{event.location}</span>
                         <span className="mx-1">•</span>

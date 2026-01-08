@@ -441,7 +441,6 @@ export function FlowNode({ type, value, delayHours, isActive = true, className }
         config.bgColor,
         config.borderColor,
         isActive ? "shadow-sm" : "opacity-50",
-        isRTL && "flex-row-reverse",
         className
       )}
     >
@@ -470,7 +469,7 @@ export function FlowNode({ type, value, delayHours, isActive = true, className }
       </div>
 
       {/* Label and delay */}
-      <div className={cn("flex flex-col", isRTL && "text-right")}>
+      <div className="flex flex-col text-start">
         <span className={cn("text-sm font-medium", config.color)}>
           {isRTL ? config.label.he : config.label.en}
         </span>

@@ -59,6 +59,46 @@ export async function createEvent(input: CreateEventInput) {
       }
     }
 
+    // Handle workspace assignment
+    let workspaceId = validatedData.workspaceId;
+
+    if (workspaceId) {
+      // Verify workspace ownership
+      const workspace = await prisma.workspace.findFirst({
+        where: {
+          id: workspaceId,
+          ownerId: userId,
+        },
+      });
+
+      if (!workspace) {
+        return { error: "Workspace not found or unauthorized" };
+      }
+    } else {
+      // Get or create default workspace
+      let defaultWorkspace = await prisma.workspace.findFirst({
+        where: {
+          ownerId: userId,
+          isDefault: true,
+        },
+      });
+
+      if (!defaultWorkspace) {
+        // Create default workspace if none exists
+        const slug = `workspace-${userId.slice(-8)}`;
+        defaultWorkspace = await prisma.workspace.create({
+          data: {
+            name: "My Events",
+            slug,
+            ownerId: userId,
+            isDefault: true,
+          },
+        });
+      }
+
+      workspaceId = defaultWorkspace.id;
+    }
+
     const event = await prisma.weddingEvent.create({
       data: {
         title: validatedData.title,
@@ -69,6 +109,7 @@ export async function createEvent(input: CreateEventInput) {
         imageUrl: validatedData.imageUrl || null,
         dateTime: new Date(validatedData.dateTime),
         ownerId: userId,
+        workspaceId,
         invitationImageUrl,
         invitationImagePublicId,
       },
@@ -224,7 +265,7 @@ export async function getEventById(eventId: string) {
   }
 }
 
-export async function getUserEvents() {
+export async function getUserEvents(workspaceId?: string) {
   try {
     const user = await getCurrentUser();
 
@@ -232,8 +273,40 @@ export async function getUserEvents() {
       return { error: "Unauthorized" };
     }
 
+    // Fetch fresh plan from database (session might be stale)
+    const dbUser = await prisma.user.findUnique({
+      where: { id: user.id },
+      select: { plan: true },
+    });
+    const userPlan = dbUser?.plan || user.plan;
+
+    // For BUSINESS users, filter by workspace
+    // For other users, show all events (they only have one workspace)
+    let currentWorkspaceId = workspaceId;
+
+    if (!currentWorkspaceId && userPlan === "BUSINESS") {
+      // Get the default workspace for BUSINESS users
+      const defaultWorkspace = await prisma.workspace.findFirst({
+        where: {
+          ownerId: user.id,
+          isDefault: true,
+        },
+        select: { id: true },
+      });
+      currentWorkspaceId = defaultWorkspace?.id;
+    }
+
+    const whereClause: { ownerId: string; workspaceId?: string } = {
+      ownerId: user.id,
+    };
+
+    // Only filter by workspace for BUSINESS users
+    if (userPlan === "BUSINESS" && currentWorkspaceId) {
+      whereClause.workspaceId = currentWorkspaceId;
+    }
+
     const events = await prisma.weddingEvent.findMany({
-      where: { ownerId: user.id },
+      where: whereClause,
       include: {
         _count: {
           select: { guests: true },

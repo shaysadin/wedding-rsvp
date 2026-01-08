@@ -489,14 +489,14 @@ export function BillingPageContent({ userId, subscriptionPlan }: BillingPageCont
         )}>
           <CardHeader className="pb-4">
             <Badge className={cn("w-fit", planBadgeColors.free)} variant="outline">
-              {isOnFreePlan && <Icons.check className="mr-1 h-3 w-3" />}
+              {isOnFreePlan && <Icons.check className="me-1 h-3 w-3" />}
               {tPlans("free")}
             </Badge>
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
               <span className="text-3xl font-bold">$0</span>
-              <span className="text-muted-foreground ml-1">{t("perUserMonth")}</span>
+              <span className="text-muted-foreground ms-1">{t("perUserMonth")}</span>
             </div>
             <ul className="space-y-2 text-sm">
               <li className="flex items-center gap-2">
@@ -555,14 +555,14 @@ export function BillingPageContent({ userId, subscriptionPlan }: BillingPageCont
             
               <CardHeader className="pb-4">
                 <Badge className={cn("w-fit", planBadgeColors[planKey])} variant="outline">
-                  {isCurrentPlan && <Icons.check className="mr-1 h-3 w-3" />}
+                  {isCurrentPlan && <Icons.check className="me-1 h-3 w-3" />}
                   {tPricing(`plans.${planKey}.title`)}
                 </Badge>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
                   <span className="text-3xl font-bold">${displayPrice.toFixed(2)}</span>
-                  <span className="text-muted-foreground ml-1">{t("perUserMonth")}</span>
+                  <span className="text-muted-foreground ms-1">{t("perUserMonth")}</span>
                 </div>
                 <ul className="space-y-2 text-sm">
                   {offer.benefits.slice(0, 4).map((_, index) => (

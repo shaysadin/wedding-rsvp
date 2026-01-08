@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { cn, formatDate } from "@/lib/utils";
-import { UserSubscriptionPlan } from "types";
+import { UserSubscriptionPlan } from "@/types";
 import { Icons } from "@/components/shared/icons";
 
 interface BillingInfoProps {

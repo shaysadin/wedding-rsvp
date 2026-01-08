@@ -1,11 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useTranslations, useLocale } from "next-intl";
+import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 
 import { deleteGuest } from "@/actions/guests";
-import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -70,8 +69,6 @@ export function DuplicateErrorDialog({
   const t = useTranslations("guests");
   const tc = useTranslations("common");
   const ts = useTranslations("success");
-  const locale = useLocale();
-  const isRTL = locale === "he";
 
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [guestToDelete, setGuestToDelete] = useState<{ id: string; name: string } | null>(null);
@@ -138,15 +135,15 @@ export function DuplicateErrorDialog({
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent dir={isRTL ? "rtl" : "ltr"} className="sm:max-w-lg">
-          <DialogHeader className={cn(isRTL && "text-right")}>
-            <div className={cn("flex items-center gap-3", isRTL && "flex-row-reverse")}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-destructive/10">
                 <Icons.alertTriangle className="h-5 w-5 text-destructive" />
               </div>
-              <div className={cn("flex-1", isRTL && "text-right")}>
+              <div className="flex-1">
                 <DialogTitle>{t("duplicates.errorTitle")}</DialogTitle>
-                <DialogDescription className={cn(isRTL && "text-right")}>
+                <DialogDescription>
                   {t("duplicates.errorDescription")}
                 </DialogDescription>
               </div>
@@ -158,23 +155,23 @@ export function DuplicateErrorDialog({
               {/* Single guest duplicate mode - shows existing guests with same phone */}
               {isSingleMode && (
                 <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-4">
-                  <div className={cn("flex items-center gap-2 text-sm font-medium", isRTL && "flex-row-reverse")}>
+                  <div className="flex items-center gap-2 text-sm font-medium">
                     <Icons.phone className="h-4 w-4 text-muted-foreground" />
                     <span dir="ltr">{phoneNumber}</span>
                   </div>
-                  <p className={cn("mt-2 text-sm text-muted-foreground", isRTL && "text-right")}>
+                  <p className="mt-2 text-sm text-muted-foreground">
                     {t("duplicates.alreadyUsedBy")}:
                   </p>
-                  <div className={cn("mt-2 flex flex-wrap gap-2", isRTL && "flex-row-reverse justify-end")}>
+                  <div className="mt-2 flex flex-wrap gap-2">
                     {singleDuplicateNames.map((name, idx) => {
                       const guestId = singleDuplicateGuestIds[idx];
                       return (
-                        <div key={idx} className={cn("flex items-center gap-1", isRTL && "flex-row-reverse")}>
+                        <div key={idx} className="flex items-center gap-1">
                           <Badge variant="secondary" className="text-sm">
                             {name}
                           </Badge>
                           {guestId && (
-                            <div className={cn("flex gap-1", isRTL && "flex-row-reverse")}>
+                            <div className="flex gap-1">
                               {onEditGuest && (
                                 <Button
                                   variant="ghost"
@@ -202,7 +199,7 @@ export function DuplicateErrorDialog({
                     })}
                   </div>
                   {guestName && (
-                    <p className={cn("mt-3 text-sm", isRTL && "text-right")}>
+                    <p className="mt-3 text-sm">
                       <span className="font-medium">{t("duplicates.tryingToAdd")}:</span> {guestName}
                     </p>
                   )}
@@ -212,7 +209,7 @@ export function DuplicateErrorDialog({
               {/* Bulk import - duplicates with existing guests */}
               {hasExistingDuplicates && (
                 <div className="space-y-2">
-                  <h4 className={cn("text-sm font-medium text-destructive", isRTL && "text-right")}>
+                  <h4 className="text-sm font-medium text-destructive">
                     {t("duplicates.conflictWithExisting")}
                   </h4>
                   <div className="space-y-2">
@@ -221,14 +218,14 @@ export function DuplicateErrorDialog({
                         key={idx}
                         className="rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2"
                       >
-                        <div className={cn("flex items-center justify-between gap-2", isRTL && "flex-row-reverse")}>
+                        <div className="flex items-center justify-between gap-2">
                           <div className="flex-1 min-w-0">
                             <span className="font-medium">{dup.name}</span>
-                            <p className={cn("text-xs text-muted-foreground", isRTL && "text-right")}>
+                            <p className="text-xs text-muted-foreground">
                               {t("duplicates.samePhoneAs")}: <span className="font-medium">{dup.existingName}</span>
                             </p>
                           </div>
-                          <div className={cn("flex items-center gap-2 shrink-0", isRTL && "flex-row-reverse")}>
+                          <div className="flex items-center gap-2 shrink-0">
                             <Badge variant="outline" className="text-xs" dir="ltr">
                               {dup.phone}
                             </Badge>
@@ -240,7 +237,7 @@ export function DuplicateErrorDialog({
                                 onClick={() => handleSkipFromImport(dup.phone)}
                                 title={t("duplicates.skipFromImport")}
                               >
-                                <Icons.close className="h-3.5 w-3.5 me-1" />
+                                <Icons.close className="me-1 h-3.5 w-3.5" />
                                 {t("duplicates.skip")}
                               </Button>
                             )}
@@ -255,10 +252,10 @@ export function DuplicateErrorDialog({
               {/* Bulk import - duplicates within the batch */}
               {hasBatchDuplicates && (
                 <div className="space-y-2">
-                  <h4 className={cn("text-sm font-medium text-orange-600", isRTL && "text-right")}>
+                  <h4 className="text-sm font-medium text-orange-600">
                     {t("duplicates.conflictWithinImport")}
                   </h4>
-                  <p className={cn("text-xs text-muted-foreground", isRTL && "text-right")}>
+                  <p className="text-xs text-muted-foreground">
                     {t("duplicates.removeDuplicatesFromFile")}
                   </p>
                   <div className="space-y-2">
@@ -267,9 +264,9 @@ export function DuplicateErrorDialog({
                         key={idx}
                         className="rounded-md border border-orange-500/30 bg-orange-500/5 px-3 py-2"
                       >
-                        <div className={cn("flex items-center justify-between gap-2", isRTL && "flex-row-reverse")}>
+                        <div className="flex items-center justify-between gap-2">
                           <span className="font-medium">{dup.name}</span>
-                          <div className={cn("flex items-center gap-2 shrink-0", isRTL && "flex-row-reverse")}>
+                          <div className="flex items-center gap-2 shrink-0">
                             <Badge variant="outline" className="text-xs" dir="ltr">
                               {dup.phone}
                             </Badge>
@@ -281,7 +278,7 @@ export function DuplicateErrorDialog({
                                 onClick={() => handleSkipFromImport(dup.phone)}
                                 title={t("duplicates.skipFromImport")}
                               >
-                                <Icons.close className="h-3.5 w-3.5 me-1" />
+                                <Icons.close className="me-1 h-3.5 w-3.5" />
                                 {t("duplicates.skip")}
                               </Button>
                             )}
@@ -295,7 +292,7 @@ export function DuplicateErrorDialog({
             </div>
           </ScrollArea>
 
-          <DialogFooter className={cn(isRTL && "flex-row-reverse sm:justify-start")}>
+          <DialogFooter>
             <Button onClick={() => onOpenChange(false)}>
               {tc("understood")}
             </Button>
@@ -305,14 +302,14 @@ export function DuplicateErrorDialog({
 
       {/* Delete confirmation dialog - only for single add mode */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <AlertDialogContent dir={isRTL ? "rtl" : "ltr"}>
-          <AlertDialogHeader className={cn(isRTL && "text-right")}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
             <AlertDialogTitle>{t("deleteConfirmTitle")}</AlertDialogTitle>
-            <AlertDialogDescription className={cn(isRTL && "text-right")}>
+            <AlertDialogDescription>
               {t("deleteConfirmDescription", { name: guestToDelete?.name || "" })}
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter className={cn(isRTL && "flex-row-reverse sm:justify-start gap-2")}>
+          <AlertDialogFooter>
             <AlertDialogCancel disabled={isDeleting}>
               {tc("cancel")}
             </AlertDialogCancel>

@@ -2,7 +2,12 @@ import { headers } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 
-import { stripe, getPlanFromPriceId } from "@/lib/stripe";
+import {
+  stripe,
+  getPlanFromPriceId,
+  priceIncludesVoice,
+  priceHasGiftDiscount,
+} from "@/lib/stripe";
 import { prisma } from "@/lib/db";
 import { withRateLimit, RATE_LIMIT_PRESETS } from "@/lib/rate-limit";
 
@@ -103,6 +108,10 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     ? new Date(latestInvoice.period_end * 1000)
     : null;
 
+  // Determine gift system and voice status from price ID
+  const giftSystemEnabled = priceHasGiftDiscount(priceId);
+  const voiceCallsAddOn = priceIncludesVoice(priceId);
+
   await prisma.user.update({
     where: { stripeCustomerId: customerId },
     data: {
@@ -110,10 +119,12 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
       stripePriceId: priceId,
       plan,
       stripeCurrentPeriodEnd: periodEnd,
+      giftSystemEnabled,
+      voiceCallsAddOn,
     },
   });
 
-  console.log(`Subscription created for customer ${customerId}, plan: ${plan}`);
+  console.log(`Subscription created for customer ${customerId}, plan: ${plan}, gift: ${giftSystemEnabled}, voice: ${voiceCallsAddOn}`);
 }
 
 async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
@@ -140,6 +151,10 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
     }
   }
 
+  // Determine gift system and voice status from price ID
+  const giftSystemEnabled = priceHasGiftDiscount(priceId);
+  const voiceCallsAddOn = priceIncludesVoice(priceId);
+
   // Find user by customer ID
   const user = await prisma.user.findUnique({
     where: { stripeCustomerId: customerId },
@@ -157,6 +172,8 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
           stripePriceId: priceId,
           plan,
           stripeCurrentPeriodEnd: periodEnd,
+          giftSystemEnabled,
+          voiceCallsAddOn,
         },
       });
       return;
@@ -176,6 +193,8 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
       stripePriceId: priceId,
       plan,
       stripeCurrentPeriodEnd: periodEnd,
+      giftSystemEnabled,
+      voiceCallsAddOn,
       // Clear pending plan change if this update fulfills it
       ...(shouldClearPending && {
         pendingPlanChange: null,
@@ -184,12 +203,13 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
     },
   });
 
-  console.log(`Subscription updated for customer ${customerId}, plan: ${plan}${shouldClearPending ? ' (pending change applied)' : ''}`);
+  console.log(`Subscription updated for customer ${customerId}, plan: ${plan}, gift: ${giftSystemEnabled}, voice: ${voiceCallsAddOn}${shouldClearPending ? ' (pending change applied)' : ''}`);
 }
 
 async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
   const customerId = subscription.customer as string;
 
+  // Main subscription deleted - reset to FREE plan
   await prisma.user.update({
     where: { stripeCustomerId: customerId },
     data: {
@@ -197,6 +217,8 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
       stripePriceId: null,
       plan: "FREE",
       stripeCurrentPeriodEnd: null,
+      giftSystemEnabled: true, // Reset to default
+      voiceCallsAddOn: false,
     },
   });
 

@@ -157,7 +157,7 @@ export function SystemAutomationCards({
   return (
     <>
       <div className="space-y-3">
-        <div className={cn("flex items-center gap-2", isRTL && "flex-row-reverse")}>
+        <div className="flex items-center gap-2">
           <Zap className="h-4 w-4 text-blue-500" />
           <h3 className="text-sm font-medium text-muted-foreground">
             {isRTL ? "אוטומציות מערכת" : "System Automations"}
@@ -168,7 +168,7 @@ export function SystemAutomationCards({
                 <Info className="h-3.5 w-3.5 text-muted-foreground/60" />
               </TooltipTrigger>
               <TooltipContent side={isRTL ? "left" : "right"} className="max-w-xs">
-                <p className={cn("text-xs", isRTL && "text-right")}>
+                <p className="text-xs text-start">
                   {isRTL
                     ? "אוטומציות אלו פועלות אוטומטית דרך זרימת הוואטסאפ האינטראקטיבי. לחצו על עריכה כדי להתאים את ההודעה."
                     : "These automations run automatically through the interactive WhatsApp flow. Click edit to customize the message."}
@@ -191,16 +191,16 @@ export function SystemAutomationCards({
                 <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-400 to-cyan-400" />
 
                 <CardContent className="p-4">
-                  <div className={cn("flex items-start justify-between gap-2", isRTL && "flex-row-reverse")}>
+                  <div className="flex items-start justify-between gap-2">
                     {/* Flow visualization */}
-                    <div className={cn("flex items-center gap-2", isRTL && "flex-row-reverse")}>
+                    <div className="flex items-center gap-2">
                       <span className="text-xl">{automation.trigger.icon}</span>
                       <span className="text-muted-foreground">→</span>
                       <span className="text-xl">{automation.action.icon}</span>
                     </div>
 
                     {/* Badges and edit button */}
-                    <div className={cn("flex items-center gap-2", isRTL && "flex-row-reverse")}>
+                    <div className="flex items-center gap-2">
                       {hasCustomMessage && (
                         <Badge
                           variant="outline"
@@ -227,7 +227,7 @@ export function SystemAutomationCards({
                     </div>
                   </div>
 
-                  <div className={cn("mt-3 space-y-1", isRTL && "text-right")}>
+                  <div className="mt-3 space-y-1 text-start">
                     <p className="text-sm font-medium">
                       {isRTL ? automation.trigger.label.he : automation.trigger.label.en}
                     </p>
@@ -246,11 +246,11 @@ export function SystemAutomationCards({
       <Dialog open={!!editingId} onOpenChange={(open) => !open && handleCancel()}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle className={cn("flex items-center gap-2", isRTL && "flex-row-reverse")}>
+            <DialogTitle className="flex items-center gap-2">
               <Edit2 className="h-5 w-5 text-blue-500" />
               {isRTL ? "עריכת הודעת מערכת" : "Edit System Message"}
             </DialogTitle>
-            <DialogDescription className={isRTL ? "text-right" : ""}>
+            <DialogDescription className="text-start">
               {currentAutomation && (isRTL
                 ? `התאם את ההודעה שתישלח כאשר ${currentAutomation.trigger.label.he}`
                 : `Customize the message sent when ${currentAutomation?.trigger.label.en}`)}
@@ -260,10 +260,10 @@ export function SystemAutomationCards({
           <div className="space-y-4 py-4">
             {/* Variable buttons */}
             <div className="space-y-2">
-              <p className={cn("text-sm text-muted-foreground", isRTL && "text-right")}>
+              <p className="text-sm text-muted-foreground text-start">
                 {isRTL ? "משתנים זמינים:" : "Available variables:"}
               </p>
-              <div className={cn("flex flex-wrap gap-1", isRTL && "flex-row-reverse")}>
+              <div className="flex flex-wrap gap-1">
                 {MESSAGE_VARIABLES.map((variable) => (
                   <Button
                     key={variable.key}
@@ -286,20 +286,20 @@ export function SystemAutomationCards({
               placeholder={currentAutomation
                 ? (isRTL ? currentAutomation.defaultMessage.he : currentAutomation.defaultMessage.en)
                 : ""}
-              className={cn("min-h-[120px] resize-none", isRTL && "text-right")}
+              className="min-h-[120px] resize-none text-start"
               dir={isRTL ? "rtl" : "ltr"}
             />
 
-            <p className={cn("text-xs text-muted-foreground", isRTL && "text-right")}>
+            <p className="text-xs text-muted-foreground text-start">
               {isRTL
                 ? "השאר ריק כדי להשתמש בהודעת ברירת המחדל"
                 : "Leave empty to use the default message"}
             </p>
           </div>
 
-          <DialogFooter className={isRTL ? "flex-row-reverse" : ""}>
+          <DialogFooter>
             <Button variant="outline" onClick={handleCancel} disabled={isLoading}>
-              <X className={cn("h-4 w-4", isRTL ? "ml-2" : "me-2")} />
+              <X className="h-4 w-4 me-2" />
               {isRTL ? "ביטול" : "Cancel"}
             </Button>
             <Button
@@ -309,7 +309,7 @@ export function SystemAutomationCards({
               {isLoading ? (
                 <Icons.spinner className="h-4 w-4 animate-spin" />
               ) : (
-                <Save className={cn("h-4 w-4", isRTL ? "ml-2" : "me-2")} />
+                <Save className="h-4 w-4 me-2" />
               )}
               {isRTL ? "שמור" : "Save"}
             </Button>

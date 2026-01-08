@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
+import { useTheme } from "next-themes";
 import { toast } from "sonner";
 import { PlanTier, UserRole, UserStatus } from "@prisma/client";
 
@@ -47,9 +48,16 @@ export function UserSettingsForm({ user }: UserSettingsFormProps) {
   const tc = useTranslations("common");
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  const { theme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
 
   const [name, setName] = useState(user.name || "");
   const [locale, setLocale] = useState(user.locale);
+
+  // Avoid hydration mismatch for theme
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -130,43 +138,76 @@ export function UserSettingsForm({ user }: UserSettingsFormProps) {
               </p>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="locale">{t("preferences.language")}</Label>
-              <Select value={locale} onValueChange={setLocale}>
-                <SelectTrigger id="locale">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="he">
-                    <span className="flex items-center gap-2">
-                      <span>🇮🇱</span> עברית
-                    </span>
-                  </SelectItem>
-                  <SelectItem value="en">
-                    <span className="flex items-center gap-2">
-                      <span>🇺🇸</span> English
-                    </span>
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-              <p className="text-xs text-muted-foreground">
-                {t("preferences.languageNote")}
-              </p>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="locale">{t("preferences.language")}</Label>
+                <Select value={locale} onValueChange={setLocale}>
+                  <SelectTrigger id="locale">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="he">
+                      <span className="flex items-center gap-2">
+                        עברית <span>🇮🇱</span>
+                      </span>
+                    </SelectItem>
+                    <SelectItem value="en">
+                      <span className="flex items-center gap-2">
+                        English <span>🇺🇸</span>
+                      </span>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  {t("preferences.languageNote")}
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="theme">{t("preferences.theme")}</Label>
+                <Select value={theme ?? "system"} onValueChange={setTheme} disabled={!mounted}>
+                  <SelectTrigger id="theme">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="light">
+                      <span className="flex items-center gap-2">
+                        {t("preferences.themeLight")} <Icons.sun className="size-4" />
+                      </span>
+                    </SelectItem>
+                    <SelectItem value="dark">
+                      <span className="flex items-center gap-2">
+                        {t("preferences.themeDark")} <Icons.moon className="size-4" />
+                      </span>
+                    </SelectItem>
+                    <SelectItem value="system">
+                      <span className="flex items-center gap-2">
+                        {t("preferences.themeSystem")} <Icons.laptop className="size-4" />
+                      </span>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  {t("preferences.themeNote")}
+                </p>
+              </div>
             </div>
 
-            <Button type="submit" disabled={isPending}>
-              {isPending ? (
-                <>
-                  <Icons.spinner className="me-2 h-4 w-4 animate-spin" />
-                  {t("saving")}
-                </>
-              ) : (
-                <>
-                  <Icons.check className="me-2 h-4 w-4" />
-                  {tc("saveChanges")}
-                </>
-              )}
-            </Button>
+            <div className="flex justify-end">
+              <Button type="submit" disabled={isPending}>
+                {isPending ? (
+                  <>
+                    <Icons.spinner className="me-2 h-4 w-4 animate-spin" />
+                    {t("saving")}
+                  </>
+                ) : (
+                  <>
+                    <Icons.check className="me-2 h-4 w-4" />
+                    {tc("saveChanges")}
+                  </>
+                )}
+              </Button>
+            </div>
           </form>
         </CardContent>
       </Card>

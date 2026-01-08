@@ -6,7 +6,7 @@ import { UserRole, NotificationType, NotificationChannel, PlanTier } from "@pris
 import { prisma } from "@/lib/db";
 import { getCurrentUser } from "@/lib/session";
 import { getNotificationService } from "@/lib/notifications";
-import { PLAN_LIMITS } from "@/config/plans";
+import { PLAN_LIMITS, BUSINESS_VOICE_ADDON_CALLS, getVoiceCallLimit } from "@/config/plans";
 import { onNotificationSent } from "@/lib/automation/event-handlers";
 
 export type ChannelType = "WHATSAPP" | "SMS" | "AUTO";
@@ -155,7 +155,11 @@ export async function getCurrentUserUsage() {
 
     const dbUser = await prisma.user.findUnique({
       where: { id: user.id },
-      include: {
+      select: {
+        id: true,
+        plan: true,
+        voiceCallsAddOn: true,
+        stripeCurrentPeriodEnd: true,
         usageTracking: true,
         weddingEvents: {
           select: { id: true },
@@ -221,7 +225,10 @@ export async function getCurrentUserUsage() {
     // Handle unlimited (-1) cases
     const whatsappTotal = planLimits.maxWhatsappMessages === -1 ? -1 : planLimits.maxWhatsappMessages + whatsappBonus;
     const smsTotal = planLimits.maxSmsMessages === -1 ? -1 : planLimits.maxSmsMessages + smsBonus;
-    const voiceCallsTotal = planLimits.maxVoiceCalls === -1 ? -1 : planLimits.maxVoiceCalls + voiceCallsBonus;
+
+    // For BUSINESS plan, voice calls depend on the voiceCallsAddOn status
+    const effectiveVoiceCallLimit = getVoiceCallLimit(dbUser.plan, dbUser.voiceCallsAddOn ?? false);
+    const voiceCallsTotal = effectiveVoiceCallLimit === -1 ? -1 : effectiveVoiceCallLimit + voiceCallsBonus;
 
     return {
       success: true,
@@ -243,7 +250,7 @@ export async function getCurrentUserUsage() {
         },
         calls: {
           made: voiceCallsMade,
-          limit: planLimits.maxVoiceCalls,
+          limit: effectiveVoiceCallLimit,
           bonus: voiceCallsBonus,
           total: voiceCallsTotal === -1 ? 999999 : voiceCallsTotal,
           remaining: voiceCallsTotal === -1 ? 999999 : Math.max(0, voiceCallsTotal - voiceCallsMade),

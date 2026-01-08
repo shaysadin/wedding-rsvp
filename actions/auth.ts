@@ -7,6 +7,36 @@ import { prisma } from "@/lib/db";
 import { sendVerificationEmail } from "@/lib/email";
 import { userRegisterSchema, userLoginSchema } from "@/lib/validations/auth";
 
+// Helper: Create default workspace for a user (named after them)
+export async function ensureDefaultWorkspace(userId: string, userName: string) {
+  try {
+    // Check if user already has a workspace
+    const existingWorkspace = await prisma.workspace.findFirst({
+      where: { ownerId: userId },
+    });
+
+    if (existingWorkspace) {
+      return { success: true, workspace: existingWorkspace };
+    }
+
+    // Create default workspace named after the user
+    const slug = `workspace-${userId.slice(-8)}`;
+    const workspace = await prisma.workspace.create({
+      data: {
+        name: userName || "My Events",
+        slug,
+        ownerId: userId,
+        isDefault: true,
+      },
+    });
+
+    return { success: true, workspace };
+  } catch (error) {
+    console.error("Error creating default workspace:", error);
+    return { error: "Failed to create default workspace" };
+  }
+}
+
 // Generate a random password for magic link users
 function generateTemporaryPassword(): string {
   return randomBytes(16).toString("hex");
@@ -50,6 +80,9 @@ export async function registerUser(input: {
         // emailVerified is null - user needs to verify
       },
     });
+
+    // Create default workspace for the user (named after them)
+    await ensureDefaultWorkspace(user.id, validated.name);
 
     // Create verification token
     const token = generateVerificationToken();
@@ -175,16 +208,20 @@ export async function ensureUserWithPassword(email: string, name?: string) {
       // Create user with temporary password
       const tempPassword = generateTemporaryPassword();
       const hashedPassword = await hash(tempPassword, 12);
+      const userName = name || email.split("@")[0];
 
       user = await prisma.user.create({
         data: {
           email: email.toLowerCase(),
-          name: name || email.split("@")[0],
+          name: userName,
           password: hashedPassword,
           // Magic link users are verified immediately
           emailVerified: new Date(),
         },
       });
+
+      // Create default workspace for the user (named after them)
+      await ensureDefaultWorkspace(user.id, userName);
     }
 
     return { success: true, user };

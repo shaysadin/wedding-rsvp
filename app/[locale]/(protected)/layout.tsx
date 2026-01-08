@@ -1,21 +1,9 @@
 import { redirect } from "next/navigation";
 import { getLocale } from "next-intl/server";
-import { UserRole } from "@prisma/client";
 
-import { sidebarLinks, adminLinks } from "@/config/dashboard";
 import { getCurrentUser } from "@/lib/session";
 import { prisma } from "@/lib/db";
-import { SearchCommand } from "@/components/dashboard/search-command";
-import {
-  DashboardSidebar,
-  MobileSheetSidebar,
-} from "@/components/layout/dashboard-sidebar";
-import { MobileBottomNav } from "@/components/layout/mobile-bottom-nav";
-import { ModeToggle } from "@/components/layout/mode-toggle";
-import { LanguageSwitcher } from "@/components/layout/language-switcher";
-import { UserAccountNav } from "@/components/layout/user-account-nav";
-import { RoleSwitcher } from "@/components/dashboard/role-switcher";
-import MaxWidthWrapper from "@/components/shared/max-width-wrapper";
+import { ProtectedHeader } from "@/components/layout/protected-header";
 
 // Force dynamic rendering to avoid caching issues with role switching
 export const dynamic = "force-dynamic";
@@ -31,10 +19,9 @@ export default async function ProtectedLayout({ children }: ProtectedLayoutProps
   if (!user) redirect(`/${locale}/login`);
 
   // Get user data including email verification status and roles
-  // Also fetch current role from DB to ensure role switches are reflected immediately
   const dbUser = await prisma.user.findUnique({
     where: { id: user.id },
-    select: { emailVerified: true, role: true, roles: true, accounts: true },
+    select: { emailVerified: true, role: true, accounts: true },
   });
 
   // If user has no OAuth accounts and email is not verified, block access
@@ -43,75 +30,24 @@ export default async function ProtectedLayout({ children }: ProtectedLayoutProps
     redirect(`/${locale}/login?error=EmailNotVerified`);
   }
 
-  const currentRole = dbUser?.role || user.role;
-  const userRoles = dbUser?.roles || [currentRole];
+  const isRTL = locale === "he";
 
-  // Fetch user's events for sidebar (only for wedding owners)
-  let userEvents: { id: string; title: string }[] = [];
-  if (currentRole === UserRole.ROLE_WEDDING_OWNER) {
-    const events = await prisma.weddingEvent.findMany({
-      where: { ownerId: user.id },
-      select: { id: true, title: true },
-      orderBy: { dateTime: "asc" },
-    });
-    userEvents = events;
-  }
-
-  // Combine admin links (for platform owners) with regular sidebar links
-  const allLinks = currentRole === UserRole.ROLE_PLATFORM_OWNER
-    ? [...adminLinks, ...sidebarLinks]
-    : sidebarLinks;
-
-  const filteredLinks = allLinks.map((section) => ({
-    ...section,
-    items: section.items.filter(
-      ({ authorizeOnly }) => !authorizeOnly || authorizeOnly === currentRole,
-    ),
-  })).filter((section) => section.items.length > 0);
-
-  // Check if user can switch roles (has multiple roles)
-  const canSwitchRoles = userRoles.length > 1;
-
+  // Layout for all protected pages
+  // ProtectedHeader client component handles showing/hiding based on route
   return (
     <div className="fixed inset-0 flex w-full overflow-hidden bg-sidebar">
-      <DashboardSidebar
-        links={filteredLinks}
-        userEvents={userEvents}
-        currentRole={currentRole}
-        availableRoles={userRoles}
-      />
-
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden md:rounded-xl md:border bg-background md:shadow-md md:p-2 md:m-3">
-        <header className="shrink-0 flex h-14 justify-between items-center border-b lg:h-[60px] pe-3 ps-3 sm:ps-0">
-          <MaxWidthWrapper className="flex justify-between w-full items-center gap-x-3 px-0">
-            <MobileSheetSidebar
-              links={filteredLinks}
-              userEvents={userEvents}
-              currentRole={currentRole}
-              availableRoles={userRoles}
-            />
+        <ProtectedHeader />
 
-            <div className="w-full flex-1">
-              <SearchCommand links={filteredLinks} userEvents={userEvents} />
-            </div>
-
-            <div className="flex items-center flex-row-reverse">
-              <LanguageSwitcher />
-              <ModeToggle />
-              <UserAccountNav />
-            </div>
-          </MaxWidthWrapper>
-        </header>
-
-        <main className="flex min-h-0 flex-1 flex-col overflow-auto md:overflow-hidden">
-          <MaxWidthWrapper className="flex w-full min-h-0 flex-1 pb-[74px] sm:pb-0 flex-col gap-4 lg:gap-6">
+        <main
+          className="flex min-h-0 flex-1 flex-col overflow-auto"
+          dir={isRTL ? "rtl" : "ltr"}
+        >
+          <div className="flex w-full min-h-0 flex-1 flex-col gap-4 lg:gap-6 p-4 sm:p-6">
             {children}
-          </MaxWidthWrapper>
+          </div>
         </main>
       </div>
-
-      {/* Mobile Bottom Navigation */}
-      <MobileBottomNav currentRole={currentRole} />
     </div>
   );
 }

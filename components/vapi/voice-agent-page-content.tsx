@@ -16,7 +16,6 @@ import { CallGuestsSection } from "@/components/vapi/call-guests-section";
 import { CallLogTable } from "@/components/vapi/call-log-table";
 import { ActiveCallTracker } from "@/components/vapi/active-call-tracker";
 import { EventDropdownSelector, type EventOption } from "@/components/events/event-dropdown-selector";
-import { cn } from "@/lib/utils";
 
 interface VoiceAgentPageContentProps {
   eventId: string;
@@ -27,7 +26,6 @@ interface VoiceAgentPageContentProps {
 export function VoiceAgentPageContent({ eventId, events, locale }: VoiceAgentPageContentProps) {
   const t = useTranslations("voiceAgent");
   const tc = useTranslations("common");
-  const isRTL = locale === "he";
 
   const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -159,11 +157,11 @@ export function VoiceAgentPageContent({ eventId, events, locale }: VoiceAgentPag
     <PageFadeIn>
       {/* Header with Event Dropdown */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between mb-6">
-        <div className={cn("space-y-1", isRTL && "text-right")}>
+        <div className="space-y-1">
           <h1 className="text-2xl font-bold tracking-tight">{t("title")}</h1>
           <p className="text-muted-foreground">{t("description")}</p>
         </div>
-        <div className={cn("flex items-center gap-2", isRTL && "flex-row-reverse")}>
+        <div className="flex items-center gap-2">
           {isRefreshing && (
             <Icons.spinner className="h-4 w-4 animate-spin text-violet-400" />
           )}

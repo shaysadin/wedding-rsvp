@@ -152,7 +152,7 @@ export function InvitationImageUpload({ eventId, currentImageUrl }: InvitationIm
                     onClick={triggerFileSelect}
                     disabled={uploading}
                   >
-                    <Icons.upload className="mr-1 h-4 w-4" />
+                    <Icons.upload className="me-1 h-4 w-4" />
                     {isRTL ? "החלף" : "Replace"}
                   </Button>
                   <Button

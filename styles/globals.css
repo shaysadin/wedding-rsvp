@@ -214,3 +214,111 @@
     display: none;
   }
 }
+
+/* Glass morphism utilities */
+@layer utilities {
+  .glass {
+    @apply bg-white/70 dark:bg-white/5 backdrop-blur-xl border border-white/20 dark:border-white/10;
+  }
+
+  .glass-card {
+    @apply bg-white/80 dark:bg-white/5 backdrop-blur-xl border border-white/30 dark:border-white/10 shadow-xl shadow-black/5 dark:shadow-black/20;
+  }
+
+  .glass-subtle {
+    @apply bg-white/50 dark:bg-white/5 backdrop-blur-md border border-white/20 dark:border-white/5;
+  }
+
+  .glass-stat {
+    @apply bg-gradient-to-br from-white/90 to-white/60 dark:from-white/10 dark:to-white/5 backdrop-blur-xl border border-white/40 dark:border-white/10;
+  }
+
+  .glow-sm {
+    box-shadow: 0 0 20px -5px currentColor;
+  }
+
+  .glow-md {
+    box-shadow: 0 0 30px -5px currentColor;
+  }
+
+  .gradient-border {
+    position: relative;
+  }
+
+  .gradient-border::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(135deg, rgba(255,255,255,0.4), rgba(255,255,255,0.1));
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+  }
+}
+
+/* Modern gradient backgrounds */
+@layer utilities {
+  .bg-gradient-radial {
+    background: radial-gradient(ellipse at top, var(--tw-gradient-stops));
+  }
+
+  .bg-mesh {
+    background-color: hsl(var(--background));
+    background-image:
+      radial-gradient(at 40% 20%, hsla(280, 60%, 50%, 0.1) 0px, transparent 50%),
+      radial-gradient(at 80% 0%, hsla(200, 60%, 50%, 0.1) 0px, transparent 50%),
+      radial-gradient(at 0% 50%, hsla(340, 60%, 50%, 0.1) 0px, transparent 50%),
+      radial-gradient(at 80% 50%, hsla(140, 60%, 50%, 0.08) 0px, transparent 50%),
+      radial-gradient(at 0% 100%, hsla(260, 60%, 50%, 0.1) 0px, transparent 50%);
+  }
+
+  .dark .bg-mesh {
+    background-image:
+      radial-gradient(at 40% 20%, hsla(280, 60%, 50%, 0.15) 0px, transparent 50%),
+      radial-gradient(at 80% 0%, hsla(200, 60%, 50%, 0.1) 0px, transparent 50%),
+      radial-gradient(at 0% 50%, hsla(340, 60%, 50%, 0.1) 0px, transparent 50%),
+      radial-gradient(at 80% 50%, hsla(140, 60%, 50%, 0.08) 0px, transparent 50%),
+      radial-gradient(at 0% 100%, hsla(260, 60%, 50%, 0.1) 0px, transparent 50%);
+  }
+}
+
+/* Animated gradient border */
+@keyframes gradient-rotate {
+  0% { --gradient-angle: 0deg; }
+  100% { --gradient-angle: 360deg; }
+}
+
+@property --gradient-angle {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+
+.animated-border {
+  --gradient-angle: 0deg;
+  background: linear-gradient(var(--gradient-angle), #f472b6, #c084fc, #60a5fa, #34d399, #f472b6);
+  animation: gradient-rotate 4s linear infinite;
+}
+
+/* Shine effect for cards */
+@keyframes shine {
+  to {
+    background-position: 200% center;
+  }
+}
+
+.shine-effect {
+  background: linear-gradient(
+    120deg,
+    transparent 0%,
+    transparent 40%,
+    rgba(255,255,255,0.1) 50%,
+    transparent 60%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: shine 3s ease-in-out infinite;
+}

@@ -9,7 +9,6 @@ import { Icons } from "@/components/shared/icons";
 import { PageFadeIn } from "@/components/shared/page-fade-in";
 import { AutomationDashboard } from "@/components/automation/automation-dashboard";
 import { EventDropdownSelector, type EventOption } from "@/components/events/event-dropdown-selector";
-import { cn } from "@/lib/utils";
 
 interface AutomationsPageContentProps {
   eventId: string;
@@ -68,7 +67,7 @@ export function AutomationsPageContent({ eventId, events, locale }: AutomationsP
     <PageFadeIn>
       {/* Header with Event Dropdown */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between mb-6">
-        <div className={cn("space-y-1", isRTL && "text-right")}>
+        <div className="space-y-1 text-start">
           <h1 className="text-2xl font-bold tracking-tight">
             {isRTL ? "אוטומציות" : "Automations"}
           </h1>

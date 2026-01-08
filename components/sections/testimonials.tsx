@@ -40,6 +40,7 @@ export default function Testimonials() {
                           width={100}
                           height={100}
                           className="size-full rounded-full border"
+                          style={{ width: "auto", height: "auto" }}
                           src={reviewImages[index]}
                           alt={t(`reviews.${key}.name`)}
                         />

@@ -234,7 +234,7 @@ export function AssignGuestsDialog({
 
         <div className="flex flex-col gap-4 min-h-0 flex-1">
           {/* Stats Bar */}
-          <div className={cn("flex items-center gap-4 py-2 px-3 bg-muted rounded-lg text-sm shrink-0", isRTL && "flex-row")}>
+          <div className="flex items-center gap-4 py-2 px-3 bg-muted rounded-lg text-sm shrink-0">
             <span>
               {t("assignDialog.availableSeats", { count: availableSeats })}
             </span>
@@ -249,7 +249,7 @@ export function AssignGuestsDialog({
           </div>
 
           {/* Filters */}
-          <div className={cn("flex flex-wrap items-center gap-2 shrink-0", isRTL && "flex-row")}>
+          <div className="flex flex-wrap items-center gap-2 shrink-0">
             <div className="flex-1 min-w-[200px]">
               <Input
                 placeholder={t("assignDialog.search")}
@@ -312,7 +312,7 @@ export function AssignGuestsDialog({
           </div>
 
           {/* Select/Deselect All */}
-          <div className={cn("flex gap-2 shrink-0", isRTL && "flex-row-reverse")}>
+          <div className="flex gap-2 shrink-0">
             <Button variant="outline" size="sm" onClick={selectAll}>
               {t("assignDialog.selectAll")} ({filteredGuests.length})
             </Button>

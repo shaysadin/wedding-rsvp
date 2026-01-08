@@ -29,10 +29,13 @@
     "notes": "Notes",
     "settings": "Settings",
     "logout": "Logout",
+    "userMenu": "User Menu",
     "login": "Login",
     "register": "Register",
     "dashboard": "Dashboard",
     "admin": "Admin",
+    "switchToAdmin": "Switch to Admin",
+    "switchToDashboard": "Switch to Dashboard",
     "menu": "Menu",
     "options": "Options",
     "homepage": "Homepage",
@@ -97,7 +100,18 @@
     "designInvitations": "Design & Invitations",
     "rsvpCommunication": "RSVP & Communication",
     "accountSettings": "Account & Settings",
-    "adminPanel": "Admin Panel"
+    "adminPanel": "Admin Panel",
+    "main": "Main",
+    "myEvents": "My Events",
+    "backToLobby": "Back to Events",
+    "switchEvent": "Switch Event",
+    "eventDashboard": "Event Dashboard",
+    "overview": "Overview",
+    "planning": "Planning",
+    "communication": "Communication",
+    "more": "More",
+    "lobby": "My Events",
+    "account": "Account"
   },
   "auth": {
     "signIn": "Sign In",
@@ -913,7 +927,12 @@
     },
     "preferences": {
       "language": "Language",
-      "languageNote": "Choose your preferred language for the dashboard"
+      "languageNote": "Choose your preferred language for the dashboard",
+      "theme": "Theme",
+      "themeNote": "Choose your preferred theme",
+      "themeLight": "Light",
+      "themeDark": "Dark",
+      "themeSystem": "System"
     },
     "account": {
       "title": "Account Information",
@@ -1696,6 +1715,68 @@
       "sendWhatsapp": "Send WhatsApp Message",
       "sendSms": "Send SMS Reminder",
       "sendTableAssignment": "Send Table Assignment"
+    }
+  },
+  "workspaces": {
+    "title": "Workspaces",
+    "description": "Organize your events into separate workspaces",
+    "select": "Select workspace",
+    "search": "Search workspaces...",
+    "noWorkspaces": "No workspaces found",
+    "yourWorkspaces": "Your Workspaces",
+    "default": "Default",
+    "events": "events",
+    "createNew": "Create New Workspace",
+    "createFirst": "Create Workspace",
+    "upgradeForMore": "Upgrade to Business plan for unlimited workspaces",
+    "create": {
+      "title": "Create Workspace",
+      "description": "Create a new workspace to organize your events",
+      "nameLabel": "Workspace Name",
+      "namePlaceholder": "e.g., My Wedding Planning Business",
+      "slugLabel": "URL Slug",
+      "slugPlaceholder": "my-workspace",
+      "slugHint": "Used in URLs. Only lowercase letters, numbers, and hyphens.",
+      "submit": "Create Workspace",
+      "success": "Workspace created successfully",
+      "error": "Failed to create workspace"
+    },
+    "settings": {
+      "title": "Workspace Settings",
+      "general": "General",
+      "nameLabel": "Workspace Name",
+      "slugLabel": "URL Slug",
+      "setDefault": "Set as Default",
+      "setDefaultDescription": "Make this your default workspace for new events",
+      "delete": "Delete Workspace",
+      "deleteDescription": "Permanently delete this workspace. This action cannot be undone.",
+      "deleteConfirm": "Are you sure you want to delete this workspace?",
+      "cannotDeleteDefault": "Cannot delete the default workspace",
+      "cannotDeleteWithEvents": "Cannot delete workspace with events. Move or delete all events first.",
+      "updateSuccess": "Workspace updated successfully",
+      "deleteSuccess": "Workspace deleted successfully"
+    },
+    "limitReached": "Workspace limit reached",
+    "limitReachedDescription": "You've reached the maximum number of workspaces for your plan."
+  },
+  "billing": {
+    "giftDiscount": {
+      "title": "Gift Payment Discount",
+      "description": "Keep gift payments enabled to save 50% on your subscription",
+      "enabled": "Gift payments enabled - You're getting the discounted rate!",
+      "disabled": "Gift payments disabled - Your subscription cost is doubled",
+      "toggle": "Enable gift payments",
+      "warning": "Disabling gift payments will double your subscription price",
+      "savings": "You're saving {amount}/month with the gift system discount"
+    },
+    "voiceAddon": {
+      "title": "Voice Calls Add-on",
+      "description": "Add 2000 voice calls per month for automated guest follow-ups",
+      "price": "$165/month",
+      "included": "2000 voice calls included",
+      "enable": "Enable Voice Calls",
+      "disable": "Disable Voice Calls",
+      "businessOnly": "Available for Business plan only"
     }
   }
 }
