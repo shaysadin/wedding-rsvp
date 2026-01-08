@@ -52,7 +52,49 @@ export default async function ProtectedLayout({ children }: ProtectedLayoutProps
     return <>{children}</>;
   }
 
+  // Check if we're on the dashboard/lobby page (My Events)
+  // This page should not have a sidebar - just header with user avatar
+  const isDashboardLobby = pathname.match(/^\/[a-z]{2}\/dashboard\/?$/) !== null;
+
   const currentRole = dbUser?.role || user.role;
+
+  // For dashboard lobby, render layout without sidebar
+  if (isDashboardLobby) {
+    return (
+      <div className="fixed inset-0 flex w-full overflow-hidden bg-background">
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+          <header className="shrink-0 flex h-14 items-center border-b lg:h-[60px] px-4">
+            {/* Mobile: full width search bar */}
+            <div className="flex md:hidden w-full items-center gap-3">
+              <div className="flex-1 min-w-0">
+                <SearchCommand links={sidebarLinks} fullWidth />
+              </div>
+              <div className="shrink-0">
+                <UserAccountNav />
+              </div>
+            </div>
+            {/* Desktop: centered search bar */}
+            <div className="hidden md:flex w-full items-center justify-between">
+              <div className="flex-1" />
+              <div className="w-72 lg:w-96">
+                <SearchCommand links={sidebarLinks} fullWidth />
+              </div>
+              <div className="flex-1 flex justify-end">
+                <UserAccountNav />
+              </div>
+            </div>
+          </header>
+
+          <main className="flex min-h-0 flex-1 flex-col overflow-auto">
+            <MaxWidthWrapper className="flex w-full min-h-0 flex-1 flex-col gap-4 lg:gap-6 py-4">
+              {children}
+            </MaxWidthWrapper>
+          </main>
+        </div>
+      </div>
+    );
+  }
+
   const userRoles = dbUser?.roles || [currentRole];
 
   // Combine admin links (for platform owners) with regular sidebar links

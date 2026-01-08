@@ -19,9 +19,10 @@ import { Icons } from "@/components/shared/icons";
 
 interface SearchCommandProps {
   links: SidebarNavItem[];
+  fullWidth?: boolean;
 }
 
-export function SearchCommand({ links }: SearchCommandProps) {
+export function SearchCommand({ links, fullWidth = false }: SearchCommandProps) {
   const [open, setOpen] = useState(false);
   const router = useRouter();
   const locale = useLocale();
@@ -67,21 +68,25 @@ export function SearchCommand({ links }: SearchCommandProps) {
 
   return (
     <>
-      {/* Mobile: Icon button only */}
-      <Button
-        variant="ghost"
-        size="icon"
-        className="md:hidden size-9 shrink-0"
-        onClick={() => setOpen(true)}
-      >
-        <Icons.search className="h-5 w-5" />
-        <span className="sr-only">{isRTL ? "חיפוש" : "Search"}</span>
-      </Button>
+      {/* Mobile: Icon button only (unless fullWidth) */}
+      {!fullWidth && (
+        <Button
+          variant="ghost"
+          size="icon"
+          className="md:hidden size-9 shrink-0"
+          onClick={() => setOpen(true)}
+        >
+          <Icons.search className="h-5 w-5" />
+          <span className="sr-only">{isRTL ? "חיפוש" : "Search"}</span>
+        </Button>
+      )}
 
-      {/* Desktop: Full search bar */}
+      {/* Desktop: Full search bar (or full width on mobile when fullWidth is true) */}
       <Button
         variant="outline"
-        className="relative h-9 w-full justify-start rounded-md bg-muted/50 text-sm font-normal text-muted-foreground shadow-none sm:pe-12 md:w-72 lg:w-96 hidden md:flex"
+        className={`relative h-9 w-full justify-start rounded-md bg-muted/50 text-sm font-normal text-muted-foreground shadow-none sm:pe-12 ${
+          fullWidth ? "flex" : "hidden md:flex md:w-72 lg:w-96"
+        }`}
         onClick={() => setOpen(true)}
       >
         <Icons.search className="h-4 w-4 shrink-0 me-2" />

@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { LayoutDashboard, Lock, LogOut, Settings } from "lucide-react";
+import { Archive, CreditCard, Lock, LogOut, Settings } from "lucide-react";
 import { signOut, useSession } from "next-auth/react";
 import { Drawer } from "vaul";
 
@@ -94,12 +94,23 @@ export function UserAccountNav({ user: propUser }: UserAccountNavProps = {}) {
 
               <li className="rounded-lg text-foreground hover:bg-muted">
                 <Link
-                  href={`/${locale}/dashboard`}
+                  href={`/${locale}/dashboard/archives`}
                   onClick={closeDrawer}
                   className="flex w-full items-center gap-3 px-2.5 py-2"
                 >
-                  <LayoutDashboard className="size-4" />
-                  <p className="text-sm">{t("common.dashboard")}</p>
+                  <Archive className="size-4" />
+                  <p className="text-sm">{t("navigation.archives")}</p>
+                </Link>
+              </li>
+
+              <li className="rounded-lg text-foreground hover:bg-muted">
+                <Link
+                  href={`/${locale}/dashboard/billing`}
+                  onClick={closeDrawer}
+                  className="flex w-full items-center gap-3 px-2.5 py-2"
+                >
+                  <CreditCard className="size-4" />
+                  <p className="text-sm">{t("navigation.billing")}</p>
                 </Link>
               </li>
 
@@ -167,9 +178,16 @@ export function UserAccountNav({ user: propUser }: UserAccountNavProps = {}) {
         ) : null}
 
         <DropdownMenuItem asChild>
-          <Link href={`/${locale}/dashboard`} className="flex items-center space-x-2.5">
-            <LayoutDashboard className="size-4" />
-            <p className="text-sm">{t("common.dashboard")}</p>
+          <Link href={`/${locale}/dashboard/archives`} className="flex items-center space-x-2.5">
+            <Archive className="size-4" />
+            <p className="text-sm">{t("navigation.archives")}</p>
+          </Link>
+        </DropdownMenuItem>
+
+        <DropdownMenuItem asChild>
+          <Link href={`/${locale}/dashboard/billing`} className="flex items-center space-x-2.5">
+            <CreditCard className="size-4" />
+            <p className="text-sm">{t("navigation.billing")}</p>
           </Link>
         </DropdownMenuItem>
 
