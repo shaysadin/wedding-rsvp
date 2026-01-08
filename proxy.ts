@@ -7,6 +7,8 @@ const intlMiddleware = createMiddleware({
   locales,
   defaultLocale,
   localePrefix: "always",
+  // Disable browser locale detection - always default to Hebrew
+  localeDetection: false,
 });
 
 export async function proxy(request: NextRequest) {
