@@ -156,16 +156,16 @@ export function EventMobileBottomNav({ eventId, locale }: EventMobileBottomNavPr
                 </span>
               </button>
             </DrawerTrigger>
-            <DrawerContent>
+            <DrawerContent dir={isRTL ? "rtl" : "ltr"}>
               <DrawerHeader>
-                <DrawerTitle className="rtl:text-end">
+                <DrawerTitle>
                   {isRTL ? "תפריט" : "Menu"}
                 </DrawerTitle>
               </DrawerHeader>
               <div className="px-4 pb-6 space-y-6">
                 {/* Event Features */}
                 <div className="space-y-2">
-                  <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide rtl:text-end">
+                  <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">
                     {isRTL ? "תכונות האירוע" : "Event Features"}
                   </p>
                   <div className="grid grid-cols-4 gap-2">
@@ -198,7 +198,7 @@ export function EventMobileBottomNav({ eventId, locale }: EventMobileBottomNavPr
 
                 {/* Global Navigation */}
                 <div className="space-y-2">
-                  <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide rtl:text-end">
+                  <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">
                     {isRTL ? "חשבון" : "Account"}
                   </p>
                   <div className="grid grid-cols-3 gap-2">
