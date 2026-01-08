@@ -178,7 +178,7 @@ export function DashboardContent({ userName, events, stats, locale, usageData }:
 
   return (
     <motion.div
-      className="flex flex-col gap-6 overflow-y-auto px-3"
+      className="flex flex-col gap-6"
       variants={containerVariants}
       initial="hidden"
       animate="visible"

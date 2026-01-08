@@ -30,6 +30,8 @@ export default async function ProtectedLayout({ children }: ProtectedLayoutProps
     redirect(`/${locale}/login?error=EmailNotVerified`);
   }
 
+  const isRTL = locale === "he";
+
   // Layout for all protected pages
   // ProtectedHeader client component handles showing/hiding based on route
   return (
@@ -37,8 +39,11 @@ export default async function ProtectedLayout({ children }: ProtectedLayoutProps
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
         <ProtectedHeader />
 
-        <main className="flex min-h-0 flex-1 flex-col overflow-auto">
-          <div className="flex w-full min-h-0 flex-1 flex-col gap-4 lg:gap-6 py-4 px-4 sm:px-6 lg:px-8">
+        <main
+          className="flex min-h-0 flex-1 flex-col overflow-auto"
+          dir={isRTL ? "rtl" : "ltr"}
+        >
+          <div className="flex w-full min-h-0 flex-1 flex-col gap-4 lg:gap-6 p-4 sm:p-6">
             {children}
           </div>
         </main>
