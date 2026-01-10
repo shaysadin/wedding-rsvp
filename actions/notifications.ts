@@ -266,7 +266,7 @@ export async function getCurrentUserUsage() {
   }
 }
 
-export async function sendInvite(guestId: string, channel: ChannelType = "AUTO") {
+export async function sendInvite(guestId: string, channel: ChannelType = "AUTO", customTemplate?: string, whatsappContentSid?: string) {
   try {
     const user = await getCurrentUser();
 
@@ -301,8 +301,8 @@ export async function sendInvite(guestId: string, channel: ChannelType = "AUTO")
       return { error: "SMS message limit reached", limitReached: true };
     }
 
-    // Send notification
-    const result = await notificationService.sendInvite(guest, guest.weddingEvent, preferredChannel);
+    // Send notification (pass custom template for SMS and/or WhatsApp Content SID if provided)
+    const result = await notificationService.sendInvite(guest, guest.weddingEvent, preferredChannel, customTemplate, { whatsappContentSid });
 
     // Log to database
     await prisma.notificationLog.create({
@@ -342,7 +342,7 @@ export async function sendInvite(guestId: string, channel: ChannelType = "AUTO")
   }
 }
 
-export async function sendReminder(guestId: string, channel: ChannelType = "AUTO") {
+export async function sendReminder(guestId: string, channel: ChannelType = "AUTO", customTemplate?: string, whatsappContentSid?: string) {
   try {
     const user = await getCurrentUser();
 
@@ -382,8 +382,8 @@ export async function sendReminder(guestId: string, channel: ChannelType = "AUTO
       return { error: "SMS message limit reached", limitReached: true };
     }
 
-    // Send notification
-    const result = await notificationService.sendReminder(guest, guest.weddingEvent, preferredChannel);
+    // Send notification (pass custom template for SMS and/or WhatsApp Content SID if provided)
+    const result = await notificationService.sendReminder(guest, guest.weddingEvent, preferredChannel, customTemplate, { whatsappContentSid });
 
     // Log to database
     await prisma.notificationLog.create({
@@ -650,7 +650,7 @@ export async function sendBulkInvites(eventId: string) {
 }
 
 // Send interactive invite with buttons (WhatsApp only)
-export async function sendInteractiveInvite(guestId: string, includeImage: boolean = false) {
+export async function sendInteractiveInvite(guestId: string, includeImage: boolean = false, whatsappContentSid?: string) {
   try {
     const user = await getCurrentUser();
 
@@ -686,7 +686,8 @@ export async function sendInteractiveInvite(guestId: string, includeImage: boole
     const result = await notificationService.sendInteractiveInvite(
       guest,
       guest.weddingEvent,
-      includeImage
+      includeImage,
+      whatsappContentSid
     );
 
     // Log to database
@@ -728,7 +729,7 @@ export async function sendInteractiveInvite(guestId: string, includeImage: boole
 }
 
 // Send interactive reminder with buttons (WhatsApp only)
-export async function sendInteractiveReminder(guestId: string, includeImage: boolean = false) {
+export async function sendInteractiveReminder(guestId: string, includeImage: boolean = false, whatsappContentSid?: string) {
   try {
     const user = await getCurrentUser();
 
@@ -764,7 +765,8 @@ export async function sendInteractiveReminder(guestId: string, includeImage: boo
     const result = await notificationService.sendInteractiveReminder(
       guest,
       guest.weddingEvent,
-      includeImage
+      includeImage,
+      whatsappContentSid
     );
 
     // Log to database

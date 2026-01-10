@@ -14,17 +14,29 @@ export interface NotificationResult {
   error?: string;
 }
 
+// Options for customizing message sending
+export interface SendMessageOptions {
+  // Custom SMS template (with {{guestName}}, {{eventTitle}}, {{rsvpLink}} placeholders)
+  customSmsTemplate?: string;
+  // WhatsApp Content SID for using a specific approved template
+  whatsappContentSid?: string;
+}
+
 export interface NotificationService {
   sendInvite(
     guest: Guest,
     event: WeddingEvent,
-    preferredChannel?: NotificationChannel
+    preferredChannel?: NotificationChannel,
+    customTemplate?: string,
+    options?: SendMessageOptions
   ): Promise<NotificationResult>;
 
   sendReminder(
     guest: Guest,
     event: WeddingEvent,
-    preferredChannel?: NotificationChannel
+    preferredChannel?: NotificationChannel,
+    customTemplate?: string,
+    options?: SendMessageOptions
   ): Promise<NotificationResult>;
 
   sendConfirmation(
@@ -38,13 +50,15 @@ export interface NotificationService {
   sendInteractiveInvite(
     guest: Guest,
     event: WeddingEvent,
-    includeImage?: boolean
+    includeImage?: boolean,
+    whatsappContentSid?: string
   ): Promise<NotificationResult>;
 
   sendInteractiveReminder(
     guest: Guest,
     event: WeddingEvent,
-    includeImage?: boolean
+    includeImage?: boolean,
+    whatsappContentSid?: string
   ): Promise<NotificationResult>;
 }
 

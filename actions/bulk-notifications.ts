@@ -20,6 +20,8 @@ interface BulkMessageOptions {
   messageFormat: "STANDARD" | "INTERACTIVE";
   channel: "WHATSAPP" | "SMS" | "AUTO";
   includeImage?: boolean;
+  smsTemplate?: string;
+  whatsappContentSid?: string;
 }
 
 interface BulkMessageResult {
@@ -125,6 +127,8 @@ async function processSingleMessage(
     messageFormat: "STANDARD" | "INTERACTIVE";
     channel: NotificationChannel;
     includeImage: boolean;
+    smsTemplate?: string;
+    whatsappContentSid?: string;
   }
 ): Promise<{
   success: boolean;
@@ -143,28 +147,34 @@ async function processSingleMessage(
         result = await notificationService.sendInteractiveInvite(
           guest as any,
           guest.weddingEvent as any,
-          options.includeImage
+          options.includeImage,
+          options.whatsappContentSid
         );
       } else {
         result = await notificationService.sendInteractiveReminder(
           guest as any,
           guest.weddingEvent as any,
-          options.includeImage
+          options.includeImage,
+          options.whatsappContentSid
         );
       }
     } else {
-      // Standard messages with RSVP link
+      // Standard messages with RSVP link (pass custom template for SMS/WhatsApp if provided)
       if (options.messageType === "INVITE") {
         result = await notificationService.sendInvite(
           guest as any,
           guest.weddingEvent as any,
-          options.channel
+          options.channel,
+          options.smsTemplate,
+          { whatsappContentSid: options.whatsappContentSid }
         );
       } else {
         result = await notificationService.sendReminder(
           guest as any,
           guest.weddingEvent as any,
-          options.channel
+          options.channel,
+          options.smsTemplate,
+          { whatsappContentSid: options.whatsappContentSid }
         );
       }
     }
@@ -215,6 +225,8 @@ async function processBatch(
     messageFormat: "STANDARD" | "INTERACTIVE";
     channel: NotificationChannel;
     includeImage: boolean;
+    smsTemplate?: string;
+    whatsappContentSid?: string;
   }
 ): Promise<Array<{
   success: boolean;
@@ -394,6 +406,8 @@ export async function sendBulkMessages(options: BulkMessageOptions): Promise<Bul
         messageFormat: options.messageFormat,
         channel: effectiveChannel,
         includeImage: options.includeImage || false,
+        smsTemplate: options.smsTemplate,
+        whatsappContentSid: options.whatsappContentSid,
       });
 
       // Collect results

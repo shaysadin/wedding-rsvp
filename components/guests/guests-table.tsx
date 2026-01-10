@@ -43,6 +43,7 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { EditGuestDialog } from "./edit-guest-dialog";
 import { SendMessageDialog } from "./send-message-dialog";
+import { AddGuestDialog } from "./add-guest-dialog";
 import {
   GuestsFilterBar,
   type SideFilter,
@@ -540,6 +541,7 @@ export function GuestsTable({ guests, eventId, initialFilter = "all", invitation
         <EmptyPlaceholder.Description>
           {t("addFirst")}
         </EmptyPlaceholder.Description>
+        <AddGuestDialog eventId={eventId} />
       </EmptyPlaceholder>
     );
   }

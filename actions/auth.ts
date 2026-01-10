@@ -4,7 +4,7 @@ import { hash, compare } from "bcryptjs";
 import { randomBytes } from "crypto";
 
 import { prisma } from "@/lib/db";
-import { sendVerificationEmail } from "@/lib/email";
+import { sendVerificationEmail, sendPasswordResetEmail } from "@/lib/email";
 import { userRegisterSchema, userLoginSchema } from "@/lib/validations/auth";
 
 // Helper: Create default workspace for a user (named after them)
@@ -254,6 +254,108 @@ export async function validateCredentials(email: string, password: string) {
     return { success: true, user };
   } catch (error) {
     console.error("Validate credentials error:", error);
+    return { error: "failed" };
+  }
+}
+
+// Generate password reset token
+function generatePasswordResetToken(): string {
+  return randomBytes(32).toString("hex");
+}
+
+// Request password reset - sends email with reset link
+export async function requestPasswordReset(email: string, locale: string = "he") {
+  try {
+    const user = await prisma.user.findUnique({
+      where: { email: email.toLowerCase() },
+    });
+
+    // Always return success to not reveal if user exists
+    if (!user) {
+      return { success: true };
+    }
+
+    // User must have a password (not OAuth-only)
+    if (!user.password) {
+      return { success: true };
+    }
+
+    // Delete existing tokens for this user
+    await prisma.passwordResetToken.deleteMany({
+      where: { userId: user.id },
+    });
+
+    // Create new token (valid for 1 hour)
+    const token = generatePasswordResetToken();
+    const expires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+
+    await prisma.passwordResetToken.create({
+      data: {
+        token,
+        userId: user.id,
+        expires,
+      },
+    });
+
+    // Send password reset email
+    await sendPasswordResetEmail({
+      email: user.email,
+      name: user.name || "",
+      token,
+      locale,
+    });
+
+    return { success: true };
+  } catch (error) {
+    console.error("Password reset request error:", error);
+    return { error: "failed" };
+  }
+}
+
+// Reset password with token
+export async function resetPassword(token: string, newPassword: string) {
+  try {
+    // Find token
+    const resetToken = await prisma.passwordResetToken.findUnique({
+      where: { token },
+      include: { user: true },
+    });
+
+    if (!resetToken) {
+      return { error: "invalidToken" };
+    }
+
+    // Check if expired
+    if (resetToken.expires < new Date()) {
+      // Delete expired token
+      await prisma.passwordResetToken.delete({
+        where: { id: resetToken.id },
+      });
+      return { error: "tokenExpired" };
+    }
+
+    // Validate new password (minimum 6 characters)
+    if (!newPassword || newPassword.length < 6) {
+      return { error: "passwordTooShort" };
+    }
+
+    // Hash new password
+    const hashedPassword = await hash(newPassword, 12);
+
+    // Update user password
+    await prisma.user.update({
+      where: { id: resetToken.userId },
+      data: { password: hashedPassword },
+    });
+
+    // Delete token
+    await prisma.passwordResetToken.delete({
+      where: { id: resetToken.id },
+    });
+
+    return { success: true };
+  } catch (error) {
+    console.error("Password reset error:", error);
     return { error: "failed" };
   }
 }

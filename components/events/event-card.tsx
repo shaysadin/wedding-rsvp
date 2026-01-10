@@ -75,7 +75,7 @@ export function EventCard({ event, locale }: EventCardProps) {
         transition={{ duration: 0.3, ease: [0.25, 0.1, 0.25, 1] }}
       >
         <Link href={`/${locale}/events/${event.id}`}>
-          <Card className="group relative overflow-hidden transition-all duration-300 hover:shadow-2xl hover:shadow-rose-500/10 dark:hover:shadow-rose-500/5 bg-gradient-to-br from-white to-gray-50/80 dark:from-gray-900 dark:to-gray-900/80 backdrop-blur-sm border-white/50 dark:border-gray-800/50">
+          <Card className="group relative overflow-hidden cursor-pointer transition-all duration-300 hover:shadow-2xl hover:shadow-rose-500/10 dark:hover:shadow-rose-500/5 bg-gradient-to-br from-white to-gray-50/80 dark:from-gray-900 dark:to-gray-900/80 backdrop-blur-sm border border-gray-200 dark:border-gray-700/60">
             {/* Animated gradient border on hover */}
             <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
               <div className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-pink-500 via-rose-500 to-red-500" />
@@ -239,6 +239,12 @@ export function EventCard({ event, locale }: EventCardProps) {
                     transition={{ duration: 0.8, ease: "easeOut", delay: 0.2 }}
                   />
                 </div>
+              </div>
+
+              {/* Click hint */}
+              <div className="mt-4 pt-3 border-t border-dashed border-gray-200 dark:border-gray-700/50 flex items-center justify-center gap-2 text-xs text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                <ExternalLink className="h-3 w-3" />
+                <span>{isRTL ? "לחץ לניהול האירוע" : "Click to manage event"}</span>
               </div>
             </CardContent>
           </Card>

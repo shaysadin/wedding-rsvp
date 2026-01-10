@@ -174,54 +174,78 @@ export class TwilioNotificationService implements NotificationService {
     };
   }
 
-  async sendInvite(guest: Guest, event: WeddingEvent, preferredChannel?: NotificationChannel): Promise<NotificationResult> {
+  async sendInvite(guest: Guest, event: WeddingEvent, preferredChannel?: NotificationChannel, customTemplate?: string, options?: { whatsappContentSid?: string }): Promise<NotificationResult> {
     const channel = preferredChannel || this.getChannel(guest);
     const settings = await this.getSettings();
 
-    // Use custom template from database (or fallback to default) for SMS
-    const message = await renderMessage(guest, event, "INVITE");
+    // Use custom template if provided, otherwise use database template (or fallback to default)
+    let message: string;
+    if (customTemplate) {
+      // Render custom template with placeholders
+      message = customTemplate
+        .replace(/\{\{guestName\}\}/g, guest.name)
+        .replace(/\{\{eventTitle\}\}/g, event.title)
+        .replace(/\{\{rsvpLink\}\}/g, this.getRsvpLink(guest.slug));
+    } else {
+      message = await renderMessage(guest, event, "INVITE");
+    }
 
     // Prepare WhatsApp options with Content Template if available
     let whatsappOptions: { contentSid?: string; contentVariables?: Record<string, string> } | undefined;
 
-    if (settings?.whatsappInviteContentSid && channel === NotificationChannel.WHATSAPP) {
+    // Use provided Content SID (from template selection) or fall back to settings default
+    const contentSid = options?.whatsappContentSid || settings?.whatsappInviteContentSid;
+
+    if (contentSid && channel === NotificationChannel.WHATSAPP) {
       // Use Content Template for WhatsApp Business API
       whatsappOptions = {
-        contentSid: settings.whatsappInviteContentSid,
+        contentSid,
         contentVariables: {
           "1": guest.name, // {{1}} = guest name
           "2": event.title, // {{2}} = event title
           "3": this.getRsvpLink(guest.slug), // {{3}} = RSVP link
         },
       };
-      console.log(`Using WhatsApp Content Template for INVITE: ${settings.whatsappInviteContentSid}`);
+      console.log(`Using WhatsApp Content Template for INVITE: ${contentSid}`);
     }
 
     // Pass event's SMS sender ID for SMS channel
     return this.sendMessage(guest, message, channel, event.smsSenderId, whatsappOptions);
   }
 
-  async sendReminder(guest: Guest, event: WeddingEvent, preferredChannel?: NotificationChannel): Promise<NotificationResult> {
+  async sendReminder(guest: Guest, event: WeddingEvent, preferredChannel?: NotificationChannel, customTemplate?: string, options?: { whatsappContentSid?: string }): Promise<NotificationResult> {
     const channel = preferredChannel || this.getChannel(guest);
     const settings = await this.getSettings();
 
-    // Use custom template from database (or fallback to default) for SMS
-    const message = await renderMessage(guest, event, "REMINDER");
+    // Use custom template if provided, otherwise use database template (or fallback to default)
+    let message: string;
+    if (customTemplate) {
+      // Render custom template with placeholders
+      message = customTemplate
+        .replace(/\{\{guestName\}\}/g, guest.name)
+        .replace(/\{\{eventTitle\}\}/g, event.title)
+        .replace(/\{\{rsvpLink\}\}/g, this.getRsvpLink(guest.slug));
+    } else {
+      message = await renderMessage(guest, event, "REMINDER");
+    }
 
     // Prepare WhatsApp options with Content Template if available
     let whatsappOptions: { contentSid?: string; contentVariables?: Record<string, string> } | undefined;
 
-    if (settings?.whatsappReminderContentSid && channel === NotificationChannel.WHATSAPP) {
+    // Use provided Content SID (from template selection) or fall back to settings default
+    const contentSid = options?.whatsappContentSid || settings?.whatsappReminderContentSid;
+
+    if (contentSid && channel === NotificationChannel.WHATSAPP) {
       // Use Content Template for WhatsApp Business API
       whatsappOptions = {
-        contentSid: settings.whatsappReminderContentSid,
+        contentSid,
         contentVariables: {
           "1": guest.name, // {{1}} = guest name
           "2": event.title, // {{2}} = event title
           "3": this.getRsvpLink(guest.slug), // {{3}} = RSVP link
         },
       };
-      console.log(`Using WhatsApp Content Template for REMINDER: ${settings.whatsappReminderContentSid}`);
+      console.log(`Using WhatsApp Content Template for REMINDER: ${contentSid}`);
     }
 
     // Pass event's SMS sender ID for SMS channel
@@ -317,11 +341,15 @@ export class TwilioNotificationService implements NotificationService {
   async sendInteractiveInvite(
     guest: Guest,
     event: WeddingEvent,
-    includeImage: boolean = false
+    includeImage: boolean = false,
+    whatsappContentSid?: string
   ): Promise<NotificationResult> {
     const settings = await this.getSettings();
 
-    if (!settings?.whatsappInteractiveInviteContentSid) {
+    // Use provided Content SID or fall back to settings default
+    const contentSid = whatsappContentSid || settings?.whatsappInteractiveInviteContentSid;
+
+    if (!contentSid) {
       return {
         success: false,
         error: "Interactive invite template not configured",
@@ -330,7 +358,7 @@ export class TwilioNotificationService implements NotificationService {
       };
     }
 
-    if (!settings.whatsappEnabled || !settings.whatsappApiKey || !settings.whatsappApiSecret) {
+    if (!settings || !settings.whatsappEnabled || !settings.whatsappApiKey || !settings.whatsappApiSecret) {
       return {
         success: false,
         error: "WhatsApp not configured",
@@ -377,7 +405,7 @@ export class TwilioNotificationService implements NotificationService {
       const messageOptions = {
         from: `whatsapp:${fromNumber}`,
         to: `whatsapp:${phoneNumber}`,
-        contentSid: settings.whatsappInteractiveInviteContentSid,
+        contentSid: contentSid,
         contentVariables: JSON.stringify(contentVariables),
       };
 
@@ -412,11 +440,15 @@ export class TwilioNotificationService implements NotificationService {
   async sendInteractiveReminder(
     guest: Guest,
     event: WeddingEvent,
-    includeImage: boolean = false
+    includeImage: boolean = false,
+    whatsappContentSid?: string
   ): Promise<NotificationResult> {
     const settings = await this.getSettings();
 
-    if (!settings?.whatsappInteractiveReminderContentSid) {
+    // Use provided Content SID or fall back to settings default
+    const contentSid = whatsappContentSid || settings?.whatsappInteractiveReminderContentSid;
+
+    if (!contentSid) {
       return {
         success: false,
         error: "Interactive reminder template not configured",
@@ -425,7 +457,7 @@ export class TwilioNotificationService implements NotificationService {
       };
     }
 
-    if (!settings.whatsappEnabled || !settings.whatsappApiKey || !settings.whatsappApiSecret) {
+    if (!settings || !settings.whatsappEnabled || !settings.whatsappApiKey || !settings.whatsappApiSecret) {
       return {
         success: false,
         error: "WhatsApp not configured",
@@ -472,7 +504,7 @@ export class TwilioNotificationService implements NotificationService {
       const messageOptions = {
         from: `whatsapp:${fromNumber}`,
         to: `whatsapp:${phoneNumber}`,
-        contentSid: settings.whatsappInteractiveReminderContentSid,
+        contentSid: contentSid,
         contentVariables: JSON.stringify(contentVariables),
       };
 

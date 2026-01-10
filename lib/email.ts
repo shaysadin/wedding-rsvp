@@ -6,6 +6,7 @@ import { env } from "@/env.mjs";
 import { siteConfig } from "@/config/site";
 import { MagicLinkEmail } from "@/emails/magic-link-email";
 import { VerificationEmail } from "@/emails/verification-email";
+import { PasswordResetEmail } from "@/emails/password-reset-email";
 import { getUserByEmail } from "./user";
 
 // Initialize SMTP transporter
@@ -100,6 +101,53 @@ export async function sendVerificationEmail({
     locale === "he"
       ? `אימות כתובת האימייל שלך - ${siteConfig.name}`
       : `Verify your email - ${siteConfig.name}`;
+
+  return sendEmail({
+    to: email,
+    subject,
+    html,
+  });
+}
+
+// Send password reset email
+export async function sendPasswordResetEmail({
+  email,
+  name,
+  token,
+  locale = "he",
+}: {
+  email: string;
+  name: string;
+  token: string;
+  locale?: string;
+}) {
+  const resetUrl = `${env.NEXT_PUBLIC_APP_URL}/${locale}/reset-password?token=${token}`;
+
+  console.log("");
+  console.log("=".repeat(60));
+  console.log("🔐 PASSWORD RESET EMAIL");
+  console.log("=".repeat(60));
+  console.log(`To: ${email}`);
+  console.log(`Name: ${name}`);
+  console.log("");
+  console.log(`🔗 Reset your password:`);
+  console.log(resetUrl);
+  console.log("=".repeat(60));
+  console.log("");
+
+  const html = await render(
+    PasswordResetEmail({
+      firstName: name,
+      resetUrl,
+      siteName: siteConfig.name,
+      locale,
+    })
+  );
+
+  const subject =
+    locale === "he"
+      ? `איפוס סיסמה - ${siteConfig.name}`
+      : `Reset your password - ${siteConfig.name}`;
 
   return sendEmail({
     to: email,

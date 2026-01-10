@@ -4,7 +4,8 @@ import { prisma } from "@/lib/db";
 import { getCurrentUser } from "@/lib/session";
 import { VapiClient } from "@/lib/vapi/client";
 import { syncCallFromVapi, syncAllActiveCalls } from "@/lib/vapi/call-sync";
-import { canMakeVoiceCalls, isVoiceCallsEnabled, getRemainingVoiceCalls, PLAN_LIMITS } from "@/config/plans";
+import { canMakeVoiceCalls, isVoiceCallsEnabled, getRemainingVoiceCalls, PLAN_LIMITS, getVoiceCallLimit, BUSINESS_VOICE_ADDON_CALLS } from "@/config/plans";
+import { PlanTier } from "@prisma/client";
 import { getEffectivePhoneNumberId } from "./phone-numbers";
 
 // ============ Helper: Get Billing Period ============
@@ -104,10 +105,10 @@ export async function callGuest(guestId: string, eventId: string) {
       return { error: "Unauthorized" };
     }
 
-    // Get the user's plan from the database (session plan can be stale after upgrades)
+    // Get the user's plan and voice add-on status from the database
     const dbUser = await prisma.user.findUnique({
       where: { id: user.id },
-      select: { plan: true },
+      select: { plan: true, voiceCallsAddOn: true },
     });
 
     if (!dbUser) {
@@ -116,32 +117,51 @@ export async function callGuest(guestId: string, eventId: string) {
 
     // Check plan limits for voice calls
     const userPlan = dbUser.plan;
+    const hasVoiceAddon = dbUser.voiceCallsAddOn || false;
+    const planLimits = PLAN_LIMITS[userPlan];
+
+    // Calculate effective voice call limit based on plan and add-on status
+    // BUSINESS plan: 0 base, 2000 with add-on
+    // Other plans: use base limit from plan config
+    const effectiveVoiceCallLimit = userPlan === PlanTier.BUSINESS
+      ? (hasVoiceAddon ? BUSINESS_VOICE_ADDON_CALLS : 0)
+      : planLimits?.maxVoiceCalls ?? 0;
+
+    // Debug logging
+    console.log("[VOICE CALL CHECK]", {
+      userId: user.id,
+      plan: userPlan,
+      hasVoiceAddon,
+      baseLimit: planLimits?.maxVoiceCalls,
+      effectiveLimit: effectiveVoiceCallLimit,
+    });
 
     // Check if voice calls are enabled for this plan
-    if (!isVoiceCallsEnabled(userPlan)) {
+    if (effectiveVoiceCallLimit === 0) {
+      if (userPlan === PlanTier.BUSINESS && !hasVoiceAddon) {
+        return { error: "VOICE_CALLS_NOT_AVAILABLE", message: "Voice calls require the voice add-on for your Business plan. Please enable it in your billing settings." };
+      }
       return { error: "VOICE_CALLS_NOT_AVAILABLE", message: "Voice calls are not available on your plan. Please upgrade to use this feature." };
     }
 
     // Get actual voice call count from VapiCallLog (source of truth)
     const { callsMade: voiceCallsMade, callsBonus: voiceCallsBonus } = await getActualVoiceCallCount(user.id);
+    const totalAllowed = effectiveVoiceCallLimit + voiceCallsBonus;
+    const remaining = Math.max(0, totalAllowed - voiceCallsMade);
 
     // Debug logging
-    const planLimits = PLAN_LIMITS[userPlan];
     console.log("[VOICE CALL DEBUG]", {
       userId: user.id,
-      sessionPlan: user.plan,  // Plan from session (can be stale)
-      dbPlan: userPlan,        // Plan from database (fresh)
+      plan: userPlan,
       voiceCallsMade,
       voiceCallsBonus,
-      planLimit: planLimits.maxVoiceCalls,
-      totalAllowed: planLimits.maxVoiceCalls + voiceCallsBonus,
-      canMakeCall: canMakeVoiceCalls(userPlan, voiceCallsMade, voiceCallsBonus),
-      remaining: getRemainingVoiceCalls(userPlan, voiceCallsMade, voiceCallsBonus),
+      effectiveLimit: effectiveVoiceCallLimit,
+      totalAllowed,
+      remaining,
     });
 
     // Check if user can make more calls
-    if (!canMakeVoiceCalls(userPlan, voiceCallsMade, voiceCallsBonus)) {
-      const remaining = getRemainingVoiceCalls(userPlan, voiceCallsMade, voiceCallsBonus);
+    if (voiceCallsMade >= totalAllowed) {
       return {
         error: "VOICE_CALL_LIMIT_REACHED",
         message: `You have reached your voice call limit. ${remaining} calls remaining.`,
@@ -321,10 +341,10 @@ export async function startBulkCalling(
       return { error: "Unauthorized" };
     }
 
-    // Get the user's plan from the database (session plan can be stale after upgrades)
+    // Get the user's plan and voice add-on status from the database
     const dbUser = await prisma.user.findUnique({
       where: { id: user.id },
-      select: { plan: true },
+      select: { plan: true, voiceCallsAddOn: true },
     });
 
     if (!dbUser) {
@@ -333,18 +353,29 @@ export async function startBulkCalling(
 
     // Check plan limits for voice calls
     const userPlan = dbUser.plan;
+    const hasVoiceAddon = dbUser.voiceCallsAddOn || false;
+    const planLimits = PLAN_LIMITS[userPlan];
+
+    // Calculate effective voice call limit based on plan and add-on status
+    const effectiveVoiceCallLimit = userPlan === PlanTier.BUSINESS
+      ? (hasVoiceAddon ? BUSINESS_VOICE_ADDON_CALLS : 0)
+      : planLimits?.maxVoiceCalls ?? 0;
 
     // Check if voice calls are enabled for this plan
-    if (!isVoiceCallsEnabled(userPlan)) {
+    if (effectiveVoiceCallLimit === 0) {
+      if (userPlan === PlanTier.BUSINESS && !hasVoiceAddon) {
+        return { error: "VOICE_CALLS_NOT_AVAILABLE", message: "Voice calls require the voice add-on for your Business plan. Please enable it in your billing settings." };
+      }
       return { error: "VOICE_CALLS_NOT_AVAILABLE", message: "Voice calls are not available on your plan. Please upgrade to use this feature." };
     }
 
     // Get actual voice call count from VapiCallLog (source of truth)
     const { callsMade: voiceCallsMade, callsBonus: voiceCallsBonus } = await getActualVoiceCallCount(user.id);
-    const remaining = getRemainingVoiceCalls(userPlan, voiceCallsMade, voiceCallsBonus);
+    const totalAllowed = effectiveVoiceCallLimit + voiceCallsBonus;
+    const remaining = Math.max(0, totalAllowed - voiceCallsMade);
 
     // Check if user can make more calls (for the requested count)
-    if (!canMakeVoiceCalls(userPlan, voiceCallsMade, voiceCallsBonus, guestIds.length)) {
+    if (voiceCallsMade + guestIds.length > totalAllowed) {
       return {
         error: "VOICE_CALL_LIMIT_EXCEEDED",
         message: `You can only make ${remaining} more calls. Requested: ${guestIds.length}`,

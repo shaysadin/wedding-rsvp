@@ -27,14 +27,15 @@ export class MockNotificationService implements NotificationService {
     return `${env.NEXT_PUBLIC_APP_URL}/rsvp/${guestSlug}`;
   }
 
-  async sendInvite(guest: Guest, event: WeddingEvent, preferredChannel?: NotificationChannel): Promise<NotificationResult> {
+  async sendInvite(guest: Guest, event: WeddingEvent, preferredChannel?: NotificationChannel, customTemplate?: string, options?: { whatsappContentSid?: string }): Promise<NotificationResult> {
     const channel = preferredChannel || this.getChannel(guest);
     const rsvpLink = this.getRsvpLink(guest.slug);
-    const message = hebrewTemplates.invite.message(
-      guest.name,
-      event.title,
-      rsvpLink
-    );
+    const message = customTemplate
+      ? customTemplate
+          .replace(/\{\{guestName\}\}/g, guest.name)
+          .replace(/\{\{eventTitle\}\}/g, event.title)
+          .replace(/\{\{rsvpLink\}\}/g, rsvpLink)
+      : hebrewTemplates.invite.message(guest.name, event.title, rsvpLink);
 
     // Log to console (mock implementation)
     console.log("=".repeat(50));
@@ -62,14 +63,15 @@ export class MockNotificationService implements NotificationService {
     };
   }
 
-  async sendReminder(guest: Guest, event: WeddingEvent, preferredChannel?: NotificationChannel): Promise<NotificationResult> {
+  async sendReminder(guest: Guest, event: WeddingEvent, preferredChannel?: NotificationChannel, customTemplate?: string, options?: { whatsappContentSid?: string }): Promise<NotificationResult> {
     const channel = preferredChannel || this.getChannel(guest);
     const rsvpLink = this.getRsvpLink(guest.slug);
-    const message = hebrewTemplates.reminder.message(
-      guest.name,
-      event.title,
-      rsvpLink
-    );
+    const message = customTemplate
+      ? customTemplate
+          .replace(/\{\{guestName\}\}/g, guest.name)
+          .replace(/\{\{eventTitle\}\}/g, event.title)
+          .replace(/\{\{rsvpLink\}\}/g, rsvpLink)
+      : hebrewTemplates.reminder.message(guest.name, event.title, rsvpLink);
 
     // Log to console (mock implementation)
     console.log("=".repeat(50));
@@ -183,7 +185,8 @@ export class MockNotificationService implements NotificationService {
   async sendInteractiveInvite(
     guest: Guest,
     event: WeddingEvent,
-    includeImage: boolean = false
+    includeImage: boolean = false,
+    whatsappContentSid?: string
   ): Promise<NotificationResult> {
     // Log to console (mock implementation)
     console.log("=".repeat(50));
@@ -217,7 +220,8 @@ export class MockNotificationService implements NotificationService {
   async sendInteractiveReminder(
     guest: Guest,
     event: WeddingEvent,
-    includeImage: boolean = false
+    includeImage: boolean = false,
+    whatsappContentSid?: string
   ): Promise<NotificationResult> {
     // Log to console (mock implementation)
     console.log("=".repeat(50));

@@ -23,6 +23,9 @@ import { sendInvite, sendReminder, sendInteractiveInvite, sendInteractiveReminde
 import { sendBulkMessages } from "@/actions/bulk-notifications";
 import { getAvailableChannels } from "@/actions/messaging-settings";
 import { Checkbox } from "@/components/ui/checkbox";
+import { SmsTemplateSelector } from "./sms-template-selector";
+import { WhatsAppTemplateSelector } from "./whatsapp-template-selector";
+import type { WhatsAppTemplateType } from "@/config/whatsapp-templates";
 
 interface SendMessageDialogProps {
   open: boolean;
@@ -95,6 +98,9 @@ export function SendMessageDialog({
   const [messageType, setMessageType] = useState<MessageType>("INVITE");
   const [messageFormat, setMessageFormat] = useState<MessageFormat>("STANDARD");
   const [channel, setChannel] = useState<ChannelType>("WHATSAPP");
+  const [smsTemplate, setSmsTemplate] = useState<string>("");
+  const [whatsappContentSid, setWhatsappContentSid] = useState<string | null>(null);
+  const [whatsappTemplateStyle, setWhatsappTemplateStyle] = useState<string>("");
   const [sending, setSending] = useState(false);
   const [progress, setProgress] = useState(0);
   const [results, setResults] = useState<{ success: number; failed: number; errors: string[] } | null>(null);
@@ -120,6 +126,9 @@ export function SendMessageDialog({
       setShowConfirmation(false);
       setMessageFormat("STANDARD");
       setIncludeImage(hasInvitationImage);
+      setSmsTemplate("");
+      setWhatsappContentSid(null);
+      setWhatsappTemplateStyle("");
 
       // Fetch channels and usage in parallel
       Promise.all([
@@ -201,6 +210,8 @@ export function SendMessageDialog({
           messageFormat,
           channel,
           includeImage,
+          smsTemplate: channel === "SMS" ? smsTemplate : undefined,
+          whatsappContentSid: channel === "WHATSAPP" && whatsappContentSid ? whatsappContentSid : undefined,
         });
 
         // Stop the progress animation and complete
@@ -243,17 +254,20 @@ export function SendMessageDialog({
 
         if (messageFormat === "INTERACTIVE") {
           // Interactive button messages (WhatsApp only)
+          const templateSid = whatsappContentSid || undefined;
           if (messageType === "INVITE") {
-            result = await sendInteractiveInvite(guestId, includeImage);
+            result = await sendInteractiveInvite(guestId, includeImage, templateSid);
           } else {
-            result = await sendInteractiveReminder(guestId, includeImage);
+            result = await sendInteractiveReminder(guestId, includeImage, templateSid);
           }
         } else {
           // Standard messages with RSVP link
+          const customTemplate = channel === "SMS" ? smsTemplate : undefined;
+          const templateSid = channel === "WHATSAPP" && whatsappContentSid ? whatsappContentSid : undefined;
           if (messageType === "INVITE") {
-            result = await sendInvite(guestId, channel);
+            result = await sendInvite(guestId, channel, customTemplate, templateSid);
           } else {
-            result = await sendReminder(guestId, channel);
+            result = await sendReminder(guestId, channel, customTemplate, templateSid);
           }
         }
 
@@ -568,6 +582,52 @@ export function SendMessageDialog({
                   })}
                 </div>
               </div>
+
+              {/* SMS Template Selector - Only for SMS channel */}
+              {channel === "SMS" && channelStatus?.sms.enabled && (
+                <div className="space-y-3">
+                  <SmsTemplateSelector
+                    messageType={messageType}
+                    onTemplateSelect={setSmsTemplate}
+                    previewContext={
+                      mode === "single" && guestNames?.[0]
+                        ? {
+                            guestName: guestNames[0],
+                            eventTitle: isRTL ? "שם האירוע" : "Event Name",
+                            rsvpLink: "https://...",
+                          }
+                        : undefined
+                    }
+                    disabled={sending}
+                  />
+                </div>
+              )}
+
+              {/* WhatsApp Template Selector - Only for WhatsApp channel */}
+              {channel === "WHATSAPP" && channelStatus?.whatsapp.enabled && (
+                <div className="space-y-3">
+                  <WhatsAppTemplateSelector
+                    templateType={
+                      messageFormat === "INTERACTIVE"
+                        ? (messageType === "INVITE" ? "INTERACTIVE_INVITE" : "INTERACTIVE_REMINDER")
+                        : (messageType === "INVITE" ? "INVITE" : "REMINDER") as WhatsAppTemplateType
+                    }
+                    onTemplateSelect={(contentSid, style) => {
+                      setWhatsappContentSid(contentSid);
+                      setWhatsappTemplateStyle(style);
+                    }}
+                    previewContext={
+                      mode === "single" && guestNames?.[0]
+                        ? {
+                            guestName: guestNames[0],
+                            eventTitle: isRTL ? "שם האירוע" : "Event Name",
+                          }
+                        : undefined
+                    }
+                    disabled={sending}
+                  />
+                </div>
+              )}
 
               {/* Recipients Summary */}
               <div className="rounded-lg border bg-muted/30 p-4">

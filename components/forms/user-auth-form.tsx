@@ -50,6 +50,7 @@ export function UserAuthForm({ className, type = "login", onModeChange, ...props
   const [isMagicLinkLoading, setIsMagicLinkLoading] = React.useState<boolean>(false);
   const [showMagicLink, setShowMagicLink] = React.useState<boolean>(false);
   const [alert, setAlert] = React.useState<AlertState>(null);
+  const [justRegistered, setJustRegistered] = React.useState<boolean>(false);
   const searchParams = useSearchParams();
   const pathname = usePathname();
 
@@ -68,10 +69,12 @@ export function UserAuthForm({ className, type = "login", onModeChange, ...props
     }
   }, [type, searchParams, t]);
 
-  // Clear alert when switching modes
+  // Clear alert when switching modes (but not if we just registered successfully)
   React.useEffect(() => {
-    setAlert(null);
-  }, [type]);
+    if (!justRegistered) {
+      setAlert(null);
+    }
+  }, [type, justRegistered]);
 
   // Registration form
   const registerForm = useForm<RegisterFormData>({
@@ -130,6 +133,9 @@ export function UserAuthForm({ className, type = "login", onModeChange, ...props
       return;
     }
 
+    // Mark that we just registered (to prevent alert from being cleared on mode switch)
+    setJustRegistered(true);
+
     // Show success message and switch to login
     setAlert({
       type: "success",
@@ -146,6 +152,7 @@ export function UserAuthForm({ className, type = "login", onModeChange, ...props
   async function onLoginSubmit(data: LoginFormData) {
     setIsLoading(true);
     setAlert(null);
+    setJustRegistered(false);
 
     const callbackUrl = searchParams?.get("from") || defaultCallbackUrl;
 
