@@ -176,6 +176,7 @@ model WeddingEvent {
   // Custom system automation messages (overrides defaults if set)
   rsvpConfirmedMessage    String?            @map("rsvp_confirmed_message")
   rsvpDeclinedMessage     String?            @map("rsvp_declined_message")
+  rsvpMaybeMessage        String?            @map("rsvp_maybe_message")
   bulkMessageJobs         BulkMessageJob[]
   guests                  Guest[]
   messageTemplates        MessageTemplate[]
@@ -554,8 +555,6 @@ model MessagingProviderSettings {
   azureSpeechRegion                String?  @map("azure_speech_region")
   vapiApiKey                       String?  @map("vapi_api_key")
   vapiAssistantId                  String?  @map("vapi_assistant_id")
-  vapiDefaultFirstMessage          String?  @map("vapi_default_first_message")
-  vapiDefaultSystemPrompt          String?  @map("vapi_default_system_prompt")
   vapiDefaultVoiceId               String?  @default("he-IL-AvriNeural") @map("vapi_default_voice_id")
   vapiEnabled                      Boolean  @default(false) @map("vapi_enabled")
   vapiPhoneNumber                  String?  @map("vapi_phone_number")
@@ -628,6 +627,12 @@ enum WhatsAppTemplateType {
   REMINDER            // Standard reminder with RSVP link
   INTERACTIVE_INVITE  // Interactive buttons invite
   INTERACTIVE_REMINDER // Interactive buttons reminder
+  IMAGE_INVITE        // Image invite with invitation image
+  CONFIRMATION        // RSVP confirmation message
+  EVENT_DAY           // Event day reminder (morning of event)
+  THANK_YOU           // Thank you message (day after event)
+  TABLE_ASSIGNMENT    // Table assignment notification
+  GUEST_COUNT_LIST    // Guest count selection list (interactive)
 }
 
 model BulkMessageJob {
@@ -971,6 +976,7 @@ enum RsvpStatus {
   PENDING
   ACCEPTED
   DECLINED
+  MAYBE
 }
 
 enum NotificationType {
@@ -1108,6 +1114,7 @@ enum AutomationTrigger {
   // Immediate Event Triggers (System automations - shown as active by default)
   RSVP_CONFIRMED           // When guest confirms attendance - system automation
   RSVP_DECLINED            // When guest declines - system automation
+  RSVP_MAYBE               // When guest says "maybe" - system automation, sends reminder next day
 
   // Time-Based Triggers (uses delayHours field, 1-24 hours)
   NO_RESPONSE_WHATSAPP     // Guest hasn't responded to WhatsApp invite/reminder after X hours
@@ -1293,6 +1300,7 @@ model AutomationFlow {
   templateId     String?              @map("template_id") // If created from a template
   customMessage  String?              @map("custom_message") // Optional custom message override
   delayHours     Int?                 @map("delay_hours") // For time-based triggers (NO_RESPONSE, BEFORE_EVENT, AFTER_EVENT)
+  templateStyle  String?              @map("template_style") // WhatsApp template style: formal, friendly, short
   createdAt      DateTime             @default(now()) @map("created_at")
   updatedAt      DateTime             @default(now()) @updatedAt @map("updated_at")
 

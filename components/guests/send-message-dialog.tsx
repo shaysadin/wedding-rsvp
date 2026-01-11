@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
 import { useTranslations, useLocale } from "next-intl";
-import { ArrowUpRight } from "lucide-react";
+import { ArrowUpRight, MessageCircle, Phone, Sparkles, Zap, ExternalLink, Image as ImageIcon } from "lucide-react";
 
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -19,13 +20,26 @@ import { Label } from "@/components/ui/label";
 import { Icons } from "@/components/shared/icons";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Textarea } from "@/components/ui/textarea";
+import { Skeleton } from "@/components/ui/skeleton";
 import { sendInvite, sendReminder, sendInteractiveInvite, sendInteractiveReminder, ChannelType, getCurrentUserUsage } from "@/actions/notifications";
 import { sendBulkMessages } from "@/actions/bulk-notifications";
 import { getAvailableChannels } from "@/actions/messaging-settings";
-import { Checkbox } from "@/components/ui/checkbox";
-import { SmsTemplateSelector } from "./sms-template-selector";
-import { WhatsAppTemplateSelector } from "./whatsapp-template-selector";
-import type { WhatsAppTemplateType } from "@/config/whatsapp-templates";
+import { MessagePreview } from "./message-preview";
+import {
+  getWhatsAppTemplateDefinitions,
+  type WhatsAppTemplateType,
+  type WhatsAppTemplateDefinition,
+} from "@/config/whatsapp-templates";
+import { getActiveWhatsAppTemplates } from "@/actions/whatsapp-templates";
+import {
+  getSmsTemplates,
+  renderSmsTemplate,
+  SMS_MAX_LENGTH,
+  type SmsTemplate,
+} from "@/config/sms-templates";
 
 interface SendMessageDialogProps {
   open: boolean;
@@ -35,39 +49,11 @@ interface SendMessageDialogProps {
   guestStatuses?: ("PENDING" | "ACCEPTED" | "DECLINED" | "MAYBE")[];
   eventId: string;
   mode: "single" | "bulk";
-  invitationImageUrl?: string | null; // For interactive messages with image
+  invitationImageUrl?: string | null;
 }
 
 type MessageType = "INVITE" | "REMINDER";
 type MessageFormat = "STANDARD" | "INTERACTIVE";
-
-const MESSAGE_TYPES: { value: MessageType; labelKey: string; icon: keyof typeof Icons; descriptionKey: string }[] = [
-  {
-    value: "INVITE",
-    labelKey: "invitation",
-    icon: "mail",
-    descriptionKey: "invitationDescription",
-  },
-  {
-    value: "REMINDER",
-    labelKey: "reminder",
-    icon: "bell",
-    descriptionKey: "reminderDescription",
-  },
-];
-
-const CHANNELS: { value: ChannelType; labelKey: string; icon: keyof typeof Icons }[] = [
-  {
-    value: "WHATSAPP",
-    labelKey: "whatsapp",
-    icon: "messageCircle",
-  },
-  {
-    value: "SMS",
-    labelKey: "sms",
-    icon: "phone",
-  },
-];
 
 interface ChannelStatus {
   whatsapp: { enabled: boolean; configured: boolean };
@@ -79,6 +65,28 @@ interface UsageStatus {
   whatsappRemaining: number;
   smsRemaining: number;
 }
+
+interface ActiveTemplate {
+  id: string;
+  style: string;
+  contentSid: string;
+  nameHe: string;
+  nameEn: string;
+  templateText: string | null;
+}
+
+const INTERACTIVE_BUTTONS = {
+  he: [
+    { text: "כן, אגיע", variant: "accept" as const },
+    { text: "לא אגיע", variant: "decline" as const },
+    { text: "עדיין לא יודע/ת", variant: "maybe" as const },
+  ],
+  en: [
+    { text: "Yes, I'll attend", variant: "accept" as const },
+    { text: "No, I won't attend", variant: "decline" as const },
+    { text: "Don't know yet", variant: "maybe" as const },
+  ],
+};
 
 export function SendMessageDialog({
   open,
@@ -95,28 +103,63 @@ export function SendMessageDialog({
   const tn = useTranslations("notifications");
   const locale = useLocale();
   const isRTL = locale === "he";
+
+  // State
+  const [channel, setChannel] = useState<ChannelType>("WHATSAPP");
   const [messageType, setMessageType] = useState<MessageType>("INVITE");
   const [messageFormat, setMessageFormat] = useState<MessageFormat>("STANDARD");
-  const [channel, setChannel] = useState<ChannelType>("WHATSAPP");
-  const [smsTemplate, setSmsTemplate] = useState<string>("");
+  const [includeImage, setIncludeImage] = useState(!!invitationImageUrl);
+
+  // WhatsApp template state
+  const [whatsappTemplates, setWhatsappTemplates] = useState<ActiveTemplate[]>([]);
+  const [selectedWhatsappStyle, setSelectedWhatsappStyle] = useState<string>("formal");
   const [whatsappContentSid, setWhatsappContentSid] = useState<string | null>(null);
-  const [whatsappTemplateStyle, setWhatsappTemplateStyle] = useState<string>("");
-  const [sending, setSending] = useState(false);
-  const [progress, setProgress] = useState(0);
-  const [results, setResults] = useState<{ success: number; failed: number; errors: string[] } | null>(null);
+  const [loadingWhatsappTemplates, setLoadingWhatsappTemplates] = useState(false);
+
+  // SMS template state
+  const [smsTemplates, setSmsTemplates] = useState<SmsTemplate[]>([]);
+  const [selectedSmsTemplateId, setSelectedSmsTemplateId] = useState<string | null>(null);
+  const [isCustomSms, setIsCustomSms] = useState(false);
+  const [customSmsMessage, setCustomSmsMessage] = useState("");
+  const [smsTemplate, setSmsTemplate] = useState<string>("");
+
+  // Channel & usage state
   const [channelStatus, setChannelStatus] = useState<ChannelStatus | null>(null);
   const [usageStatus, setUsageStatus] = useState<UsageStatus | null>(null);
   const [loadingChannels, setLoadingChannels] = useState(true);
-  const [showConfirmation, setShowConfirmation] = useState(false);
-  // Check if interactive buttons are configured (WhatsApp only)
-  const hasInvitationImage = !!invitationImageUrl;
-  const [includeImage, setIncludeImage] = useState(hasInvitationImage);
 
-  // Count guests who already accepted
+  // Sending state
+  const [sending, setSending] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [results, setResults] = useState<{ success: number; failed: number; errors: string[] } | null>(null);
+  const [showConfirmation, setShowConfirmation] = useState(false);
+
+  const hasInvitationImage = !!invitationImageUrl;
   const acceptedGuestsCount = guestStatuses?.filter(s => s === "ACCEPTED").length || 0;
   const hasAcceptedGuests = acceptedGuestsCount > 0;
 
-  // Fetch available channels and user usage when dialog opens
+  // Get WhatsApp template type based on message type and format
+  const whatsappTemplateType: WhatsAppTemplateType = useMemo(() => {
+    if (messageFormat === "INTERACTIVE") {
+      return messageType === "INVITE" ? "INTERACTIVE_INVITE" : "INTERACTIVE_REMINDER";
+    }
+    return messageType === "INVITE" ? "INVITE" : "REMINDER";
+  }, [messageType, messageFormat]);
+
+  // Preview context
+  const previewContext = {
+    guestName: mode === "single" && guestNames?.[0] ? guestNames[0] : (isRTL ? "שם האורח" : "Guest Name"),
+    eventTitle: isRTL ? "שם האירוע" : "Event Name",
+    rsvpLink: "https://...",
+  };
+
+  // Get template definitions for WhatsApp
+  const whatsappTemplateDefinitions = useMemo(
+    () => getWhatsAppTemplateDefinitions(whatsappTemplateType),
+    [whatsappTemplateType]
+  );
+
+  // Fetch channels and usage on open
   useEffect(() => {
     if (open) {
       setProgress(0);
@@ -126,11 +169,9 @@ export function SendMessageDialog({
       setShowConfirmation(false);
       setMessageFormat("STANDARD");
       setIncludeImage(hasInvitationImage);
-      setSmsTemplate("");
-      setWhatsappContentSid(null);
-      setWhatsappTemplateStyle("");
+      setIsCustomSms(false);
+      setCustomSmsMessage("");
 
-      // Fetch channels and usage in parallel
       Promise.all([
         getAvailableChannels(),
         getCurrentUserUsage()
@@ -152,10 +193,10 @@ export function SendMessageDialog({
           setUsageStatus(usage);
         }
 
-        // Auto-select first channel that is both enabled AND has quota (prefer WhatsApp)
+        // Auto-select first available channel
         if (channels && usage) {
-          const smsAvailable = channels.sms.enabled && usage.smsRemaining > 0;
           const whatsappAvailable = channels.whatsapp.enabled && usage.whatsappRemaining > 0;
+          const smsAvailable = channels.sms.enabled && usage.smsRemaining > 0;
 
           if (whatsappAvailable) {
             setChannel("WHATSAPP");
@@ -166,16 +207,123 @@ export function SendMessageDialog({
 
         setLoadingChannels(false);
       });
-    }
-  }, [open, hasInvitationImage]);
 
+      // Load SMS templates
+      const smsTemplatesList = getSmsTemplates(messageType);
+      setSmsTemplates(smsTemplatesList);
+      if (smsTemplatesList.length > 0) {
+        setSelectedSmsTemplateId(smsTemplatesList[0].id);
+        setSmsTemplate(isRTL ? smsTemplatesList[0].messageHe : smsTemplatesList[0].messageEn);
+      }
+    }
+  }, [open, hasInvitationImage, messageType, isRTL]);
+
+  // Fetch WhatsApp templates when type changes
+  useEffect(() => {
+    if (!open || channel !== "WHATSAPP") return;
+
+    setLoadingWhatsappTemplates(true);
+
+    getActiveWhatsAppTemplates(whatsappTemplateType).then((result) => {
+      if (result.success && result.templates && result.templates.length > 0) {
+        setWhatsappTemplates(result.templates);
+        // Auto-select first template
+        const firstTemplate = result.templates[0];
+        setSelectedWhatsappStyle(firstTemplate.style);
+        setWhatsappContentSid(firstTemplate.contentSid);
+      } else {
+        // Fallback to config templates
+        const fallbackTemplates: ActiveTemplate[] = whatsappTemplateDefinitions
+          .filter((def) => def.existingContentSid)
+          .map((def) => ({
+            id: `config-${def.style}`,
+            style: def.style,
+            contentSid: def.existingContentSid!,
+            nameHe: def.nameHe,
+            nameEn: def.nameEn,
+            templateText: isRTL ? def.templateTextHe : def.templateTextEn,
+          }));
+
+        if (fallbackTemplates.length > 0) {
+          setWhatsappTemplates(fallbackTemplates);
+          setSelectedWhatsappStyle(fallbackTemplates[0].style);
+          setWhatsappContentSid(fallbackTemplates[0].contentSid);
+        } else {
+          setWhatsappTemplates([]);
+          setWhatsappContentSid(null);
+        }
+      }
+      setLoadingWhatsappTemplates(false);
+    }).catch(() => {
+      setLoadingWhatsappTemplates(false);
+    });
+  }, [open, channel, whatsappTemplateType, whatsappTemplateDefinitions, isRTL]);
+
+  // Update SMS templates when message type changes
+  useEffect(() => {
+    if (channel === "SMS") {
+      const smsTemplatesList = getSmsTemplates(messageType);
+      setSmsTemplates(smsTemplatesList);
+      if (smsTemplatesList.length > 0 && !isCustomSms) {
+        setSelectedSmsTemplateId(smsTemplatesList[0].id);
+        setSmsTemplate(isRTL ? smsTemplatesList[0].messageHe : smsTemplatesList[0].messageEn);
+      }
+    }
+  }, [channel, messageType, isRTL, isCustomSms]);
+
+  // Get preview message content
+  const getPreviewMessage = (): string => {
+    if (channel === "WHATSAPP") {
+      // Always use template definitions for preview text (they have the actual message content)
+      // The database templateText field stores Twilio template names, not actual messages
+      const definition = whatsappTemplateDefinitions.find((d) => d.style === selectedWhatsappStyle);
+      if (definition) {
+        const text = isRTL ? definition.templateTextHe : definition.templateTextEn;
+        return text
+          .replace(/\{\{1\}\}/g, previewContext.guestName)
+          .replace(/\{\{2\}\}/g, previewContext.eventTitle)
+          .replace(/\{\{3\}\}/g, previewContext.rsvpLink);
+      }
+      return isRTL ? "תצוגה מקדימה לא זמינה" : "Preview not available";
+    } else {
+      // SMS
+      if (isCustomSms) {
+        return renderSmsTemplate(customSmsMessage || "", previewContext);
+      }
+      const template = smsTemplates.find((t) => t.id === selectedSmsTemplateId);
+      if (template) {
+        const msg = isRTL ? template.messageHe : template.messageEn;
+        return renderSmsTemplate(msg, previewContext);
+      }
+      return "";
+    }
+  };
+
+  // Handle template selection
+  const handleWhatsappTemplateSelect = (template: ActiveTemplate) => {
+    setSelectedWhatsappStyle(template.style);
+    setWhatsappContentSid(template.contentSid);
+  };
+
+  const handleSmsTemplateSelect = (template: SmsTemplate) => {
+    setSelectedSmsTemplateId(template.id);
+    setIsCustomSms(false);
+    const msg = isRTL ? template.messageHe : template.messageEn;
+    setSmsTemplate(msg);
+  };
+
+  const handleCustomSmsChange = (value: string) => {
+    const trimmed = value.slice(0, SMS_MAX_LENGTH);
+    setCustomSmsMessage(trimmed);
+    setSmsTemplate(trimmed);
+  };
+
+  // Send handlers
   const handleSendClick = () => {
-    // If there are accepted guests, show confirmation first
     if (hasAcceptedGuests && !showConfirmation) {
       setShowConfirmation(true);
       return;
     }
-    // Otherwise proceed to send
     executeSend();
   };
 
@@ -187,15 +335,12 @@ export function SendMessageDialog({
 
     const total = guestIds.length;
 
-    // Use bulk messaging for multiple guests (optimized for 20-800+ messages)
     if (guestIds.length > 1) {
-      // Animate progress smoothly during bulk send
-      const estimatedDuration = Math.max(2000, total * 150); // At least 2s, ~150ms per message
+      const estimatedDuration = Math.max(2000, total * 150);
       const progressInterval = setInterval(() => {
         setProgress((prev) => {
-          // Smoothly increase up to 90%, leaving 10% for completion
           if (prev < 90) {
-            const increment = (90 - prev) * 0.1; // Ease-out effect
+            const increment = (90 - prev) * 0.1;
             return Math.min(90, prev + Math.max(1, increment));
           }
           return prev;
@@ -214,7 +359,6 @@ export function SendMessageDialog({
           whatsappContentSid: channel === "WHATSAPP" && whatsappContentSid ? whatsappContentSid : undefined,
         });
 
-        // Stop the progress animation and complete
         clearInterval(progressInterval);
         setProgress(100);
 
@@ -243,7 +387,6 @@ export function SendMessageDialog({
         toast.error(t("messageSentFailed"));
       }
     } else {
-      // Single guest - use direct messaging for immediate feedback
       let successCount = 0;
       let failedCount = 0;
       const errors: string[] = [];
@@ -253,7 +396,6 @@ export function SendMessageDialog({
         const guestId = guestIds[0];
 
         if (messageFormat === "INTERACTIVE") {
-          // Interactive button messages (WhatsApp only)
           const templateSid = whatsappContentSid || undefined;
           if (messageType === "INVITE") {
             result = await sendInteractiveInvite(guestId, includeImage, templateSid);
@@ -261,7 +403,6 @@ export function SendMessageDialog({
             result = await sendInteractiveReminder(guestId, includeImage, templateSid);
           }
         } else {
-          // Standard messages with RSVP link
           const customTemplate = channel === "SMS" ? smsTemplate : undefined;
           const templateSid = channel === "WHATSAPP" && whatsappContentSid ? whatsappContentSid : undefined;
           if (messageType === "INVITE") {
@@ -304,414 +445,523 @@ export function SendMessageDialog({
   const noChannelsAvailable = channelStatus && !channelStatus.whatsapp.enabled && !channelStatus.sms.enabled;
   const noQuotaAvailable = usageStatus && !usageStatus.canSendMessages;
 
+  const previewMessage = getPreviewMessage();
+  const charCount = previewMessage.length;
+
+  // Get style display name
+  const getStyleName = (style: string): string => {
+    const styleNames: Record<string, { en: string; he: string }> = {
+      formal: { en: "Formal", he: "רשמי" },
+      friendly: { en: "Friendly", he: "ידידותי" },
+      short: { en: "Short", he: "קצר" },
+    };
+    return isRTL ? styleNames[style]?.he || style : styleNames[style]?.en || style;
+  };
+
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[500px]">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Icons.messageSquare className="h-5 w-5" />
-            {mode === "single" ? t("sendMessage") : t("sendBulkMessage")}
-          </DialogTitle>
-          <DialogDescription>
-            {mode === "single" && guestNames?.[0]
-              ? t("sendMessageTo", { name: guestNames[0] })
-              : t("sendMessageToSelected", { count: guestIds.length })}
-          </DialogDescription>
-        </DialogHeader>
-
+      <DialogContent size="xl" className="overflow-hidden p-0">
         {loadingChannels ? (
-          <div className="flex items-center justify-center py-8">
-            <Icons.spinner className="h-6 w-6 animate-spin" />
+          <div className="flex items-center justify-center py-16">
+            <Icons.spinner className="h-8 w-8 animate-spin text-muted-foreground" />
           </div>
         ) : noQuotaAvailable ? (
-          <div className="py-6 text-center">
-            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-900/50">
-              <ArrowUpRight className="h-8 w-8 text-amber-600 dark:text-amber-400" />
+          <div className="p-6">
+            <div className="py-6 text-center">
+              <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-900/50">
+                <ArrowUpRight className="h-8 w-8 text-amber-600 dark:text-amber-400" />
+              </div>
+              <h3 className="text-lg font-semibold">
+                {isRTL ? "שדרג כדי לשלוח הודעות" : "Upgrade to Send Messages"}
+              </h3>
+              <p className="mt-2 text-sm text-muted-foreground max-w-xs mx-auto">
+                {isRTL
+                  ? "התוכנית החינמית שלך לא כוללת הודעות. שדרג לתוכנית בתשלום כדי להתחיל לשלוח הזמנות ותזכורות לאורחים."
+                  : "Your free plan doesn't include messages. Upgrade to a paid plan to start sending invitations and reminders to your guests."}
+              </p>
+              <div className="mt-6 flex justify-center gap-2">
+                <Button variant="outline" onClick={handleClose}>
+                  {tc("cancel")}
+                </Button>
+                <Button asChild>
+                  <Link href={`/${locale}/dashboard/billing`} className="gap-1">
+                    {isRTL ? "שדרג עכשיו" : "Upgrade Now"}
+                    <ArrowUpRight className="h-4 w-4" />
+                  </Link>
+                </Button>
+              </div>
             </div>
-            <h3 className="text-lg font-semibold">
-              {isRTL ? "שדרג כדי לשלוח הודעות" : "Upgrade to Send Messages"}
-            </h3>
-            <p className="mt-2 text-sm text-muted-foreground max-w-xs mx-auto">
-              {isRTL
-                ? "התוכנית החינמית שלך לא כוללת הודעות. שדרג לתוכנית בתשלום כדי להתחיל לשלוח הזמנות ותזכורות לאורחים."
-                : "Your free plan doesn't include messages. Upgrade to a paid plan to start sending invitations and reminders to your guests."}
-            </p>
-            <DialogFooter className="mt-6 flex-col sm:flex-row gap-2">
-              <Button variant="outline" onClick={handleClose}>
-                {tc("cancel")}
-              </Button>
-              <Button asChild>
-                <Link href={`/${locale}/dashboard/billing`} className="gap-1">
-                  {isRTL ? "שדרג עכשיו" : "Upgrade Now"}
-                  <ArrowUpRight className="h-4 w-4" />
-                </Link>
-              </Button>
-            </DialogFooter>
           </div>
         ) : noChannelsAvailable ? (
-          <div className="py-6 text-center">
-            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-yellow-100 dark:bg-yellow-900">
-              <Icons.warning className="h-8 w-8 text-yellow-600 dark:text-yellow-400" />
+          <div className="p-6">
+            <div className="py-6 text-center">
+              <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-yellow-100 dark:bg-yellow-900">
+                <Icons.warning className="h-8 w-8 text-yellow-600 dark:text-yellow-400" />
+              </div>
+              <h3 className="text-lg font-semibold">{t("noChannelsAvailable")}</h3>
+              <p className="mt-2 text-sm text-muted-foreground">
+                {t("contactAdminForChannels")}
+              </p>
+              <div className="mt-6">
+                <Button onClick={handleClose}>{tc("close")}</Button>
+              </div>
             </div>
-            <h3 className="text-lg font-semibold">{t("noChannelsAvailable")}</h3>
-            <p className="mt-2 text-sm text-muted-foreground">
-              {t("contactAdminForChannels")}
-            </p>
-            <DialogFooter className="mt-6">
-              <Button onClick={handleClose}>{tc("close")}</Button>
-            </DialogFooter>
           </div>
         ) : !results ? (
-          <>
-            <div className="space-y-4 py-4">
-              {/* Channel Selection */}
-              <div className="space-y-3">
-                <Label>{t("sendVia")}</Label>
-                <div className="flex gap-2">
-                  {CHANNELS.map((ch) => {
-                    const IconComponent = Icons[ch.icon];
-                    const isChannelEnabled = ch.value === "WHATSAPP"
-                      ? channelStatus?.whatsapp.enabled
-                      : channelStatus?.sms.enabled;
-                    const remainingQuota = ch.value === "WHATSAPP"
-                      ? usageStatus?.whatsappRemaining ?? 0
-                      : usageStatus?.smsRemaining ?? 0;
-                    const hasQuota = remainingQuota > 0;
-                    const isEnabled = isChannelEnabled && hasQuota;
-                    const isSelected = channel === ch.value;
-                    const noQuotaLabel = isRTL ? "אזלה המכסה" : "No quota";
+          <div className="flex flex-col md:flex-row flex-1 min-h-0 overflow-hidden">
+            {/* Left Side - Preview (hidden on small screens, shown on md+) */}
+            <div className="hidden md:flex md:w-[280px] lg:w-[320px] shrink-0 bg-muted/30 p-4 lg:p-6 flex-col items-center justify-center border-e">
+              <div className="text-center mb-4">
+                <h4 className="text-sm font-medium text-muted-foreground">
+                  {isRTL ? "תצוגה מקדימה" : "Preview"}
+                </h4>
+              </div>
+              <MessagePreview
+                channel={channel === "AUTO" ? "WHATSAPP" : channel}
+                message={previewMessage}
+                isRTL={isRTL}
+                hasButtons={messageFormat === "INTERACTIVE" && channel === "WHATSAPP"}
+                buttons={INTERACTIVE_BUTTONS[isRTL ? "he" : "en"]}
+                imageUrl={includeImage ? invitationImageUrl || undefined : undefined}
+              />
+              {channel === "SMS" && (
+                <div className="mt-3 text-center">
+                  <Badge variant="outline" className="text-xs">
+                    {charCount} / {SMS_MAX_LENGTH} {isRTL ? "תווים" : "chars"}
+                  </Badge>
+                </div>
+              )}
+            </div>
 
-                    return (
+            {/* Right Side - Controls */}
+            <div className="flex-1 flex flex-col min-h-0 min-w-0">
+              <DialogHeader className="p-4 sm:p-6 pb-3 sm:pb-4 border-b shrink-0">
+                <DialogTitle className="flex items-center gap-2 text-base sm:text-lg">
+                  <Icons.messageSquare className="h-4 w-4 sm:h-5 sm:w-5" />
+                  {mode === "single" ? t("sendMessage") : t("sendBulkMessage")}
+                </DialogTitle>
+                <DialogDescription className="text-sm">
+                  {mode === "single" && guestNames?.[0]
+                    ? t("sendMessageTo", { name: guestNames[0] })
+                    : t("sendMessageToSelected", { count: guestIds.length })}
+                </DialogDescription>
+              </DialogHeader>
+
+              <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 sm:space-y-6">
+                {/* Channel Selection */}
+                <div className="space-y-2">
+                  <Label>{t("sendVia")}</Label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {[
+                      { value: "WHATSAPP" as ChannelType, icon: MessageCircle, label: "WhatsApp", color: "green" },
+                      { value: "SMS" as ChannelType, icon: Phone, label: "SMS", color: "blue" },
+                    ].map((ch) => {
+                      const isEnabled = ch.value === "WHATSAPP"
+                        ? channelStatus?.whatsapp.enabled && (usageStatus?.whatsappRemaining ?? 0) > 0
+                        : channelStatus?.sms.enabled && (usageStatus?.smsRemaining ?? 0) > 0;
+                      const remaining = ch.value === "WHATSAPP"
+                        ? usageStatus?.whatsappRemaining ?? 0
+                        : usageStatus?.smsRemaining ?? 0;
+
+                      return (
+                        <button
+                          key={ch.value}
+                          onClick={() => isEnabled && setChannel(ch.value)}
+                          disabled={!isEnabled || sending}
+                          className={cn(
+                            "flex items-center gap-3 p-3 rounded-lg border-2 transition-all",
+                            channel === ch.value && isEnabled
+                              ? ch.color === "green"
+                                ? "border-green-500 bg-green-50 dark:bg-green-900/20"
+                                : "border-blue-500 bg-blue-50 dark:bg-blue-900/20"
+                              : isEnabled
+                                ? "border-border hover:border-primary/50"
+                                : "border-border bg-muted/30 opacity-50 cursor-not-allowed"
+                          )}
+                        >
+                          <ch.icon className={cn(
+                            "h-5 w-5",
+                            channel === ch.value && isEnabled
+                              ? ch.color === "green" ? "text-green-600" : "text-blue-600"
+                              : "text-muted-foreground"
+                          )} />
+                          <div className="flex-1 text-start">
+                            <p className="font-medium text-sm">{ch.label}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {remaining} {isRTL ? "נותרו" : "remaining"}
+                            </p>
+                          </div>
+                          {channel === ch.value && isEnabled && (
+                            <Icons.check className="h-4 w-4 text-primary" />
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Message Type */}
+                <div className="space-y-2">
+                  <Label>{t("messageType")}</Label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      onClick={() => setMessageType("INVITE")}
+                      disabled={sending}
+                      className={cn(
+                        "p-3 rounded-lg border-2 text-start transition-all",
+                        messageType === "INVITE"
+                          ? "border-primary bg-primary/5"
+                          : "border-border hover:border-primary/50"
+                      )}
+                    >
+                      <div className="flex items-center gap-2">
+                        <Icons.mail className="h-4 w-4" />
+                        <span className="font-medium text-sm">
+                          {t("invitation")}
+                        </span>
+                        {messageType === "INVITE" && (
+                          <Icons.check className="h-4 w-4 text-primary ms-auto" />
+                        )}
+                      </div>
+                    </button>
+                    <button
+                      onClick={() => setMessageType("REMINDER")}
+                      disabled={sending}
+                      className={cn(
+                        "p-3 rounded-lg border-2 text-start transition-all",
+                        messageType === "REMINDER"
+                          ? "border-primary bg-primary/5"
+                          : "border-border hover:border-primary/50"
+                      )}
+                    >
+                      <div className="flex items-center gap-2">
+                        <Icons.bell className="h-4 w-4" />
+                        <span className="font-medium text-sm">
+                          {t("reminder")}
+                        </span>
+                        {messageType === "REMINDER" && (
+                          <Icons.check className="h-4 w-4 text-primary ms-auto" />
+                        )}
+                      </div>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Message Format (WhatsApp only) */}
+                {channel === "WHATSAPP" && (
+                  <div className="space-y-2">
+                    <Label>{isRTL ? "פורמט הודעה" : "Message Format"}</Label>
+                    <div className="grid grid-cols-2 gap-2">
                       <button
-                        key={ch.value}
-                        type="button"
-                        onClick={() => isEnabled && setChannel(ch.value)}
-                        disabled={!isEnabled || sending}
-                        className={`flex flex-1 flex-col items-center justify-center gap-1 rounded-lg border p-3 transition-colors ${
-                          isSelected && isEnabled
+                        onClick={() => setMessageFormat("STANDARD")}
+                        disabled={sending}
+                        className={cn(
+                          "p-3 rounded-lg border-2 text-start transition-all",
+                          messageFormat === "STANDARD"
                             ? "border-primary bg-primary/5"
-                            : isEnabled
-                            ? "border-border hover:border-primary/50 hover:bg-muted/50"
-                            : "border-border bg-muted/30 opacity-50 cursor-not-allowed"
-                        }`}
+                            : "border-border hover:border-primary/50"
+                        )}
                       >
                         <div className="flex items-center gap-2">
-                          <IconComponent className="h-4 w-4" />
-                          <span className="font-medium">{tn(ch.labelKey as "whatsapp" | "sms")}</span>
-                          {!isChannelEnabled && (
-                            <Badge variant="outline" className="ml-1 text-xs">
-                              {t("offline")}
-                            </Badge>
-                          )}
-                          {isChannelEnabled && !hasQuota && (
-                            <Badge variant="destructive" className="ml-1 text-xs">
-                              {noQuotaLabel}
-                            </Badge>
-                          )}
-                          {isSelected && isEnabled && (
+                          <ExternalLink className="h-4 w-4" />
+                          <div className="flex-1">
+                            <p className="font-medium text-sm">
+                              {isRTL ? "סטנדרטי" : "Standard"}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              {isRTL ? "עם קישור RSVP" : "With RSVP link"}
+                            </p>
+                          </div>
+                          {messageFormat === "STANDARD" && (
                             <Icons.check className="h-4 w-4 text-primary" />
                           )}
                         </div>
-                        {isChannelEnabled && (
-                          <span className={`text-xs ${hasQuota ? 'text-muted-foreground' : 'text-destructive'}`}>
-                            {remainingQuota} {isRTL ? 'נותרו' : 'remaining'}
-                          </span>
-                        )}
                       </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Message Format Selection (Standard vs Interactive) - WhatsApp only */}
-              {channel === "WHATSAPP" && channelStatus?.whatsapp.enabled && (
-                <div className="space-y-3">
-                  <Label>{isRTL ? "פורמט הודעה" : "Message Format"}</Label>
-                  <div className="flex gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setMessageFormat("STANDARD")}
-                      disabled={sending}
-                      className={`flex flex-1 flex-col items-center justify-center gap-1 rounded-lg border p-3 transition-colors ${
-                        messageFormat === "STANDARD"
-                          ? "border-primary bg-primary/5"
-                          : "border-border hover:border-primary/50 hover:bg-muted/50"
-                      }`}
-                    >
-                      <div className="flex items-center gap-2">
-                        <Icons.externalLink className="h-4 w-4" />
-                        <span className="font-medium text-sm">
-                          {isRTL ? "סטנדרטי (קישור)" : "Standard (Link)"}
-                        </span>
-                        {messageFormat === "STANDARD" && (
-                          <Icons.check className="h-4 w-4 text-primary" />
-                        )}
-                      </div>
-                      <span className="text-xs text-muted-foreground">
-                        {isRTL ? "עם קישור לדף אישור הגעה" : "With RSVP page link"}
-                      </span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setMessageFormat("INTERACTIVE");
-                        // Force WhatsApp channel for interactive
-                        setChannel("WHATSAPP");
-                      }}
-                      disabled={sending}
-                      className={`flex flex-1 flex-col items-center justify-center gap-1 rounded-lg border p-3 transition-colors ${
-                        messageFormat === "INTERACTIVE"
-                          ? "border-purple-500 bg-purple-50 dark:bg-purple-900/20"
-                          : "border-border hover:border-purple-500/50 hover:bg-muted/50"
-                      }`}
-                    >
-                      <div className="flex items-center gap-2">
-                        <Icons.messageSquare className="h-4 w-4 text-purple-600" />
-                        <span className="font-medium text-sm">
-                          {isRTL ? "כפתורים אינטראקטיביים" : "Interactive Buttons"}
-                        </span>
-                        {messageFormat === "INTERACTIVE" && (
-                          <Icons.check className="h-4 w-4 text-purple-600" />
-                        )}
-                      </div>
-                      <span className="text-xs text-muted-foreground">
-                        {isRTL ? "אישור ישיר בלחיצה" : "Direct RSVP via buttons"}
-                      </span>
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {/* Interactive Options - Show when format is Interactive */}
-              {messageFormat === "INTERACTIVE" && (
-                <div className="rounded-lg border border-purple-200 dark:border-purple-800 bg-purple-50/50 dark:bg-purple-900/20 p-4 space-y-3">
-                  <div className="flex items-center gap-2">
-                    <Icons.messageSquare className="h-4 w-4 text-purple-600" />
-                    <span className="text-sm font-medium text-purple-800 dark:text-purple-200">
-                      {isRTL ? "אפשרויות הודעה אינטראקטיבית" : "Interactive Message Options"}
-                    </span>
-                  </div>
-
-                  {/* Include Image Checkbox */}
-                  {hasInvitationImage && (
-                    <div className="flex items-center space-x-2 rtl:space-x-reverse">
-                      <Checkbox
-                        id="include-image"
-                        checked={includeImage}
-                        onCheckedChange={(checked) => setIncludeImage(checked === true)}
-                        disabled={sending}
-                      />
-                      <Label
-                        htmlFor="include-image"
-                        className="text-sm font-normal cursor-pointer"
-                      >
-                        {isRTL ? "כלול תמונת הזמנה" : "Include invitation image"}
-                      </Label>
-                    </div>
-                  )}
-
-                  {/* Button Preview */}
-                  <div className="space-y-2">
-                    <span className="text-xs text-muted-foreground">
-                      {isRTL ? "תצוגה מקדימה של כפתורים:" : "Button preview:"}
-                    </span>
-                    <div className="flex flex-wrap gap-2">
-                      <Badge variant="outline" className="bg-green-50 border-green-200 text-green-700 dark:bg-green-900/30 dark:border-green-700 dark:text-green-300">
-                        {isRTL ? "כן, אגיע" : "Yes, I'll attend"}
-                      </Badge>
-                      <Badge variant="outline" className="bg-red-50 border-red-200 text-red-700 dark:bg-red-900/30 dark:border-red-700 dark:text-red-300">
-                        {isRTL ? "לא אגיע" : "No, I won't attend"}
-                      </Badge>
-                      <Badge variant="outline" className="bg-gray-50 border-gray-200 text-gray-700 dark:bg-gray-900/30 dark:border-gray-700 dark:text-gray-300">
-                        {isRTL ? "עדיין לא יודע/ת" : "Don't know yet"}
-                      </Badge>
-                    </div>
-                  </div>
-
-                  <p className="text-xs text-purple-700 dark:text-purple-300">
-                    {isRTL
-                      ? "* לאחר אישור הגעה, האורח יקבל בקשה לבחור כמה אורחים"
-                      : "* After accepting, guest will receive a request to select guest count"}
-                  </p>
-                </div>
-              )}
-
-              {/* Message Type Selection */}
-              <div className="space-y-3">
-                <Label>{t("messageType")}</Label>
-                <div className="grid gap-3">
-                  {MESSAGE_TYPES.map((type) => {
-                    const IconComponent = Icons[type.icon];
-                    const isSelected = messageType === type.value;
-                    return (
                       <button
-                        key={type.value}
-                        type="button"
-                        onClick={() => setMessageType(type.value)}
-                        className={`flex items-start gap-4 rounded-lg border p-4 text-start transition-colors ${
-                          isSelected
-                            ? "border-primary bg-primary/5"
-                            : "border-border hover:border-primary/50 hover:bg-muted/50"
-                        }`}
+                        onClick={() => setMessageFormat("INTERACTIVE")}
                         disabled={sending}
+                        className={cn(
+                          "p-3 rounded-lg border-2 text-start transition-all",
+                          messageFormat === "INTERACTIVE"
+                            ? "border-purple-500 bg-purple-50 dark:bg-purple-900/20"
+                            : "border-border hover:border-purple-500/50"
+                        )}
                       >
-                        <div
-                          className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${
-                            isSelected
-                              ? "bg-primary text-primary-foreground"
-                              : "bg-muted"
-                          }`}
-                        >
-                          <IconComponent className="h-5 w-5" />
-                        </div>
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2">
-                            <span className="font-medium">
-                              {t(type.labelKey as "invitation" | "reminder")}
-                            </span>
-                            {isSelected && (
-                              <Icons.check className="h-4 w-4 text-primary" />
-                            )}
+                        <div className="flex items-center gap-2">
+                          <Zap className="h-4 w-4 text-purple-600" />
+                          <div className="flex-1">
+                            <p className="font-medium text-sm">
+                              {isRTL ? "אינטראקטיבי" : "Interactive"}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              {isRTL ? "כפתורי תגובה" : "Response buttons"}
+                            </p>
                           </div>
-                          <p className="text-sm text-muted-foreground">
-                            {t(type.descriptionKey as "invitationDescription" | "reminderDescription")}
+                          {messageFormat === "INTERACTIVE" && (
+                            <Icons.check className="h-4 w-4 text-purple-600" />
+                          )}
+                        </div>
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Include Image Option (Interactive + has image) */}
+                {messageFormat === "INTERACTIVE" && hasInvitationImage && (
+                  <div className="flex items-center gap-2 p-3 rounded-lg border bg-muted/30">
+                    <Checkbox
+                      id="include-image"
+                      checked={includeImage}
+                      onCheckedChange={(checked) => setIncludeImage(checked === true)}
+                      disabled={sending}
+                    />
+                    <Label htmlFor="include-image" className="flex items-center gap-2 cursor-pointer">
+                      <ImageIcon className="h-4 w-4 text-muted-foreground" />
+                      {isRTL ? "כלול תמונת הזמנה" : "Include invitation image"}
+                    </Label>
+                  </div>
+                )}
+
+                {/* Template Selection */}
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-2 text-sm">
+                    <Sparkles className="h-3.5 w-3.5" />
+                    {isRTL ? "בחר סגנון תבנית" : "Select Template Style"}
+                  </Label>
+
+                  {channel === "WHATSAPP" ? (
+                    loadingWhatsappTemplates ? (
+                      <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
+                        <Skeleton className="h-12 sm:h-14 rounded-lg" />
+                        <Skeleton className="h-12 sm:h-14 rounded-lg" />
+                        <Skeleton className="h-12 sm:h-14 rounded-lg" />
+                      </div>
+                    ) : whatsappTemplates.length === 0 ? (
+                      <div className="p-3 sm:p-4 rounded-lg border border-amber-200 bg-amber-50 dark:bg-amber-900/20 dark:border-amber-800">
+                        <p className="text-xs sm:text-sm text-amber-700 dark:text-amber-300">
+                          {isRTL
+                            ? "אין תבניות WhatsApp מאושרות עדיין"
+                            : "No approved WhatsApp templates yet"}
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
+                        {whatsappTemplateDefinitions.map((definition) => {
+                          const activeTemplate = whatsappTemplates.find((t) => t.style === definition.style);
+                          const isActive = !!activeTemplate;
+                          const isSelected = selectedWhatsappStyle === definition.style;
+
+                          return (
+                            <button
+                              key={definition.style}
+                              onClick={() => activeTemplate && handleWhatsappTemplateSelect(activeTemplate)}
+                              disabled={!isActive || sending}
+                              className={cn(
+                                "p-2 sm:p-3 rounded-lg border-2 text-center transition-all",
+                                isSelected && isActive
+                                  ? "border-green-500 bg-green-50 dark:bg-green-900/20"
+                                  : isActive
+                                    ? "border-border hover:border-green-500/50"
+                                    : "border-border bg-muted/30 opacity-50 cursor-not-allowed"
+                              )}
+                            >
+                              <p className="font-medium text-xs sm:text-sm">
+                                {getStyleName(definition.style)}
+                              </p>
+                              {!isActive && (
+                                <p className="text-[9px] sm:text-[10px] text-muted-foreground mt-0.5">
+                                  {isRTL ? "לא מאושר" : "Not approved"}
+                                </p>
+                              )}
+                              {isSelected && isActive && (
+                                <Icons.check className="h-3 w-3 sm:h-4 sm:w-4 text-green-600 mx-auto mt-1" />
+                              )}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )
+                  ) : (
+                    <div className="space-y-2 sm:space-y-3">
+                      {/* SMS Template Buttons */}
+                      <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
+                        {smsTemplates.map((template) => {
+                          const isSelected = selectedSmsTemplateId === template.id && !isCustomSms;
+                          const name = isRTL ? template.nameHe : template.nameEn;
+
+                          return (
+                            <button
+                              key={template.id}
+                              onClick={() => handleSmsTemplateSelect(template)}
+                              disabled={sending}
+                              className={cn(
+                                "p-2 sm:p-3 rounded-lg border-2 text-center transition-all",
+                                isSelected
+                                  ? "border-primary bg-primary/5"
+                                  : "border-border hover:border-primary/50"
+                              )}
+                            >
+                              <p className="font-medium text-xs sm:text-sm">{name}</p>
+                              {isSelected && (
+                                <Icons.check className="h-3 w-3 sm:h-4 sm:w-4 text-primary mx-auto mt-1" />
+                              )}
+                            </button>
+                          );
+                        })}
+                      </div>
+
+                      {/* Custom SMS Toggle */}
+                      <button
+                        onClick={() => {
+                          setIsCustomSms(!isCustomSms);
+                          if (!isCustomSms) {
+                            setSelectedSmsTemplateId(null);
+                            setSmsTemplate(customSmsMessage);
+                          }
+                        }}
+                        disabled={sending}
+                        className={cn(
+                          "w-full p-2 sm:p-3 rounded-lg border-2 text-center transition-all",
+                          isCustomSms
+                            ? "border-purple-500 bg-purple-50 dark:bg-purple-900/20"
+                            : "border-dashed border-border hover:border-purple-500/50"
+                        )}
+                      >
+                        <div className="flex items-center justify-center gap-2">
+                          <Icons.edit className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                          <span className="font-medium text-xs sm:text-sm">
+                            {isRTL ? "הודעה מותאמת אישית" : "Custom Message"}
+                          </span>
+                          {isCustomSms && (
+                            <Icons.check className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-purple-600" />
+                          )}
+                        </div>
+                      </button>
+
+                      {/* Custom SMS Textarea */}
+                      {isCustomSms && (
+                        <div className="space-y-1.5 sm:space-y-2">
+                          <Textarea
+                            value={customSmsMessage}
+                            onChange={(e) => handleCustomSmsChange(e.target.value)}
+                            placeholder={
+                              isRTL
+                                ? "כתוב הודעה מותאמת אישית...\nתומך ב: {{guestName}}, {{eventTitle}}, {{rsvpLink}}"
+                                : "Write a custom message...\nSupports: {{guestName}}, {{eventTitle}}, {{rsvpLink}}"
+                            }
+                            disabled={sending}
+                            className="min-h-[70px] sm:min-h-[80px] text-xs sm:text-sm"
+                            dir={isRTL ? "rtl" : "ltr"}
+                          />
+                          <p className="text-[10px] sm:text-xs text-muted-foreground">
+                            {isRTL ? "משתנים:" : "Variables:"}{" "}
+                            <code className="bg-muted px-0.5 sm:px-1 rounded text-[10px] sm:text-xs">{"{{guestName}}"}</code>{" "}
+                            <code className="bg-muted px-0.5 sm:px-1 rounded text-[10px] sm:text-xs">{"{{eventTitle}}"}</code>{" "}
+                            <code className="bg-muted px-0.5 sm:px-1 rounded text-[10px] sm:text-xs">{"{{rsvpLink}}"}</code>
                           </p>
                         </div>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* SMS Template Selector - Only for SMS channel */}
-              {channel === "SMS" && channelStatus?.sms.enabled && (
-                <div className="space-y-3">
-                  <SmsTemplateSelector
-                    messageType={messageType}
-                    onTemplateSelect={setSmsTemplate}
-                    previewContext={
-                      mode === "single" && guestNames?.[0]
-                        ? {
-                            guestName: guestNames[0],
-                            eventTitle: isRTL ? "שם האירוע" : "Event Name",
-                            rsvpLink: "https://...",
-                          }
-                        : undefined
-                    }
-                    disabled={sending}
-                  />
-                </div>
-              )}
-
-              {/* WhatsApp Template Selector - Only for WhatsApp channel */}
-              {channel === "WHATSAPP" && channelStatus?.whatsapp.enabled && (
-                <div className="space-y-3">
-                  <WhatsAppTemplateSelector
-                    templateType={
-                      messageFormat === "INTERACTIVE"
-                        ? (messageType === "INVITE" ? "INTERACTIVE_INVITE" : "INTERACTIVE_REMINDER")
-                        : (messageType === "INVITE" ? "INVITE" : "REMINDER") as WhatsAppTemplateType
-                    }
-                    onTemplateSelect={(contentSid, style) => {
-                      setWhatsappContentSid(contentSid);
-                      setWhatsappTemplateStyle(style);
-                    }}
-                    previewContext={
-                      mode === "single" && guestNames?.[0]
-                        ? {
-                            guestName: guestNames[0],
-                            eventTitle: isRTL ? "שם האירוע" : "Event Name",
-                          }
-                        : undefined
-                    }
-                    disabled={sending}
-                  />
-                </div>
-              )}
-
-              {/* Recipients Summary */}
-              <div className="rounded-lg border bg-muted/30 p-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">{t("recipients")}</span>
-                  <Badge variant="secondary">{guestIds.length}</Badge>
-                </div>
-                {mode === "single" && guestNames?.[0] && (
-                  <p className="mt-1 text-sm text-muted-foreground">{guestNames[0]}</p>
-                )}
-              </div>
-
-              {/* Progress Bar (when sending) */}
-              {sending && (
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between text-sm">
-                    <span>{t("sending")}</span>
-                    <span>
-                      {guestIds.length > 1
-                        ? (progress < 100 ? (isRTL ? "מעבד..." : "Processing...") : `${progress}%`)
-                        : `${progress}%`
-                      }
-                    </span>
-                  </div>
-                  <Progress value={progress} className={`h-2 ${progress < 100 && guestIds.length > 1 ? "animate-pulse" : ""}`} />
-                  {guestIds.length > 10 && progress < 100 && (
-                    <p className="text-xs text-muted-foreground text-center">
-                      {isRTL
-                        ? `שולח ${guestIds.length} הודעות באצווה...`
-                        : `Sending ${guestIds.length} messages in batches...`
-                      }
-                    </p>
+                      )}
+                    </div>
                   )}
                 </div>
-              )}
-            </div>
 
-            {/* Confirmation for accepted guests */}
-            {showConfirmation && (
-              <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 dark:border-amber-800 dark:bg-amber-900/30">
-                <div className="flex items-start gap-3">
-                  <Icons.warning className="h-5 w-5 shrink-0 text-amber-600 dark:text-amber-400 mt-0.5" />
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-amber-800 dark:text-amber-200">
-                      {isRTL
-                        ? `${acceptedGuestsCount} ${acceptedGuestsCount === 1 ? "אורח כבר אישר" : "אורחים כבר אישרו"} הגעה`
-                        : `${acceptedGuestsCount} ${acceptedGuestsCount === 1 ? "guest has" : "guests have"} already accepted`}
-                    </p>
-                    <p className="mt-1 text-xs text-amber-700 dark:text-amber-300">
-                      {isRTL
-                        ? "האם בכל זאת לשלוח להם את ההודעה?"
-                        : "Do you still want to send them a message?"}
-                    </p>
+                {/* Mobile Preview (shown only on small screens) */}
+                <div className="md:hidden rounded-lg border bg-muted/30 p-4">
+                  <div className="text-center mb-3">
+                    <h4 className="text-sm font-medium text-muted-foreground">
+                      {isRTL ? "תצוגה מקדימה" : "Preview"}
+                    </h4>
                   </div>
+                  <div className="flex justify-center">
+                    <MessagePreview
+                      channel={channel === "AUTO" ? "WHATSAPP" : channel}
+                      message={previewMessage}
+                      isRTL={isRTL}
+                      hasButtons={messageFormat === "INTERACTIVE" && channel === "WHATSAPP"}
+                      buttons={INTERACTIVE_BUTTONS[isRTL ? "he" : "en"]}
+                      imageUrl={includeImage ? invitationImageUrl || undefined : undefined}
+                    />
+                  </div>
+                  {channel === "SMS" && (
+                    <div className="mt-3 text-center">
+                      <Badge variant="outline" className="text-xs">
+                        {charCount} / {SMS_MAX_LENGTH} {isRTL ? "תווים" : "chars"}
+                      </Badge>
+                    </div>
+                  )}
                 </div>
-              </div>
-            )}
 
-            <DialogFooter>
-              <Button variant="outline" onClick={handleClose} disabled={sending}>
-                {tc("cancel")}
-              </Button>
-              <Button onClick={handleSendClick} disabled={sending}>
-                {sending ? (
-                  <>
-                    <Icons.spinner className="me-2 h-4 w-4 animate-spin" />
-                    {t("sending")}
-                  </>
-                ) : showConfirmation ? (
-                  <>
-                    <Icons.check className="me-2 h-4 w-4" />
-                    {isRTL ? "שלח בכל זאת" : "Send Anyway"}
-                  </>
-                ) : (
-                  <>
-                    <Icons.send className="me-2 h-4 w-4" />
-                    {t("send")}
-                  </>
+                {/* Recipients Summary */}
+                <div className="rounded-lg border bg-muted/30 p-3 sm:p-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium">{t("recipients")}</span>
+                    <Badge variant="secondary">{guestIds.length}</Badge>
+                  </div>
+                  {mode === "single" && guestNames?.[0] && (
+                    <p className="mt-1 text-sm text-muted-foreground">{guestNames[0]}</p>
+                  )}
+                </div>
+
+                {/* Progress Bar */}
+                {sending && (
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between text-sm">
+                      <span>{t("sending")}</span>
+                      <span>{progress < 100 ? (isRTL ? "מעבד..." : "Processing...") : `${progress}%`}</span>
+                    </div>
+                    <Progress value={progress} className="h-2" />
+                  </div>
                 )}
-              </Button>
-            </DialogFooter>
-          </>
+
+                {/* Confirmation Warning */}
+                {showConfirmation && (
+                  <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 dark:border-amber-800 dark:bg-amber-900/30">
+                    <div className="flex items-start gap-3">
+                      <Icons.warning className="h-5 w-5 shrink-0 text-amber-600 dark:text-amber-400 mt-0.5" />
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-amber-800 dark:text-amber-200">
+                          {isRTL
+                            ? `${acceptedGuestsCount} ${acceptedGuestsCount === 1 ? "אורח כבר אישר" : "אורחים כבר אישרו"} הגעה`
+                            : `${acceptedGuestsCount} ${acceptedGuestsCount === 1 ? "guest has" : "guests have"} already accepted`}
+                        </p>
+                        <p className="mt-1 text-xs text-amber-700 dark:text-amber-300">
+                          {isRTL
+                            ? "האם בכל זאת לשלוח להם את ההודעה?"
+                            : "Do you still want to send them a message?"}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <DialogFooter className="p-4 sm:p-6 pt-3 sm:pt-4 border-t shrink-0 flex-col-reverse sm:flex-row gap-2 sm:gap-0">
+                <Button variant="outline" onClick={handleClose} disabled={sending} className="w-full sm:w-auto">
+                  {tc("cancel")}
+                </Button>
+                <Button onClick={handleSendClick} disabled={sending} className="w-full sm:w-auto">
+                  {sending ? (
+                    <>
+                      <Icons.spinner className="me-2 h-4 w-4 animate-spin" />
+                      {t("sending")}
+                    </>
+                  ) : showConfirmation ? (
+                    <>
+                      <Icons.check className="me-2 h-4 w-4" />
+                      {isRTL ? "שלח בכל זאת" : "Send Anyway"}
+                    </>
+                  ) : (
+                    <>
+                      <Icons.send className="me-2 h-4 w-4" />
+                      {t("send")}
+                    </>
+                  )}
+                </Button>
+              </DialogFooter>
+            </div>
+          </div>
         ) : (
-          <>
+          <div className="p-4 sm:p-6 overflow-y-auto">
             {/* Results View */}
             <div className="py-6 text-center">
               {results.failed === 0 ? (
@@ -732,8 +982,8 @@ export function SendMessageDialog({
                 {results.failed === 0
                   ? t("allMessagesSent")
                   : results.success === 0
-                  ? t("sendingFailed")
-                  : t("partiallySent")}
+                    ? t("sendingFailed")
+                    : t("partiallySent")}
               </h3>
 
               <div className="mt-4 flex justify-center gap-6">
@@ -749,7 +999,6 @@ export function SendMessageDialog({
                 )}
               </div>
 
-              {/* Show errors if any */}
               {results.errors.length > 0 && (
                 <div className="mt-4 rounded-lg border border-red-200 bg-red-50 p-3 text-start dark:border-red-800 dark:bg-red-900/20">
                   <p className="text-sm font-medium text-red-800 dark:text-red-200">{t("errorDetails")}:</p>
@@ -768,7 +1017,7 @@ export function SendMessageDialog({
             <DialogFooter>
               <Button onClick={handleClose}>{tc("close")}</Button>
             </DialogFooter>
-          </>
+          </div>
         )}
       </DialogContent>
     </Dialog>

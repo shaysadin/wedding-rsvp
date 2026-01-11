@@ -60,30 +60,75 @@ export function WhatsAppTemplateSelector({
   const context = previewContext || defaultContext;
 
   // Fetch active templates from database on mount
+  // Falls back to config's existingContentSid if no DB entries
   useEffect(() => {
     async function fetchTemplates() {
       setLoading(true);
       try {
         const result = await getActiveWhatsAppTemplates(templateType);
-        if (result.success && result.templates) {
+        if (result.success && result.templates && result.templates.length > 0) {
           setActiveTemplates(result.templates);
 
           // Auto-select first template if none selected
-          if (result.templates.length > 0 && !selectedStyle) {
+          if (!selectedStyle) {
             const firstTemplate = result.templates[0];
             setSelectedStyle(firstTemplate.style);
             onTemplateSelect(firstTemplate.contentSid, firstTemplate.style);
           }
+        } else {
+          // Fallback: use existing Content SIDs from config for templates that are already approved
+          const fallbackTemplates: ActiveTemplate[] = templateDefinitions
+            .filter((def) => def.existingContentSid)
+            .map((def) => ({
+              id: `config-${def.style}`,
+              style: def.style,
+              contentSid: def.existingContentSid!,
+              nameHe: def.nameHe,
+              nameEn: def.nameEn,
+              templateText: isHebrew ? def.templateTextHe : def.templateTextEn,
+            }));
+
+          if (fallbackTemplates.length > 0) {
+            setActiveTemplates(fallbackTemplates);
+
+            // Auto-select first fallback template
+            if (!selectedStyle) {
+              const firstTemplate = fallbackTemplates[0];
+              setSelectedStyle(firstTemplate.style);
+              onTemplateSelect(firstTemplate.contentSid, firstTemplate.style);
+            }
+          }
         }
       } catch (error) {
         console.error("Failed to fetch WhatsApp templates:", error);
+
+        // On error, also try fallback from config
+        const fallbackTemplates: ActiveTemplate[] = templateDefinitions
+          .filter((def) => def.existingContentSid)
+          .map((def) => ({
+            id: `config-${def.style}`,
+            style: def.style,
+            contentSid: def.existingContentSid!,
+            nameHe: def.nameHe,
+            nameEn: def.nameEn,
+            templateText: isHebrew ? def.templateTextHe : def.templateTextEn,
+          }));
+
+        if (fallbackTemplates.length > 0) {
+          setActiveTemplates(fallbackTemplates);
+          if (!selectedStyle) {
+            const firstTemplate = fallbackTemplates[0];
+            setSelectedStyle(firstTemplate.style);
+            onTemplateSelect(firstTemplate.contentSid, firstTemplate.style);
+          }
+        }
       } finally {
         setLoading(false);
       }
     }
 
     fetchTemplates();
-  }, [templateType]);
+  }, [templateType, isHebrew]);
 
   // Handle template selection
   const handleTemplateSelect = (template: ActiveTemplate) => {

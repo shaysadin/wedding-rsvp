@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Card,
   CardContent,
@@ -30,7 +29,6 @@ import {
   testWhatsAppConnection,
   testSmsConnection,
 } from "@/actions/messaging-settings";
-import { WhatsAppPhoneNumbers } from "./whatsapp-phone-numbers";
 
 interface MessagingSettingsFormProps {
   settings: Partial<MessagingProviderSettings> | null;
@@ -55,43 +53,13 @@ export function MessagingSettingsForm({ settings }: MessagingSettingsFormProps) 
   const [whatsappPhoneNumber, setWhatsappPhoneNumber] = useState(settings?.whatsappPhoneNumber || "");
   const [whatsappEnabled, setWhatsappEnabled] = useState(settings?.whatsappEnabled || false);
 
-  // WhatsApp Content Template SIDs
-  const [whatsappInviteContentSid, setWhatsappInviteContentSid] = useState(settings?.whatsappInviteContentSid || "");
-  const [whatsappReminderContentSid, setWhatsappReminderContentSid] = useState(settings?.whatsappReminderContentSid || "");
-  const [whatsappConfirmationContentSid, setWhatsappConfirmationContentSid] = useState(settings?.whatsappConfirmationContentSid || "");
-
-  // WhatsApp Template Text (for display to wedding owners)
-  const [whatsappInviteTemplateText, setWhatsappInviteTemplateText] = useState(settings?.whatsappInviteTemplateText || "");
-  const [whatsappReminderTemplateText, setWhatsappReminderTemplateText] = useState(settings?.whatsappReminderTemplateText || "");
-  const [whatsappConfirmationTemplateText, setWhatsappConfirmationTemplateText] = useState(settings?.whatsappConfirmationTemplateText || "");
-
-  // Interactive Button Templates
-  const [whatsappInteractiveInviteContentSid, setWhatsappInteractiveInviteContentSid] = useState(settings?.whatsappInteractiveInviteContentSid || "");
-  const [whatsappInteractiveReminderContentSid, setWhatsappInteractiveReminderContentSid] = useState(settings?.whatsappInteractiveReminderContentSid || "");
-  const [whatsappGuestCountListContentSid, setWhatsappGuestCountListContentSid] = useState(settings?.whatsappGuestCountListContentSid || "");
-  const [whatsappInteractiveInviteText, setWhatsappInteractiveInviteText] = useState(settings?.whatsappInteractiveInviteText || "");
-  const [whatsappInteractiveReminderText, setWhatsappInteractiveReminderText] = useState(settings?.whatsappInteractiveReminderText || "");
-
-  // Event Day & Thank You Templates
-  const [whatsappEventDayContentSid, setWhatsappEventDayContentSid] = useState((settings as any)?.whatsappEventDayContentSid || "");
-  const [whatsappEventDayTemplateText, setWhatsappEventDayTemplateText] = useState((settings as any)?.whatsappEventDayTemplateText || "");
-  const [whatsappThankYouContentSid, setWhatsappThankYouContentSid] = useState((settings as any)?.whatsappThankYouContentSid || "");
-  const [whatsappThankYouTemplateText, setWhatsappThankYouTemplateText] = useState((settings as any)?.whatsappThankYouTemplateText || "");
-
   // SMS state (Twilio only)
-  const smsProvider = "twilio"; // Fixed to Twilio
+  const smsProvider = "twilio";
   const [smsApiKey, setSmsApiKey] = useState(settings?.smsApiKey || "");
   const [smsApiSecret, setSmsApiSecret] = useState(settings?.smsApiSecret || "");
   const [smsPhoneNumber, setSmsPhoneNumber] = useState(settings?.smsPhoneNumber || "");
   const [smsMessagingServiceSid, setSmsMessagingServiceSid] = useState(settings?.smsMessagingServiceSid || "");
   const [smsEnabled, setSmsEnabled] = useState(settings?.smsEnabled || false);
-
-  // Handle active phone number change from the phone numbers component
-  const handleActivePhoneNumberChange = (phoneNumber: string | null) => {
-    if (phoneNumber) {
-      setWhatsappPhoneNumber(phoneNumber);
-    }
-  };
 
   const handleSaveWhatsApp = () => {
     startTransition(async () => {
@@ -101,23 +69,6 @@ export function MessagingSettingsForm({ settings }: MessagingSettingsFormProps) 
         whatsappApiSecret,
         whatsappPhoneNumber,
         whatsappEnabled,
-        whatsappInviteContentSid: whatsappInviteContentSid || null,
-        whatsappReminderContentSid: whatsappReminderContentSid || null,
-        whatsappConfirmationContentSid: whatsappConfirmationContentSid || null,
-        whatsappInviteTemplateText: whatsappInviteTemplateText || null,
-        whatsappReminderTemplateText: whatsappReminderTemplateText || null,
-        whatsappConfirmationTemplateText: whatsappConfirmationTemplateText || null,
-        // Interactive templates
-        whatsappInteractiveInviteContentSid: whatsappInteractiveInviteContentSid || null,
-        whatsappInteractiveReminderContentSid: whatsappInteractiveReminderContentSid || null,
-        whatsappGuestCountListContentSid: whatsappGuestCountListContentSid || null,
-        whatsappInteractiveInviteText: whatsappInteractiveInviteText || null,
-        whatsappInteractiveReminderText: whatsappInteractiveReminderText || null,
-        // Event Day & Thank You templates
-        whatsappEventDayContentSid: whatsappEventDayContentSid || null,
-        whatsappEventDayTemplateText: whatsappEventDayTemplateText || null,
-        whatsappThankYouContentSid: whatsappThankYouContentSid || null,
-        whatsappThankYouTemplateText: whatsappThankYouTemplateText || null,
       });
 
       if (result.success) {
@@ -179,7 +130,6 @@ export function MessagingSettingsForm({ settings }: MessagingSettingsFormProps) 
     }
   };
 
-  // Check if using trial account
   const isTrialAccount = (accountInfo: AccountInfo | null) => {
     if (!accountInfo) return false;
     return accountInfo.status === "active" && accountInfo.friendlyName.toLowerCase().includes("trial");
@@ -188,50 +138,42 @@ export function MessagingSettingsForm({ settings }: MessagingSettingsFormProps) 
   return (
     <div className="grid gap-6">
       {/* Twilio Trial Account Warning */}
-      {(whatsappProvider === "twilio" || smsProvider === "twilio") && (
-        <Alert>
-          <Icons.info className="h-4 w-4" />
-          <AlertTitle>Twilio Trial Account Limitations</AlertTitle>
-          <AlertDescription className="mt-2 space-y-2">
-            <p className="text-sm">
-              If you&apos;re using a Twilio trial account, please note these limitations:
-            </p>
-            <ul className="list-disc pl-5 text-sm text-muted-foreground space-y-1">
-              <li>
-                <strong>SMS:</strong> Can only send to{" "}
-                <a
-                  href="https://console.twilio.com/us1/develop/phone-numbers/manage/verified"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-primary underline"
-                >
-                  Verified Caller IDs
-                </a>
-              </li>
-              <li>
-                <strong>WhatsApp:</strong> Requires{" "}
-                <a
-                  href="https://console.twilio.com/us1/develop/sms/try-it-out/whatsapp-learn"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-primary underline"
-                >
-                  WhatsApp Sandbox
-                </a>{" "}
-                - recipients must first message your sandbox number
-              </li>
-              <li>Messages prefixed with &quot;Sent from your Twilio trial account&quot;</li>
-              <li>Limited to ~50 messages per day</li>
-            </ul>
-            <p className="text-sm text-muted-foreground mt-2">
-              Upgrade your Twilio account to remove these restrictions for production use.
-            </p>
-          </AlertDescription>
-        </Alert>
-      )}
+      <Alert>
+        <Icons.info className="h-4 w-4" />
+        <AlertTitle>Twilio Configuration</AlertTitle>
+        <AlertDescription className="mt-2 space-y-2">
+          <p className="text-sm">
+            Configure your Twilio credentials for WhatsApp and SMS messaging.
+          </p>
+          <ul className="list-disc pl-5 text-sm text-muted-foreground space-y-1">
+            <li>
+              Get your Account SID and Auth Token from{" "}
+              <a
+                href="https://console.twilio.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary underline"
+              >
+                Twilio Console
+              </a>
+            </li>
+            <li>
+              WhatsApp requires approved message templates from{" "}
+              <a
+                href="https://console.twilio.com/us1/develop/sms/content-editor/content-templates"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary underline"
+              >
+                Content API
+              </a>
+            </li>
+          </ul>
+        </AlertDescription>
+      </Alert>
 
       {/* WhatsApp Settings */}
-      <Card>
+      <Card className="overflow-visible">
         <CardHeader>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -239,9 +181,9 @@ export function MessagingSettingsForm({ settings }: MessagingSettingsFormProps) 
                 <Icons.messageCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
               </div>
               <div>
-                <CardTitle>WhatsApp Configuration</CardTitle>
+                <CardTitle>WhatsApp API Credentials</CardTitle>
                 <CardDescription>
-                  Configure WhatsApp Business API for sending messages
+                  Twilio credentials for WhatsApp Business API
                 </CardDescription>
               </div>
             </div>
@@ -267,405 +209,92 @@ export function MessagingSettingsForm({ settings }: MessagingSettingsFormProps) 
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="twilio">Twilio</SelectItem>
-                  <SelectItem value="meta">Meta (WhatsApp Business)</SelectItem>
-                  <SelectItem value="360dialog">360dialog</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="whatsapp-phone">Active Phone Number</Label>
+              <Label htmlFor="whatsapp-phone">Default Phone Number</Label>
               <Input
                 id="whatsapp-phone"
-                placeholder="Manage phone numbers below"
+                placeholder="+1234567890"
                 value={whatsappPhoneNumber}
-                readOnly
-                className="bg-muted/50"
+                onChange={(e) => setWhatsappPhoneNumber(e.target.value)}
               />
               <p className="text-xs text-muted-foreground">
-                Managed via the phone numbers section below
+                Use Phone Numbers section above for multi-number setup
               </p>
             </div>
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="whatsapp-api-key">API Key / Account SID</Label>
+              <Label htmlFor="whatsapp-api-key">Account SID</Label>
               <Input
                 id="whatsapp-api-key"
                 type="password"
-                placeholder="Enter API key"
+                placeholder="ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
                 value={whatsappApiKey}
                 onChange={(e) => setWhatsappApiKey(e.target.value)}
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="whatsapp-api-secret">API Secret / Auth Token</Label>
+              <Label htmlFor="whatsapp-api-secret">Auth Token</Label>
               <Input
                 id="whatsapp-api-secret"
                 type="password"
-                placeholder="Enter API secret"
+                placeholder="Your Twilio Auth Token"
                 value={whatsappApiSecret}
                 onChange={(e) => setWhatsappApiSecret(e.target.value)}
               />
             </div>
           </div>
 
-          {/* WhatsApp Content Templates Section */}
-          <div className="border-t pt-4 mt-4">
-            <div className="mb-4">
-              <h4 className="text-sm font-medium">Content Templates (Required for WhatsApp Business API)</h4>
-              <p className="text-xs text-muted-foreground mt-1">
-                Enter your approved Content Template SIDs from{" "}
-                <a
-                  href="https://console.twilio.com/us1/develop/sms/content-editor/content-templates"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-primary underline"
-                >
-                  Twilio Content API
-                </a>
-                . Templates must be approved by WhatsApp before use.
-              </p>
+          <div className="flex items-center justify-between pt-2">
+            <div className="flex gap-3">
+              <Button onClick={handleSaveWhatsApp} disabled={isPending}>
+                {isPending ? (
+                  <>
+                    <Icons.spinner className="me-2 h-4 w-4 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  "Save WhatsApp Settings"
+                )}
+              </Button>
+              <Button
+                variant="outline"
+                onClick={handleTestWhatsApp}
+                disabled={isTesting === "whatsapp"}
+              >
+                {isTesting === "whatsapp" ? (
+                  <>
+                    <Icons.spinner className="me-2 h-4 w-4 animate-spin" />
+                    Testing...
+                  </>
+                ) : (
+                  <>
+                    <Icons.zap className="me-2 h-4 w-4" />
+                    Test Connection
+                  </>
+                )}
+              </Button>
             </div>
-            <div className="grid gap-6">
-              {/* Invite Template */}
-              <div className="space-y-3 rounded-lg border p-4">
-                <div className="flex items-center gap-2">
-                  <Icons.mail className="h-4 w-4 text-blue-600" />
-                  <Label className="text-sm font-medium">Invite Template</Label>
-                </div>
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label htmlFor="whatsapp-invite-template" className="text-xs text-muted-foreground">Content SID</Label>
-                    <Input
-                      id="whatsapp-invite-template"
-                      placeholder="HXxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-                      value={whatsappInviteContentSid}
-                      onChange={(e) => setWhatsappInviteContentSid(e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="whatsapp-invite-text" className="text-xs text-muted-foreground">Template Text (for display to users)</Label>
-                    <Textarea
-                      id="whatsapp-invite-text"
-                      placeholder="שלום {{1}} 👋&#10;&#10;הוזמנת ל{{2}}! 🎊💍&#10;&#10;לאישור הגעה: {{3}}"
-                      value={whatsappInviteTemplateText}
-                      onChange={(e) => setWhatsappInviteTemplateText(e.target.value)}
-                      rows={4}
-                      className="text-sm"
-                    />
-                  </div>
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Variables: {"{{1}}"} = guest name, {"{{2}}"} = event title, {"{{3}}"} = RSVP link
+            {whatsappAccountInfo && (
+              <div className="text-sm text-end">
+                <p className="text-muted-foreground">
+                  {whatsappAccountInfo.friendlyName}
                 </p>
+                {isTrialAccount(whatsappAccountInfo) && (
+                  <p className="text-yellow-600">Trial Account</p>
+                )}
               </div>
-
-              {/* Reminder Template */}
-              <div className="space-y-3 rounded-lg border p-4">
-                <div className="flex items-center gap-2">
-                  <Icons.bell className="h-4 w-4 text-yellow-600" />
-                  <Label className="text-sm font-medium">Reminder Template</Label>
-                </div>
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label htmlFor="whatsapp-reminder-template" className="text-xs text-muted-foreground">Content SID</Label>
-                    <Input
-                      id="whatsapp-reminder-template"
-                      placeholder="HXxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-                      value={whatsappReminderContentSid}
-                      onChange={(e) => setWhatsappReminderContentSid(e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="whatsapp-reminder-text" className="text-xs text-muted-foreground">Template Text (for display to users)</Label>
-                    <Textarea
-                      id="whatsapp-reminder-text"
-                      placeholder="היי {{1}} 👋&#10;&#10;עדיין לא קיבלנו את אישור ההגעה שלך ל{{2}} 📋&#10;&#10;לאישור: {{3}}"
-                      value={whatsappReminderTemplateText}
-                      onChange={(e) => setWhatsappReminderTemplateText(e.target.value)}
-                      rows={4}
-                      className="text-sm"
-                    />
-                  </div>
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Variables: {"{{1}}"} = guest name, {"{{2}}"} = event title, {"{{3}}"} = RSVP link
-                </p>
-              </div>
-
-              {/* Confirmation Template */}
-              <div className="space-y-3 rounded-lg border p-4">
-                <div className="flex items-center gap-2">
-                  <Icons.check className="h-4 w-4 text-green-600" />
-                  <Label className="text-sm font-medium">Confirmation Template (Optional)</Label>
-                </div>
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label htmlFor="whatsapp-confirmation-template" className="text-xs text-muted-foreground">Content SID</Label>
-                    <Input
-                      id="whatsapp-confirmation-template"
-                      placeholder="HXxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-                      value={whatsappConfirmationContentSid}
-                      onChange={(e) => setWhatsappConfirmationContentSid(e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="whatsapp-confirmation-text" className="text-xs text-muted-foreground">Template Text (for display to users)</Label>
-                    <Textarea
-                      id="whatsapp-confirmation-text"
-                      placeholder="תודה {{1}}! ✅&#10;&#10;קיבלנו את תשובתך ל{{2}}. 🎉"
-                      value={whatsappConfirmationTemplateText}
-                      onChange={(e) => setWhatsappConfirmationTemplateText(e.target.value)}
-                      rows={3}
-                      className="text-sm"
-                    />
-                  </div>
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Variables: {"{{1}}"} = guest name, {"{{2}}"} = event title
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Interactive Button Templates Section */}
-          <div className="border-t pt-4 mt-4">
-            <div className="mb-4">
-              <h4 className="text-sm font-medium flex items-center gap-2">
-                <Icons.messageSquare className="h-4 w-4 text-purple-600" />
-                Interactive Button Templates
-              </h4>
-              <p className="text-xs text-muted-foreground mt-1">
-                Templates with interactive buttons for direct RSVP responses. Guests can tap buttons
-                to respond instead of visiting a link. Create these templates in{" "}
-                <a
-                  href="https://console.twilio.com/us1/develop/sms/content-editor/content-templates"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-primary underline"
-                >
-                  Twilio Content API
-                </a>{" "}
-                using the &quot;twilio/quick-reply&quot; type.
-              </p>
-            </div>
-            <div className="grid gap-6">
-              {/* Interactive Invite Template */}
-              <div className="space-y-3 rounded-lg border border-purple-200 dark:border-purple-800 bg-purple-50/50 dark:bg-purple-900/20 p-4">
-                <div className="flex items-center gap-2">
-                  <Icons.mail className="h-4 w-4 text-purple-600" />
-                  <Label className="text-sm font-medium">Interactive Invite Template</Label>
-                </div>
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label htmlFor="whatsapp-interactive-invite-template" className="text-xs text-muted-foreground">Content SID</Label>
-                    <Input
-                      id="whatsapp-interactive-invite-template"
-                      placeholder="HXxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-                      value={whatsappInteractiveInviteContentSid}
-                      onChange={(e) => setWhatsappInteractiveInviteContentSid(e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="whatsapp-interactive-invite-text" className="text-xs text-muted-foreground">Template Text (for display)</Label>
-                    <Textarea
-                      id="whatsapp-interactive-invite-text"
-                      placeholder="שלום {{1}}! הוזמנת ל{{2}}! אנא אשר/י הגעה:"
-                      value={whatsappInteractiveInviteText}
-                      onChange={(e) => setWhatsappInteractiveInviteText(e.target.value)}
-                      rows={3}
-                      className="text-sm"
-                    />
-                  </div>
-                </div>
-                <div className="text-xs text-muted-foreground space-y-1">
-                  <p>Variables: {"{{1}}"} = guest name, {"{{2}}"} = event title</p>
-                  <p>Buttons: Accept / Decline / Maybe</p>
-                </div>
-              </div>
-
-              {/* Interactive Reminder Template */}
-              <div className="space-y-3 rounded-lg border border-purple-200 dark:border-purple-800 bg-purple-50/50 dark:bg-purple-900/20 p-4">
-                <div className="flex items-center gap-2">
-                  <Icons.bell className="h-4 w-4 text-purple-600" />
-                  <Label className="text-sm font-medium">Interactive Reminder Template</Label>
-                </div>
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label htmlFor="whatsapp-interactive-reminder-template" className="text-xs text-muted-foreground">Content SID</Label>
-                    <Input
-                      id="whatsapp-interactive-reminder-template"
-                      placeholder="HXxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-                      value={whatsappInteractiveReminderContentSid}
-                      onChange={(e) => setWhatsappInteractiveReminderContentSid(e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="whatsapp-interactive-reminder-text" className="text-xs text-muted-foreground">Template Text (for display)</Label>
-                    <Textarea
-                      id="whatsapp-interactive-reminder-text"
-                      placeholder="היי {{1}}! לא שכחת? {{2}} מתקרב! אנא אשר/י הגעה:"
-                      value={whatsappInteractiveReminderText}
-                      onChange={(e) => setWhatsappInteractiveReminderText(e.target.value)}
-                      rows={3}
-                      className="text-sm"
-                    />
-                  </div>
-                </div>
-                <div className="text-xs text-muted-foreground space-y-1">
-                  <p>Variables: {"{{1}}"} = guest name, {"{{2}}"} = event title</p>
-                  <p>Buttons: Accept / Decline / Maybe</p>
-                </div>
-              </div>
-
-              {/* Guest Count List Template */}
-              <div className="space-y-3 rounded-lg border border-purple-200 dark:border-purple-800 bg-purple-50/50 dark:bg-purple-900/20 p-4">
-                <div className="flex items-center gap-2">
-                  <Icons.users className="h-4 w-4 text-purple-600" />
-                  <Label className="text-sm font-medium">Guest Count List Template</Label>
-                </div>
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label htmlFor="whatsapp-guest-count-template" className="text-xs text-muted-foreground">Content SID</Label>
-                    <Input
-                      id="whatsapp-guest-count-template"
-                      placeholder="HXxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-                      value={whatsappGuestCountListContentSid}
-                      onChange={(e) => setWhatsappGuestCountListContentSid(e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-xs text-muted-foreground">Description</Label>
-                    <p className="text-xs text-muted-foreground border rounded-lg p-3 bg-muted/30">
-                      This template is sent after a guest accepts. It should be a list picker
-                      (twilio/list-picker) asking how many guests will attend (1-10+ options).
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Event Day & Thank You Templates Section */}
-          <div className="border-t pt-4 mt-4">
-            <div className="mb-4">
-              <h4 className="text-sm font-medium flex items-center gap-2">
-                <Icons.calendar className="h-4 w-4 text-orange-600" />
-                Event Day & Thank You Templates
-              </h4>
-              <p className="text-xs text-muted-foreground mt-1">
-                Templates for same-day reminders and post-event thank you messages.
-              </p>
-            </div>
-            <div className="grid gap-6">
-              {/* Event Day Template */}
-              <div className="space-y-3 rounded-lg border border-orange-200 dark:border-orange-800 bg-orange-50/50 dark:bg-orange-900/20 p-4">
-                <div className="flex items-center gap-2">
-                  <Icons.mapPin className="h-4 w-4 text-orange-600" />
-                  <Label className="text-sm font-medium">Event Day Reminder Template</Label>
-                </div>
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label htmlFor="whatsapp-event-day-template" className="text-xs text-muted-foreground">Content SID</Label>
-                    <Input
-                      id="whatsapp-event-day-template"
-                      placeholder="HXxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-                      value={whatsappEventDayContentSid}
-                      onChange={(e) => setWhatsappEventDayContentSid(e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="whatsapp-event-day-text" className="text-xs text-muted-foreground">Template Text (for display)</Label>
-                    <Textarea
-                      id="whatsapp-event-day-text"
-                      placeholder="היום זה היום! 🎉&#10;&#10;{{1}}, השולחן שלך: {{2}}&#10;📍 כתובת: {{3}}&#10;🗺️ ניווט: {{4}}&#10;💝 קישור למתנה: {{5}}"
-                      value={whatsappEventDayTemplateText}
-                      onChange={(e) => setWhatsappEventDayTemplateText(e.target.value)}
-                      rows={5}
-                      className="text-sm"
-                    />
-                  </div>
-                </div>
-                <div className="text-xs text-muted-foreground space-y-1">
-                  <p>Variables: {"{{1}}"} = guest name, {"{{2}}"} = table name, {"{{3}}"} = venue address, {"{{4}}"} = navigation link, {"{{5}}"} = gift link</p>
-                  <p className="text-orange-600">Sent morning of the event to confirmed guests</p>
-                </div>
-              </div>
-
-              {/* Thank You Template */}
-              <div className="space-y-3 rounded-lg border border-pink-200 dark:border-pink-800 bg-pink-50/50 dark:bg-pink-900/20 p-4">
-                <div className="flex items-center gap-2">
-                  <Icons.heart className="h-4 w-4 text-pink-600" />
-                  <Label className="text-sm font-medium">Thank You Template</Label>
-                </div>
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label htmlFor="whatsapp-thank-you-template" className="text-xs text-muted-foreground">Content SID</Label>
-                    <Input
-                      id="whatsapp-thank-you-template"
-                      placeholder="HXxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-                      value={whatsappThankYouContentSid}
-                      onChange={(e) => setWhatsappThankYouContentSid(e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="whatsapp-thank-you-text" className="text-xs text-muted-foreground">Template Text (for display)</Label>
-                    <Textarea
-                      id="whatsapp-thank-you-text"
-                      placeholder="תודה רבה {{1}}! 💕&#10;&#10;שמחנו לחגוג איתך את היום המיוחד שלנו!&#10;&#10;באהבה,&#10;{{2}}"
-                      value={whatsappThankYouTemplateText}
-                      onChange={(e) => setWhatsappThankYouTemplateText(e.target.value)}
-                      rows={4}
-                      className="text-sm"
-                    />
-                  </div>
-                </div>
-                <div className="text-xs text-muted-foreground space-y-1">
-                  <p>Variables: {"{{1}}"} = guest name, {"{{2}}"} = couple names</p>
-                  <p className="text-pink-600">Sent day after the event to guests who attended</p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="flex gap-3">
-            <Button onClick={handleSaveWhatsApp} disabled={isPending}>
-              {isPending ? (
-                <>
-                  <Icons.spinner className="me-2 h-4 w-4 animate-spin" />
-                  Saving...
-                </>
-              ) : (
-                "Save WhatsApp Settings"
-              )}
-            </Button>
-            <Button
-              variant="outline"
-              onClick={handleTestWhatsApp}
-              disabled={isTesting === "whatsapp"}
-            >
-              {isTesting === "whatsapp" ? (
-                <>
-                  <Icons.spinner className="me-2 h-4 w-4 animate-spin" />
-                  Testing...
-                </>
-              ) : (
-                <>
-                  <Icons.zap className="me-2 h-4 w-4" />
-                  Test Connection
-                </>
-              )}
-            </Button>
+            )}
           </div>
         </CardContent>
       </Card>
 
-      {/* WhatsApp Phone Numbers */}
-      <WhatsAppPhoneNumbers onActiveNumberChange={handleActivePhoneNumberChange} />
-
       {/* SMS Settings */}
-      <Card>
+      <Card className="overflow-visible">
         <CardHeader>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -673,9 +302,9 @@ export function MessagingSettingsForm({ settings }: MessagingSettingsFormProps) 
                 <Icons.phone className="h-5 w-5 text-blue-600 dark:text-blue-400" />
               </div>
               <div>
-                <CardTitle>SMS Configuration</CardTitle>
+                <CardTitle>SMS API Credentials</CardTitle>
                 <CardDescription>
-                  Configure SMS provider for sending text messages
+                  Twilio credentials for SMS messaging
                 </CardDescription>
               </div>
             </div>
@@ -703,10 +332,13 @@ export function MessagingSettingsForm({ settings }: MessagingSettingsFormProps) 
               />
             </div>
             <div className="space-y-2">
-              <Label>Provider</Label>
-              <div className="flex h-10 items-center rounded-md border bg-muted/50 px-3 text-sm">
-                Twilio <span className="ml-2 text-xs text-muted-foreground">(~$0.26/SMS to Israel)</span>
-              </div>
+              <Label htmlFor="sms-messaging-service">Messaging Service SID (Optional)</Label>
+              <Input
+                id="sms-messaging-service"
+                placeholder="MGxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+                value={smsMessagingServiceSid}
+                onChange={(e) => setSmsMessagingServiceSid(e.target.value)}
+              />
             </div>
           </div>
 
@@ -716,7 +348,7 @@ export function MessagingSettingsForm({ settings }: MessagingSettingsFormProps) 
               <Input
                 id="sms-api-key"
                 type="password"
-                placeholder="Enter Account SID"
+                placeholder="ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
                 value={smsApiKey}
                 onChange={(e) => setSmsApiKey(e.target.value)}
               />
@@ -726,134 +358,53 @@ export function MessagingSettingsForm({ settings }: MessagingSettingsFormProps) 
               <Input
                 id="sms-api-secret"
                 type="password"
-                placeholder="Enter Auth Token"
+                placeholder="Your Twilio Auth Token"
                 value={smsApiSecret}
                 onChange={(e) => setSmsApiSecret(e.target.value)}
               />
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="sms-messaging-service">Messaging Service SID (Optional)</Label>
-            <Input
-              id="sms-messaging-service"
-              placeholder="MGxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-              value={smsMessagingServiceSid}
-              onChange={(e) => setSmsMessagingServiceSid(e.target.value)}
-            />
-            <p className="text-xs text-muted-foreground">
-              If configured, messages will be sent via this Messaging Service instead of the phone number directly.
-              This enables Alpha Sender ID, intelligent sender selection, and better deliverability.
-            </p>
-          </div>
-
-          <div className="flex gap-3">
-            <Button onClick={handleSaveSms} disabled={isPending}>
-              {isPending ? (
-                <>
-                  <Icons.spinner className="me-2 h-4 w-4 animate-spin" />
-                  Saving...
-                </>
-              ) : (
-                "Save SMS Settings"
-              )}
-            </Button>
-            <Button
-              variant="outline"
-              onClick={handleTestSms}
-              disabled={isTesting === "sms"}
-            >
-              {isTesting === "sms" ? (
-                <>
-                  <Icons.spinner className="me-2 h-4 w-4 animate-spin" />
-                  Testing...
-                </>
-              ) : (
-                <>
-                  <Icons.zap className="me-2 h-4 w-4" />
-                  Test Connection
-                </>
-              )}
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Status Info */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Provider Status</CardTitle>
-          <CardDescription>
-            Test your connections to see account details
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="rounded-lg border p-4">
-              <div className="flex items-center gap-3">
-                <div
-                  className={`h-3 w-3 rounded-full ${
-                    whatsappEnabled ? "bg-green-500" : "bg-gray-300"
-                  }`}
-                />
-                <div>
-                  <p className="font-medium">WhatsApp</p>
-                  <p className="text-sm text-muted-foreground">
-                    {whatsappEnabled ? "Active" : "Inactive"}
-                  </p>
-                </div>
-              </div>
-              {whatsappAccountInfo && (
-                <div className="mt-3 pt-3 border-t text-sm">
-                  <p className="text-muted-foreground">
-                    Account: <span className="text-foreground">{whatsappAccountInfo.friendlyName}</span>
-                  </p>
-                  <p className="text-muted-foreground">
-                    Status: <span className="text-foreground capitalize">{whatsappAccountInfo.status}</span>
-                  </p>
-                  {isTrialAccount(whatsappAccountInfo) && (
-                    <p className="text-yellow-600 dark:text-yellow-500 mt-1">
-                      ⚠ Trial Account
-                    </p>
-                  )}
-                </div>
-              )}
+          <div className="flex items-center justify-between pt-2">
+            <div className="flex gap-3">
+              <Button onClick={handleSaveSms} disabled={isPending}>
+                {isPending ? (
+                  <>
+                    <Icons.spinner className="me-2 h-4 w-4 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  "Save SMS Settings"
+                )}
+              </Button>
+              <Button
+                variant="outline"
+                onClick={handleTestSms}
+                disabled={isTesting === "sms"}
+              >
+                {isTesting === "sms" ? (
+                  <>
+                    <Icons.spinner className="me-2 h-4 w-4 animate-spin" />
+                    Testing...
+                  </>
+                ) : (
+                  <>
+                    <Icons.zap className="me-2 h-4 w-4" />
+                    Test Connection
+                  </>
+                )}
+              </Button>
             </div>
-            <div className="rounded-lg border p-4">
-              <div className="flex items-center gap-3">
-                <div
-                  className={`h-3 w-3 rounded-full ${
-                    smsEnabled ? "bg-green-500" : "bg-gray-300"
-                  }`}
-                />
-                <div>
-                  <p className="font-medium">SMS (Twilio)</p>
-                  <p className="text-sm text-muted-foreground">
-                    {smsEnabled ? "Active" : "Inactive"}
-                  </p>
-                </div>
+            {smsAccountInfo && (
+              <div className="text-sm text-end">
+                <p className="text-muted-foreground">
+                  {smsAccountInfo.friendlyName}
+                </p>
+                {isTrialAccount(smsAccountInfo) && (
+                  <p className="text-yellow-600">Trial Account</p>
+                )}
               </div>
-              {smsAccountInfo && (
-                <div className="mt-3 pt-3 border-t text-sm">
-                  <p className="text-muted-foreground">
-                    Account: <span className="text-foreground">{smsAccountInfo.friendlyName}</span>
-                  </p>
-                  <p className="text-muted-foreground">
-                    Status: <span className="text-foreground capitalize">{smsAccountInfo.status}</span>
-                  </p>
-                  {smsAccountInfo.messagingService && (
-                    <p className="text-muted-foreground">
-                      Messaging Service: <span className="text-foreground">{smsAccountInfo.messagingService}</span>
-                    </p>
-                  )}
-                  {isTrialAccount(smsAccountInfo) && (
-                    <p className="text-yellow-600 dark:text-yellow-500 mt-1">
-                      ⚠ Trial Account
-                    </p>
-                  )}
-                </div>
-              )}
-            </div>
+            )}
           </div>
         </CardContent>
       </Card>

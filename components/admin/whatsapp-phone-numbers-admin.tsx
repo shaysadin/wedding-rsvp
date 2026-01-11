@@ -215,7 +215,7 @@ export function WhatsAppPhoneNumbersAdmin({
   };
 
   return (
-    <Card>
+    <Card className="overflow-visible">
       <CardHeader>
         <div className="flex items-center justify-between">
           <div>

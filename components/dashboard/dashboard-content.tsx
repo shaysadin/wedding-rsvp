@@ -305,13 +305,11 @@ export function DashboardContent({ userName, events, stats, locale, usageData }:
       {/* Events Section */}
       <motion.div variants={itemVariants} className="space-y-4">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
+          <div className="flex flex-col gap-0.5">
             <h2 className="text-lg font-semibold">{t("upcomingEvents")}</h2>
-            {events && events.length > 0 && (
-              <Badge variant="secondary" className="font-medium">
-                {events.length}
-              </Badge>
-            )}
+            <p className="text-sm text-muted-foreground">
+              {isRTL ? "בחר אירוע לניהול" : "Select an event to manage"}
+            </p>
           </div>
           {events && events.length > 0 && (
             <div className="flex gap-1 border rounded-lg p-1 bg-muted/30 backdrop-blur-sm">
@@ -578,46 +576,35 @@ const EventCard = React.memo(function EventCard({
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.05, duration: 0.3, ease: [0.25, 0.1, 0.25, 1] }}
-      whileHover={{ y: -6, transition: { duration: 0.2 } }}
-      style={{ willChange: "transform" }}
     >
       <Link href={`/${locale}/events/${event.id}`}>
-        <Card className="group relative overflow-hidden transition-all duration-300 hover:shadow-2xl hover:shadow-rose-500/10 dark:hover:shadow-rose-500/5 bg-gradient-to-br from-white to-gray-50/80 dark:from-gray-900 dark:to-gray-900/80 backdrop-blur-sm border-white/50 dark:border-gray-800/50">
-          {/* Animated gradient border on hover */}
-          <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
-            <div className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-pink-500 via-rose-500 to-red-500" />
+        <Card className={cn(
+          "group relative overflow-hidden cursor-pointer transition-all duration-200",
+          "bg-background hover:bg-muted/30",
+          "border-2 border-border/60 hover:border-primary/50",
+          "shadow-sm hover:shadow-lg hover:shadow-primary/10 dark:hover:shadow-primary/5",
+          "hover:-translate-y-1"
+        )}>
+          {/* Click indicator arrow - always visible */}
+          <div className="absolute top-4 end-4 flex items-center gap-1.5 text-xs text-muted-foreground group-hover:text-primary transition-colors">
+            <span className="hidden sm:inline">{isRTL ? "לחץ לניהול" : "Click to manage"}</span>
+            <ArrowUpRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
           </div>
-
-          {/* Decorative top gradient */}
-          <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-pink-500 via-rose-500 to-red-500" />
-
-          {/* Subtle glow effect */}
-          <div className="absolute -top-24 -right-24 w-48 h-48 bg-gradient-to-br from-rose-500/10 to-pink-500/5 rounded-full blur-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
 
           <CardContent className="p-5 relative">
             {/* Header */}
             <div className="flex items-start justify-between gap-3">
-              <div className="flex-1 min-w-0">
-                <h3 className="font-semibold truncate group-hover:text-rose-600 dark:group-hover:text-rose-400 transition-colors duration-200">
+              <div className="flex-1 min-w-0 pe-20">
+                <h3 className="font-semibold truncate group-hover:text-primary transition-colors duration-200">
                   {event.title}
                 </h3>
                 {event.venue && (
                   <p className="mt-1.5 flex items-center gap-1.5 text-xs text-muted-foreground truncate">
-                    <MapPin className="h-3 w-3 shrink-0 text-rose-400" />
+                    <MapPin className="h-3 w-3 shrink-0 text-primary/60" />
                     <span className="truncate">{event.venue}</span>
                   </p>
                 )}
               </div>
-              <motion.div
-                className="shrink-0 relative"
-                whileHover={{ scale: 1.1, rotate: 12 }}
-                transition={{ type: "spring", stiffness: 400, damping: 10 }}
-              >
-                <div className="rounded-full bg-gradient-to-br from-pink-100 to-rose-100 p-2.5 dark:from-pink-900/40 dark:to-rose-900/40 shadow-sm">
-                  <Heart className="h-4 w-4 text-rose-500" />
-                </div>
-                <div className="absolute inset-0 rounded-full bg-gradient-to-br from-pink-500 to-rose-500 blur-lg opacity-20 group-hover:opacity-40 transition-opacity" />
-              </motion.div>
             </div>
 
             {/* Date & Time - Keeping as is per request */}
@@ -650,54 +637,54 @@ const EventCard = React.memo(function EventCard({
               )}
             </div>
 
-            {/* Stats - Enhanced with icons and glass effect */}
-            <div className="mt-4 grid grid-cols-3 gap-2 text-center">
-              <div className="rounded-xl bg-gradient-to-br from-slate-50 to-gray-50 dark:from-slate-900/50 dark:to-gray-900/50 p-2.5 border border-slate-200/50 dark:border-slate-700/30 transition-all duration-200 hover:scale-105">
-                <div className="flex items-center justify-center gap-1.5 mb-1">
-                  <Users className="h-3.5 w-3.5 text-slate-500" />
+            {/* Stats - Clean minimal design */}
+            <div className="mt-4 grid grid-cols-3 gap-3 text-center">
+              <div className="space-y-1">
+                <div className="flex items-center justify-center gap-1.5">
+                  <Users className="h-3.5 w-3.5 text-muted-foreground" />
+                  <p className="text-lg font-bold">{event.stats.total}</p>
                 </div>
-                <p className="text-lg font-bold">{event.stats.total}</p>
                 <p className="text-[10px] text-muted-foreground">
                   {isRTL ? "אורחים" : "Guests"}
                 </p>
               </div>
-              <div className="rounded-xl bg-gradient-to-br from-emerald-50 to-green-50 dark:from-emerald-950/50 dark:to-green-950/50 p-2.5 border border-emerald-200/50 dark:border-emerald-700/30 transition-all duration-200 hover:scale-105">
-                <div className="flex items-center justify-center gap-1.5 mb-1">
+              <div className="space-y-1">
+                <div className="flex items-center justify-center gap-1.5">
                   <UserCheck className="h-3.5 w-3.5 text-emerald-500" />
+                  <p className="text-lg font-bold text-emerald-600 dark:text-emerald-400">
+                    {event.stats.accepted}
+                  </p>
                 </div>
-                <p className="text-lg font-bold text-emerald-600 dark:text-emerald-400">
-                  {event.stats.accepted}
-                </p>
                 <p className="text-[10px] text-emerald-600/70 dark:text-emerald-400/70">
                   {isRTL ? "מאושר" : "Confirmed"}
                 </p>
               </div>
-              <div className="rounded-xl bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/50 dark:to-orange-950/50 p-2.5 border border-amber-200/50 dark:border-amber-700/30 transition-all duration-200 hover:scale-105">
-                <div className="flex items-center justify-center gap-1.5 mb-1">
+              <div className="space-y-1">
+                <div className="flex items-center justify-center gap-1.5">
                   <Clock className="h-3.5 w-3.5 text-amber-500" />
+                  <p className="text-lg font-bold text-amber-600 dark:text-amber-400">
+                    {event.stats.pending}
+                  </p>
                 </div>
-                <p className="text-lg font-bold text-amber-600 dark:text-amber-400">
-                  {event.stats.pending}
-                </p>
                 <p className="text-[10px] text-amber-600/70 dark:text-amber-400/70">
                   {isRTL ? "ממתין" : "Pending"}
                 </p>
               </div>
             </div>
 
-            {/* Progress bar - Enhanced */}
-            <div className="mt-4">
+            {/* Progress bar - Clean */}
+            <div className="mt-4 pt-3 border-t">
               <div className="mb-1.5 flex items-center justify-between text-xs">
                 <span className="text-muted-foreground">
                   {isRTL ? "אחוז אישורים" : "Response rate"}
                 </span>
-                <span className="font-semibold bg-gradient-to-r from-emerald-600 to-green-600 dark:from-emerald-400 dark:to-green-400 bg-clip-text text-transparent">
+                <span className="font-semibold text-emerald-600 dark:text-emerald-400">
                   {acceptanceRate}%
                 </span>
               </div>
-              <div className="h-2 overflow-hidden rounded-full bg-gradient-to-r from-muted/50 to-muted/30">
+              <div className="h-2 overflow-hidden rounded-full bg-muted">
                 <motion.div
-                  className="h-full rounded-full bg-gradient-to-r from-emerald-500 via-green-500 to-teal-500 shadow-sm shadow-emerald-500/30"
+                  className="h-full rounded-full bg-emerald-500"
                   initial={{ width: 0 }}
                   animate={{ width: `${acceptanceRate}%` }}
                   transition={{ delay: 0.2, duration: 0.8, ease: "easeOut" }}

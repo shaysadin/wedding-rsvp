@@ -245,7 +245,7 @@ async function handleButtonResponse(
   console.log(`Found guest: ${guest.name} for event: ${guest.weddingEvent?.title}`);
 
   // Determine RSVP status based on action
-  let rsvpStatus: RsvpStatus | null = null;
+  let rsvpStatus: RsvpStatus;
   let shouldSendGuestCountList = false;
 
   switch (action.toLowerCase()) {
@@ -257,8 +257,7 @@ async function handleButtonResponse(
       rsvpStatus = RsvpStatus.DECLINED;
       break;
     case "maybe":
-      // Keep as pending for "maybe" responses
-      rsvpStatus = null;
+      rsvpStatus = RsvpStatus.MAYBE;
       break;
     default:
       console.error("Unknown button action:", action);
@@ -278,23 +277,21 @@ async function handleButtonResponse(
     },
   });
 
-  // Update RSVP status if applicable (using upsert for atomic operation)
-  if (rsvpStatus) {
-    await prisma.guestRsvp.upsert({
-      where: { guestId: guest.id },
-      create: {
-        guestId: guest.id,
-        status: rsvpStatus,
-        respondedAt: new Date(),
-      },
-      update: {
-        status: rsvpStatus,
-        respondedAt: new Date(),
-      },
-    });
+  // Update RSVP status (using upsert for atomic operation)
+  await prisma.guestRsvp.upsert({
+    where: { guestId: guest.id },
+    create: {
+      guestId: guest.id,
+      status: rsvpStatus,
+      respondedAt: new Date(),
+    },
+    update: {
+      status: rsvpStatus,
+      respondedAt: new Date(),
+    },
+  });
 
-    console.log(`RSVP updated via button: Guest ${guest.name} - ${rsvpStatus}`);
-  }
+  console.log(`RSVP updated via button: Guest ${guest.name} - ${rsvpStatus}`);
 
   // If guest accepted, send guest count list picker
   if (shouldSendGuestCountList) {
@@ -304,6 +301,13 @@ async function handleButtonResponse(
   // If guest declined, send confirmation message immediately
   if (rsvpStatus === RsvpStatus.DECLINED) {
     await sendConfirmationMessage(guest.id, rawPayload.From, "DECLINED");
+  }
+
+  // If guest said maybe, send confirmation and schedule follow-up reminder
+  if (rsvpStatus === RsvpStatus.MAYBE) {
+    await sendConfirmationMessage(guest.id, rawPayload.From, "MAYBE");
+    // Schedule a follow-up reminder for the next day via automation
+    await scheduleRsvpMaybeFollowUp(guest.id, guest.weddingEventId);
   }
 }
 
@@ -500,7 +504,7 @@ async function sendGuestCountList(guestId: string, toNumber: string) {
 async function sendConfirmationMessage(
   guestId: string,
   toNumber: string,
-  status: "ACCEPTED" | "DECLINED"
+  status: "ACCEPTED" | "DECLINED" | "MAYBE"
 ) {
   try {
     const settings = await prisma.messagingProviderSettings.findFirst();
@@ -548,45 +552,47 @@ async function sendConfirmationMessage(
     console.log("Status:", status);
     console.log("Custom rsvpConfirmedMessage:", event.rsvpConfirmedMessage);
     console.log("Custom rsvpDeclinedMessage:", event.rsvpDeclinedMessage);
+    console.log("Custom rsvpMaybeMessage:", event.rsvpMaybeMessage);
     console.log("===================================");
+
+    // Helper to replace placeholders in custom messages
+    const replacePlaceholders = (text: string) => {
+      return text
+        .replace(/\{guestName\}/g, guest.name)
+        .replace(/\{name\}/g, guest.name)
+        .replace(/\{eventTitle\}/g, event.title)
+        .replace(/\{eventDate\}/g, eventDate)
+        .replace(/\{address\}/g, locationString)
+        .replace(/\{location\}/g, locationString)
+        .replace(/\{venue\}/g, event.venue || event.location)
+        .replace(/\{guestCount\}/g, String(guestCount));
+    };
 
     let message: string;
     if (status === "ACCEPTED") {
-      // Use custom message from event if available, otherwise use default
       if (event.rsvpConfirmedMessage) {
         console.log("Using custom ACCEPTED message");
-        // Replace placeholders in custom message (matching automation system naming)
-        message = event.rsvpConfirmedMessage
-          .replace(/\{guestName\}/g, guest.name)
-          .replace(/\{name\}/g, guest.name) // Support both variations
-          .replace(/\{eventTitle\}/g, event.title)
-          .replace(/\{eventDate\}/g, eventDate)
-          .replace(/\{address\}/g, locationString)
-          .replace(/\{location\}/g, locationString) // Support both variations
-          .replace(/\{venue\}/g, event.venue || event.location)
-          .replace(/\{guestCount\}/g, String(guestCount));
+        message = replacePlaceholders(event.rsvpConfirmedMessage);
       } else {
         console.log("Using default ACCEPTED message");
-        // Default message
         message = `תודה ${guest.name}! 🎉\n\nאישור ההגעה שלך ל${event.title} התקבל בהצלחה.\n\n📅 תאריך: ${eventDate}\n📍 מיקום: ${locationString}\n👥 מספר אורחים: ${guestCount}\n\nמחכים לראותכם! 💕`;
       }
-    } else {
-      // Use custom message from event if available, otherwise use default
+    } else if (status === "DECLINED") {
       if (event.rsvpDeclinedMessage) {
         console.log("Using custom DECLINED message");
-        // Replace placeholders in custom message (matching automation system naming)
-        message = event.rsvpDeclinedMessage
-          .replace(/\{guestName\}/g, guest.name)
-          .replace(/\{name\}/g, guest.name) // Support both variations
-          .replace(/\{eventTitle\}/g, event.title)
-          .replace(/\{eventDate\}/g, eventDate)
-          .replace(/\{address\}/g, locationString)
-          .replace(/\{location\}/g, locationString) // Support both variations
-          .replace(/\{venue\}/g, event.venue || event.location);
+        message = replacePlaceholders(event.rsvpDeclinedMessage);
       } else {
         console.log("Using default DECLINED message");
-        // Default message
         message = `תודה ${guest.name} על התשובה.\n\nקיבלנו את ההודעה שלא תוכל/י להגיע ל${event.title}.\n\nמקווים לראותך באירוע אחר! 💕`;
+      }
+    } else {
+      // MAYBE status
+      if (event.rsvpMaybeMessage) {
+        console.log("Using custom MAYBE message");
+        message = replacePlaceholders(event.rsvpMaybeMessage);
+      } else {
+        console.log("Using default MAYBE message");
+        message = `תודה ${guest.name} על התשובה! 🤔\n\nהבנו שעדיין לא בטוח/ה לגבי ההגעה ל${event.title}.\n\n📅 תאריך: ${eventDate}\n📍 מיקום: ${locationString}\n\nניצור איתך קשר שוב בקרוב לבדוק אם החלטת. 💕`;
       }
     }
 
@@ -630,6 +636,79 @@ function getButtonTitle(action: string): string {
       return "Don't know yet";
     default:
       return action;
+  }
+}
+
+/**
+ * Schedule a follow-up reminder for guests who said "maybe"
+ * Creates an automation execution to send a reminder 24 hours later
+ */
+async function scheduleRsvpMaybeFollowUp(guestId: string, eventId: string) {
+  try {
+    // Find or create the default RSVP_MAYBE automation flow for this event
+    let automationFlow = await prisma.automationFlow.findFirst({
+      where: {
+        weddingEventId: eventId,
+        trigger: "RSVP_MAYBE",
+        status: { in: ["ACTIVE", "DRAFT"] },
+      },
+    });
+
+    // If no automation exists, create a default one
+    if (!automationFlow) {
+      automationFlow = await prisma.automationFlow.create({
+        data: {
+          weddingEventId: eventId,
+          name: "Maybe Follow-up Reminder",
+          trigger: "RSVP_MAYBE",
+          action: "SEND_WHATSAPP_INTERACTIVE_REMINDER",
+          delayHours: 24, // Send reminder 24 hours after "maybe" response
+          status: "ACTIVE",
+        },
+      });
+      console.log(`Created default RSVP_MAYBE automation for event ${eventId}`);
+    }
+
+    // Schedule the execution for 24 hours from now
+    const scheduledFor = new Date();
+    scheduledFor.setHours(scheduledFor.getHours() + (automationFlow.delayHours || 24));
+
+    // Check if an execution already exists for this guest/flow combination
+    const existingExecution = await prisma.automationFlowExecution.findUnique({
+      where: {
+        flowId_guestId: {
+          flowId: automationFlow.id,
+          guestId: guestId,
+        },
+      },
+    });
+
+    if (existingExecution) {
+      // Update existing execution to reschedule
+      await prisma.automationFlowExecution.update({
+        where: { id: existingExecution.id },
+        data: {
+          status: "PENDING",
+          scheduledFor: scheduledFor,
+          retryCount: 0,
+          errorMessage: null,
+        },
+      });
+      console.log(`Rescheduled RSVP_MAYBE follow-up for guest ${guestId} at ${scheduledFor.toISOString()}`);
+    } else {
+      // Create new execution
+      await prisma.automationFlowExecution.create({
+        data: {
+          flowId: automationFlow.id,
+          guestId: guestId,
+          status: "PENDING",
+          scheduledFor: scheduledFor,
+        },
+      });
+      console.log(`Scheduled RSVP_MAYBE follow-up for guest ${guestId} at ${scheduledFor.toISOString()}`);
+    }
+  } catch (error) {
+    console.error("Error scheduling RSVP_MAYBE follow-up:", error);
   }
 }
 

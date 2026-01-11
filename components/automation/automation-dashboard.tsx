@@ -72,6 +72,7 @@ interface AutomationDashboardProps {
   customMessages?: {
     rsvpConfirmedMessage?: string | null;
     rsvpDeclinedMessage?: string | null;
+    rsvpMaybeMessage?: string | null;
   };
   onRefresh: () => void;
 }

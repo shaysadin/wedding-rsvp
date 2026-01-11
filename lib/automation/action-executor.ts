@@ -1,7 +1,81 @@
-import { AutomationAction } from "@prisma/client";
+import { AutomationAction, WhatsAppTemplateType } from "@prisma/client";
 import { AutomationContext, ExecutionResult } from "./types";
 import { prisma } from "@/lib/db";
 import { onNotificationSent } from "./event-handlers";
+import { ALL_WHATSAPP_TEMPLATE_DEFINITIONS } from "@/config/whatsapp-templates";
+
+/**
+ * Map automation action to WhatsApp template type
+ */
+function getWhatsAppTemplateType(action: AutomationAction): WhatsAppTemplateType | null {
+  switch (action) {
+    case "SEND_WHATSAPP_INVITE":
+      return WhatsAppTemplateType.INVITE;
+    case "SEND_WHATSAPP_REMINDER":
+      return WhatsAppTemplateType.REMINDER;
+    case "SEND_WHATSAPP_IMAGE_INVITE":
+      return WhatsAppTemplateType.IMAGE_INVITE;
+    case "SEND_WHATSAPP_INTERACTIVE_INVITE":
+      return WhatsAppTemplateType.INTERACTIVE_INVITE;
+    case "SEND_WHATSAPP_INTERACTIVE_REMINDER":
+      return WhatsAppTemplateType.INTERACTIVE_REMINDER;
+    case "SEND_WHATSAPP_CONFIRMATION":
+      return WhatsAppTemplateType.CONFIRMATION;
+    case "SEND_WHATSAPP_EVENT_DAY":
+      return WhatsAppTemplateType.EVENT_DAY;
+    case "SEND_WHATSAPP_THANK_YOU":
+      return WhatsAppTemplateType.THANK_YOU;
+    case "SEND_TABLE_ASSIGNMENT":
+      return WhatsAppTemplateType.TABLE_ASSIGNMENT;
+    case "SEND_WHATSAPP_GUEST_COUNT":
+      return WhatsAppTemplateType.GUEST_COUNT_LIST;
+    default:
+      return null;
+  }
+}
+
+/**
+ * Get WhatsApp template Content SID from database or config fallback
+ */
+async function getWhatsAppTemplateSid(
+  templateType: WhatsAppTemplateType,
+  style: string = "formal",
+  settingsField: string,
+  providerSettings: any
+): Promise<string | null> {
+  // First, try to get from database
+  const dbTemplate = await prisma.whatsAppTemplate.findFirst({
+    where: {
+      type: templateType,
+      style: style,
+      isActive: true,
+    },
+  });
+
+  if (dbTemplate?.contentSid) {
+    console.log(`Using DB template: ${templateType} ${style} -> ${dbTemplate.contentSid}`);
+    return dbTemplate.contentSid;
+  }
+
+  // Second, check config for existing Content SIDs (pre-approved templates)
+  const configTemplate = ALL_WHATSAPP_TEMPLATE_DEFINITIONS.find(
+    (def) => def.type === templateType && def.style === style && def.existingContentSid
+  );
+
+  if (configTemplate?.existingContentSid) {
+    console.log(`Using config template: ${templateType} ${style} -> ${configTemplate.existingContentSid}`);
+    return configTemplate.existingContentSid;
+  }
+
+  // Third, fall back to legacy settings field
+  const legacySid = providerSettings?.[settingsField];
+  if (legacySid) {
+    console.log(`Using legacy settings: ${settingsField} -> ${legacySid}`);
+    return legacySid;
+  }
+
+  return null;
+}
 
 /**
  * Format phone number to international format (E.164)
@@ -75,24 +149,24 @@ export async function executeAction(
   context: AutomationContext
 ): Promise<ExecutionResult> {
   switch (action) {
-    // WhatsApp Template Actions
+    // WhatsApp Template Actions - now with template style support
     case "SEND_WHATSAPP_INVITE":
-      return sendWhatsAppWithTemplate(context, "whatsappInviteContentSid");
+      return sendWhatsAppWithTemplate(context, "whatsappInviteContentSid", action);
 
     case "SEND_WHATSAPP_REMINDER":
-      return sendWhatsAppWithTemplate(context, "whatsappReminderContentSid");
+      return sendWhatsAppWithTemplate(context, "whatsappReminderContentSid", action);
 
     case "SEND_WHATSAPP_CONFIRMATION":
       return sendWhatsAppWithTemplate(context, "whatsappConfirmationContentSid");
 
     case "SEND_WHATSAPP_IMAGE_INVITE":
-      return sendWhatsAppWithTemplate(context, "whatsappImageInviteContentSid");
+      return sendWhatsAppWithTemplate(context, "whatsappImageInviteContentSid", action);
 
     case "SEND_WHATSAPP_INTERACTIVE_INVITE":
-      return sendWhatsAppWithTemplate(context, "whatsappInteractiveInviteContentSid");
+      return sendWhatsAppWithTemplate(context, "whatsappInteractiveInviteContentSid", action);
 
     case "SEND_WHATSAPP_INTERACTIVE_REMINDER":
-      return sendWhatsAppWithTemplate(context, "whatsappInteractiveReminderContentSid");
+      return sendWhatsAppWithTemplate(context, "whatsappInteractiveReminderContentSid", action);
 
     case "SEND_WHATSAPP_GUEST_COUNT":
       return sendWhatsAppWithTemplate(context, "whatsappGuestCountListContentSid");
@@ -116,7 +190,7 @@ export async function executeAction(
 
     // Legacy actions (backwards compatibility)
     case "SEND_WHATSAPP_TEMPLATE":
-      return sendWhatsAppWithTemplate(context, "whatsappReminderContentSid");
+      return sendWhatsAppWithTemplate(context, "whatsappReminderContentSid", "SEND_WHATSAPP_REMINDER");
 
     case "SEND_SMS_REMINDER":
       return sendSmsReminder(context);
@@ -146,9 +220,10 @@ export async function executeAction(
  */
 async function sendWhatsAppWithTemplate(
   context: AutomationContext,
-  templateField: string
+  templateField: string,
+  action?: AutomationAction
 ): Promise<ExecutionResult> {
-  const { guestId, guestName, guestPhone, weddingEventId } = context;
+  const { guestId, guestName, guestPhone, weddingEventId, templateStyle } = context;
 
   if (!guestPhone) {
     return {
@@ -170,8 +245,26 @@ async function sendWhatsAppWithTemplate(
       };
     }
 
-    // Get the template SID dynamically
-    const templateSid = (providerSettings as any)[templateField];
+    // Determine template SID - try new system first, then fall back to legacy
+    let templateSid: string | null = null;
+
+    // If we have an action type, try to get template from DB/config
+    if (action) {
+      const templateType = getWhatsAppTemplateType(action);
+      if (templateType) {
+        templateSid = await getWhatsAppTemplateSid(
+          templateType,
+          templateStyle || "formal",
+          templateField,
+          providerSettings
+        );
+      }
+    }
+
+    // Fall back to legacy settings field if no template found
+    if (!templateSid) {
+      templateSid = (providerSettings as any)[templateField];
+    }
 
     if (!templateSid) {
       return {
@@ -656,6 +749,7 @@ async function sendTableAssignment(
     eventLocation,
     eventVenue,
     customMessage,
+    templateStyle,
   } = context;
 
   if (!guestPhone) {
@@ -694,36 +788,6 @@ async function sendTableAssignment(
       };
     }
 
-    // Build message content (use custom if provided, otherwise default)
-    let messageBody: string;
-
-    if (customMessage) {
-      messageBody = replaceMessageVariables(customMessage, context);
-    } else {
-      messageBody = `שלום ${guestName}! 🎉\n\n`;
-      messageBody += `מזכירים שאנחנו מחכים לכם היום!\n\n`;
-
-      if (tableName) {
-        messageBody += `🪑 השולחן שלכם: ${tableName}\n\n`;
-      }
-
-      messageBody += `📍 מיקום: ${eventVenue || eventLocation}\n`;
-
-      // Add Google Maps link if available
-      const mapsUrl = event.rsvpPageSettings?.googleMapsUrl;
-      if (mapsUrl) {
-        messageBody += `🗺️ קישור לניווט: ${mapsUrl}\n`;
-      }
-
-      // Add Waze link if available
-      const wazeUrl = event.rsvpPageSettings?.wazeUrl;
-      if (wazeUrl) {
-        messageBody += `🚗 Waze: ${wazeUrl}\n`;
-      }
-
-      messageBody += `\nנתראה! 💕`;
-    }
-
     // Send via Twilio WhatsApp
     const accountSid = providerSettings.smsApiKey;
     const authToken = providerSettings.smsApiSecret;
@@ -738,13 +802,67 @@ async function sendTableAssignment(
     }
 
     const twilio = require("twilio")(accountSid, authToken);
-
     const formattedPhone = formatPhoneNumber(guestPhone);
-    const message = await twilio.messages.create({
-      body: messageBody,
-      from: `whatsapp:${fromNumber}`,
-      to: `whatsapp:${formattedPhone}`,
-    });
+
+    // Try to get template SID for table assignment
+    const templateSid = await getWhatsAppTemplateSid(
+      WhatsAppTemplateType.TABLE_ASSIGNMENT,
+      templateStyle || "formal",
+      "whatsappTableAssignmentContentSid", // Legacy field (may not exist yet)
+      providerSettings
+    );
+
+    let message;
+
+    if (templateSid) {
+      // Use Twilio Content Template
+      message = await twilio.messages.create({
+        contentSid: templateSid,
+        contentVariables: JSON.stringify({
+          "1": guestName,
+          "2": event.title,
+          "3": tableName || "טרם שובץ",
+        }),
+        from: `whatsapp:${fromNumber}`,
+        to: `whatsapp:${formattedPhone}`,
+      });
+    } else {
+      // Fallback to freeform message
+      let messageBody: string;
+
+      if (customMessage) {
+        messageBody = replaceMessageVariables(customMessage, context);
+      } else {
+        messageBody = `שלום ${guestName}! 🎉\n\n`;
+        messageBody += `מזכירים שאנחנו מחכים לכם היום!\n\n`;
+
+        if (tableName) {
+          messageBody += `🪑 השולחן שלכם: ${tableName}\n\n`;
+        }
+
+        messageBody += `📍 מיקום: ${eventVenue || eventLocation}\n`;
+
+        // Add Google Maps link if available
+        const mapsUrl = event.rsvpPageSettings?.googleMapsUrl;
+        if (mapsUrl) {
+          messageBody += `🗺️ קישור לניווט: ${mapsUrl}\n`;
+        }
+
+        // Add Waze link if available
+        const wazeUrl = event.rsvpPageSettings?.wazeUrl;
+        if (wazeUrl) {
+          messageBody += `🚗 Waze: ${wazeUrl}\n`;
+        }
+
+        messageBody += `\nנתראה! 💕`;
+      }
+
+      message = await twilio.messages.create({
+        body: messageBody,
+        from: `whatsapp:${fromNumber}`,
+        to: `whatsapp:${formattedPhone}`,
+      });
+    }
 
     // Log the notification (skip for test guests)
     if (!guestId.startsWith("test-")) {
@@ -789,6 +907,7 @@ async function sendEventDayReminder(
     tableName,
     eventLocation,
     eventVenue,
+    templateStyle,
   } = context;
 
   if (!guestPhone) {
@@ -811,7 +930,13 @@ async function sendEventDayReminder(
       };
     }
 
-    const templateSid = providerSettings.whatsappEventDayContentSid;
+    // Get template SID from new template system (DB -> config -> legacy)
+    const templateSid = await getWhatsAppTemplateSid(
+      WhatsAppTemplateType.EVENT_DAY,
+      templateStyle || "formal",
+      "whatsappEventDayContentSid",
+      providerSettings
+    );
 
     if (!templateSid) {
       return {
@@ -964,6 +1089,7 @@ async function sendThankYouMessage(
     guestName,
     guestPhone,
     weddingEventId,
+    templateStyle,
   } = context;
 
   if (!guestPhone) {
@@ -986,7 +1112,13 @@ async function sendThankYouMessage(
       };
     }
 
-    const templateSid = providerSettings.whatsappThankYouContentSid;
+    // Get template SID from new template system (DB -> config -> legacy)
+    const templateSid = await getWhatsAppTemplateSid(
+      WhatsAppTemplateType.THANK_YOU,
+      templateStyle || "formal",
+      "whatsappThankYouContentSid",
+      providerSettings
+    );
 
     if (!templateSid) {
       return {

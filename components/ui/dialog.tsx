@@ -7,6 +7,62 @@ import { X } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 
+// Hook for swipe-to-dismiss on mobile bottom sheets
+function useSwipeToDismiss(onDismiss: () => void, enabled: boolean = true) {
+  const [dragY, setDragY] = React.useState(0)
+  const [isDragging, setIsDragging] = React.useState(false)
+  const startY = React.useRef(0)
+  const currentY = React.useRef(0)
+
+  const handleTouchStart = React.useCallback((e: React.TouchEvent) => {
+    if (!enabled) return
+    // Only enable drag from the handle area (first 60px from top)
+    const touch = e.touches[0]
+    const target = e.currentTarget as HTMLElement
+    const rect = target.getBoundingClientRect()
+    const touchY = touch.clientY - rect.top
+
+    if (touchY <= 60) {
+      startY.current = touch.clientY
+      currentY.current = touch.clientY
+      setIsDragging(true)
+    }
+  }, [enabled])
+
+  const handleTouchMove = React.useCallback((e: React.TouchEvent) => {
+    if (!isDragging || !enabled) return
+    const touch = e.touches[0]
+    currentY.current = touch.clientY
+    const delta = Math.max(0, currentY.current - startY.current)
+    setDragY(delta)
+  }, [isDragging, enabled])
+
+  const handleTouchEnd = React.useCallback(() => {
+    if (!isDragging || !enabled) return
+    const delta = currentY.current - startY.current
+
+    // If dragged more than 100px down, dismiss
+    if (delta > 100) {
+      onDismiss()
+    }
+
+    setDragY(0)
+    setIsDragging(false)
+    startY.current = 0
+    currentY.current = 0
+  }, [isDragging, enabled, onDismiss])
+
+  return {
+    dragY,
+    isDragging,
+    handlers: {
+      onTouchStart: handleTouchStart,
+      onTouchMove: handleTouchMove,
+      onTouchEnd: handleTouchEnd,
+    },
+  }
+}
+
 const Dialog = DialogPrimitive.Root
 
 const DialogTrigger = DialogPrimitive.Trigger
@@ -32,14 +88,16 @@ DialogOverlay.displayName = DialogPrimitive.Overlay.displayName
 
 const dialogContentVariants = cva(
   cn(
-    // Mobile: full screen with safe areas
-    "fixed inset-0 z-[61] flex flex-col bg-card",
-    // Desktop: centered modal
-    "sm:inset-auto sm:left-1/2 sm:top-1/2 sm:max-h-[90vh] sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-xl sm:border sm:border-border/50 sm:shadow-xl",
+    // Base styles
+    "fixed z-[61] flex flex-col bg-card",
+    // Mobile: bottom sheet style with gap from top, full width, rounded top corners
+    "inset-x-0 bottom-0 top-3 w-full rounded-t-2xl border border-b-0 border-border/50 shadow-xl",
+    // Desktop: centered modal with all rounded corners
+    "sm:inset-auto sm:left-1/2 sm:top-1/2 sm:bottom-auto sm:max-h-[90vh] sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-xl sm:border sm:border-border/50",
     // Animations
     "duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
-    // Mobile slide up, desktop zoom
-    "data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom sm:data-[state=closed]:slide-out-to-bottom-0 sm:data-[state=open]:slide-in-from-bottom-0 sm:data-[state=closed]:zoom-out-95 sm:data-[state=open]:zoom-in-95",
+    // Mobile slide up from bottom, desktop zoom
+    "data-[state=closed]:slide-out-to-bottom-[100%] data-[state=open]:slide-in-from-bottom-[100%] sm:data-[state=closed]:slide-out-to-bottom-0 sm:data-[state=open]:slide-in-from-bottom-0 sm:data-[state=closed]:zoom-out-95 sm:data-[state=open]:zoom-in-95",
   ),
   {
     variants: {
@@ -72,6 +130,8 @@ const DialogContent = React.forwardRef<
 >(({ className, children, size, hideCloseButton, noWrapper, dir, ...props }, ref) => {
   // Get document direction for RTL support in portal (if not explicitly set)
   const [autoDir, setAutoDir] = React.useState<"ltr" | "rtl" | undefined>(undefined)
+  const [isMobile, setIsMobile] = React.useState(false)
+  const closeRef = React.useRef<HTMLButtonElement>(null)
 
   React.useEffect(() => {
     if (!dir) {
@@ -82,16 +142,44 @@ const DialogContent = React.forwardRef<
     }
   }, [dir])
 
+  // Check if mobile on mount
+  React.useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 640)
+    checkMobile()
+    window.addEventListener("resize", checkMobile)
+    return () => window.removeEventListener("resize", checkMobile)
+  }, [])
+
+  // Swipe to dismiss handler
+  const handleDismiss = React.useCallback(() => {
+    closeRef.current?.click()
+  }, [])
+
+  const { dragY, isDragging, handlers } = useSwipeToDismiss(handleDismiss, isMobile)
+
   return (
     <DialogPortal>
-      <DialogOverlay />
+      <DialogOverlay style={isDragging ? { opacity: Math.max(0.2, 1 - dragY / 300) } : undefined} />
       <DialogPrimitive.Content
         ref={ref}
         dir={dir || autoDir}
         aria-describedby={undefined}
         className={cn(dialogContentVariants({ size }), className)}
+        style={
+          isMobile && dragY > 0
+            ? {
+                transform: `translateY(${dragY}px)`,
+                transition: isDragging ? "none" : "transform 0.2s ease-out",
+              }
+            : undefined
+        }
+        {...handlers}
         {...props}
       >
+        {/* Mobile drag handle indicator */}
+        <div
+          className="mx-auto mt-2 mb-1 h-1.5 w-12 shrink-0 rounded-full bg-muted-foreground/40 sm:hidden cursor-grab active:cursor-grabbing"
+        />
         {noWrapper ? (
           children
         ) : (
@@ -99,12 +187,16 @@ const DialogContent = React.forwardRef<
             {children}
           </div>
         )}
-        {!hideCloseButton && (
-          <DialogPrimitive.Close className="absolute end-3 top-3 rounded-lg p-1.5 opacity-70 ring-offset-background transition-all hover:opacity-100 hover:bg-muted focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground sm:end-4 sm:top-4 sm:p-1 z-10">
-            <X className="size-5 sm:size-4" />
-            <span className="sr-only">Close</span>
-          </DialogPrimitive.Close>
-        )}
+        <DialogPrimitive.Close
+          ref={closeRef}
+          className={cn(
+            "absolute end-3 top-4 rounded-lg p-1.5 opacity-70 ring-offset-background transition-all hover:opacity-100 hover:bg-muted focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground sm:end-4 sm:top-4 sm:p-1 z-10",
+            hideCloseButton && "sr-only"
+          )}
+        >
+          <X className="size-5 sm:size-4" />
+          <span className="sr-only">Close</span>
+        </DialogPrimitive.Close>
       </DialogPrimitive.Content>
     </DialogPortal>
   )

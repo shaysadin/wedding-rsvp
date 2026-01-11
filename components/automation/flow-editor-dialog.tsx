@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useLocale } from "next-intl";
 import { toast } from "sonner";
-import { Plus, Sparkles, Info, Zap } from "lucide-react";
+import { Plus, Sparkles, Info, Zap, MessageCircle } from "lucide-react";
 import { AutomationTrigger, AutomationAction } from "@prisma/client";
 
 import { cn } from "@/lib/utils";
@@ -37,7 +37,7 @@ import {
   getDelayOptionsForTrigger,
   isCustomMessageAction,
 } from "./flow-node";
-import { createCustomAutomationFlow, updateAutomationFlowMessage } from "@/actions/automation";
+import { createCustomAutomationFlow, updateAutomationFlowMessage, updateAutomationFlowTemplateStyle } from "@/actions/automation";
 import { Icons } from "@/components/shared/icons";
 
 interface FlowEditorDialogProps {
@@ -51,9 +51,25 @@ interface FlowEditorDialogProps {
     action: AutomationAction;
     customMessage?: string | null;
     delayHours?: number | null;
+    templateStyle?: string | null;
   };
   children?: React.ReactNode;
 }
+
+// Actions that support template style selection
+const TEMPLATE_STYLE_ACTIONS: AutomationAction[] = [
+  "SEND_WHATSAPP_INVITE",
+  "SEND_WHATSAPP_REMINDER",
+  "SEND_WHATSAPP_IMAGE_INVITE",
+  "SEND_WHATSAPP_INTERACTIVE_INVITE",
+  "SEND_WHATSAPP_INTERACTIVE_REMINDER",
+];
+
+const TEMPLATE_STYLES = [
+  { value: "formal", labelEn: "Formal", labelHe: "רשמי" },
+  { value: "friendly", labelEn: "Friendly", labelHe: "ידידותי" },
+  { value: "short", labelEn: "Short", labelHe: "קצר" },
+];
 
 const MESSAGE_VARIABLES = [
   { key: "{guestName}", label: { en: "Guest Name", he: "שם האורח" } },
@@ -82,6 +98,9 @@ export function FlowEditorDialog({
   const [customMessage, setCustomMessage] = useState(editMode?.customMessage || "");
   const [delayHours, setDelayHours] = useState<number | undefined>(
     editMode?.delayHours ?? undefined
+  );
+  const [templateStyle, setTemplateStyle] = useState<string>(
+    editMode?.templateStyle || "formal"
   );
 
   const triggerOptions = getTriggerOptions(locale);
@@ -120,10 +139,16 @@ export function FlowEditorDialog({
 
     try {
       if (editMode) {
-        // Update existing flow's custom message
-        const result = await updateAutomationFlowMessage(editMode.flowId, customMessage || null);
-        if (result.error) {
-          toast.error(result.error);
+        // Update existing flow's custom message and template style
+        const messageResult = await updateAutomationFlowMessage(editMode.flowId, customMessage || null);
+
+        // Also update template style if it's a WhatsApp action
+        if (TEMPLATE_STYLE_ACTIONS.includes(editMode.action)) {
+          await updateAutomationFlowTemplateStyle(editMode.flowId, templateStyle);
+        }
+
+        if (messageResult.error) {
+          toast.error(messageResult.error);
         } else {
           toast.success(isRTL ? "האוטומציה עודכנה" : "Automation updated");
           setOpen(false);
@@ -137,6 +162,7 @@ export function FlowEditorDialog({
           action,
           customMessage: customMessage || undefined,
           delayHours: delayHours,
+          templateStyle: TEMPLATE_STYLE_ACTIONS.includes(action as AutomationAction) ? templateStyle : undefined,
         });
 
         if (result.error) {
@@ -162,6 +188,7 @@ export function FlowEditorDialog({
       setAction("");
       setCustomMessage("");
       setDelayHours(undefined);
+      setTemplateStyle("formal");
     }
   };
 
@@ -368,6 +395,44 @@ export function FlowEditorDialog({
                     </SelectContent>
                   </Select>
                 </div>
+
+                {/* Template Style Selector - shows for WhatsApp template actions */}
+                {action && TEMPLATE_STYLE_ACTIONS.includes(action as AutomationAction) && (
+                  <div className="w-full max-w-sm animate-in slide-in-from-top-2 duration-200">
+                    <div className="rounded-xl border-2 border-purple-200 dark:border-purple-800 bg-purple-50/50 dark:bg-purple-900/20 p-4">
+                      <div className="flex items-center gap-2 mb-3">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-purple-100 dark:bg-purple-900/50">
+                          <MessageCircle className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                        </div>
+                        <span className="text-sm font-medium text-purple-700 dark:text-purple-300">
+                          {isRTL ? "בחרו סגנון תבנית" : "Select Template Style"}
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-3 gap-2">
+                        {TEMPLATE_STYLES.map((style) => (
+                          <Button
+                            key={style.value}
+                            type="button"
+                            variant={templateStyle === style.value ? "default" : "outline"}
+                            size="sm"
+                            className={cn(
+                              "h-auto py-2 text-xs transition-all",
+                              templateStyle === style.value && "ring-2 ring-purple-400 ring-offset-2"
+                            )}
+                            onClick={() => setTemplateStyle(style.value)}
+                          >
+                            {isRTL ? style.labelHe : style.labelEn}
+                          </Button>
+                        ))}
+                      </div>
+                      <p className="text-xs text-purple-600/70 dark:text-purple-400/70 mt-2 text-start">
+                        {isRTL
+                          ? "סגנון ההודעה שישלח דרך WhatsApp"
+                          : "The message style that will be sent via WhatsApp"}
+                      </p>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>

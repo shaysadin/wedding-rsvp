@@ -30,6 +30,7 @@ interface EventWithStats {
   totalBudget: any;
   rsvpConfirmedMessage: string | null;
   rsvpDeclinedMessage: string | null;
+  rsvpMaybeMessage: string | null;
   stats: {
     total: number;
     pending: number;

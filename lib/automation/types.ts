@@ -24,6 +24,7 @@ export interface AutomationContext {
   giftLink?: string | null; // Gift payment link
   navigationLink?: string | null; // Google Maps or Waze link
   coupleName?: string | null; // Couple names for thank you message
+  templateStyle?: string | null; // WhatsApp template style: formal, friendly, short
 }
 
 export interface TriggerCheckResult {

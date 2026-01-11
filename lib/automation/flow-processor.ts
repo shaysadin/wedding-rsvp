@@ -164,6 +164,7 @@ export async function processAutomationFlows(): Promise<ProcessResult> {
         eventVenue: execution.flow.weddingEvent.venue,
         customMessage: execution.flow.customMessage, // Pass custom message to executor
         rsvpLink: rsvpUrl,
+        templateStyle: execution.flow.templateStyle, // WhatsApp template style
       };
 
       // Execute the action

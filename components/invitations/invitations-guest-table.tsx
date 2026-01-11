@@ -77,6 +77,7 @@ const statusColors: Record<RsvpStatus, string> = {
   PENDING: "bg-yellow-500/10 text-yellow-500",
   ACCEPTED: "bg-green-500/10 text-green-500",
   DECLINED: "bg-red-500/10 text-red-500",
+  MAYBE: "bg-blue-500/10 text-blue-500",
 };
 
 export function InvitationsGuestTable({

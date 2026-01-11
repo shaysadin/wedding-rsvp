@@ -239,6 +239,7 @@ export async function createCustomAutomationFlow(
     action: AutomationAction;
     customMessage?: string;
     delayHours?: number;
+    templateStyle?: string; // WhatsApp template style: formal, friendly, short
   }
 ) {
   try {
@@ -280,6 +281,7 @@ export async function createCustomAutomationFlow(
         action: data.action,
         customMessage: data.customMessage,
         delayHours: data.delayHours,
+        templateStyle: data.templateStyle,
         status: "DRAFT",
       },
     });
@@ -394,6 +396,49 @@ export async function updateAutomationFlowMessage(
   } catch (error) {
     console.error("Error updating automation flow message:", error);
     return { error: "Failed to update flow message" };
+  }
+}
+
+/**
+ * Update automation flow template style
+ */
+export async function updateAutomationFlowTemplateStyle(
+  flowId: string,
+  templateStyle: string | null
+) {
+  try {
+    const user = await getCurrentUser();
+
+    // Check if user has ROLE_WEDDING_OWNER in their roles array
+    const hasWeddingOwnerRole = user?.roles?.includes(UserRole.ROLE_WEDDING_OWNER);
+    if (!user || !hasWeddingOwnerRole) {
+      return { error: "Unauthorized" };
+    }
+
+    // Verify ownership through the event
+    const flow = await prisma.automationFlow.findUnique({
+      where: { id: flowId },
+      include: {
+        weddingEvent: true,
+      },
+    });
+
+    if (!flow || flow.weddingEvent.ownerId !== user.id) {
+      return { error: "Flow not found" };
+    }
+
+    // Update the template style
+    await prisma.automationFlow.update({
+      where: { id: flowId },
+      data: { templateStyle },
+    });
+
+    revalidatePath(`/dashboard/events/${flow.weddingEventId}/automation`);
+
+    return { success: true };
+  } catch (error) {
+    console.error("Error updating automation flow template style:", error);
+    return { error: "Failed to update template style" };
   }
 }
 
@@ -878,7 +923,7 @@ export async function deleteAutomationFlow(flowId: string) {
  */
 export async function updateSystemAutomationMessage(
   eventId: string,
-  field: "rsvpConfirmedMessage" | "rsvpDeclinedMessage",
+  field: "rsvpConfirmedMessage" | "rsvpDeclinedMessage" | "rsvpMaybeMessage",
   message: string | null
 ) {
   try {
@@ -937,6 +982,7 @@ export async function getEventAutomationSettings(eventId: string) {
         ownerId: true,
         rsvpConfirmedMessage: true,
         rsvpDeclinedMessage: true,
+        rsvpMaybeMessage: true,
       },
     });
 
@@ -949,6 +995,7 @@ export async function getEventAutomationSettings(eventId: string) {
       customMessages: {
         rsvpConfirmedMessage: event.rsvpConfirmedMessage,
         rsvpDeclinedMessage: event.rsvpDeclinedMessage,
+        rsvpMaybeMessage: event.rsvpMaybeMessage,
       },
     };
   } catch (error) {

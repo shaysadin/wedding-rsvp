@@ -29,6 +29,7 @@ const TRIGGER_ICONS: Record<AutomationTrigger, string> = {
   // Core triggers
   RSVP_CONFIRMED: "✅",
   RSVP_DECLINED: "❌",
+  RSVP_MAYBE: "🤔",
   NO_RESPONSE_WHATSAPP: "💬",
   NO_RESPONSE_SMS: "📱",
   BEFORE_EVENT: "⏱️",

@@ -119,6 +119,16 @@ const TRIGGER_CONFIG: Record<AutomationTrigger, NodeConfig> = {
     borderColor: "border-rose-200 dark:border-rose-800",
     category: "immediate",
   },
+  RSVP_MAYBE: {
+    icon: Timer,
+    label: { en: "Guest Maybe", he: "אורח אולי" },
+    description: { en: "Follow-up reminder for guests who said maybe", he: "תזכורת לאורחים שאמרו אולי" },
+    color: "text-amber-600 dark:text-amber-400",
+    bgColor: "bg-amber-50 dark:bg-amber-950/50",
+    borderColor: "border-amber-200 dark:border-amber-800",
+    category: "time-based",
+    requiresDelay: true,
+  },
   // Legacy - hidden from UI
   RSVP_SENT: {
     icon: Send,

@@ -28,7 +28,7 @@ import { updateSystemAutomationMessage } from "@/actions/automation";
 import { Icons } from "@/components/shared/icons";
 
 interface SystemAutomation {
-  id: "RSVP_CONFIRMED" | "RSVP_DECLINED";
+  id: "RSVP_CONFIRMED" | "RSVP_DECLINED" | "RSVP_MAYBE";
   trigger: {
     icon: string;
     label: { en: string; he: string };
@@ -39,7 +39,7 @@ interface SystemAutomation {
   };
   description: { en: string; he: string };
   defaultMessage: { en: string; he: string };
-  messageField: "rsvpConfirmedMessage" | "rsvpDeclinedMessage";
+  messageField: "rsvpConfirmedMessage" | "rsvpDeclinedMessage" | "rsvpMaybeMessage";
 }
 
 const SYSTEM_AUTOMATIONS: SystemAutomation[] = [
@@ -83,6 +83,26 @@ const SYSTEM_AUTOMATIONS: SystemAutomation[] = [
     },
     messageField: "rsvpDeclinedMessage",
   },
+  {
+    id: "RSVP_MAYBE",
+    trigger: {
+      icon: "🤔",
+      label: { en: "Guest Maybe", he: "אורח אולי" },
+    },
+    action: {
+      icon: "💬",
+      label: { en: "Maybe Acknowledgment", he: "הודעת אולי בוואטסאפ" },
+    },
+    description: {
+      en: "Automatically acknowledges when guest says maybe and schedules a follow-up reminder",
+      he: "שולח הודעה אוטומטית כשאורח אומר אולי ומתזמן תזכורת המשך",
+    },
+    defaultMessage: {
+      en: "Thank you {guestName}! 🤔\n\nWe understand you're not sure yet.\n\n📅 Date: {eventDate}\n📍 Location: {venue}, {address}\n\nWe'll check back with you soon. 💕",
+      he: "תודה {guestName}! 🤔\n\nהבנו שעדיין לא בטוח/ה לגבי ההגעה.\n\n📅 תאריך: {eventDate}\n📍 מיקום: {venue}, {address}\n\nניצור איתך קשר שוב בקרוב. 💕",
+    },
+    messageField: "rsvpMaybeMessage",
+  },
 ];
 
 const MESSAGE_VARIABLES = [
@@ -99,6 +119,7 @@ interface SystemAutomationCardsProps {
   customMessages?: {
     rsvpConfirmedMessage?: string | null;
     rsvpDeclinedMessage?: string | null;
+    rsvpMaybeMessage?: string | null;
   };
   onUpdate?: () => void;
 }

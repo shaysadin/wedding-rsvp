@@ -44,6 +44,7 @@ const TRIGGER_LABELS: Record<AutomationTrigger, { en: string; he: string; icon: 
   // Core Triggers (visible in UI)
   RSVP_CONFIRMED: { en: "Guest Confirmed", he: "אורח אישר הגעה", icon: "✅" },
   RSVP_DECLINED: { en: "Guest Declined", he: "אורח סירב", icon: "❌" },
+  RSVP_MAYBE: { en: "Guest Maybe", he: "אורח אולי", icon: "🤔" },
   NO_RESPONSE_WHATSAPP: { en: "No Response (WhatsApp)", he: "ללא תגובה (וואטסאפ)", icon: "💬" },
   NO_RESPONSE_SMS: { en: "No Response (SMS)", he: "ללא תגובה (SMS)", icon: "📱" },
   BEFORE_EVENT: { en: "Before Event", he: "לפני האירוע", icon: "⏱️" },

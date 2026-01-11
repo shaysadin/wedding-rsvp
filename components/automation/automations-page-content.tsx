@@ -25,6 +25,7 @@ export function AutomationsPageContent({ eventId, events, locale }: AutomationsP
   const [customMessages, setCustomMessages] = useState<{
     rsvpConfirmedMessage?: string | null;
     rsvpDeclinedMessage?: string | null;
+    rsvpMaybeMessage?: string | null;
   }>({});
   const [isLoading, setIsLoading] = useState(true);
 

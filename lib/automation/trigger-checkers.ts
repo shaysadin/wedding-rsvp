@@ -30,6 +30,14 @@ export function checkTriggerCondition(
     case "RSVP_DECLINED":
       return { shouldTrigger: false, reason: "Event-based trigger" };
 
+    case "RSVP_MAYBE":
+      // RSVP_MAYBE is a time-based trigger - it sends a reminder after delayHours
+      // The execution is already scheduled with scheduledFor, so just validate the guest hasn't responded yet
+      if (context.rsvpStatus === "ACCEPTED" || context.rsvpStatus === "DECLINED") {
+        return { shouldTrigger: false, reason: "Guest already responded" };
+      }
+      return { shouldTrigger: true, reason: "Maybe follow-up reminder" };
+
     // Flexible Time-Based Triggers (use delayHours from flow)
     case "NO_RESPONSE_WHATSAPP":
     case "NO_RESPONSE_SMS":
