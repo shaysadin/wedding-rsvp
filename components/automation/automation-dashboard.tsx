@@ -74,6 +74,7 @@ interface AutomationDashboardProps {
     rsvpDeclinedMessage?: string | null;
     rsvpMaybeMessage?: string | null;
   };
+  rsvpMaybeReminderDelay?: number;
   onRefresh: () => void;
 }
 
@@ -82,6 +83,7 @@ export function AutomationDashboard({
   flows,
   templates,
   customMessages,
+  rsvpMaybeReminderDelay = 24,
   onRefresh,
 }: AutomationDashboardProps) {
   const locale = useLocale();
@@ -318,7 +320,7 @@ export function AutomationDashboard({
       </div>
 
       {/* Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
+      <Tabs value={activeTab} onValueChange={setActiveTab} dir={isRTL ? "rtl" : "ltr"}>
         <div className="flex items-center justify-between">
           <TabsList className="grid w-full max-w-[400px] grid-cols-2">
             <TabsTrigger value="flows" className="gap-2">
@@ -343,6 +345,7 @@ export function AutomationDashboard({
           <SystemAutomationCards
             eventId={eventId}
             customMessages={customMessages}
+            rsvpMaybeReminderDelay={rsvpMaybeReminderDelay}
             onUpdate={onRefresh}
           />
 

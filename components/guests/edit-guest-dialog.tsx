@@ -9,7 +9,7 @@ import { Guest, GuestRsvp, RsvpStatus } from "@prisma/client";
 
 const PREDEFINED_GROUPS = ["family", "friends", "work", "other"] as const;
 const PREDEFINED_SIDES = ["bride", "groom", "both"] as const;
-const RSVP_STATUSES = ["PENDING", "ACCEPTED", "DECLINED"] as const;
+const RSVP_STATUSES = ["PENDING", "ACCEPTED", "DECLINED", "MAYBE"] as const;
 
 import { updateGuest } from "@/actions/guests";
 import { updateGuestSchema, type UpdateGuestInput } from "@/lib/validations/guest";
@@ -331,6 +331,7 @@ export function EditGuestDialog({ guest, open, onOpenChange }: EditGuestDialogPr
                         <SelectItem value="PENDING">{t("statuses.pending")}</SelectItem>
                         <SelectItem value="ACCEPTED">{t("statuses.accepted")}</SelectItem>
                         <SelectItem value="DECLINED">{t("statuses.declined")}</SelectItem>
+                        <SelectItem value="MAYBE">{t("statuses.maybe")}</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />

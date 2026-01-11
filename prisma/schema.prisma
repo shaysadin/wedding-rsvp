@@ -177,6 +177,7 @@ model WeddingEvent {
   rsvpConfirmedMessage    String?            @map("rsvp_confirmed_message")
   rsvpDeclinedMessage     String?            @map("rsvp_declined_message")
   rsvpMaybeMessage        String?            @map("rsvp_maybe_message")
+  rsvpMaybeReminderDelay  Int                @default(24) @map("rsvp_maybe_reminder_delay") // Hours until follow-up reminder
   bulkMessageJobs         BulkMessageJob[]
   guests                  Guest[]
   messageTemplates        MessageTemplate[]

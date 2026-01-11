@@ -641,10 +641,18 @@ function getButtonTitle(action: string): string {
 
 /**
  * Schedule a follow-up reminder for guests who said "maybe"
- * Creates an automation execution to send a reminder 24 hours later
+ * Creates an automation execution to send a reminder based on the event's configured delay
  */
 async function scheduleRsvpMaybeFollowUp(guestId: string, eventId: string) {
   try {
+    // Get the event's configured reminder delay
+    const event = await prisma.weddingEvent.findUnique({
+      where: { id: eventId },
+      select: { rsvpMaybeReminderDelay: true },
+    });
+
+    const configuredDelay = event?.rsvpMaybeReminderDelay || 24;
+
     // Find or create the default RSVP_MAYBE automation flow for this event
     let automationFlow = await prisma.automationFlow.findFirst({
       where: {
@@ -654,7 +662,7 @@ async function scheduleRsvpMaybeFollowUp(guestId: string, eventId: string) {
       },
     });
 
-    // If no automation exists, create a default one
+    // If no automation exists, create a default one with the configured delay
     if (!automationFlow) {
       automationFlow = await prisma.automationFlow.create({
         data: {
@@ -662,16 +670,16 @@ async function scheduleRsvpMaybeFollowUp(guestId: string, eventId: string) {
           name: "Maybe Follow-up Reminder",
           trigger: "RSVP_MAYBE",
           action: "SEND_WHATSAPP_INTERACTIVE_REMINDER",
-          delayHours: 24, // Send reminder 24 hours after "maybe" response
+          delayHours: configuredDelay,
           status: "ACTIVE",
         },
       });
-      console.log(`Created default RSVP_MAYBE automation for event ${eventId}`);
+      console.log(`Created default RSVP_MAYBE automation for event ${eventId} with ${configuredDelay}h delay`);
     }
 
-    // Schedule the execution for 24 hours from now
+    // Use the event's configured delay (not the flow's delay, which might be outdated)
     const scheduledFor = new Date();
-    scheduledFor.setHours(scheduledFor.getHours() + (automationFlow.delayHours || 24));
+    scheduledFor.setHours(scheduledFor.getHours() + configuredDelay);
 
     // Check if an execution already exists for this guest/flow combination
     const existingExecution = await prisma.automationFlowExecution.findUnique({
@@ -694,7 +702,7 @@ async function scheduleRsvpMaybeFollowUp(guestId: string, eventId: string) {
           errorMessage: null,
         },
       });
-      console.log(`Rescheduled RSVP_MAYBE follow-up for guest ${guestId} at ${scheduledFor.toISOString()}`);
+      console.log(`Rescheduled RSVP_MAYBE follow-up for guest ${guestId} at ${scheduledFor.toISOString()} (${configuredDelay}h delay)`);
     } else {
       // Create new execution
       await prisma.automationFlowExecution.create({
@@ -705,7 +713,7 @@ async function scheduleRsvpMaybeFollowUp(guestId: string, eventId: string) {
           scheduledFor: scheduledFor,
         },
       });
-      console.log(`Scheduled RSVP_MAYBE follow-up for guest ${guestId} at ${scheduledFor.toISOString()}`);
+      console.log(`Scheduled RSVP_MAYBE follow-up for guest ${guestId} at ${scheduledFor.toISOString()} (${configuredDelay}h delay)`);
     }
   } catch (error) {
     console.error("Error scheduling RSVP_MAYBE follow-up:", error);

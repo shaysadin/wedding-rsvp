@@ -268,7 +268,8 @@
     "statuses": {
       "pending": "ממתין",
       "accepted": "מאושר",
-      "declined": "סירב"
+      "declined": "סירב",
+      "maybe": "אולי"
     },
     "importInstructions": "העלה קובץ Excel או CSV עם העמודות: שם, טלפון, צד, קבוצה, מספר אורחים",
     "downloadTemplate": "הורד תבנית",
@@ -574,6 +575,7 @@
     "pending": "ממתין",
     "accepted": "אישר הגעה",
     "declined": "סירב",
+    "maybe": "אולי",
     "active": "פעיל",
     "suspended": "מושהה",
     "pending_approval": "ממתין לאישור"
@@ -1148,6 +1150,12 @@
     "savePositionError": "שמירת מיקום השולחנות נכשלה",
     "changesDiscarded": "השינויים בוטלו",
     "rotate45": "סובב 45 מעלות",
+    "fullscreen": "מסך מלא",
+    "exitFullscreen": "יציאה ממסך מלא",
+    "hostessView": "תצוגת מארחת",
+    "hostessViewDescription": "שתפי קישור זה עם המארחת",
+    "copyHostessLink": "העתק קישור",
+    "hostessLinkCopied": "הקישור למארחת הועתק ללוח",
     "venueBlocks": {
       "title": "אזורי מקום",
       "add": "הוסף אזור",

@@ -7,6 +7,19 @@ import { X } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 
+// Context to track if a visible DialogTitle has been rendered
+interface DialogContextValue {
+  hasVisibleTitle: boolean;
+  setHasVisibleTitle: (value: boolean) => void;
+  screenReaderTitle: string;
+}
+
+const DialogContext = React.createContext<DialogContextValue | null>(null)
+
+function useDialogContext() {
+  return React.useContext(DialogContext)
+}
+
 // Hook for swipe-to-dismiss on mobile bottom sheets
 function useSwipeToDismiss(onDismiss: () => void, enabled: boolean = true) {
   const [dragY, setDragY] = React.useState(0)
@@ -122,15 +135,33 @@ interface DialogContentProps
     VariantProps<typeof dialogContentVariants> {
   hideCloseButton?: boolean;
   noWrapper?: boolean;
+  /** Visually hidden title for screen readers when no visible DialogTitle is used */
+  screenReaderTitle?: string;
+}
+
+// Internal component for the fallback hidden title
+function DialogFallbackTitle() {
+  const context = useDialogContext()
+
+  if (!context || context.hasVisibleTitle) {
+    return null
+  }
+
+  return (
+    <DialogPrimitive.Title className="sr-only">
+      {context.screenReaderTitle}
+    </DialogPrimitive.Title>
+  )
 }
 
 const DialogContent = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Content>,
   DialogContentProps
->(({ className, children, size, hideCloseButton, noWrapper, dir, ...props }, ref) => {
+>(({ className, children, size, hideCloseButton, noWrapper, dir, screenReaderTitle = "Dialog", ...props }, ref) => {
   // Get document direction for RTL support in portal (if not explicitly set)
   const [autoDir, setAutoDir] = React.useState<"ltr" | "rtl" | undefined>(undefined)
   const [isMobile, setIsMobile] = React.useState(false)
+  const [hasVisibleTitle, setHasVisibleTitle] = React.useState(false)
   const closeRef = React.useRef<HTMLButtonElement>(null)
 
   React.useEffect(() => {
@@ -157,48 +188,58 @@ const DialogContent = React.forwardRef<
 
   const { dragY, isDragging, handlers } = useSwipeToDismiss(handleDismiss, isMobile)
 
+  const contextValue = React.useMemo(() => ({
+    hasVisibleTitle,
+    setHasVisibleTitle,
+    screenReaderTitle,
+  }), [hasVisibleTitle, screenReaderTitle])
+
   return (
-    <DialogPortal>
-      <DialogOverlay style={isDragging ? { opacity: Math.max(0.2, 1 - dragY / 300) } : undefined} />
-      <DialogPrimitive.Content
-        ref={ref}
-        dir={dir || autoDir}
-        aria-describedby={undefined}
-        className={cn(dialogContentVariants({ size }), className)}
-        style={
-          isMobile && dragY > 0
-            ? {
-                transform: `translateY(${dragY}px)`,
-                transition: isDragging ? "none" : "transform 0.2s ease-out",
-              }
-            : undefined
-        }
-        {...handlers}
-        {...props}
-      >
-        {/* Mobile drag handle indicator */}
-        <div
-          className="mx-auto mt-2 mb-1 h-1.5 w-12 shrink-0 rounded-full bg-muted-foreground/40 sm:hidden cursor-grab active:cursor-grabbing"
-        />
-        {noWrapper ? (
-          children
-        ) : (
-          <div className="flex min-h-0 flex-1 flex-col overflow-y-auto p-4 sm:p-6">
-            {children}
-          </div>
-        )}
-        <DialogPrimitive.Close
-          ref={closeRef}
-          className={cn(
-            "absolute end-3 top-4 rounded-lg p-1.5 opacity-70 ring-offset-background transition-all hover:opacity-100 hover:bg-muted focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground sm:end-4 sm:top-4 sm:p-1 z-10",
-            hideCloseButton && "sr-only"
-          )}
+    <DialogContext.Provider value={contextValue}>
+      <DialogPortal>
+        <DialogOverlay style={isDragging ? { opacity: Math.max(0.2, 1 - dragY / 300) } : undefined} />
+        <DialogPrimitive.Content
+          ref={ref}
+          dir={dir || autoDir}
+          aria-describedby={undefined}
+          className={cn(dialogContentVariants({ size }), className)}
+          style={
+            isMobile && dragY > 0
+              ? {
+                  transform: `translateY(${dragY}px)`,
+                  transition: isDragging ? "none" : "transform 0.2s ease-out",
+                }
+              : undefined
+          }
+          {...handlers}
+          {...props}
         >
-          <X className="size-5 sm:size-4" />
-          <span className="sr-only">Close</span>
-        </DialogPrimitive.Close>
-      </DialogPrimitive.Content>
-    </DialogPortal>
+          {/* Mobile drag handle indicator */}
+          <div
+            className="mx-auto mt-2 mb-1 h-1.5 w-12 shrink-0 rounded-full bg-muted-foreground/40 sm:hidden cursor-grab active:cursor-grabbing"
+          />
+          {/* Fallback visually hidden title for dialogs without visible DialogTitle */}
+          <DialogFallbackTitle />
+          {noWrapper ? (
+            children
+          ) : (
+            <div className="flex min-h-0 flex-1 flex-col overflow-y-auto p-4 sm:p-6">
+              {children}
+            </div>
+          )}
+          <DialogPrimitive.Close
+            ref={closeRef}
+            className={cn(
+              "absolute end-3 top-4 rounded-lg p-1.5 opacity-70 ring-offset-background transition-all hover:opacity-100 hover:bg-muted focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground sm:end-4 sm:top-4 sm:p-1 z-10",
+              hideCloseButton && "sr-only"
+            )}
+          >
+            <X className="size-5 sm:size-4" />
+            <span className="sr-only">Close</span>
+          </DialogPrimitive.Close>
+        </DialogPrimitive.Content>
+      </DialogPortal>
+    </DialogContext.Provider>
   )
 })
 DialogContent.displayName = DialogPrimitive.Content.displayName
@@ -234,16 +275,28 @@ DialogFooter.displayName = "DialogFooter"
 const DialogTitle = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Title>,
   React.ComponentPropsWithoutRef<typeof DialogPrimitive.Title>
->(({ className, ...props }, ref) => (
-  <DialogPrimitive.Title
-    ref={ref}
-    className={cn(
-      "text-lg font-semibold leading-none tracking-tight",
-      className
-    )}
-    {...props}
-  />
-))
+>(({ className, ...props }, ref) => {
+  const context = useDialogContext()
+
+  // Register that a visible title exists
+  React.useEffect(() => {
+    if (context) {
+      context.setHasVisibleTitle(true)
+      return () => context.setHasVisibleTitle(false)
+    }
+  }, [context])
+
+  return (
+    <DialogPrimitive.Title
+      ref={ref}
+      className={cn(
+        "text-lg font-semibold leading-none tracking-tight",
+        className
+      )}
+      {...props}
+    />
+  )
+})
 DialogTitle.displayName = DialogPrimitive.Title.displayName
 
 const DialogDescription = React.forwardRef<

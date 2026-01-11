@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useLocale } from "next-intl";
-import { CheckCircle2, Info, Zap, Edit2, Save, X } from "lucide-react";
+import { CheckCircle2, Info, Zap, Edit2, Save, X, Clock } from "lucide-react";
 import { toast } from "sonner";
 
 import { cn } from "@/lib/utils";
@@ -10,6 +10,14 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Dialog,
   DialogContent,
@@ -24,7 +32,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { updateSystemAutomationMessage } from "@/actions/automation";
+import { updateSystemAutomationMessage, updateSystemAutomationDelay } from "@/actions/automation";
 import { Icons } from "@/components/shared/icons";
 
 interface SystemAutomation {
@@ -40,7 +48,17 @@ interface SystemAutomation {
   description: { en: string; he: string };
   defaultMessage: { en: string; he: string };
   messageField: "rsvpConfirmedMessage" | "rsvpDeclinedMessage" | "rsvpMaybeMessage";
+  hasDelay?: boolean;
+  delayDescription?: { en: string; he: string };
 }
+
+const DELAY_OPTIONS = [
+  { value: 24, label: { en: "24 hours", he: "24 שעות" } },
+  { value: 48, label: { en: "48 hours", he: "48 שעות" } },
+  { value: 72, label: { en: "72 hours", he: "72 שעות" } },
+  { value: 96, label: { en: "4 days", he: "4 ימים" } },
+  { value: 168, label: { en: "1 week", he: "שבוע" } },
+];
 
 const SYSTEM_AUTOMATIONS: SystemAutomation[] = [
   {
@@ -91,17 +109,22 @@ const SYSTEM_AUTOMATIONS: SystemAutomation[] = [
     },
     action: {
       icon: "💬",
-      label: { en: "Maybe Acknowledgment", he: "הודעת אולי בוואטסאפ" },
+      label: { en: "Maybe + Follow-up Reminder", he: "הודעת אולי + תזכורת" },
     },
     description: {
-      en: "Automatically acknowledges when guest says maybe and schedules a follow-up reminder",
-      he: "שולח הודעה אוטומטית כשאורח אומר אולי ומתזמן תזכורת המשך",
+      en: "Sends acknowledgment when guest says maybe, then sends a follow-up reminder after the configured delay",
+      he: "שולח הודעה כשאורח אומר אולי, ולאחר מכן שולח תזכורת לפי הזמן שנבחר",
     },
     defaultMessage: {
       en: "Thank you {guestName}! 🤔\n\nWe understand you're not sure yet.\n\n📅 Date: {eventDate}\n📍 Location: {venue}, {address}\n\nWe'll check back with you soon. 💕",
       he: "תודה {guestName}! 🤔\n\nהבנו שעדיין לא בטוח/ה לגבי ההגעה.\n\n📅 תאריך: {eventDate}\n📍 מיקום: {venue}, {address}\n\nניצור איתך קשר שוב בקרוב. 💕",
     },
     messageField: "rsvpMaybeMessage",
+    hasDelay: true,
+    delayDescription: {
+      en: "Follow-up reminder will be sent after:",
+      he: "תזכורת תישלח לאחר:",
+    },
   },
 ];
 
@@ -121,44 +144,61 @@ interface SystemAutomationCardsProps {
     rsvpDeclinedMessage?: string | null;
     rsvpMaybeMessage?: string | null;
   };
+  rsvpMaybeReminderDelay?: number;
   onUpdate?: () => void;
 }
 
 export function SystemAutomationCards({
   eventId,
   customMessages,
+  rsvpMaybeReminderDelay = 24,
   onUpdate,
 }: SystemAutomationCardsProps) {
   const locale = useLocale();
   const isRTL = locale === "he";
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editMessage, setEditMessage] = useState("");
+  const [editDelay, setEditDelay] = useState<number>(24);
   const [isLoading, setIsLoading] = useState(false);
 
   const handleEdit = (automation: SystemAutomation) => {
     const currentMessage = customMessages?.[automation.messageField];
     setEditMessage(currentMessage || (isRTL ? automation.defaultMessage.he : automation.defaultMessage.en));
+    if (automation.hasDelay) {
+      setEditDelay(rsvpMaybeReminderDelay);
+    }
     setEditingId(automation.id);
   };
 
   const handleSave = async (automation: SystemAutomation) => {
     setIsLoading(true);
     try {
-      const result = await updateSystemAutomationMessage(
+      // Save the message
+      const messageResult = await updateSystemAutomationMessage(
         eventId,
         automation.messageField,
         editMessage.trim() || null
       );
 
-      if (result.error) {
-        toast.error(result.error);
-      } else {
-        toast.success(isRTL ? "ההודעה עודכנה בהצלחה" : "Message updated successfully");
-        setEditingId(null);
-        onUpdate?.();
+      if (messageResult.error) {
+        toast.error(messageResult.error);
+        return;
       }
+
+      // Save the delay if this automation has one
+      if (automation.hasDelay) {
+        const delayResult = await updateSystemAutomationDelay(eventId, editDelay);
+        if (delayResult.error) {
+          toast.error(delayResult.error);
+          return;
+        }
+      }
+
+      toast.success(isRTL ? "ההגדרות עודכנו בהצלחה" : "Settings updated successfully");
+      setEditingId(null);
+      onUpdate?.();
     } catch (error) {
-      toast.error(isRTL ? "שגיאה בעדכון ההודעה" : "Failed to update message");
+      toast.error(isRTL ? "שגיאה בעדכון ההגדרות" : "Failed to update settings");
     } finally {
       setIsLoading(false);
     }
@@ -167,6 +207,7 @@ export function SystemAutomationCards({
   const handleCancel = () => {
     setEditingId(null);
     setEditMessage("");
+    setEditDelay(rsvpMaybeReminderDelay);
   };
 
   const insertVariable = (variable: string) => {
@@ -174,6 +215,12 @@ export function SystemAutomationCards({
   };
 
   const currentAutomation = SYSTEM_AUTOMATIONS.find((a) => a.id === editingId);
+
+  // Get the delay label for display
+  const getDelayLabel = (hours: number) => {
+    const option = DELAY_OPTIONS.find((o) => o.value === hours);
+    return option ? (isRTL ? option.label.he : option.label.en) : `${hours}h`;
+  };
 
   return (
     <>
@@ -255,6 +302,16 @@ export function SystemAutomationCards({
                     <p className="text-xs text-muted-foreground">
                       {isRTL ? automation.description.he : automation.description.en}
                     </p>
+                    {/* Show delay info for RSVP_MAYBE */}
+                    {automation.hasDelay && (
+                      <div className="flex items-center gap-1.5 mt-2 text-xs text-amber-600 dark:text-amber-400">
+                        <Clock className="h-3 w-3" />
+                        <span>
+                          {isRTL ? "תזכורת אחרי:" : "Reminder after:"}{" "}
+                          <span className="font-medium">{getDelayLabel(rsvpMaybeReminderDelay)}</span>
+                        </span>
+                      </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>
@@ -279,10 +336,44 @@ export function SystemAutomationCards({
           </DialogHeader>
 
           <div className="space-y-4 py-4">
+            {/* Delay selector for RSVP_MAYBE */}
+            {currentAutomation?.hasDelay && (
+              <div className="space-y-2 rounded-lg border border-amber-200 bg-amber-50/50 p-3 dark:border-amber-800 dark:bg-amber-950/30">
+                <div className="flex items-center gap-2">
+                  <Clock className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                  <Label className="text-sm font-medium text-amber-800 dark:text-amber-300">
+                    {currentAutomation.delayDescription
+                      ? (isRTL ? currentAutomation.delayDescription.he : currentAutomation.delayDescription.en)
+                      : (isRTL ? "תזכורת לאחר:" : "Follow-up reminder after:")}
+                  </Label>
+                </div>
+                <Select
+                  value={editDelay.toString()}
+                  onValueChange={(value) => setEditDelay(parseInt(value))}
+                >
+                  <SelectTrigger className="w-full bg-white dark:bg-gray-900">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {DELAY_OPTIONS.map((option) => (
+                      <SelectItem key={option.value} value={option.value.toString()}>
+                        {isRTL ? option.label.he : option.label.en}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-amber-700 dark:text-amber-400 text-start">
+                  {isRTL
+                    ? "לאחר זמן זה, תישלח הודעת תזכורת אינטראקטיבית לאורח"
+                    : "After this time, an interactive reminder will be sent to the guest"}
+                </p>
+              </div>
+            )}
+
             {/* Variable buttons */}
             <div className="space-y-2">
               <p className="text-sm text-muted-foreground text-start">
-                {isRTL ? "משתנים זמינים:" : "Available variables:"}
+                {isRTL ? "משתנים זמינים להודעת האישור:" : "Available variables for acknowledgment message:"}
               </p>
               <div className="flex flex-wrap gap-1">
                 {MESSAGE_VARIABLES.map((variable) => (
@@ -301,15 +392,22 @@ export function SystemAutomationCards({
             </div>
 
             {/* Message textarea */}
-            <Textarea
-              value={editMessage}
-              onChange={(e) => setEditMessage(e.target.value)}
-              placeholder={currentAutomation
-                ? (isRTL ? currentAutomation.defaultMessage.he : currentAutomation.defaultMessage.en)
-                : ""}
-              className="min-h-[120px] resize-none text-start"
-              dir={isRTL ? "rtl" : "ltr"}
-            />
+            <div className="space-y-2">
+              <Label className="text-sm text-start">
+                {currentAutomation?.hasDelay
+                  ? (isRTL ? "הודעת אישור מיידית:" : "Immediate acknowledgment message:")
+                  : (isRTL ? "הודעה:" : "Message:")}
+              </Label>
+              <Textarea
+                value={editMessage}
+                onChange={(e) => setEditMessage(e.target.value)}
+                placeholder={currentAutomation
+                  ? (isRTL ? currentAutomation.defaultMessage.he : currentAutomation.defaultMessage.en)
+                  : ""}
+                className="min-h-[120px] resize-none text-start"
+                dir={isRTL ? "rtl" : "ltr"}
+              />
+            </div>
 
             <p className="text-xs text-muted-foreground text-start">
               {isRTL

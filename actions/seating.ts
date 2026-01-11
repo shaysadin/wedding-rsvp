@@ -1026,3 +1026,82 @@ export async function getEventVenueBlocks(eventId: string) {
     return { error: "Failed to fetch venue blocks" };
   }
 }
+
+/**
+ * Get guests with table assignments for hostess view (public, no auth required)
+ * Returns only accepted guests with their table assignments
+ */
+export async function getEventGuestsForHostess(eventId: string) {
+  try {
+    // Verify event exists and is active
+    const event = await prisma.weddingEvent.findFirst({
+      where: {
+        id: eventId,
+        isActive: true,
+      },
+      select: {
+        id: true,
+        title: true,
+        dateTime: true,
+        location: true,
+        venue: true,
+      },
+    });
+
+    if (!event) {
+      return { error: "Event not found" };
+    }
+
+    // Get all guests who have confirmed attendance (ACCEPTED status)
+    // Include their table assignments
+    const guests = await prisma.guest.findMany({
+      where: {
+        weddingEventId: eventId,
+        rsvp: {
+          status: "ACCEPTED",
+        },
+      },
+      select: {
+        id: true,
+        name: true,
+        rsvp: {
+          select: {
+            guestCount: true,
+          },
+        },
+        tableAssignment: {
+          select: {
+            table: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+          },
+        },
+      },
+      orderBy: [
+        { tableAssignment: { table: { name: "asc" } } },
+        { name: "asc" },
+      ],
+    });
+
+    // Transform the data for easier consumption
+    const guestsWithTables = guests.map((guest) => ({
+      id: guest.id,
+      name: guest.name,
+      guestCount: guest.rsvp?.guestCount || 1,
+      tableName: guest.tableAssignment?.table?.name || null,
+      tableId: guest.tableAssignment?.table?.id || null,
+    }));
+
+    return {
+      success: true,
+      event,
+      guests: guestsWithTables,
+    };
+  } catch (error) {
+    console.error("Error fetching guests for hostess view:", error);
+    return { error: "Failed to fetch guest list" };
+  }
+}

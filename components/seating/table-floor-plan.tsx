@@ -13,6 +13,7 @@ import {
   useSensor,
   useSensors,
 } from "@dnd-kit/core";
+import { Maximize2, Minimize2, GripHorizontal } from "lucide-react";
 
 import { updateTablePosition, updateTableSize, updateTableRotation, updateVenueBlockPosition, updateVenueBlockSize, updateVenueBlockRotation, deleteVenueBlock } from "@/actions/seating";
 import { cn } from "@/lib/utils";
@@ -93,7 +94,10 @@ interface LocalPosition {
 }
 
 const GRID_SIZE = 20; // Snap to grid
-const FLOOR_HEIGHT = 600; // Fixed floor height
+const DEFAULT_FLOOR_HEIGHT = 600; // Default floor height
+const MIN_FLOOR_HEIGHT = 300;
+const MAX_FLOOR_HEIGHT = 3000; // Allow very large floor plans
+const FLOOR_HEIGHT_STORAGE_KEY = "seating-floor-height";
 const MIN_SIZE = 40;
 const MAX_SIZE = 400;
 const DEFAULT_TABLE_SIZE = {
@@ -719,8 +723,8 @@ function DraggableVenueBlock({
   );
 }
 
-const FloorArea = React.forwardRef<HTMLDivElement, { children: React.ReactNode }>(
-  function FloorArea({ children }, ref) {
+const FloorArea = React.forwardRef<HTMLDivElement, { children: React.ReactNode; height: number; isFullscreen?: boolean }>(
+  function FloorArea({ children, height, isFullscreen }, ref) {
     const { setNodeRef, isOver } = useDroppable({
       id: "floor-area",
     });
@@ -739,11 +743,13 @@ const FloorArea = React.forwardRef<HTMLDivElement, { children: React.ReactNode }
       <div
         ref={combinedRef}
         className={cn(
-          "relative w-full h-[600px] border-2 border-dashed rounded-lg overflow-hidden",
+          "relative w-full border-2 border-dashed rounded-lg overflow-hidden",
           "bg-muted/20",
-          isOver && "border-primary bg-primary/5"
+          isOver && "border-primary bg-primary/5",
+          isFullscreen && "rounded-none border-0"
         )}
         style={{
+          height: isFullscreen ? "100%" : height,
           backgroundImage: `
             linear-gradient(to right, hsl(var(--border)) 1px, transparent 1px),
             linear-gradient(to bottom, hsl(var(--border)) 1px, transparent 1px)
@@ -778,20 +784,120 @@ export function TableFloorPlan({
   const [showUnsavedDialog, setShowUnsavedDialog] = useState(false);
   const [pendingAction, setPendingAction] = useState<(() => void) | null>(null);
   const [floorWidth, setFloorWidth] = useState(800); // Default width, will be updated
+  const [floorHeight, setFloorHeight] = useState(DEFAULT_FLOOR_HEIGHT);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isResizingHeight, setIsResizingHeight] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const floorRef = useRef<HTMLDivElement>(null);
+  const fullscreenRef = useRef<HTMLDivElement>(null);
+  // Store base dimensions (non-fullscreen) for proper position saving
+  const baseFloorDimensions = useRef({ width: 800, height: DEFAULT_FLOOR_HEIGHT });
 
-  // Measure floor width on mount and resize
+  // Load floor height from localStorage on mount
   useEffect(() => {
-    const updateFloorWidth = () => {
+    const savedHeight = localStorage.getItem(FLOOR_HEIGHT_STORAGE_KEY);
+    if (savedHeight) {
+      const height = parseInt(savedHeight, 10);
+      if (!isNaN(height) && height >= MIN_FLOOR_HEIGHT && height <= MAX_FLOOR_HEIGHT) {
+        setFloorHeight(height);
+        // Also set base dimensions
+        baseFloorDimensions.current.height = height;
+      }
+    }
+  }, []);
+
+  // Measure floor dimensions on mount, resize, and fullscreen change
+  useEffect(() => {
+    const updateFloorDimensions = () => {
       if (floorRef.current) {
-        setFloorWidth(floorRef.current.clientWidth);
+        const currentWidth = floorRef.current.clientWidth;
+        setFloorWidth(currentWidth);
+
+        // In fullscreen mode, use actual element height
+        if (isFullscreen) {
+          setFloorHeight(floorRef.current.clientHeight);
+        } else {
+          // Update base dimensions when not in fullscreen
+          baseFloorDimensions.current = {
+            width: currentWidth,
+            height: floorHeight,
+          };
+        }
       }
     };
 
-    updateFloorWidth();
-    window.addEventListener("resize", updateFloorWidth);
-    return () => window.removeEventListener("resize", updateFloorWidth);
+    // Use requestAnimationFrame to ensure DOM has updated after fullscreen toggle
+    const rafId = requestAnimationFrame(updateFloorDimensions);
+    window.addEventListener("resize", updateFloorDimensions);
+
+    return () => {
+      cancelAnimationFrame(rafId);
+      window.removeEventListener("resize", updateFloorDimensions);
+    };
+  }, [isFullscreen, floorHeight]);
+
+  // Handle fullscreen mode with Escape key
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && isFullscreen) {
+        setIsFullscreen(false);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isFullscreen]);
+
+  // Height resize handler
+  const handleHeightResizeStart = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsResizingHeight(true);
+    const startY = e.clientY;
+    const startHeight = floorHeight;
+    let currentHeight = startHeight;
+
+    const handleMouseMove = (moveEvent: MouseEvent) => {
+      const deltaY = moveEvent.clientY - startY;
+      currentHeight = Math.max(MIN_FLOOR_HEIGHT, Math.min(MAX_FLOOR_HEIGHT, startHeight + deltaY));
+      setFloorHeight(currentHeight);
+      // Update base dimensions as we resize
+      if (floorRef.current) {
+        baseFloorDimensions.current = {
+          width: floorRef.current.clientWidth,
+          height: currentHeight,
+        };
+      }
+    };
+
+    const handleMouseUp = () => {
+      setIsResizingHeight(false);
+      // Save the final height to localStorage
+      localStorage.setItem(FLOOR_HEIGHT_STORAGE_KEY, currentHeight.toString());
+      document.removeEventListener("mousemove", handleMouseMove);
+      document.removeEventListener("mouseup", handleMouseUp);
+    };
+
+    document.addEventListener("mousemove", handleMouseMove);
+    document.addEventListener("mouseup", handleMouseUp);
+  }, [floorHeight]);
+
+  // Fullscreen toggle handler
+  const toggleFullscreen = useCallback(() => {
+    setIsFullscreen((prev) => {
+      if (prev) {
+        // Exiting fullscreen - restore saved height
+        const savedHeight = localStorage.getItem(FLOOR_HEIGHT_STORAGE_KEY);
+        if (savedHeight) {
+          const height = parseInt(savedHeight, 10);
+          if (!isNaN(height) && height >= MIN_FLOOR_HEIGHT && height <= MAX_FLOOR_HEIGHT) {
+            setFloorHeight(height);
+          }
+        } else {
+          setFloorHeight(DEFAULT_FLOOR_HEIGHT);
+        }
+      }
+      return !prev;
+    });
   }, []);
 
   const hasUnsavedChanges = localPositions.size > 0 || blockPositions.size > 0 || tableSizes.size > 0 || blockSizes.size > 0 || tableRotations.size > 0 || blockRotations.size > 0;
@@ -807,9 +913,9 @@ export function TableFloorPlan({
     // Auto position blocks along the bottom
     return {
       x: 50 + index * 120,
-      y: FLOOR_HEIGHT - block.height - 50,
+      y: floorHeight - block.height - 50,
     };
-  }, [blockPositions]);
+  }, [blockPositions, floorHeight]);
 
   // Configure sensors with distance activation - drag only starts after moving 8px
   // This allows clicks to pass through for the popover
@@ -884,7 +990,7 @@ export function TableFloorPlan({
 
       // Ensure within bounds
       const maxX = floorWidth - block.width;
-      const maxY = FLOOR_HEIGHT - block.height;
+      const maxY = floorHeight - block.height;
       const boundedX = Math.max(0, Math.min(newX, maxX));
       const boundedY = Math.max(0, Math.min(newY, maxY));
 
@@ -916,7 +1022,7 @@ export function TableFloorPlan({
 
       // Ensure within bounds - account for table size so it stays fully visible
       const maxX = floorWidth - tableWidth;
-      const maxY = FLOOR_HEIGHT - tableHeight;
+      const maxY = floorHeight - tableHeight;
       const boundedX = Math.max(0, Math.min(newX, maxX));
       const boundedY = Math.max(0, Math.min(newY, maxY));
 
@@ -934,21 +1040,25 @@ export function TableFloorPlan({
 
     setIsSaving(true);
     try {
-      // Save all table positions
+      // When in fullscreen, scale positions to base dimensions for saving
+      const scaleX = isFullscreen ? baseFloorDimensions.current.width / floorWidth : 1;
+      const scaleY = isFullscreen ? baseFloorDimensions.current.height / floorHeight : 1;
+
+      // Save all table positions (scaled if in fullscreen)
       const tablePositionPromises = Array.from(localPositions.entries()).map(([tableId, pos]) =>
         updateTablePosition({
           id: tableId,
-          positionX: pos.x,
-          positionY: pos.y,
+          positionX: Math.round(pos.x * scaleX),
+          positionY: Math.round(pos.y * scaleY),
         })
       );
 
-      // Save all block positions
+      // Save all block positions (scaled if in fullscreen)
       const blockPositionPromises = Array.from(blockPositions.entries()).map(([blockId, pos]) =>
         updateVenueBlockPosition({
           id: blockId,
-          positionX: pos.x,
-          positionY: pos.y,
+          positionX: Math.round(pos.x * scaleX),
+          positionY: Math.round(pos.y * scaleY),
         })
       );
 
@@ -1143,11 +1253,172 @@ export function TableFloorPlan({
     (t) => t.positionX === null || t.positionY === null
   );
 
+  // Floor plan content - reused in both normal and fullscreen modes
+  const floorPlanContent = (
+    <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
+      <FloorArea ref={floorRef} height={floorHeight} isFullscreen={isFullscreen}>
+        {/* Fullscreen toggle button - always visible */}
+        <Button
+          variant="outline"
+          size="icon"
+          className="absolute top-2 end-2 z-50 bg-background/80 backdrop-blur-sm hover:bg-background"
+          onClick={toggleFullscreen}
+          title={isFullscreen ? t("exitFullscreen") : t("fullscreen")}
+        >
+          {isFullscreen ? (
+            <Minimize2 className="h-4 w-4" />
+          ) : (
+            <Maximize2 className="h-4 w-4" />
+          )}
+        </Button>
+
+        {tables.length === 0 ? (
+          <div className="absolute inset-0 flex flex-col items-center justify-center text-muted-foreground">
+            <Icons.layoutGrid className="h-12 w-12 mb-4" />
+            <p>{t("noTablesYet")}</p>
+            <p className="text-sm">{t("addTableToStart")}</p>
+          </div>
+        ) : (
+          tables.map((table, index) => {
+            const position = getTablePosition(table, index);
+            const tableWithPosition = {
+              ...table,
+              positionX: position.x,
+              positionY: position.y,
+            };
+
+            return (
+              <DraggableTable
+                key={table.id}
+                table={tableWithPosition}
+                localPosition={localPositions.get(table.id)}
+                localSize={tableSizes.get(table.id)}
+                localRotation={tableRotations.get(table.id)}
+                onAssignGuests={onAssignGuests}
+                onEditTable={onEditTable}
+                onResizeStart={handleResizeStart}
+                onResize={handleResize}
+                onResizeEnd={handleResizeEnd}
+                onRotate={handleRotate}
+                isResizing={isResizing}
+              />
+            );
+          })
+        )}
+
+        {/* Venue Blocks */}
+        {venueBlocks.map((block, index) => {
+          const position = getBlockPosition(block, index);
+          const blockWithPosition = {
+            ...block,
+            positionX: position.x,
+            positionY: position.y,
+          };
+
+          return (
+            <DraggableVenueBlock
+              key={block.id}
+              block={blockWithPosition}
+              localPosition={blockPositions.get(block.id)}
+              localSize={blockSizes.get(block.id)}
+              localRotation={blockRotations.get(block.id)}
+              onDelete={handleDeleteBlock}
+              onResizeStart={handleResizeStart}
+              onResize={handleResize}
+              onResizeEnd={handleResizeEnd}
+              onRotate={handleRotate}
+              isResizing={isResizing}
+            />
+          );
+        })}
+
+        {/* Drag indicator */}
+        {activeDragId && (
+          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 px-3 py-1.5 bg-primary text-primary-foreground rounded-full text-sm font-medium shadow-lg">
+            {t("dropToPosition")}
+          </div>
+        )}
+      </FloorArea>
+    </DndContext>
+  );
+
+  // Fullscreen overlay
+  if (isFullscreen) {
+    return (
+      <div
+        ref={fullscreenRef}
+        className="fixed inset-0 z-[100] bg-background flex flex-col"
+      >
+        {/* Fullscreen header */}
+        <div className="flex items-center justify-between p-4 border-b bg-background/95 backdrop-blur-sm">
+          <div className="flex items-center gap-4 text-sm text-muted-foreground">
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 rounded-full border-2 border-primary/50 bg-card" />
+              <span>{t("shapes.circle")}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-5 h-3 rounded-none border-2 border-primary/50 bg-card" />
+              <span>{t("shapes.rectangle")}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-5 h-3 rounded-t-full rounded-b-none border-2 border-primary/50 bg-card" />
+              <span>{t("shapes.concave")}</span>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            {hasUnsavedChanges && (
+              <>
+                <Badge variant="outline" className="text-yellow-600 border-yellow-600">
+                  {t("unsavedChanges", { count: totalUnsavedCount })}
+                </Badge>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleDiscardChanges}
+                  disabled={isSaving}
+                >
+                  <Icons.close className="me-2 h-4 w-4" />
+                  {tc("discard")}
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={handleSavePositions}
+                  disabled={isSaving}
+                >
+                  {isSaving ? (
+                    <Icons.spinner className="me-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <Icons.check className="me-2 h-4 w-4" />
+                  )}
+                  {tc("save")}
+                </Button>
+              </>
+            )}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={toggleFullscreen}
+            >
+              <Minimize2 className="me-2 h-4 w-4" />
+              {t("exitFullscreen")}
+            </Button>
+          </div>
+        </div>
+
+        {/* Fullscreen floor plan */}
+        <div className="flex-1 p-4 overflow-hidden">
+          {floorPlanContent}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div ref={containerRef} className="space-y-4">
       {/* Header with Save/Discard buttons */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4 text-sm text-muted-foreground">
+      <div className="flex items-center justify-between flex-wrap gap-2">
+        <div className="flex items-center gap-4 text-sm text-muted-foreground flex-wrap">
           <div className="flex items-center gap-2">
             <div className="w-4 h-4 rounded-full border-2 border-primary/50 bg-card" />
             <span>{t("shapes.circle")}</span>
@@ -1207,76 +1478,25 @@ export function TableFloorPlan({
         </div>
       )}
 
-      <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
-        <FloorArea ref={floorRef}>
-          {tables.length === 0 ? (
-            <div className="absolute inset-0 flex flex-col items-center justify-center text-muted-foreground">
-              <Icons.layoutGrid className="h-12 w-12 mb-4" />
-              <p>{t("noTablesYet")}</p>
-              <p className="text-sm">{t("addTableToStart")}</p>
-            </div>
-          ) : (
-            tables.map((table, index) => {
-              const position = getTablePosition(table, index);
-              const tableWithPosition = {
-                ...table,
-                positionX: position.x,
-                positionY: position.y,
-              };
+      {/* Floor Plan */}
+      {floorPlanContent}
 
-              return (
-                <DraggableTable
-                  key={table.id}
-                  table={tableWithPosition}
-                  localPosition={localPositions.get(table.id)}
-                  localSize={tableSizes.get(table.id)}
-                  localRotation={tableRotations.get(table.id)}
-                  onAssignGuests={onAssignGuests}
-                  onEditTable={onEditTable}
-                  onResizeStart={handleResizeStart}
-                  onResize={handleResize}
-                  onResizeEnd={handleResizeEnd}
-                  onRotate={handleRotate}
-                  isResizing={isResizing}
-                />
-              );
-            })
-          )}
-
-          {/* Venue Blocks */}
-          {venueBlocks.map((block, index) => {
-            const position = getBlockPosition(block, index);
-            const blockWithPosition = {
-              ...block,
-              positionX: position.x,
-              positionY: position.y,
-            };
-
-            return (
-              <DraggableVenueBlock
-                key={block.id}
-                block={blockWithPosition}
-                localPosition={blockPositions.get(block.id)}
-                localSize={blockSizes.get(block.id)}
-                localRotation={blockRotations.get(block.id)}
-                onDelete={handleDeleteBlock}
-                onResizeStart={handleResizeStart}
-                onResize={handleResize}
-                onResizeEnd={handleResizeEnd}
-                onRotate={handleRotate}
-                isResizing={isResizing}
-              />
-            );
-          })}
-
-          {/* Drag indicator */}
-          {activeDragId && (
-            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 px-3 py-1.5 bg-primary text-primary-foreground rounded-full text-sm font-medium shadow-lg">
-              {t("dropToPosition")}
-            </div>
-          )}
-        </FloorArea>
-      </DndContext>
+      {/* Resize Handle */}
+      <div
+        className={cn(
+          "flex items-center justify-center h-3 -mt-2 cursor-ns-resize group select-none",
+          isResizingHeight && "cursor-ns-resize"
+        )}
+        onMouseDown={handleHeightResizeStart}
+      >
+        <div className={cn(
+          "flex items-center justify-center w-24 h-2 rounded-full transition-colors",
+          "bg-muted hover:bg-muted-foreground/30",
+          isResizingHeight && "bg-primary/50"
+        )}>
+          <GripHorizontal className="h-3 w-3 text-muted-foreground" />
+        </div>
+      </div>
 
       {/* Unsaved Changes Confirmation Dialog */}
       <AlertDialog open={showUnsavedDialog} onOpenChange={setShowUnsavedDialog}>

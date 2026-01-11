@@ -83,6 +83,9 @@ import {
 } from "@/actions/automation";
 import { Icons } from "@/components/shared/icons";
 
+// System automation triggers that cannot be deleted
+const PROTECTED_SYSTEM_TRIGGERS: AutomationTrigger[] = ["RSVP_MAYBE"];
+
 interface FlowDetailDialogProps {
   flowId: string;
   existingTriggers: AutomationTrigger[];
@@ -423,7 +426,7 @@ export function FlowDetailDialog({
           </div>
 
           {/* Content */}
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col" dir={isRTL ? "rtl" : "ltr"}>
             <div className="border-b px-6">
               <TabsList className="w-full justify-start rounded-none border-b-0 bg-transparent p-0">
                 <TabsTrigger
@@ -660,32 +663,35 @@ export function FlowDetailDialog({
                       </Button>
                     )}
 
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button variant="destructive">
-                          <Trash2 className="h-4 w-4 me-2" />
-                          {isRTL ? "מחק" : "Delete"}
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>
-                            {isRTL ? "מחיקת אוטומציה" : "Delete Automation"}
-                          </AlertDialogTitle>
-                          <AlertDialogDescription>
-                            {isRTL
-                              ? "האם אתה בטוח שברצונך למחוק את האוטומציה הזו? פעולה זו לא ניתנת לביטול."
-                              : "Are you sure you want to delete this automation? This action cannot be undone."}
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>{isRTL ? "ביטול" : "Cancel"}</AlertDialogCancel>
-                          <AlertDialogAction onClick={handleDelete}>
+                    {/* Only show delete for non-system automations */}
+                    {!PROTECTED_SYSTEM_TRIGGERS.includes(flow.trigger) && (
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button variant="destructive">
+                            <Trash2 className="h-4 w-4 me-2" />
                             {isRTL ? "מחק" : "Delete"}
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>
+                              {isRTL ? "מחיקת אוטומציה" : "Delete Automation"}
+                            </AlertDialogTitle>
+                            <AlertDialogDescription>
+                              {isRTL
+                                ? "האם אתה בטוח שברצונך למחוק את האוטומציה הזו? פעולה זו לא ניתנת לביטול."
+                                : "Are you sure you want to delete this automation? This action cannot be undone."}
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>{isRTL ? "ביטול" : "Cancel"}</AlertDialogCancel>
+                            <AlertDialogAction onClick={handleDelete}>
+                              {isRTL ? "מחק" : "Delete"}
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    )}
                   </div>
                 </div>
               </TabsContent>

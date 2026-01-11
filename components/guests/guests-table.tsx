@@ -860,7 +860,7 @@ export function GuestsTable({ guests, eventId, initialFilter = "all", invitation
                     </TableCell>
                     <TableCell className="text-center">
                       <Badge className={statusColors[status]} variant="secondary">
-                        {tStatus(status.toLowerCase() as "pending" | "accepted" | "declined")}
+                        {tStatus(status.toLowerCase() as "pending" | "accepted" | "declined" | "maybe")}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-center">
@@ -1090,7 +1090,7 @@ export function GuestsTable({ guests, eventId, initialFilter = "all", invitation
                           </TableCell>
                           <TableCell className="text-center">
                             <Badge className={statusColors[status]} variant="secondary">
-                              {tStatus(status.toLowerCase() as "pending" | "accepted" | "declined")}
+                              {tStatus(status.toLowerCase() as "pending" | "accepted" | "declined" | "maybe")}
                             </Badge>
                           </TableCell>
                           <TableCell className="text-center">

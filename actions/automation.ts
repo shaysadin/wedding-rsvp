@@ -877,6 +877,9 @@ export async function runExecutionNow(executionId: string) {
   }
 }
 
+// System automation triggers that cannot be deleted
+const PROTECTED_SYSTEM_TRIGGERS: AutomationTrigger[] = ["RSVP_MAYBE"];
+
 /**
  * Delete an automation flow
  */
@@ -900,6 +903,11 @@ export async function deleteAutomationFlow(flowId: string) {
 
     if (!flow || flow.weddingEvent.ownerId !== user.id) {
       return { error: "Flow not found" };
+    }
+
+    // Prevent deletion of protected system automations
+    if (PROTECTED_SYSTEM_TRIGGERS.includes(flow.trigger)) {
+      return { error: "System automations cannot be deleted" };
     }
 
     const eventId = flow.weddingEventId;
@@ -983,6 +991,7 @@ export async function getEventAutomationSettings(eventId: string) {
         rsvpConfirmedMessage: true,
         rsvpDeclinedMessage: true,
         rsvpMaybeMessage: true,
+        rsvpMaybeReminderDelay: true,
       },
     });
 
@@ -997,10 +1006,60 @@ export async function getEventAutomationSettings(eventId: string) {
         rsvpDeclinedMessage: event.rsvpDeclinedMessage,
         rsvpMaybeMessage: event.rsvpMaybeMessage,
       },
+      rsvpMaybeReminderDelay: event.rsvpMaybeReminderDelay,
     };
   } catch (error) {
     console.error("Error fetching event automation settings:", error);
     return { error: "Failed to fetch settings" };
+  }
+}
+
+/**
+ * Update the RSVP Maybe reminder delay for an event
+ */
+export async function updateSystemAutomationDelay(
+  eventId: string,
+  delayHours: number
+) {
+  try {
+    const user = await getCurrentUser();
+
+    // Check if user has ROLE_WEDDING_OWNER in their roles array
+    const hasWeddingOwnerRole = user?.roles?.includes(UserRole.ROLE_WEDDING_OWNER);
+    if (!user || !hasWeddingOwnerRole) {
+      return { error: "Unauthorized" };
+    }
+
+    // Verify ownership
+    const event = await prisma.weddingEvent.findUnique({
+      where: { id: eventId },
+      select: { ownerId: true },
+    });
+
+    if (!event || event.ownerId !== user.id) {
+      return { error: "Event not found" };
+    }
+
+    // Validate delay hours
+    const validDelays = [24, 48, 72, 96, 168];
+    if (!validDelays.includes(delayHours)) {
+      return { error: "Invalid delay value" };
+    }
+
+    // Update the delay
+    await prisma.weddingEvent.update({
+      where: { id: eventId },
+      data: {
+        rsvpMaybeReminderDelay: delayHours,
+      },
+    });
+
+    revalidatePath(`/dashboard/events/${eventId}/automation`);
+
+    return { success: true };
+  } catch (error) {
+    console.error("Error updating automation delay:", error);
+    return { error: "Failed to update delay" };
   }
 }
 

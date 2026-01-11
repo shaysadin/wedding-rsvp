@@ -27,6 +27,7 @@ export function AutomationsPageContent({ eventId, events, locale }: AutomationsP
     rsvpDeclinedMessage?: string | null;
     rsvpMaybeMessage?: string | null;
   }>({});
+  const [rsvpMaybeReminderDelay, setRsvpMaybeReminderDelay] = useState<number>(24);
   const [isLoading, setIsLoading] = useState(true);
 
   const loadData = useCallback(async () => {
@@ -52,6 +53,9 @@ export function AutomationsPageContent({ eventId, events, locale }: AutomationsP
 
       if (settingsResult.customMessages) {
         setCustomMessages(settingsResult.customMessages);
+      }
+      if (settingsResult.rsvpMaybeReminderDelay !== undefined) {
+        setRsvpMaybeReminderDelay(settingsResult.rsvpMaybeReminderDelay);
       }
     } catch {
       toast.error(isRTL ? "שגיאה בטעינת הנתונים" : "Failed to load data");
@@ -96,6 +100,7 @@ export function AutomationsPageContent({ eventId, events, locale }: AutomationsP
           flows={flows}
           templates={templates}
           customMessages={customMessages}
+          rsvpMaybeReminderDelay={rsvpMaybeReminderDelay}
           onRefresh={loadData}
         />
       )}

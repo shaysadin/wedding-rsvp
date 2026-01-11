@@ -155,7 +155,7 @@ export function ArchiveDetailClient({
       </div>
 
       {/* Tabs for detailed data */}
-      <Tabs defaultValue="guests" className="w-full">
+      <Tabs defaultValue="guests" className="w-full" dir={locale === "he" ? "rtl" : "ltr"}>
         <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="guests">{t("guestList")}</TabsTrigger>
           <TabsTrigger value="suppliers">{t("suppliers")}</TabsTrigger>

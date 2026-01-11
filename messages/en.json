@@ -268,7 +268,8 @@
     "statuses": {
       "pending": "Pending",
       "accepted": "Accepted",
-      "declined": "Declined"
+      "declined": "Declined",
+      "maybe": "Maybe"
     },
     "importInstructions": "Upload an Excel or CSV file with columns: Name, Phone, Side, Group, Guest Count",
     "downloadTemplate": "Download Template",
@@ -574,6 +575,7 @@
     "pending": "Pending",
     "accepted": "Accepted",
     "declined": "Declined",
+    "maybe": "Maybe",
     "active": "Active",
     "suspended": "Suspended",
     "pending_approval": "Pending Approval"
@@ -1148,6 +1150,12 @@
     "savePositionError": "Failed to save table positions",
     "changesDiscarded": "Changes discarded",
     "rotate45": "Rotate 45 degrees",
+    "fullscreen": "Enter fullscreen",
+    "exitFullscreen": "Exit fullscreen",
+    "hostessView": "Hostess View",
+    "hostessViewDescription": "Share this link with your hostess",
+    "copyHostessLink": "Copy Link",
+    "hostessLinkCopied": "Hostess link copied to clipboard",
     "venueBlocks": {
       "title": "Venue Blocks",
       "add": "Add Block",

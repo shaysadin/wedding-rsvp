@@ -8,6 +8,12 @@ import { toast } from "sonner";
 import { getEventTables, getSeatingStats, getEventVenueBlocks } from "@/actions/seating";
 import { Button } from "@/components/ui/button";
 import { Icons } from "@/components/shared/icons";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { SeatingStats } from "@/components/seating/seating-stats";
 import { SeatingViewToggle } from "@/components/seating/seating-view-toggle";
 import { TableGridView } from "@/components/seating/table-grid-view";
@@ -89,6 +95,7 @@ interface SeatingPageContentProps {
 
 export function SeatingPageContent({ eventId, events, locale }: SeatingPageContentProps) {
   const t = useTranslations("seating");
+  const isRTL = locale === "he";
 
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const [tables, setTables] = useState<Table[]>([]);
@@ -115,6 +122,13 @@ export function SeatingPageContent({ eventId, events, locale }: SeatingPageConte
   function handleEditTable(table: { id: string; name: string; capacity: number; shape?: string | null }) {
     setSelectedTableForEdit(table as Table);
     setEditDialogOpen(true);
+  }
+
+  function copyHostessLink() {
+    const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
+    const hostessUrl = `${baseUrl}/${locale}/hostess/${eventId}`;
+    navigator.clipboard.writeText(hostessUrl);
+    toast.success(isRTL ? "קישור הועתק ללוח" : "Link copied to clipboard");
   }
 
   const loadData = useCallback(async () => {
@@ -184,6 +198,19 @@ export function SeatingPageContent({ eventId, events, locale }: SeatingPageConte
             locale={locale}
             basePath={`/${locale}/dashboard/seating`}
           />
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="outline" onClick={copyHostessLink}>
+                  <Icons.copy className="me-2 h-4 w-4" />
+                  {isRTL ? "קישור לאשת קבלה" : "Hostess Link"}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>{isRTL ? "העתק קישור לרשימת אורחים עבור אשת קבלה" : "Copy guest list link for hostess"}</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
           <Button variant="outline" onClick={() => setAddBlockOpen(true)}>
             <Icons.add className="me-2 h-4 w-4" />
             {t("venueBlocks.add")}

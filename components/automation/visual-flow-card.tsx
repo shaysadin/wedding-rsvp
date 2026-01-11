@@ -66,6 +66,9 @@ interface VisualFlowCardProps {
   onTest?: (id: string) => void;
 }
 
+// System automation triggers that cannot be deleted
+const PROTECTED_SYSTEM_TRIGGERS: AutomationTrigger[] = ["RSVP_MAYBE"];
+
 const STATUS_CONFIG: Record<AutomationFlowStatus, {
   label: { en: string; he: string };
   color: string;
@@ -220,14 +223,19 @@ export function VisualFlowCard({
                   {isRTL ? "בדוק אוטומציה" : "Test Automation"}
                 </DropdownMenuItem>
               )}
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                onClick={() => onDelete(flow.id)}
-                className="text-destructive focus:text-destructive"
-              >
-                <Trash2 className="h-4 w-4 me-2" />
-                {isRTL ? "מחק" : "Delete"}
-              </DropdownMenuItem>
+              {/* Only show delete for non-system automations */}
+              {!PROTECTED_SYSTEM_TRIGGERS.includes(flow.trigger) && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={() => onDelete(flow.id)}
+                    className="text-destructive focus:text-destructive"
+                  >
+                    <Trash2 className="h-4 w-4 me-2" />
+                    {isRTL ? "מחק" : "Delete"}
+                  </DropdownMenuItem>
+                </>
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
