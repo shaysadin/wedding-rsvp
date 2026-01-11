@@ -5,10 +5,10 @@ import { useLocale } from "next-intl";
 import Link from "next/link";
 import Image from "next/image";
 import { toast } from "sonner";
-import { InvitationFieldType } from "@prisma/client";
+import { InvitationFieldType, EventType } from "@prisma/client";
 import { ArrowLeft } from "lucide-react";
 
-import { getInvitationTemplate, addTemplateField, updateTemplateField, deleteTemplateField } from "@/actions/invitation-templates";
+import { getInvitationTemplate, addTemplateField, updateTemplateField, deleteTemplateField, updateInvitationTemplate } from "@/actions/invitation-templates";
 import { DashboardHeader } from "@/components/dashboard/header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -37,6 +37,10 @@ interface Template {
   id: string;
   name: string;
   nameHe: string;
+  description: string | null;
+  descriptionHe: string | null;
+  eventType: EventType;
+  isActive: boolean;
   pdfUrl: string;
   thumbnailUrl: string | null;
   fields: TemplateField[];
@@ -74,6 +78,13 @@ const FIELD_TYPES: { value: InvitationFieldType; labelEn: string; labelHe: strin
 const FONT_FAMILIES = ["Heebo", "Assistant", "Arial", "Times New Roman"];
 const TEXT_ALIGNS = ["left", "center", "right"];
 
+const EVENT_TYPES: { value: EventType; labelEn: string; labelHe: string }[] = [
+  { value: "WEDDING", labelEn: "Wedding", labelHe: "חתונה" },
+  { value: "HENNA", labelEn: "Henna", labelHe: "חינה" },
+  { value: "ENGAGEMENT", labelEn: "Engagement", labelHe: "אירוסין" },
+  { value: "OTHER", labelEn: "Other", labelHe: "אחר" },
+];
+
 export default function TemplateEditorPage({ params }: TemplateEditorPageProps) {
   const locale = useLocale();
   const isRTL = locale === "he";
@@ -88,6 +99,18 @@ export default function TemplateEditorPage({ params }: TemplateEditorPageProps) 
   const [deleteFieldId, setDeleteFieldId] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [selectedFieldId, setSelectedFieldId] = useState<string | null>(null);
+
+  // Template details editing
+  const [isEditDetailsOpen, setIsEditDetailsOpen] = useState(false);
+  const [isSavingDetails, setIsSavingDetails] = useState(false);
+  const [editDetails, setEditDetails] = useState({
+    name: "",
+    nameHe: "",
+    description: "",
+    descriptionHe: "",
+    eventType: "WEDDING" as EventType,
+    isActive: true,
+  });
 
   // New field form
   const [newField, setNewField] = useState({
@@ -211,6 +234,48 @@ export default function TemplateEditorPage({ params }: TemplateEditorPageProps) 
     }
   };
 
+  const handleOpenEditDetails = () => {
+    if (template) {
+      setEditDetails({
+        name: template.name,
+        nameHe: template.nameHe,
+        description: template.description || "",
+        descriptionHe: template.descriptionHe || "",
+        eventType: template.eventType,
+        isActive: template.isActive,
+      });
+      setIsEditDetailsOpen(true);
+    }
+  };
+
+  const handleSaveDetails = async () => {
+    if (!templateId) return;
+
+    setIsSavingDetails(true);
+    try {
+      const result = await updateInvitationTemplate(templateId, {
+        name: editDetails.name,
+        nameHe: editDetails.nameHe,
+        description: editDetails.description || undefined,
+        descriptionHe: editDetails.descriptionHe || undefined,
+        eventType: editDetails.eventType,
+        isActive: editDetails.isActive,
+      });
+
+      if (result.error) {
+        toast.error(result.error);
+      } else {
+        toast.success(isRTL ? "פרטי התבנית עודכנו בהצלחה" : "Template details updated successfully");
+        setIsEditDetailsOpen(false);
+        loadTemplate();
+      }
+    } catch {
+      toast.error(isRTL ? "שגיאה בעדכון פרטי התבנית" : "Failed to update template details");
+    } finally {
+      setIsSavingDetails(false);
+    }
+  };
+
   if (isLoading || !template) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -231,6 +296,10 @@ export default function TemplateEditorPage({ params }: TemplateEditorPageProps) 
               <ArrowLeft className={cn("h-4 w-4", isRTL ? "ml-2 rotate-180" : "mr-2")} />
               {isRTL ? "חזרה" : "Back"}
             </Link>
+          </Button>
+          <Button variant="outline" onClick={handleOpenEditDetails}>
+            <Icons.settings className={cn("h-4 w-4", isRTL ? "ml-2" : "mr-2")} />
+            {isRTL ? "עריכת פרטי תבנית" : "Edit Details"}
           </Button>
           <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
             <DialogTrigger asChild>
@@ -324,6 +393,43 @@ export default function TemplateEditorPage({ params }: TemplateEditorPageProps) 
           </Dialog>
         </div>
       </DashboardHeader>
+
+      {/* Template Info Bar */}
+      <div className="mb-6 flex flex-wrap items-center gap-3 rounded-lg border bg-muted/50 p-4">
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-muted-foreground">{isRTL ? "קטגוריה:" : "Category:"}</span>
+          <span className="font-medium">
+            {EVENT_TYPES.find((et) => et.value === template.eventType)?.[isRTL ? "labelHe" : "labelEn"]}
+          </span>
+        </div>
+        <div className="h-4 w-px bg-border" />
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-muted-foreground">{isRTL ? "סטטוס:" : "Status:"}</span>
+          <span className={cn(
+            "inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium",
+            template.isActive
+              ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
+              : "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-400"
+          )}>
+            {template.isActive ? (isRTL ? "פעיל" : "Active") : (isRTL ? "לא פעיל" : "Inactive")}
+          </span>
+        </div>
+        {(template.description || template.descriptionHe) && (
+          <>
+            <div className="h-4 w-px bg-border" />
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground">{isRTL ? "תיאור:" : "Description:"}</span>
+              <span className="text-sm">
+                {isRTL ? template.descriptionHe || template.description : template.description || template.descriptionHe}
+              </span>
+            </div>
+          </>
+        )}
+        <Button variant="ghost" size="sm" className="ms-auto" onClick={handleOpenEditDetails}>
+          <Icons.edit className={cn("h-4 w-4", isRTL ? "ml-1" : "mr-1")} />
+          {isRTL ? "ערוך" : "Edit"}
+        </Button>
+      </div>
 
       <div className="grid lg:grid-cols-2 gap-6">
         {/* Preview */}
@@ -554,6 +660,102 @@ export default function TemplateEditorPage({ params }: TemplateEditorPageProps) 
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Edit Template Details Dialog */}
+      <Dialog open={isEditDetailsOpen} onOpenChange={setIsEditDetailsOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{isRTL ? "עריכת פרטי תבנית" : "Edit Template Details"}</DialogTitle>
+            <DialogDescription>
+              {isRTL ? "עדכנו את שם התבנית, קטגוריה ותיאור" : "Update template name, category and description"}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>{isRTL ? "שם (אנגלית)" : "Name (English)"}</Label>
+                <Input
+                  value={editDetails.name}
+                  onChange={(e) => setEditDetails({ ...editDetails, name: e.target.value })}
+                  placeholder="Template Name"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>{isRTL ? "שם (עברית)" : "Name (Hebrew)"}</Label>
+                <Input
+                  value={editDetails.nameHe}
+                  onChange={(e) => setEditDetails({ ...editDetails, nameHe: e.target.value })}
+                  placeholder="שם התבנית"
+                  dir="rtl"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>{isRTL ? "קטגוריה" : "Category"}</Label>
+              <Select
+                value={editDetails.eventType}
+                onValueChange={(value) => setEditDetails({ ...editDetails, eventType: value as EventType })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {EVENT_TYPES.map((et) => (
+                    <SelectItem key={et.value} value={et.value}>
+                      {isRTL ? et.labelHe : et.labelEn}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>{isRTL ? "תיאור (אנגלית)" : "Description (English)"}</Label>
+                <Input
+                  value={editDetails.description}
+                  onChange={(e) => setEditDetails({ ...editDetails, description: e.target.value })}
+                  placeholder="Short description"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>{isRTL ? "תיאור (עברית)" : "Description (Hebrew)"}</Label>
+                <Input
+                  value={editDetails.descriptionHe}
+                  onChange={(e) => setEditDetails({ ...editDetails, descriptionHe: e.target.value })}
+                  placeholder="תיאור קצר"
+                  dir="rtl"
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <Switch
+                checked={editDetails.isActive}
+                onCheckedChange={(checked) => setEditDetails({ ...editDetails, isActive: checked })}
+              />
+              <Label>{isRTL ? "תבנית פעילה" : "Active Template"}</Label>
+              <span className="text-sm text-muted-foreground">
+                {isRTL
+                  ? "(תבניות לא פעילות לא יוצגו למשתמשים)"
+                  : "(Inactive templates won't be shown to users)"}
+              </span>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsEditDetailsOpen(false)}>
+              {isRTL ? "ביטול" : "Cancel"}
+            </Button>
+            <Button onClick={handleSaveDetails} disabled={isSavingDetails || !editDetails.name || !editDetails.nameHe}>
+              {isSavingDetails && <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />}
+              {isRTL ? "שמור שינויים" : "Save Changes"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </PageFadeIn>
   );
 }

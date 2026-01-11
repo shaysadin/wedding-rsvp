@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { toast } from "sonner";
 import { EventType, InvitationFieldType } from "@prisma/client";
+import { Sparkles, Check, X } from "lucide-react";
 
 import { createInvitationTemplate } from "@/actions/invitation-templates";
 import { DashboardHeader } from "@/components/dashboard/header";
@@ -16,9 +17,18 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { Badge } from "@/components/ui/badge";
 import { Icons } from "@/components/shared/icons";
 import { PageFadeIn } from "@/components/shared/page-fade-in";
 import { cn } from "@/lib/utils";
+
+interface SuggestedField {
+  fieldType: string;
+  label: string;
+  labelHe: string;
+  originalValue: string;
+  confidence: "high" | "medium" | "low";
+}
 
 interface TemplateField {
   id: string;
@@ -68,6 +78,7 @@ export default function NewInvitationTemplatePage() {
 
   const [isUploading, setIsUploading] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
+  const [isScanning, setIsScanning] = useState(false);
   const [uploadedData, setUploadedData] = useState<{
     imageUrl: string;
     thumbnailUrl: string;
@@ -83,6 +94,7 @@ export default function NewInvitationTemplatePage() {
   });
 
   const [fields, setFields] = useState<TemplateField[]>([]);
+  const [suggestedFields, setSuggestedFields] = useState<SuggestedField[]>([]);
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -127,6 +139,76 @@ export default function NewInvitationTemplatePage() {
     } finally {
       setIsUploading(false);
     }
+  };
+
+  const handleScanWithAI = async () => {
+    if (!uploadedData) return;
+
+    setIsScanning(true);
+    setSuggestedFields([]);
+
+    try {
+      const response = await fetch("/api/admin/scan-template", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ imageUrl: uploadedData.imageUrl }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok || result.error) {
+        toast.error(result.error || (isRTL ? "שגיאה בסריקת התבנית" : "Error scanning template"));
+      } else if (result.fields && result.fields.length > 0) {
+        setSuggestedFields(result.fields);
+        toast.success(
+          isRTL
+            ? `נמצאו ${result.fields.length} שדות פוטנציאליים`
+            : `Found ${result.fields.length} potential fields`
+        );
+      } else {
+        toast.info(isRTL ? "לא נמצאו שדות בתמונה" : "No fields found in the image");
+      }
+    } catch {
+      toast.error(isRTL ? "שגיאה בסריקת התבנית" : "Error scanning template");
+    } finally {
+      setIsScanning(false);
+    }
+  };
+
+  const acceptSuggestion = (suggestion: SuggestedField) => {
+    const fieldType = suggestion.fieldType as InvitationFieldType;
+    const newField: TemplateField = {
+      id: `field-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      fieldType: fieldType in fieldTypeLabels ? fieldType : "CUSTOM",
+      label: suggestion.label || fieldTypeLabels[fieldType]?.en || "Custom",
+      labelHe: suggestion.labelHe || fieldTypeLabels[fieldType]?.he || "מותאם",
+      originalValue: suggestion.originalValue,
+      isRequired: true,
+    };
+    setFields([...fields, newField]);
+    setSuggestedFields(suggestedFields.filter((s) => s !== suggestion));
+    toast.success(isRTL ? "השדה נוסף" : "Field added");
+  };
+
+  const rejectSuggestion = (suggestion: SuggestedField) => {
+    setSuggestedFields(suggestedFields.filter((s) => s !== suggestion));
+  };
+
+  const acceptAllSuggestions = () => {
+    const newFields = suggestedFields.map((suggestion, index) => {
+      const fieldType = suggestion.fieldType as InvitationFieldType;
+      return {
+        id: `field-${Date.now()}-${index}`,
+        fieldType: fieldType in fieldTypeLabels ? fieldType : ("CUSTOM" as InvitationFieldType),
+        label: suggestion.label || fieldTypeLabels[fieldType]?.en || "Custom",
+        labelHe: suggestion.labelHe || fieldTypeLabels[fieldType]?.he || "מותאם",
+        originalValue: suggestion.originalValue,
+        isRequired: true,
+      };
+    });
+    setFields([...fields, ...newFields]);
+    setSuggestedFields([]);
+    toast.success(isRTL ? "כל השדות נוספו" : "All fields added");
   };
 
   const addField = () => {
@@ -262,14 +344,32 @@ export default function NewInvitationTemplatePage() {
                       className="object-contain"
                     />
                   </div>
-                  <Button
-                    variant="outline"
-                    onClick={() => setUploadedData(null)}
-                    className="w-full"
-                  >
-                    <Icons.trash className="me-2 h-4 w-4" />
-                    {isRTL ? "הסר תמונה" : "Remove Image"}
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="default"
+                      onClick={handleScanWithAI}
+                      disabled={isScanning}
+                      className="flex-1"
+                    >
+                      {isScanning ? (
+                        <Icons.spinner className="me-2 h-4 w-4 animate-spin" />
+                      ) : (
+                        <Sparkles className="me-2 h-4 w-4" />
+                      )}
+                      {isScanning
+                        ? (isRTL ? "סורק..." : "Scanning...")
+                        : (isRTL ? "סרוק עם AI" : "Scan with AI")}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setUploadedData(null);
+                        setSuggestedFields([]);
+                      }}
+                    >
+                      <Icons.trash className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
               )}
             </CardContent>
@@ -346,6 +446,89 @@ export default function NewInvitationTemplatePage() {
               </div>
             </CardContent>
           </Card>
+
+          {/* AI Suggested Fields */}
+          {suggestedFields.length > 0 && (
+            <Card className="border-primary/50 bg-primary/5">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="h-5 w-5 text-primary" />
+                    <CardTitle>{isRTL ? "שדות שזוהו ע\"י AI" : "AI Detected Fields"}</CardTitle>
+                  </div>
+                  <Button
+                    variant="default"
+                    size="sm"
+                    onClick={acceptAllSuggestions}
+                  >
+                    <Check className="me-2 h-4 w-4" />
+                    {isRTL ? "קבל הכל" : "Accept All"}
+                  </Button>
+                </div>
+                <CardDescription>
+                  {isRTL
+                    ? "בדקו את השדות שזוהו והוסיפו את הרלוונטיים"
+                    : "Review the detected fields and add the relevant ones"}
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {suggestedFields.map((suggestion, index) => (
+                  <div
+                    key={index}
+                    className="flex items-center justify-between rounded-lg border bg-background p-3"
+                  >
+                    <div className="flex-1 space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium text-sm">
+                          {isRTL ? suggestion.labelHe : suggestion.label}
+                        </span>
+                        <Badge
+                          variant={
+                            suggestion.confidence === "high"
+                              ? "default"
+                              : suggestion.confidence === "medium"
+                              ? "secondary"
+                              : "outline"
+                          }
+                          className="text-xs"
+                        >
+                          {suggestion.confidence === "high"
+                            ? (isRTL ? "גבוה" : "High")
+                            : suggestion.confidence === "medium"
+                            ? (isRTL ? "בינוני" : "Medium")
+                            : (isRTL ? "נמוך" : "Low")}
+                        </Badge>
+                      </div>
+                      <p className="text-sm text-muted-foreground font-mono" dir="auto">
+                        &quot;{suggestion.originalValue}&quot;
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {isRTL ? fieldTypeLabels[suggestion.fieldType as InvitationFieldType]?.he : fieldTypeLabels[suggestion.fieldType as InvitationFieldType]?.en}
+                      </p>
+                    </div>
+                    <div className="flex gap-2 ms-4">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => acceptSuggestion(suggestion)}
+                        className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                      >
+                        <Check className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => rejectSuggestion(suggestion)}
+                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          )}
 
           {/* Editable Fields */}
           <Card>

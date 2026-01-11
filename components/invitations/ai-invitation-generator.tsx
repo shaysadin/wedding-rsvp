@@ -247,8 +247,8 @@ export function AIInvitationGenerator({
 
       {/* Template Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="sm:max-w-4xl">
-          <DialogHeader>
+        <DialogContent className="sm:max-w-4xl max-h-[90vh] flex flex-col">
+          <DialogHeader className="flex-shrink-0">
             <DialogTitle>
               {selectedTemplate && (isRTL ? selectedTemplate.nameHe : selectedTemplate.name)}
             </DialogTitle>
@@ -259,11 +259,11 @@ export function AIInvitationGenerator({
             </DialogDescription>
           </DialogHeader>
 
-          <div className="grid gap-6 md:grid-cols-2">
+          <div className="grid gap-6 md:grid-cols-2 flex-1 min-h-0 overflow-hidden">
             {/* Preview */}
-            <div className="space-y-4">
-              <h4 className="font-medium">{isRTL ? "תצוגה מקדימה" : "Preview"}</h4>
-              <div className="relative aspect-[3/4] overflow-hidden rounded-lg border bg-muted">
+            <div className="space-y-4 flex flex-col">
+              <h4 className="font-medium flex-shrink-0">{isRTL ? "תצוגה מקדימה" : "Preview"}</h4>
+              <div className="relative aspect-[3/4] overflow-hidden rounded-lg border bg-muted flex-shrink-0">
                 {previewUrl ? (
                   <Image src={previewUrl} alt="Preview" fill className="object-contain" />
                 ) : selectedTemplate?.imageUrl ? (
@@ -286,7 +286,7 @@ export function AIInvitationGenerator({
                 variant="outline"
                 onClick={handlePreview}
                 disabled={isPreviewing || Object.keys(fieldValues).length === 0}
-                className="w-full"
+                className="w-full flex-shrink-0"
               >
                 {isPreviewing && <Icons.spinner className="me-2 h-4 w-4 animate-spin" />}
                 {isRTL ? "תצוגה מקדימה" : "Preview"}
@@ -294,38 +294,39 @@ export function AIInvitationGenerator({
             </div>
 
             {/* Form */}
-            <ScrollArea className="max-h-[60vh]">
-              <div className="space-y-4 pr-4">
-                <h4 className="font-medium">{isRTL ? "פרטי ההזמנה" : "Invitation Details"}</h4>
-                {selectedTemplate?.fields.map((field) => (
-                  <div key={field.id} className="space-y-2">
-                    <Label className={cn(field.isRequired && "after:content-['*'] after:ml-1 after:text-destructive")}>
-                      {isRTL ? field.labelHe || field.label : field.label}
-                    </Label>
-                    <Input
-                      value={fieldValues[field.fieldType] || ""}
-                      onChange={(e) => handleFieldChange(field.fieldType, e.target.value)}
-                      placeholder={field.placeholder || field.originalValue}
-                      dir="auto"
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      {isRTL ? "טקסט מקורי: " : "Original: "}{field.originalValue}
-                    </p>
-                  </div>
-                ))}
-
-                <Button
-                  onClick={handleGenerate}
-                  disabled={isGenerating}
-                  className="w-full"
-                  size="lg"
-                >
-                  {isGenerating && <Icons.spinner className="me-2 h-4 w-4 animate-spin" />}
-                  <Icons.sparkles className="me-2 h-4 w-4" />
-                  {isRTL ? "צור הזמנה" : "Generate Invitation"}
-                </Button>
-              </div>
-            </ScrollArea>
+            <div className="flex flex-col min-h-0">
+              <h4 className="font-medium mb-4 flex-shrink-0">{isRTL ? "פרטי ההזמנה" : "Invitation Details"}</h4>
+              <ScrollArea className="flex-1 min-h-0">
+                <div className="space-y-4 pe-4">
+                  {selectedTemplate?.fields.map((field) => (
+                    <div key={field.id} className="space-y-2">
+                      <Label className={cn(field.isRequired && "after:content-['*'] after:ms-1 after:text-destructive")}>
+                        {isRTL ? field.labelHe || field.label : field.label}
+                      </Label>
+                      <Input
+                        value={fieldValues[field.fieldType] || ""}
+                        onChange={(e) => handleFieldChange(field.fieldType, e.target.value)}
+                        placeholder={field.placeholder || field.originalValue}
+                        dir="auto"
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        {isRTL ? "טקסט מקורי: " : "Original: "}{field.originalValue}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </ScrollArea>
+              <Button
+                onClick={handleGenerate}
+                disabled={isGenerating}
+                className="w-full mt-4 flex-shrink-0"
+                size="lg"
+              >
+                {isGenerating && <Icons.spinner className="me-2 h-4 w-4 animate-spin" />}
+                <Icons.sparkles className="me-2 h-4 w-4" />
+                {isRTL ? "צור הזמנה" : "Generate Invitation"}
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>

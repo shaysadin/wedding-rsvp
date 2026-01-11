@@ -38,15 +38,18 @@ export async function requirePlatformOwner() {
     return null;
   }
 
-  // Check if user has ROLE_PLATFORM_OWNER in their roles array
+  // Check if user has ROLE_PLATFORM_OWNER in their roles array or role field
   const user = await prisma.user.findUnique({
     where: { id: sessionUser.id },
-    select: { roles: true, email: true },
+    select: { roles: true, role: true, email: true },
   });
 
-  console.log("[requirePlatformOwner] DB user roles:", user?.email, user?.roles);
+  console.log("[requirePlatformOwner] DB user roles:", user?.email, user?.role, user?.roles);
 
-  if (!user?.roles?.includes(UserRole.ROLE_PLATFORM_OWNER)) {
+  const hasRoleInArray = user?.roles?.includes(UserRole.ROLE_PLATFORM_OWNER);
+  const hasRoleInField = user?.role === UserRole.ROLE_PLATFORM_OWNER;
+
+  if (!hasRoleInArray && !hasRoleInField) {
     console.log("[requirePlatformOwner] User does not have ROLE_PLATFORM_OWNER");
     return null;
   }
