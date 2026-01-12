@@ -606,17 +606,19 @@ model MessageTemplate {
 // WhatsApp templates approved in Twilio dashboard
 // Supports multiple templates per type (e.g., formal, friendly, short)
 model WhatsAppTemplate {
-  id           String                @id @default(cuid())
-  type         WhatsAppTemplateType
-  style        String                // "formal", "friendly", "short"
-  nameHe       String                @map("name_he")
-  nameEn       String                @map("name_en")
-  contentSid   String                @map("content_sid") // Twilio Content SID
-  templateText String?               @map("template_text") // For display/reference
-  isActive     Boolean               @default(true) @map("is_active")
-  sortOrder    Int                   @default(0) @map("sort_order")
-  createdAt    DateTime              @default(now()) @map("created_at")
-  updatedAt    DateTime              @default(now()) @updatedAt @map("updated_at")
+  id            String                @id @default(cuid())
+  type          WhatsAppTemplateType
+  style         String                // "formal", "friendly", "short"
+  nameHe        String                @map("name_he")
+  nameEn        String                @map("name_en")
+  contentSid    String                @map("content_sid") // Twilio Content SID
+  templateText  String?               @map("template_text") // For display/reference
+  previewText   String?               @map("preview_text") // Preview text in English for send dialog
+  previewTextHe String?               @map("preview_text_he") // Preview text in Hebrew for send dialog
+  isActive      Boolean               @default(true) @map("is_active")
+  sortOrder     Int                   @default(0) @map("sort_order")
+  createdAt     DateTime              @default(now()) @map("created_at")
+  updatedAt     DateTime              @default(now()) @updatedAt @map("updated_at")
 
   @@unique([type, style])
   @@index([type, isActive])

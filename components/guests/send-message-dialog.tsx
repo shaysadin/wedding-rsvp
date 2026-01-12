@@ -73,6 +73,8 @@ interface ActiveTemplate {
   nameHe: string;
   nameEn: string;
   templateText: string | null;
+  previewText: string | null;
+  previewTextHe: string | null;
 }
 
 const INTERACTIVE_BUTTONS = {
@@ -242,6 +244,8 @@ export function SendMessageDialog({
             nameHe: def.nameHe,
             nameEn: def.nameEn,
             templateText: isRTL ? def.templateTextHe : def.templateTextEn,
+            previewText: def.templateTextEn,
+            previewTextHe: def.templateTextHe,
           }));
 
         if (fallbackTemplates.length > 0) {
@@ -274,8 +278,19 @@ export function SendMessageDialog({
   // Get preview message content
   const getPreviewMessage = (): string => {
     if (channel === "WHATSAPP") {
-      // Always use template definitions for preview text (they have the actual message content)
-      // The database templateText field stores Twilio template names, not actual messages
+      // First try to get preview text from database (admin-configured)
+      const activeTemplate = whatsappTemplates.find((t) => t.style === selectedWhatsappStyle);
+      if (activeTemplate) {
+        const dbPreviewText = isRTL ? activeTemplate.previewTextHe : activeTemplate.previewText;
+        if (dbPreviewText) {
+          return dbPreviewText
+            .replace(/\{\{1\}\}/g, previewContext.guestName)
+            .replace(/\{\{2\}\}/g, previewContext.eventTitle)
+            .replace(/\{\{3\}\}/g, previewContext.rsvpLink);
+        }
+      }
+
+      // Fallback to template definitions from config file
       const definition = whatsappTemplateDefinitions.find((d) => d.style === selectedWhatsappStyle);
       if (definition) {
         const text = isRTL ? definition.templateTextHe : definition.templateTextEn;

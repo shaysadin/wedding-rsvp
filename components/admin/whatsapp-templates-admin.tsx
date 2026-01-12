@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Card,
   CardContent,
@@ -58,6 +59,8 @@ interface WhatsAppTemplate {
   nameEn: string;
   contentSid: string;
   templateText: string | null;
+  previewText: string | null;
+  previewTextHe: string | null;
   isActive: boolean;
   sortOrder: number;
 }
@@ -94,6 +97,8 @@ export function WhatsAppTemplatesAdmin({ templates }: WhatsAppTemplatesAdminProp
   const [formType, setFormType] = useState<WhatsAppTemplateType>("INVITE");
   const [formStyle, setFormStyle] = useState<WhatsAppTemplateStyle>("formal");
   const [formContentSid, setFormContentSid] = useState("");
+  const [formPreviewText, setFormPreviewText] = useState("");
+  const [formPreviewTextHe, setFormPreviewTextHe] = useState("");
 
   // Group templates by type
   const templatesByType = templates.reduce((acc, template) => {
@@ -121,11 +126,15 @@ export function WhatsAppTemplatesAdmin({ templates }: WhatsAppTemplatesAdminProp
       setFormType(template.type as WhatsAppTemplateType);
       setFormStyle(template.style as WhatsAppTemplateStyle);
       setFormContentSid(template.contentSid);
+      setFormPreviewText(template.previewText || "");
+      setFormPreviewTextHe(template.previewTextHe || "");
     } else {
       setEditingTemplate(null);
       setFormType("INVITE");
       setFormStyle("formal");
       setFormContentSid("");
+      setFormPreviewText("");
+      setFormPreviewTextHe("");
     }
     setIsDialogOpen(true);
   };
@@ -157,6 +166,8 @@ export function WhatsAppTemplatesAdmin({ templates }: WhatsAppTemplatesAdminProp
         nameEn: definition.nameEn,
         contentSid: formContentSid.trim(),
         templateText: definition.twilioTemplateName,
+        previewText: formPreviewText.trim() || undefined,
+        previewTextHe: formPreviewTextHe.trim() || undefined,
         sortOrder: formStyle === "formal" ? 0 : formStyle === "friendly" ? 1 : 2,
       });
 
@@ -305,6 +316,8 @@ export function WhatsAppTemplatesAdmin({ templates }: WhatsAppTemplatesAdminProp
                                       definition?.existingContentSid ||
                                       ""
                                   );
+                                  setFormPreviewText(existing?.previewText || "");
+                                  setFormPreviewTextHe(existing?.previewTextHe || "");
                                   setEditingTemplate(existing || null);
                                   setIsDialogOpen(true);
                                 }}
@@ -405,6 +418,35 @@ export function WhatsAppTemplatesAdmin({ templates }: WhatsAppTemplatesAdminProp
                 />
                 <p className="text-xs text-muted-foreground">
                   Find this in Twilio Console &gt; Content Template Builder
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="previewText">Preview Text (English)</Label>
+                <Textarea
+                  id="previewText"
+                  value={formPreviewText}
+                  onChange={(e) => setFormPreviewText(e.target.value)}
+                  placeholder="Hello {{1}}, you're invited to {{2}}! RSVP here: {{3}}"
+                  className="min-h-[80px] text-sm"
+                />
+                <p className="text-xs text-muted-foreground">
+                  The message text shown in preview. Use {"{{1}}"} for guest name, {"{{2}}"} for event title, {"{{3}}"} for RSVP link.
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="previewTextHe">Preview Text (Hebrew)</Label>
+                <Textarea
+                  id="previewTextHe"
+                  value={formPreviewTextHe}
+                  onChange={(e) => setFormPreviewTextHe(e.target.value)}
+                  placeholder="שלום {{1}}, הינך מוזמן/ת ל{{2}}! אשרו הגעה כאן: {{3}}"
+                  className="min-h-[80px] text-sm"
+                  dir="rtl"
+                />
+                <p className="text-xs text-muted-foreground">
+                  טקסט התצוגה המקדימה בעברית. השתמשו ב-{"{{1}}"} לשם האורח, {"{{2}}"} לשם האירוע, {"{{3}}"} לקישור RSVP.
                 </p>
               </div>
             </div>

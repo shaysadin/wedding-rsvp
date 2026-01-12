@@ -37,6 +37,8 @@ export async function getActiveWhatsAppTemplates(type: WhatsAppTemplateType) {
         nameHe: true,
         nameEn: true,
         templateText: true,
+        previewText: true,
+        previewTextHe: true,
       },
     });
 
@@ -115,6 +117,8 @@ export async function upsertWhatsAppTemplate(data: {
   nameEn: string;
   contentSid: string;
   templateText?: string;
+  previewText?: string;
+  previewTextHe?: string;
   sortOrder?: number;
 }) {
   try {
@@ -141,6 +145,8 @@ export async function upsertWhatsAppTemplate(data: {
         nameEn: data.nameEn,
         contentSid: data.contentSid,
         templateText: data.templateText,
+        previewText: data.previewText,
+        previewTextHe: data.previewTextHe,
         sortOrder: data.sortOrder ?? 0,
         isActive: true,
       },
@@ -149,6 +155,8 @@ export async function upsertWhatsAppTemplate(data: {
         nameEn: data.nameEn,
         contentSid: data.contentSid,
         templateText: data.templateText,
+        previewText: data.previewText,
+        previewTextHe: data.previewTextHe,
         sortOrder: data.sortOrder,
         isActive: true,
       },
