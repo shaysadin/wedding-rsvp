@@ -154,6 +154,7 @@ export function DashboardContent({ userName, events, stats, locale, usageData }:
   const statCards = [
     {
       title: t("totalEvents"),
+      shortTitle: isRTL ? "אירועים" : "Events",
       value: stats.totalEvents,
       icon: Calendar,
       iconBg: "bg-gradient-to-br from-violet-500 to-purple-600",
@@ -164,6 +165,7 @@ export function DashboardContent({ userName, events, stats, locale, usageData }:
     },
     {
       title: t("totalGuests"),
+      shortTitle: isRTL ? "אורחים" : "Guests",
       value: stats.totalGuests,
       icon: Users,
       iconBg: "bg-gradient-to-br from-blue-500 to-cyan-500",
@@ -174,6 +176,7 @@ export function DashboardContent({ userName, events, stats, locale, usageData }:
     },
     {
       title: t("pendingRsvps"),
+      shortTitle: isRTL ? "ממתינים" : "Pending",
       value: stats.totalPending,
       icon: Clock,
       iconBg: "bg-gradient-to-br from-amber-500 to-orange-500",
@@ -184,6 +187,7 @@ export function DashboardContent({ userName, events, stats, locale, usageData }:
     },
     {
       title: t("confirmedGuests"),
+      shortTitle: isRTL ? "מאושרים" : "Confirmed",
       value: stats.totalAttending,
       icon: CheckCircle2,
       iconBg: "bg-gradient-to-br from-emerald-500 to-green-500",
@@ -196,7 +200,7 @@ export function DashboardContent({ userName, events, stats, locale, usageData }:
 
   return (
     <motion.div
-      className="flex flex-col gap-6 py-4"
+      className="flex flex-col gap-8 py-4"
       variants={containerVariants}
       initial="hidden"
       animate="visible"
@@ -263,19 +267,19 @@ export function DashboardContent({ userName, events, stats, locale, usageData }:
               {/* Subtle shine effect */}
               <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 shine-effect pointer-events-none" />
 
-              <CardContent className="px-2 py-4 sm:p-4 relative">
-                <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-3">
+              <CardContent className="px-2 py-3 sm:p-4 relative">
+                <div className="flex flex-col sm:flex-row items-center gap-1.5 sm:gap-3">
                   {/* Icon with glow */}
                   <div className="relative">
                     <div
                       className={cn(
-                        "flex h-9 w-9 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-xl transition-all duration-300",
+                        "flex h-8 w-8 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-xl transition-all duration-300",
                         "shadow-lg",
                         stat.iconBg,
                         stat.iconShadow
                       )}
                     >
-                      <stat.icon className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
+                      <stat.icon className="h-3.5 w-3.5 sm:h-5 sm:w-5 text-white" />
                     </div>
                     {/* Glow effect behind icon */}
                     <div className={cn(
@@ -286,10 +290,14 @@ export function DashboardContent({ userName, events, stats, locale, usageData }:
 
                   {/* Content */}
                   <div className="flex-1 min-w-0 text-center sm:text-start">
+                    {/* Short title on mobile, full title on desktop */}
+                    <p className="sm:hidden text-[12px] font-medium text-muted-foreground/80 truncate">
+                      {stat.shortTitle}
+                    </p>
                     <p className="hidden sm:block text-xs sm:text-sm font-medium text-muted-foreground/80 truncate">
                       {stat.title}
                     </p>
-                    <p className="text-xl sm:text-2xl font-bold tracking-tight">
+                    <p className="text-lg sm:text-2xl font-bold tracking-tight">
                       {stat.value}
                     </p>
                   </div>
@@ -379,9 +387,23 @@ export function DashboardContent({ userName, events, stats, locale, usageData }:
         )}
       </motion.div>
 
-            {/* Usage Tracking Card */}
+            {/* Usage Tracking Section */}
       {usageData && (
-        <motion.div variants={itemVariants}>
+        <motion.div variants={itemVariants} className="space-y-4">
+          {/* Header - Outside Card */}
+          <div className="flex items-center justify-between">
+            <div className="flex flex-col gap-0.5">
+              <h2 className="text-lg font-semibold">{isRTL ? "מעקב שימוש" : "Usage Tracking"}</h2>
+              <p className="text-sm text-muted-foreground">
+                {isRTL ? "סטטוס השימוש החודשי שלך" : "Your monthly usage status"}
+              </p>
+            </div>
+            <Badge className={cn("shadow-sm", planColors[usageData.plan])}>
+              {tPlans(usageData.plan.toLowerCase() as "free" | "basic" | "advanced" | "premium" | "business")}
+            </Badge>
+          </div>
+
+          {/* Card with Usage Bars */}
           <Card className={cn(
             "relative overflow-hidden border backdrop-blur-sm transition-all duration-300",
             usageData?.canSendMessages === false
@@ -392,31 +414,8 @@ export function DashboardContent({ userName, events, stats, locale, usageData }:
             <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-violet-500/5 to-purple-500/5 rounded-full blur-3xl -translate-y-32 translate-x-32" />
             <div className="absolute bottom-0 left-0 w-48 h-48 bg-gradient-to-tr from-blue-500/5 to-cyan-500/5 rounded-full blur-3xl translate-y-24 -translate-x-24" />
 
-            <CardContent className="p-5 relative">
-              <div className="flex flex-col gap-5">
-                {/* Header */}
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="relative">
-                      <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 text-white shadow-lg shadow-violet-500/30">
-                        <MessageSquare className="h-5 w-5" />
-                      </div>
-                      <div className="absolute inset-0 rounded-xl blur-lg bg-gradient-to-br from-violet-500 to-purple-600 opacity-40" />
-                    </div>
-                    <div>
-                      <h3 className="font-semibold">
-                        {isRTL ? "מעקב שימוש" : "Usage Tracking"}
-                      </h3>
-                      <p className="text-sm text-muted-foreground">
-                        {isRTL ? "סטטוס השימוש החודשי שלך" : "Your monthly usage status"}
-                      </p>
-                    </div>
-                  </div>
-                  <Badge className={cn("shadow-sm", planColors[usageData.plan])}>
-                    {tPlans(usageData.plan.toLowerCase() as "free" | "basic" | "advanced" | "premium" | "business")}
-                  </Badge>
-                </div>
-
+            <CardContent className="p-4 relative">
+              <div className="flex flex-col gap-4">
                 {/* Usage Bars */}
                 <div className={cn(
                   "grid gap-4",

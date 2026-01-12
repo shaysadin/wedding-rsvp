@@ -36,8 +36,8 @@ export default async function ProtectedLayout({ children }: ProtectedLayoutProps
   // ProtectedHeader client component handles showing/hiding based on route
   // Uses app-shell class to prevent iOS Safari body scrolling
   return (
-    <div className="app-shell flex w-full bg-sidebar">
-      <div className="flex min-h-0 flex-1 flex-col overflow-hidden md:rounded-xl md:border bg-background md:shadow-md md:p-2 md:m-3">
+    <div className="app-shell flex justify-center w-full bg-sidebar">
+      <div className="flex max-w-[1800px] min-h-0 flex-1 flex-col overflow-hidden md:rounded-xl md:border bg-background md:shadow-md md:p-2 md:m-3">
         <ProtectedHeader />
 
         <main
