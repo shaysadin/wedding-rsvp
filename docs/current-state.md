@@ -44,7 +44,43 @@
 
 ## Recently Completed
 
-### January 2026
+### January 2026 (Latest)
+
+**Hostess Page**:
+- New hostess view for event check-in at `app/[locale]/(public)/hostess/[eventId]/`
+- Locale-aware routing (works with next-intl)
+- Copy link functionality from seating page
+
+**Dashboard UI Improvements**:
+- Stats Grid now shows short labels on mobile (Events, Guests, Pending, Confirmed)
+- Usage Tracking section title moved outside card for cleaner layout
+- Mobile-responsive stat cards with smaller icons and text
+
+**Seating/Floor Plan**:
+- Max floor height increased to 3000px (was 1200px) for large venue layouts
+- Min floor height decreased to 300px
+- Fixed fullscreen mode table positioning and coordinate scaling
+- Height resize handler closure bug fixed
+
+**Invitation Template Management**:
+- AI-powered template scanning using Google Gemini 2.0 Flash
+- Scans uploaded invitation images and suggests field types/positions
+- Accept individual or all AI suggestions
+- Template metadata editing (name, category, description) after creation
+- Active/inactive status toggle for templates
+
+**WhatsApp Template Management**:
+- Added preview text fields (English + Hebrew) to WhatsApp templates
+- Admin can configure exact message preview shown in send dialog
+- Database fields: `previewText`, `previewTextHe`
+- Fallback to config templates if no preview text set
+
+**Bug Fixes**:
+- Fixed `requirePlatformOwner()` to check both `role` and `roles` fields
+- Fixed invitation form dialog layout being cut off
+- Fixed hostess page 404 error (next-intl locale routing)
+
+### Earlier January 2026
 
 **UI/UX Improvements**:
 - Quick Stats Bar layout improvements for better readability

@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
 import { useTranslations, useLocale } from "next-intl";
-import { ArrowUpRight, MessageCircle, Phone, Sparkles, Zap, ExternalLink, Image as ImageIcon } from "lucide-react";
+import { ArrowUpRight, MessageCircle, Phone, Sparkles, Zap, ExternalLink, Image as ImageIcon, ImagePlus, Pencil } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -721,19 +721,86 @@ export function SendMessageDialog({
                   </div>
                 )}
 
-                {/* Include Image Option (Interactive + has image) */}
-                {messageFormat === "INTERACTIVE" && hasInvitationImage && (
-                  <div className="flex items-center gap-2 p-3 rounded-lg border bg-muted/30">
-                    <Checkbox
-                      id="include-image"
-                      checked={includeImage}
-                      onCheckedChange={(checked) => setIncludeImage(checked === true)}
-                      disabled={sending}
-                    />
-                    <Label htmlFor="include-image" className="flex items-center gap-2 cursor-pointer">
-                      <ImageIcon className="h-4 w-4 text-muted-foreground" />
-                      {isRTL ? "כלול תמונת הזמנה" : "Include invitation image"}
+                {/* Invitation Image Section (Interactive mode) */}
+                {messageFormat === "INTERACTIVE" && (
+                  <div className="space-y-3">
+                    <Label className="flex items-center gap-2 text-sm">
+                      <ImageIcon className="h-3.5 w-3.5" />
+                      {isRTL ? "תמונת הזמנה" : "Invitation Image"}
                     </Label>
+
+                    {hasInvitationImage ? (
+                      <div className="rounded-lg border bg-muted/30 p-3 space-y-3">
+                        {/* Current Invitation Preview */}
+                        <div className="flex items-start gap-3">
+                          <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-lg overflow-hidden border bg-white shrink-0">
+                            <img
+                              src={invitationImageUrl!}
+                              alt={isRTL ? "תמונת הזמנה" : "Invitation"}
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium truncate">
+                              {isRTL ? "הזמנה נבחרה" : "Invitation Selected"}
+                            </p>
+                            <p className="text-xs text-muted-foreground mt-0.5">
+                              {isRTL ? "התמונה תישלח עם ההודעה" : "Image will be sent with message"}
+                            </p>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="mt-2 h-7 text-xs"
+                              asChild
+                            >
+                              <Link href={`/${locale}/events/${eventId}/invitations`}>
+                                <Pencil className="h-3 w-3 me-1" />
+                                {isRTL ? "שנה הזמנה" : "Change Invitation"}
+                              </Link>
+                            </Button>
+                          </div>
+                        </div>
+
+                        {/* Include Image Checkbox */}
+                        <div className="flex items-center gap-2 pt-2 border-t">
+                          <Checkbox
+                            id="include-image"
+                            checked={includeImage}
+                            onCheckedChange={(checked) => setIncludeImage(checked === true)}
+                            disabled={sending}
+                          />
+                          <Label htmlFor="include-image" className="text-sm cursor-pointer">
+                            {isRTL ? "כלול תמונה בהודעה" : "Include image in message"}
+                          </Label>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="rounded-lg border-2 border-dashed border-muted-foreground/25 bg-muted/20 p-4">
+                        <div className="text-center">
+                          <div className="mx-auto w-12 h-12 rounded-full bg-muted flex items-center justify-center mb-3">
+                            <ImagePlus className="h-6 w-6 text-muted-foreground" />
+                          </div>
+                          <p className="text-sm font-medium">
+                            {isRTL ? "לא נבחרה הזמנה" : "No Invitation Selected"}
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-1 mb-3">
+                            {isRTL
+                              ? "צור הזמנה כדי לשלוח אותה עם ההודעה"
+                              : "Create an invitation to send it with your message"}
+                          </p>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            asChild
+                          >
+                            <Link href={`/${locale}/events/${eventId}/invitations`}>
+                              <ImagePlus className="h-4 w-4 me-1.5" />
+                              {isRTL ? "צור הזמנה" : "Create Invitation"}
+                            </Link>
+                          </Button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
 

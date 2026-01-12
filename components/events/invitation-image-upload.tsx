@@ -2,9 +2,11 @@
 
 import { useState, useRef } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { useTranslations, useLocale } from "next-intl";
+import { Sparkles, ExternalLink } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -201,6 +203,37 @@ export function InvitationImageUpload({ eventId, currentImageUrl }: InvitationIm
             onChange={handleFileSelect}
             className="hidden"
           />
+
+          {/* Link to Invitations Page */}
+          <div className="rounded-lg border-2 border-dashed border-purple-200 dark:border-purple-800 bg-purple-50/50 dark:bg-purple-950/20 p-4">
+            <div className="flex items-start gap-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-purple-100 dark:bg-purple-900/50">
+                <Sparkles className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium">
+                  {isRTL ? "צור הזמנה מעוצבת" : "Create a Designed Invitation"}
+                </p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {isRTL
+                    ? "השתמש במחולל ההזמנות שלנו ליצירת הזמנות מקצועיות עם תבניות מוכנות"
+                    : "Use our invitation generator to create professional invitations with ready-made templates"}
+                </p>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="mt-2 border-purple-300 dark:border-purple-700 hover:bg-purple-100 dark:hover:bg-purple-900/50"
+                  asChild
+                >
+                  <Link href={`/${locale}/events/${eventId}/invitations`}>
+                    <Sparkles className="h-3.5 w-3.5 me-1.5" />
+                    {isRTL ? "עבור להזמנות" : "Go to Invitations"}
+                    <ExternalLink className="h-3 w-3 ms-1.5 opacity-50" />
+                  </Link>
+                </Button>
+              </div>
+            </div>
+          </div>
 
           {/* Info text */}
           <div className="rounded-lg border bg-muted/30 p-3">

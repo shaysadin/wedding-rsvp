@@ -178,6 +178,15 @@ Template fields store CSS properties (top, left, width) not PDF coordinates:
 - **Flexibility**: Supports both absolute and relative positioning
 - **Debugging**: Easier to test in browser DevTools
 
+### AI-Assisted Template Field Detection
+
+Using Google Gemini 2.0 Flash for template scanning:
+- **Why Gemini?** Fast, accurate multimodal analysis, good at text detection in images
+- **Use case**: Platform owner uploads invitation image, AI suggests field types/positions
+- **Not mandatory**: Admin can still manually add fields, AI just assists
+- **Structured output**: Returns JSON with field type, label, confidence level
+- **API endpoint**: `/api/admin/scan-template` (platform owner only)
+
 ---
 
 ## Storage & Files
@@ -207,6 +216,15 @@ Using Cloudinary for on-the-fly image transformations:
 - Most reliable for Israel market
 - WhatsApp Business API integration
 - Interactive button messages for RSVP
+
+### WhatsApp Template Preview Text in Database
+
+Storing preview text separately from Twilio Content SID:
+- **Why?** Twilio templates have variable placeholders ({{1}}, {{2}}, {{3}}), not actual preview text
+- **Admin-controlled**: Platform owner enters exact preview text shown to wedding owners
+- **Bilingual**: Separate `previewText` (English) and `previewTextHe` (Hebrew) fields
+- **Fallback**: If no preview text set, falls back to config file templates
+- **UX benefit**: Wedding owners see accurate message preview in send dialog
 
 ### VAPI for Voice AI
 

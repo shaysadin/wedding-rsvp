@@ -29,7 +29,9 @@ app/
 │   │       ├── voice-agent/     # VAPI configuration
 │   │       └── gifts/           # Gift settings
 │   ├── (auth)/                  # Login, register, magic link
-│   └── (marketing)/             # Landing, pricing, blog
+│   ├── (marketing)/             # Landing, pricing, blog
+│   └── (public)/                # Locale-aware public routes
+│       └── hostess/[eventId]/   # Hostess check-in page
 ├── (public)/                    # Non-localized public routes
 │   ├── rsvp/[slug]/             # Guest RSVP pages
 │   └── gift/[guestSlug]/        # Gift payment pages
@@ -66,6 +68,7 @@ app/
     │   └── gift/webhook/meshulam/
     ├── admin/
     │   ├── upload-template/
+    │   ├── scan-template/       # AI template field scanning
     │   └── test-auth/
     └── user/                    # User profile endpoints
 ```

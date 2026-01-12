@@ -70,7 +70,9 @@ npm run email        # Email template dev server (port 3333)
 - **XLSX 0.18.5** - Excel import for guests
 
 ### AI
-- **Google Gemini** - AI features (see `lib/gemini/`)
+- **Google Gemini 2.0 Flash** - AI features (see `lib/gemini/`)
+  - Invitation template scanning: detects text fields and suggests field types
+  - `scanInvitationTemplate()` function for image analysis
 
 ### i18n
 - **next-intl 4.5.8** - Hebrew (default, RTL) + English
@@ -101,6 +103,8 @@ app/
         gifts/                 # Gift settings
     (auth)/                    # Login, register, magic link
     (marketing)/               # Landing, pricing, blog
+  [locale]/(public)/           # Locale-aware public routes
+    hostess/[eventId]/         # Hostess check-in page
   (public)/                    # Non-localized public routes
     rsvp/[slug]/               # Guest RSVP pages
     gift/[guestSlug]/          # Gift payment pages
@@ -113,6 +117,7 @@ app/
     bulk-messages/             # Batch messaging API
     payments/gift/webhook/     # Meshulam gift payment webhook
     admin/                     # Admin API endpoints
+      scan-template/           # AI template field scanning
     user/                      # User profile endpoints
 
 actions/                       # Server Actions (30+ files)
@@ -346,6 +351,7 @@ All icons through `components/shared/icons.tsx` - exports Lucide icons as `Icons
 - **Types**: INVITE, REMINDER, CONFIRMATION, IMAGE_INVITE, INTERACTIVE_INVITE, GUEST_COUNT_REQUEST, EVENT_DAY, THANK_YOU, TABLE_ASSIGNMENT
 - **Statuses**: PENDING, SENT, DELIVERED, FAILED
 - **Templates**: Per-event customizable message templates
+- **WhatsApp Templates**: Admin-configurable with preview text (English + Hebrew) for send dialog
 - **Bulk Jobs**: Track batch sending with progress tracking
 
 ### 4. Automation Flows
@@ -358,10 +364,12 @@ All icons through `components/shared/icons.tsx` - exports Lucide icons as `Icons
 ### 5. Invitation Generation (Complete)
 - Complete pipeline: PDF upload -> text region erasing (Sharp) -> HTML/CSS rendering (Puppeteer) -> PNG output -> R2 storage
 - AI-powered invitation creation stepper
+- **AI Template Scanning**: Gemini 2.0 Flash scans uploaded images to suggest field types/positions
 - Gallery of generated invitations with set-as-active functionality
 - Guest table for bulk WhatsApp sending
 - 24+ field types (couple names, dates, venues, families, custom)
-- Platform owner template management
+- Platform owner template management with metadata editing (name, category, description)
+- Template active/inactive status toggle
 - See `INVITATION_SYSTEM.md` for backend details
 
 ### 6. Voice AI Agent (VAPI)
@@ -376,9 +384,11 @@ All icons through `components/shared/icons.tsx` - exports Lucide icons as `Icons
 ### 7. Seating Management
 - Interactive table planner with drag-and-drop
 - Multiple table shapes (round, rectangle, square)
-- XY positioning and rotation
+- XY positioning and rotation (floor height up to 3000px)
 - Venue blocks for layout design
 - Guest-to-table assignments
+- Fullscreen editing mode with proper coordinate scaling
+- Hostess check-in page (`/[locale]/hostess/[eventId]`) for event day
 
 ### 8. Task Management
 - Kanban board (BACKLOG, TODO, DOING, DONE)
@@ -454,6 +464,7 @@ Plan enforcement in Server Actions via `lib/subscription.ts` and `config/plans.t
 - **MessagingProviderSettings** - Provider credentials
 - **WhatsAppPhoneNumber** - Multi-phone support
 - **WhatsAppButtonResponse** - Interactive button tracking
+- **WhatsAppTemplate** - Approved Twilio templates with preview text (previewText, previewTextHe)
 
 ### Voice AI Models
 - **VapiPhoneNumber**, **VapiEventSettings**, **VapiCallJob**, **VapiCallLog**, **VapiEmbedding**
