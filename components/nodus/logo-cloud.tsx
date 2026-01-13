@@ -89,6 +89,10 @@ export const LogoCloud = () => {
                   whileHover={{
                     opacity: 1,
                   }}
+                  style={{
+                    willChange: "transform, opacity",
+                    backfaceVisibility: "hidden",
+                  }}
                 >
                   <motion.img
                     src={logo.src}

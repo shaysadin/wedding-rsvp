@@ -51,3 +51,7 @@ export { InformationBlock } from "./information-block";
 export { SignIn } from "./sign-in";
 export { SignUp } from "./sign-up";
 export { AuthIllustration } from "./auth-illustration";
+
+// Utility components
+export { PageTransition } from "./page-transition";
+export { LazySection } from "./lazy-section";

@@ -70,6 +70,10 @@ export const Card = ({
         duration: 0.5,
         delay,
       }}
+      style={{
+        willChange: "transform, opacity",
+        backfaceVisibility: "hidden",
+      }}
       className={cn("relative h-full text-xs", className)}
       ref={ref}
     >
@@ -82,6 +86,8 @@ export const Card = ({
         style={{
           translateX,
           translateY,
+          willChange: "transform",
+          backfaceVisibility: "hidden",
         }}
         className="shadow-aceternity relative z-20 flex w-54 shrink-0 flex-col items-start rounded-lg bg-white dark:bg-neutral-900"
       >

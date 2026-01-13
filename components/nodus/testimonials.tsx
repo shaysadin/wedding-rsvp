@@ -82,6 +82,10 @@ export const Testimonials = () => {
               duration: 0.2,
               ease: "easeInOut",
             }}
+            style={{
+              willChange: "transform, opacity",
+              backfaceVisibility: "hidden",
+            }}
             className="divide-divide grid grid-cols-1 items-stretch divide-x bg-gray-100 md:h-[28rem] md:grid-cols-4 dark:bg-neutral-800"
           >
             <div className="col-span-4 flex flex-col gap-10 px-4 py-10 md:flex-row md:py-0 lg:col-span-3">
@@ -192,6 +196,10 @@ export const Testimonials = () => {
                     }}
                     whileHover={{
                       opacity: 1,
+                    }}
+                    style={{
+                      willChange: "transform, opacity",
+                      backfaceVisibility: "hidden",
                     }}
                   >
                     {LogoComponent && <LogoComponent className="h-8 transition-all duration-500" />}

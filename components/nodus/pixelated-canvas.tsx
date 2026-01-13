@@ -142,7 +142,11 @@ export const PixelatedCanvas: React.FC<PixelatedCanvasProps> = ({
     <canvas
       ref={canvasRef}
       className={cn("w-full h-full", className)}
-      style={{ imageRendering: "pixelated" }}
+      style={{
+        imageRendering: "pixelated",
+        willChange: isActive ? "contents" : "auto",
+        transform: "translateZ(0)",
+      }}
     />
   );
 };
