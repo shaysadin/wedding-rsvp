@@ -115,7 +115,7 @@ export const Footer = () => {
           </div>
 
           {/* Newsletter - compact */}
-          <div className="max-w-xs shrink-0">
+          <div className="max-w-80 w-full shrink-0">
             <p className="text-footer-link text-sm font-medium">{t("footer.newsletter")}</p>
             <div className="mt-2 flex w-full items-center rounded-xl border border-gray-300 bg-gray-200 p-1 placeholder-gray-600 dark:border-neutral-700 dark:bg-neutral-800">
               <input

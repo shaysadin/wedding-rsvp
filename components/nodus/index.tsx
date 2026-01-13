@@ -29,6 +29,7 @@ export { Logo, LogoSVG } from "./logo";
 export { ModeToggle } from "./mode-toggle";
 export { Navbar } from "./navbar";
 export { Footer } from "./footer";
+export { FeaturedImages } from "./featured-images";
 
 // Section components
 export { Hero } from "./sections/hero";
