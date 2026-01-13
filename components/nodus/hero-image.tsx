@@ -68,8 +68,6 @@ export const HeroImage = () => {
           style={{
             translateX,
             translateY,
-            willChange: "transform",
-            backfaceVisibility: "hidden",
           }}
         >
           <Image

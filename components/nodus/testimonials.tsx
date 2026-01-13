@@ -48,7 +48,7 @@ export const Testimonials = () => {
     }, 10000);
 
     return () => clearInterval(intervalId);
-  }, [currentIndex]);
+  }, []); // Empty deps - interval runs once and uses functional setState
   return (
     <>
       <Container className="border-divide border-x">
@@ -81,10 +81,6 @@ export const Testimonials = () => {
             transition={{
               duration: 0.2,
               ease: "easeInOut",
-            }}
-            style={{
-              willChange: "transform, opacity",
-              backfaceVisibility: "hidden",
             }}
             className="divide-divide grid grid-cols-1 items-stretch divide-x bg-gray-100 md:h-[28rem] md:grid-cols-4 dark:bg-neutral-800"
           >
@@ -196,10 +192,6 @@ export const Testimonials = () => {
                     }}
                     whileHover={{
                       opacity: 1,
-                    }}
-                    style={{
-                      willChange: "transform, opacity",
-                      backfaceVisibility: "hidden",
                     }}
                   >
                     {LogoComponent && <LogoComponent className="h-8 transition-all duration-500" />}

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Container } from "@/components/nodus/container";
 import { cn } from "@/lib/utils";
 import { AnimatePresence, motion } from "motion/react";
@@ -17,31 +17,27 @@ export const LogoCloud = () => {
 
   useEffect(() => {
     const interval = setInterval(() => {
-      const notDisplayedIndices = logos
-        .map((_, index) => index)
-        .filter((index) => !displayedIndices.includes(index));
+      setDisplayedIndices((prev) => {
+        const notDisplayedIndices = logos
+          .map((_, index) => index)
+          .filter((index) => !prev.includes(index));
 
-      if (notDisplayedIndices.length > 0) {
-        const randomDisplayedIndex = Math.floor(
-          Math.random() * displayedIndices.length,
-        );
-        const positionToReplace = randomDisplayedIndex;
+        if (notDisplayedIndices.length === 0) return prev;
 
+        const positionToReplace = Math.floor(Math.random() * prev.length);
         const randomNotDisplayedIndex = Math.floor(
           Math.random() * notDisplayedIndices.length,
         );
         const newLogoIndex = notDisplayedIndices[randomNotDisplayedIndex];
 
-        setDisplayedIndices((prev) => {
-          const newIndices = [...prev];
-          newIndices[positionToReplace] = newLogoIndex;
-          return newIndices;
-        });
-      }
+        const newIndices = [...prev];
+        newIndices[positionToReplace] = newLogoIndex;
+        return newIndices;
+      });
     }, 3000);
 
     return () => clearInterval(interval);
-  }, [displayedIndices, logos]);
+  }, []); // Empty deps - interval runs once and uses functional setState
 
   return (
     <Container className="border-divide border-x">
@@ -88,10 +84,6 @@ export const LogoCloud = () => {
                   }}
                   whileHover={{
                     opacity: 1,
-                  }}
-                  style={{
-                    willChange: "transform, opacity",
-                    backfaceVisibility: "hidden",
                   }}
                 >
                   <motion.img

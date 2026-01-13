@@ -51,7 +51,6 @@ export const Pricing = () => {
                 <motion.div
                   layoutId="active-span"
                   className="shadow-aceternity absolute inset-0 h-full w-full rounded-md bg-white dark:bg-neutral-950"
-                  style={{ willChange: "transform", backfaceVisibility: "hidden" }}
                 ></motion.div>
               )}
               <span className="relative z-20 flex items-center gap-2 text-sm sm:text-base">

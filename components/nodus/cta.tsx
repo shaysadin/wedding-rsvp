@@ -130,8 +130,6 @@ export const CTAOrbit: React.FC<CTAOrbitProps> = ({
           width: diameter,
           height: diameter,
           ["--duration" as any]: `${duration}s`,
-          willChange: "transform",
-          transform: "translate(-50%, -50%) translateZ(0)",
         }}
       >
         <div className="relative h-full w-full">
@@ -154,8 +152,6 @@ export const CTAOrbit: React.FC<CTAOrbitProps> = ({
                     )}
                     style={{
                       ["--duration" as any]: `${duration}s`,
-                      willChange: "transform",
-                      backfaceVisibility: "hidden",
                     }}
                   >
                     <Logo className="size-8 shrink-0" />

@@ -1,6 +1,6 @@
 "use client";
 import { cn } from "@/lib/utils";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef } from "react";
 
 interface PixelatedCanvasProps {
   isActive: boolean;
@@ -20,74 +20,84 @@ export const PixelatedCanvas: React.FC<PixelatedCanvasProps> = ({
   backgroundColor = "var(--color-gray-200, white)",
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [filledSquares, setFilledSquares] = useState<Set<number>>(new Set());
-  const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
 
-  const SQUARE_SIZE = size;
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
 
-  const resolveColor = (color: string): string => {
-    if (typeof window !== "undefined" && canvasRef.current) {
+    const parent = canvas.parentElement;
+    if (!parent) return;
+
+    const width = parent.clientWidth;
+    const height = parent.clientHeight;
+
+    if (width === 0 || height === 0) return;
+
+    canvas.width = width;
+    canvas.height = height;
+
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    // Resolve CSS colors once
+    const resolveColor = (color: string): string => {
       const div = document.createElement("div");
       div.style.color = color;
       document.body.appendChild(div);
-      const computedColor = window.getComputedStyle(div).color;
+      const computedColor = getComputedStyle(div).color;
       document.body.removeChild(div);
       return computedColor;
-    }
-    return color;
-  };
-
-  useEffect(() => {
-    const updateDimensions = () => {
-      if (canvasRef.current && canvasRef.current.parentElement) {
-        const parent = canvasRef.current.parentElement;
-        const width = parent.clientWidth;
-        const height = parent.clientHeight;
-        setDimensions({ width, height });
-      }
     };
 
-    updateDimensions();
-    window.addEventListener("resize", updateDimensions);
+    const resolvedFillColor = resolveColor(fillColor);
+    const resolvedBgColor = resolveColor(backgroundColor);
 
-    return () => window.removeEventListener("resize", updateDimensions);
-  }, []);
+    // Clear canvas with background
+    ctx.fillStyle = resolvedBgColor;
+    ctx.fillRect(0, 0, width, height);
 
-  useEffect(() => {
-    if (!isActive) {
-      setFilledSquares(new Set());
-      return;
-    }
+    if (!isActive) return;
 
-    const canvas = canvasRef.current;
-    if (!canvas || dimensions.width === 0 || dimensions.height === 0) return;
-
-    // Calculate grid dimensions
-    const cols = Math.floor(dimensions.width / SQUARE_SIZE);
-    const rows = Math.floor(dimensions.height / SQUARE_SIZE);
+    // Calculate grid
+    const cols = Math.floor(width / size);
+    const rows = Math.floor(height / size);
     const totalSquares = cols * rows;
 
     if (totalSquares === 0) return;
 
-    const allSquares = Array.from({ length: totalSquares }, (_, i) => i);
+    // Create shuffled array of square indices
+    const shuffledSquares: number[] = [];
+    for (let i = 0; i < totalSquares; i++) {
+      shuffledSquares.push(i);
+    }
+    // Fisher-Yates shuffle
+    for (let i = shuffledSquares.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffledSquares[i], shuffledSquares[j]] = [shuffledSquares[j], shuffledSquares[i]];
+    }
 
-    const shuffledSquares = [...allSquares].sort(() => Math.random() - 0.5);
-
-    const fillDuration = duration;
-    const startTime = Date.now();
+    // Animation state
+    let lastDrawnIndex = 0;
     let animationId: number;
+    const startTime = performance.now();
 
-    const animate = () => {
-      const elapsed = Date.now() - startTime;
-      const progress = Math.min(elapsed / fillDuration, 1);
+    ctx.fillStyle = resolvedFillColor;
+
+    const animate = (now: number) => {
+      const elapsed = now - startTime;
+      const progress = Math.min(elapsed / duration, 1);
       const targetIndex = Math.floor(progress * shuffledSquares.length);
 
-      const newFilledSquares = new Set<number>();
-      for (let i = 0; i < targetIndex; i++) {
-        newFilledSquares.add(shuffledSquares[i]);
+      // Only draw NEW squares since last frame (incremental drawing)
+      for (let i = lastDrawnIndex; i < targetIndex; i++) {
+        const squareIndex = shuffledSquares[i];
+        const col = squareIndex % cols;
+        const row = Math.floor(squareIndex / cols);
+        const x = col * size;
+        const y = row * size;
+        ctx.fillRect(x, y, size, size);
       }
-
-      setFilledSquares(newFilledSquares);
+      lastDrawnIndex = targetIndex;
 
       if (progress < 1) {
         animationId = requestAnimationFrame(animate);
@@ -101,52 +111,13 @@ export const PixelatedCanvas: React.FC<PixelatedCanvasProps> = ({
         cancelAnimationFrame(animationId);
       }
     };
-  }, [isActive, dimensions]);
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas || dimensions.width === 0 || dimensions.height === 0) return;
-
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-
-    if (
-      canvas.width !== dimensions.width ||
-      canvas.height !== dimensions.height
-    ) {
-      canvas.width = dimensions.width;
-      canvas.height = dimensions.height;
-    }
-
-    const cols = Math.floor(dimensions.width / SQUARE_SIZE);
-    const rows = Math.floor(dimensions.height / SQUARE_SIZE);
-
-    ctx.fillStyle = resolveColor(backgroundColor);
-    ctx.fillRect(0, 0, dimensions.width, dimensions.height);
-
-    ctx.fillStyle = resolveColor(fillColor);
-    for (let row = 0; row < rows; row++) {
-      for (let col = 0; col < cols; col++) {
-        const squareIndex = row * cols + col;
-
-        if (filledSquares.has(squareIndex)) {
-          const x = col * SQUARE_SIZE;
-          const y = row * SQUARE_SIZE;
-          ctx.fillRect(x, y, SQUARE_SIZE, SQUARE_SIZE);
-        }
-      }
-    }
-  }, [filledSquares, dimensions, fillColor, backgroundColor]);
+  }, [isActive, size, duration, fillColor, backgroundColor]);
 
   return (
     <canvas
       ref={canvasRef}
       className={cn("w-full h-full", className)}
-      style={{
-        imageRendering: "pixelated",
-        willChange: isActive ? "contents" : "auto",
-        transform: "translateZ(0)",
-      }}
+      style={{ imageRendering: "pixelated" }}
     />
   );
 };

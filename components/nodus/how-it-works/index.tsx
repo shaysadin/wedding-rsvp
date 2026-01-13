@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { Container } from "@/components/nodus/container";
 import { Badge } from "@/components/nodus/badge";
 import { SubHeading } from "@/components/nodus/subheading";
@@ -13,6 +13,36 @@ import {
   DesignYourWorkflowSkeleton,
 } from "./skeletons";
 import { useTranslations } from "next-intl";
+
+// Lazy load skeleton only when visible - prevents all 3 skeletons running on mobile
+const LazyMobileSkeleton = ({ skeleton }: { skeleton: React.ReactNode }) => {
+  const ref = useRef<HTMLDivElement>(null);
+  const [isVisible, setIsVisible] = useState(false);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsVisible(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: "100px" }
+    );
+
+    if (ref.current) {
+      observer.observe(ref.current);
+    }
+
+    return () => observer.disconnect();
+  }, []);
+
+  return (
+    <div ref={ref} className="h-full w-full">
+      {isVisible ? skeleton : null}
+    </div>
+  );
+};
 
 type Tab = {
   title: string;
@@ -54,13 +84,15 @@ export const HowItWorks = () => {
 
   useEffect(() => {
     const interval = setInterval(() => {
-      const currentIndex = tabs.findIndex((tab) => tab.id === activeTab.id);
-      const nextIndex = (currentIndex + 1) % tabs.length;
-      setActiveTab(tabs[nextIndex]);
+      setActiveTab((prev) => {
+        const currentIndex = tabs.findIndex((tab) => tab.id === prev.id);
+        const nextIndex = (currentIndex + 1) % tabs.length;
+        return tabs[nextIndex];
+      });
     }, DURATION);
 
     return () => clearInterval(interval);
-  }, [activeTab]);
+  }, []); // Empty deps - interval runs once and uses functional setState
   return (
     <Container className="border-divide border-x">
       <div className="flex flex-col items-center pt-16">
@@ -131,7 +163,7 @@ export const HowItWorks = () => {
                 {tab.description}
               </p>
               <div className="relative mx-auto h-80 w-full overflow-hidden mask-t-from-90% mask-r-from-90% mask-b-from-90% mask-l-from-90% sm:h-80 sm:w-160">
-                {tab.skeleton}
+                <LazyMobileSkeleton skeleton={tab.skeleton} />
               </div>
             </div>
           ))}

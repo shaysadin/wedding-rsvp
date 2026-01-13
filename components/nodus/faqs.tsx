@@ -114,7 +114,6 @@ const AccordionItem = ({
           initial={false}
           animate={{ rotate: isOpen ? 180 : 0 }}
           transition={{ duration: 0.25 }}
-          style={{ willChange: "transform", backfaceVisibility: "hidden" }}
         >
           <ChevronDownIcon className="dark:text-neutral-100" />
         </motion.span>
@@ -127,7 +126,6 @@ const AccordionItem = ({
         initial={false}
         animate={{ height: targetHeight, opacity: isOpen ? 1 : 0 }}
         transition={{ height: { duration: 0.35 }, opacity: { duration: 0.2 } }}
-        style={{ willChange: "height, opacity", backfaceVisibility: "hidden" }}
         className="overflow-hidden px-8"
         onClick={onToggle}
       >
@@ -140,7 +138,6 @@ const AccordionItem = ({
                 animate={{ y: 0, opacity: 1 }}
                 exit={{ y: -6, opacity: 0 }}
                 transition={{ duration: 0.25 }}
-                style={{ willChange: "transform, opacity", backfaceVisibility: "hidden" }}
                 className="text-gray-600 dark:text-neutral-400"
               >
                 {answer}

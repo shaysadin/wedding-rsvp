@@ -38,7 +38,7 @@ export default async function LocaleLayout({
   const direction = localeDirection[locale as Locale];
 
   return (
-    <SessionProvider>
+    <SessionProvider refetchOnWindowFocus={false} refetchWhenOffline={false}>
       <NextIntlClientProvider messages={messages}>
         <ThemeProvider
           attribute="class"
