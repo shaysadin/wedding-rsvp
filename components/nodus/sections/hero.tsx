@@ -53,7 +53,7 @@ export const Hero = () => {
             </motion.div>
           ))}
         </div>
-        <span className="border-l border-gray-500 pl-4 text-[10px] text-gray-600 sm:text-sm dark:text-gray-400">
+        <span className="border-r border-gray-500 pr-4 text-[10px] text-gray-600 sm:text-sm dark:text-gray-400">
           {t("hero.rating")}
         </span>
       </div>
