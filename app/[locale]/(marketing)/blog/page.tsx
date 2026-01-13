@@ -1,7 +1,13 @@
 import { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
-
-import { HeaderSection } from "@/components/shared/header-section";
+import {
+  Container,
+  DivideX,
+  Heading,
+  SubHeading,
+  Badge,
+  CTA,
+} from "@/components/nodus";
 
 export const metadata: Metadata = {
   title: "Blog - Wedinex",
@@ -12,18 +18,23 @@ export default async function BlogPage() {
   const t = await getTranslations("blog");
 
   return (
-    <div className="container py-6 lg:py-10">
-      <HeaderSection
-        label={t("label")}
-        title={t("title")}
-        subtitle={t("subtitle")}
-      />
-
-      <div className="mt-10">
-        <p className="text-center text-muted-foreground">
-          {t("noPosts")}
-        </p>
-      </div>
-    </div>
+    <main>
+      <DivideX />
+      <Container className="border-divide flex flex-col items-center border-x pt-10 md:pt-20 md:pb-10">
+        <Badge text={t("label")} />
+        <Heading>{t("title")}</Heading>
+        <SubHeading className="mx-auto mt-2 max-w-sm px-4">
+          {t("subtitle")}
+        </SubHeading>
+        <div className="border-divide mt-10 w-full border-y py-20">
+          <p className="text-center text-muted-foreground">
+            {t("noPosts")}
+          </p>
+        </div>
+      </Container>
+      <DivideX />
+      <CTA />
+      <DivideX />
+    </main>
   );
 }

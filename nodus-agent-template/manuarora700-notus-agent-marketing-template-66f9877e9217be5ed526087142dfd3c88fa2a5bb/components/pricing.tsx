@@ -70,7 +70,7 @@ export const Pricing = () => {
               <p className="text-base text-gray-600 dark:text-neutral-400">
                 {tier.subtitle}
               </p>
-              <span className="mt-6 flex items-baseline-last text-2xl font-medium dark:text-white">
+              <span className="mt-6 flex justify-end text-2xl font-medium dark:text-white">
                 $
                 <Price
                   value={activeTier === "monthly" ? tier.monthly : tier.yearly}

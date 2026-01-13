@@ -1,19 +1,13 @@
 import type { Config } from "tailwindcss";
 
-const { fontFamily } = require("tailwindcss/defaultTheme");
-
 const config = {
-  darkMode: ["class"],
+  darkMode: "class",
   content: [
     "./app/**/*.{ts,tsx}",
     "./components/**/*.{ts,tsx}",
     "./ui/**/*.{ts,tsx}",
     "./content/**/*.{md,mdx}",
   ],
-  future: {
-    hoverOnlyWhenSupported: true,
-  },
-  prefix: "",
   theme: {
     container: {
       center: true,
@@ -74,10 +68,12 @@ const config = {
         sm: "calc(var(--radius) - 4px)",
       },
       fontFamily: {
-        sans: ["var(--font-sans)", ...fontFamily.sans],
-        urban: ["var(--font-urban)", ...fontFamily.sans],
-        heading: ["var(--font-heading)", ...fontFamily.sans],
-        geist: ["var(--font-geist)", ...fontFamily.sans],
+        sans: ["var(--font-sans)", "system-ui", "sans-serif"],
+        urban: ["var(--font-urban)", "system-ui", "sans-serif"],
+        heading: ["var(--font-heading)", "system-ui", "sans-serif"],
+        geist: ["var(--font-geist)", "system-ui", "sans-serif"],
+        primary: ["Inter Display", "system-ui", "sans-serif"],
+        mono: ["DM Mono", "monospace"],
       },
       keyframes: {
         "accordion-down": {
@@ -88,7 +84,6 @@ const config = {
           from: { height: "var(--radix-accordion-content-height)" },
           to: { height: "0" },
         },
-        // Fade up and down
         "fade-up": {
           "0%": {
             opacity: "0",
@@ -115,7 +110,6 @@ const config = {
             transform: "translateY(0px)",
           },
         },
-        // Fade in and out
         "fade-in": {
           "0%": {
             opacity: "0",
@@ -142,18 +136,13 @@ const config = {
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
-
-        // Fade up and down
         "fade-up": "fade-up 0.5s",
         "fade-down": "fade-down 0.5s",
-
-        // Fade in and out
         "fade-in": "fade-in 0.4s",
         "fade-out": "fade-out 0.4s",
       },
     },
   },
-  plugins: [require("tailwindcss-animate"), require("@tailwindcss/typography")],
 } satisfies Config;
 
 export default config;

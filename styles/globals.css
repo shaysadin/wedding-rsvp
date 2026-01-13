@@ -1,119 +1,270 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+@plugin "@tailwindcss/typography";
 
-@layer base {
-  :root {
-    /* Main background - light gray like reference */
-    --background: 0 0% 100%;
-    --foreground: 0 0% 9%;
+@custom-variant dark (&:where(.dark, .dark *));
 
-    /* Cards - pure white */
-    --card: 0 0% 100%;
-    --card-foreground: 0 0% 9%;
+/* ============================================
+   NODUS DESIGN SYSTEM - Theme Variables
+   ============================================ */
+@theme {
+  /* Nodus Fonts */
+  --font-primary: Inter Display, sans-serif;
+  --font-mono: DM Mono, monospace;
 
-    /* Popover - white */
-    --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 9%;
+  /* Nodus Colors */
+  --color-charcoal-900: #202020;
+  --color-charcoal-800: #29292e;
+  --color-charcoal-700: #343434;
 
-    /* Primary - black */
-    --primary: 0 0% 9%;
-    --primary-foreground: 0 0% 100%;
+  --color-gray-100: #f9f9f9;
+  --color-gray-200: #f5f5f5;
+  --color-gray-300: #eaedf1;
+  --color-gray-400: #d7d7d7;
+  --color-gray-500: #c0c0c0;
+  --color-gray-600: #8b8b8b;
 
-    /* Secondary - light gray */
-    --secondary: 0 0% 96%;
-    --secondary-foreground: 0 0% 9%;
+  /* Wedinex Brand Color */
+  --color-brand: #8b5cf6;
 
-    /* Muted - subtle gray */
-    --muted: 0 0% 96%;
-    --muted-foreground: 0 0% 45%;
+  /* Nodus Shadows */
+  --shadow-aceternity:
+    0px 2px 3px -1px rgba(0, 0, 0, 0.1), 0px 1px 0px 0px rgba(25, 28, 33, 0.02),
+    0px 0px 0px 1px rgba(25, 28, 33, 0.08);
 
-    /* Accent - very light gray */
-    --accent: 0 0% 96%;
-    --accent-foreground: 0 0% 9%;
+  /* Nodus Gradient */
+  --background-repeating-gradient: radial-gradient(
+    var(--color-gray-300) 1px,
+    transparent 1px
+  );
+  --repeat-gradient-size: 10px 10px;
 
-    /* Destructive - red */
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 0 0% 100%;
+  /* Nodus Animations */
+  --animate-orbit: orbit 24s linear infinite;
+  --animate-counter-orbit: counter-orbit 24s linear infinite;
 
-    /* Border - very light gray */
-    --border: 0 0% 90%;
-    --input: 0 0% 90%;
-    --ring: 0 0% 9%;
-
-    /* Radius - slightly larger for modern look */
-    --radius: 0.5rem;
-
-    /* Sidebar - white background */
-    --sidebar: 0 0% 96%;
-    --sidebar-foreground: 0 0% 9%;
-    --sidebar-border: 0 0% 92%;
-
-    /* Success colors */
-    --success: 142 76% 36%;
-    --success-foreground: 0 0% 100%;
-
-    /* Warning colors */
-    --warning: 38 92% 50%;
-    --warning-foreground: 0 0% 100%;
-
-    --chart-1: 271.5 81.3% 55.9%;
-    --chart-2: 270 95% 75%;
-    --chart-3: 270 91% 65%;
-    --chart-4: 269 97% 85%;
-    --chart-5: 269 100% 92%;
+  @keyframes orbit {
+    0% {
+      transform: rotate(0deg);
+    }
+    100% {
+      transform: rotate(360deg);
+    }
   }
 
-  .dark {
-    --background: 0 0% 7%;
-    --foreground: 0 0% 95%;
-
-    --card: 0 0% 10%;
-    --card-foreground: 0 0% 95%;
-
-    --popover: 0 0% 10%;
-    --popover-foreground: 0 0% 95%;
-
-    --primary: 0 0% 100%;
-    --primary-foreground: 0 0% 9%;
-
-    --secondary: 0 0% 15%;
-    --secondary-foreground: 0 0% 95%;
-
-    --muted: 0 0% 15%;
-    --muted-foreground: 0 0% 60%;
-
-    --accent: 0 0% 15%;
-    --accent-foreground: 0 0% 95%;
-
-    --destructive: 0 62% 30%;
-    --destructive-foreground: 0 0% 95%;
-
-    --border: 0 0% 18%;
-    --input: 0 0% 18%;
-    --ring: 0 0% 80%;
-
-    --sidebar: 0 0% 10%;
-    --sidebar-foreground: 0 0% 95%;
-    --sidebar-border: 0 0% 18%;
-
-    --success: 142 76% 36%;
-    --success-foreground: 0 0% 100%;
-
-    --warning: 38 92% 50%;
-    --warning-foreground: 0 0% 100%;
-
-    --chart-1: 271.5 81.3% 55.9%;
-    --chart-2: 270 95% 75%;
-    --chart-3: 270 91% 65%;
-    --chart-4: 269 97% 85%;
-    --chart-5: 269 100% 92%;
+  @keyframes counter-orbit {
+    0% {
+      transform: rotate(360deg);
+    }
+    100% {
+      transform: rotate(0deg);
+    }
   }
 }
 
+/* ============================================
+   SHADCN/UI - CSS Variables (Base Values)
+   ============================================ */
+:root {
+  /* Main background */
+  --background: 0 0% 100%;
+  --foreground: 0 0% 9%;
+
+  /* Cards */
+  --card: 0 0% 100%;
+  --card-foreground: 0 0% 9%;
+
+  /* Popover */
+  --popover: 0 0% 100%;
+  --popover-foreground: 0 0% 9%;
+
+  /* Primary */
+  --primary: 0 0% 9%;
+  --primary-foreground: 0 0% 100%;
+
+  /* Secondary */
+  --secondary: 0 0% 96%;
+  --secondary-foreground: 0 0% 9%;
+
+  /* Muted */
+  --muted: 0 0% 96%;
+  --muted-foreground: 0 0% 45%;
+
+  /* Accent */
+  --accent: 0 0% 96%;
+  --accent-foreground: 0 0% 9%;
+
+  /* Destructive */
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 0 0% 100%;
+
+  /* Border/Input/Ring */
+  --border: 0 0% 90%;
+  --input: 0 0% 90%;
+  --ring: 0 0% 9%;
+
+  /* Radius */
+  --radius: 0.5rem;
+
+  /* Sidebar */
+  --sidebar: 0 0% 96%;
+  --sidebar-foreground: 0 0% 9%;
+  --sidebar-border: 0 0% 92%;
+
+  /* Success */
+  --success: 142 76% 36%;
+  --success-foreground: 0 0% 100%;
+
+  /* Warning */
+  --warning: 38 92% 50%;
+  --warning-foreground: 0 0% 100%;
+
+  /* Charts */
+  --chart-1: 271.5 81.3% 55.9%;
+  --chart-2: 270 95% 75%;
+  --chart-3: 270 91% 65%;
+  --chart-4: 269 97% 85%;
+  --chart-5: 269 100% 92%;
+
+  /* Nodus Theme Variables */
+  --divide: var(--color-gray-300);
+  --nodus-primary: #171717;
+  --canvas: #a3a3a3;
+  --canvas-fill: #d4d4d4;
+  --dots: var(--color-gray-300);
+  --line: #e5e5e5;
+  --footer-link: #676767;
+}
+
+.dark {
+  --background: 0 0% 7%;
+  --foreground: 0 0% 95%;
+
+  --card: 0 0% 10%;
+  --card-foreground: 0 0% 95%;
+
+  --popover: 0 0% 10%;
+  --popover-foreground: 0 0% 95%;
+
+  --primary: 0 0% 100%;
+  --primary-foreground: 0 0% 9%;
+
+  --secondary: 0 0% 15%;
+  --secondary-foreground: 0 0% 95%;
+
+  --muted: 0 0% 15%;
+  --muted-foreground: 0 0% 60%;
+
+  --accent: 0 0% 15%;
+  --accent-foreground: 0 0% 95%;
+
+  --destructive: 0 62% 30%;
+  --destructive-foreground: 0 0% 95%;
+
+  --border: 0 0% 18%;
+  --input: 0 0% 18%;
+  --ring: 0 0% 80%;
+
+  --sidebar: 0 0% 10%;
+  --sidebar-foreground: 0 0% 95%;
+  --sidebar-border: 0 0% 18%;
+
+  --success: 142 76% 36%;
+  --success-foreground: 0 0% 100%;
+
+  --warning: 38 92% 50%;
+  --warning-foreground: 0 0% 100%;
+
+  --chart-1: 271.5 81.3% 55.9%;
+  --chart-2: 270 95% 75%;
+  --chart-3: 270 91% 65%;
+  --chart-4: 269 97% 85%;
+  --chart-5: 269 100% 92%;
+
+  /* Nodus Theme Variables - Dark */
+  --divide: #262626;
+  --nodus-primary: #f5f5f5;
+  --canvas: #e5e5e5;
+  --canvas-fill: #262626;
+  --dots: #262626;
+  --line: #404040;
+  --footer-link: #d4d4d4;
+}
+
+/* ============================================
+   TAILWIND 4 - Theme Integration (inline)
+   Map CSS variables to Tailwind color utilities
+   ============================================ */
+@theme inline {
+  /* Shadcn/UI Colors - HSL format */
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+
+  --color-card: hsl(var(--card));
+  --color-card-foreground: hsl(var(--card-foreground));
+
+  --color-popover: hsl(var(--popover));
+  --color-popover-foreground: hsl(var(--popover-foreground));
+
+  --color-primary: hsl(var(--primary));
+  --color-primary-foreground: hsl(var(--primary-foreground));
+
+  --color-secondary: hsl(var(--secondary));
+  --color-secondary-foreground: hsl(var(--secondary-foreground));
+
+  --color-muted: hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+
+  --color-accent: hsl(var(--accent));
+  --color-accent-foreground: hsl(var(--accent-foreground));
+
+  --color-destructive: hsl(var(--destructive));
+  --color-destructive-foreground: hsl(var(--destructive-foreground));
+
+  --color-border: hsl(var(--border));
+  --color-input: hsl(var(--input));
+  --color-ring: hsl(var(--ring));
+
+  --color-sidebar: hsl(var(--sidebar));
+  --color-sidebar-foreground: hsl(var(--sidebar-foreground));
+  --color-sidebar-border: hsl(var(--sidebar-border));
+
+  --color-success: hsl(var(--success));
+  --color-success-foreground: hsl(var(--success-foreground));
+
+  --color-warning: hsl(var(--warning));
+  --color-warning-foreground: hsl(var(--warning-foreground));
+
+  --color-chart-1: hsl(var(--chart-1));
+  --color-chart-2: hsl(var(--chart-2));
+  --color-chart-3: hsl(var(--chart-3));
+  --color-chart-4: hsl(var(--chart-4));
+  --color-chart-5: hsl(var(--chart-5));
+
+  /* Nodus Theme Colors */
+  --color-divide: var(--divide);
+  --color-nodus-primary: var(--nodus-primary);
+  --color-canvas: var(--canvas);
+  --color-canvas-fill: var(--canvas-fill);
+  --color-dots: var(--dots);
+  --color-line: var(--line);
+  --color-footer-link: var(--footer-link);
+
+  /* Border Radius */
+  --radius-lg: var(--radius);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-sm: calc(var(--radius) - 4px);
+}
+
+/* ============================================
+   BASE LAYER STYLES
+   ============================================ */
 @layer base {
   * {
     @apply border-border;
+  }
+
+  button {
+    @apply cursor-pointer;
   }
 
   body {
@@ -121,7 +272,7 @@
     font-feature-settings: "rlig" 1, "calt" 1;
   }
 
-  /* Prevent iOS Safari elastic scrolling on fixed app layouts (dashboard, etc.) */
+  /* Prevent iOS Safari elastic scrolling on fixed app layouts */
   body:has(.app-shell) {
     height: 100%;
     overflow: hidden;
@@ -136,13 +287,14 @@
   }
 }
 
-/* App shell - fixed layout container for dashboard/protected pages */
+/* ============================================
+   UTILITY CLASSES
+   ============================================ */
 @layer utilities {
   .app-shell {
     position: fixed;
     inset: 0;
     overflow: hidden;
-    /* iOS-specific fixes */
     -webkit-overflow-scrolling: touch;
   }
 
@@ -152,9 +304,7 @@
     -webkit-overflow-scrolling: touch;
     overscroll-behavior: contain;
   }
-}
 
-@layer utilities {
   .step {
     counter-increment: step;
   }
@@ -164,64 +314,8 @@
     @apply ml-[-50px] mt-[-4px];
     content: counter(step);
   }
-}
 
-.text-gradient_indigo-purple {
-  background: linear-gradient(90deg, #6366f1 0%, rgb(168 85 247 / 0.8) 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-/* Guest Counter Animations */
-@keyframes slideUp {
-  0% {
-    transform: translateY(0);
-    opacity: 1;
-  }
-  50% {
-    transform: translateY(-20px);
-    opacity: 0;
-  }
-  51% {
-    transform: translateY(20px);
-    opacity: 0;
-  }
-  100% {
-    transform: translateY(0);
-    opacity: 1;
-  }
-}
-
-@keyframes slideDown {
-  0% {
-    transform: translateY(0);
-    opacity: 1;
-  }
-  50% {
-    transform: translateY(20px);
-    opacity: 0;
-  }
-  51% {
-    transform: translateY(-20px);
-    opacity: 0;
-  }
-  100% {
-    transform: translateY(0);
-    opacity: 1;
-  }
-}
-
-.animate-slide-up {
-  animation: slideUp 0.2s ease-out;
-}
-
-.animate-slide-down {
-  animation: slideDown 0.2s ease-out;
-}
-
-/* Safe area utilities for iOS devices */
-@layer utilities {
+  /* Safe area utilities for iOS */
   .safe-area-bottom {
     padding-bottom: env(safe-area-inset-bottom);
   }
@@ -233,10 +327,8 @@
   .pb-safe {
     padding-bottom: max(env(safe-area-inset-bottom), 0.5rem);
   }
-}
 
-/* Mobile-optimized scrolling */
-@layer utilities {
+  /* Scrollbar utilities */
   .scrollbar-none {
     -ms-overflow-style: none;
     scrollbar-width: none;
@@ -245,10 +337,8 @@
   .scrollbar-none::-webkit-scrollbar {
     display: none;
   }
-}
 
-/* Glass morphism utilities */
-@layer utilities {
+  /* Glass morphism */
   .glass {
     @apply bg-white/70 dark:bg-white/5 backdrop-blur-xl border border-white/20 dark:border-white/10;
   }
@@ -289,10 +379,8 @@
     mask-composite: exclude;
     pointer-events: none;
   }
-}
 
-/* Modern gradient backgrounds */
-@layer utilities {
+  /* Gradient backgrounds */
   .bg-gradient-radial {
     background: radial-gradient(ellipse at top, var(--tw-gradient-stops));
   }
@@ -306,18 +394,49 @@
       radial-gradient(at 80% 50%, hsla(140, 60%, 50%, 0.08) 0px, transparent 50%),
       radial-gradient(at 0% 100%, hsla(260, 60%, 50%, 0.1) 0px, transparent 50%);
   }
-
-  .dark .bg-mesh {
-    background-image:
-      radial-gradient(at 40% 20%, hsla(280, 60%, 50%, 0.15) 0px, transparent 50%),
-      radial-gradient(at 80% 0%, hsla(200, 60%, 50%, 0.1) 0px, transparent 50%),
-      radial-gradient(at 0% 50%, hsla(340, 60%, 50%, 0.1) 0px, transparent 50%),
-      radial-gradient(at 80% 50%, hsla(140, 60%, 50%, 0.08) 0px, transparent 50%),
-      radial-gradient(at 0% 100%, hsla(260, 60%, 50%, 0.1) 0px, transparent 50%);
-  }
 }
 
-/* Animated gradient border */
+.dark .bg-mesh {
+  background-image:
+    radial-gradient(at 40% 20%, hsla(280, 60%, 50%, 0.15) 0px, transparent 50%),
+    radial-gradient(at 80% 0%, hsla(200, 60%, 50%, 0.1) 0px, transparent 50%),
+    radial-gradient(at 0% 50%, hsla(340, 60%, 50%, 0.1) 0px, transparent 50%),
+    radial-gradient(at 80% 50%, hsla(140, 60%, 50%, 0.08) 0px, transparent 50%),
+    radial-gradient(at 0% 100%, hsla(260, 60%, 50%, 0.1) 0px, transparent 50%);
+}
+
+/* ============================================
+   CUSTOM ANIMATIONS
+   ============================================ */
+.text-gradient_indigo-purple {
+  background: linear-gradient(90deg, #6366f1 0%, rgb(168 85 247 / 0.8) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+@keyframes slideUp {
+  0% { transform: translateY(0); opacity: 1; }
+  50% { transform: translateY(-20px); opacity: 0; }
+  51% { transform: translateY(20px); opacity: 0; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes slideDown {
+  0% { transform: translateY(0); opacity: 1; }
+  50% { transform: translateY(20px); opacity: 0; }
+  51% { transform: translateY(-20px); opacity: 0; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+
+.animate-slide-up {
+  animation: slideUp 0.2s ease-out;
+}
+
+.animate-slide-down {
+  animation: slideDown 0.2s ease-out;
+}
+
 @keyframes gradient-rotate {
   0% { --gradient-angle: 0deg; }
   100% { --gradient-angle: 360deg; }
@@ -335,11 +454,8 @@
   animation: gradient-rotate 4s linear infinite;
 }
 
-/* Shine effect for cards */
 @keyframes shine {
-  to {
-    background-position: 200% center;
-  }
+  to { background-position: 200% center; }
 }
 
 .shine-effect {
@@ -353,4 +469,90 @@
   );
   background-size: 200% 100%;
   animation: shine 3s ease-in-out infinite;
+}
+
+/* ============================================
+   CUSTOM SCROLLBAR - Modern & Elegant
+   ============================================ */
+
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: hsl(var(--muted-foreground) / 0.3) transparent;
+}
+
+/* Webkit (Chrome, Safari, Edge) */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--muted-foreground) / 0.2);
+  border-radius: 10px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+  transition: background 0.2s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground) / 0.4);
+  background-clip: content-box;
+}
+
+::-webkit-scrollbar-thumb:active {
+  background: var(--color-brand);
+  background-clip: content-box;
+}
+
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* Hide scrollbar arrows/buttons completely */
+::-webkit-scrollbar-button,
+::-webkit-scrollbar-button:single-button,
+::-webkit-scrollbar-button:start,
+::-webkit-scrollbar-button:end,
+::-webkit-scrollbar-button:start:decrement,
+::-webkit-scrollbar-button:end:increment,
+::-webkit-scrollbar-button:vertical:start:increment,
+::-webkit-scrollbar-button:vertical:end:decrement,
+::-webkit-scrollbar-button:horizontal:start:increment,
+::-webkit-scrollbar-button:horizontal:end:decrement {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  background: transparent !important;
+}
+
+/* Dark mode adjustments */
+.dark ::-webkit-scrollbar-thumb {
+  background: hsl(var(--muted-foreground) / 0.25);
+  background-clip: content-box;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground) / 0.45);
+  background-clip: content-box;
+}
+
+.dark ::-webkit-scrollbar-thumb:active {
+  background: var(--color-brand);
+  background-clip: content-box;
+}
+
+/* Thin scrollbar variant for smaller containers */
+.scrollbar-thin::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  border: 1px solid transparent;
 }

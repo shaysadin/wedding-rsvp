@@ -333,10 +333,10 @@ export function EventDashboardContent({
     },
   ];
 
-  // Filter tasks to show (in progress and todo only, limit 5)
+  // Filter tasks to show (in progress and todo only, limit 3)
   const activeTasks = recentTasks
     .filter(t => t.status === "DOING" || t.status === "TODO")
-    .slice(0, 5);
+    .slice(0, 3);
 
   return (
     <motion.div
@@ -470,26 +470,26 @@ export function EventDashboardContent({
 
       {/* Charts and Tasks Row */}
       <motion.div variants={itemVariants}>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
           {/* Guests by Status - Donut Chart */}
-          <Card>
+          <Card className="flex flex-col">
             <CardHeader className="pb-2">
               <CardTitle className="text-base font-semibold flex items-center gap-2">
                 <Users className="h-4 w-4 text-muted-foreground" />
                 {isRTL ? "אורחים לפי סטטוס" : "Guests by Status"}
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="flex items-center gap-6">
-                <div className="relative w-32 h-32 shrink-0">
+            <CardContent className="flex-1 flex items-center py-6">
+              <div className="flex items-center gap-8 w-full">
+                <div className="relative w-44 h-44 shrink-0">
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                       <Pie
                         data={guestChartData.length > 0 ? guestChartData : [{ name: "Empty", value: 1, color: "#e5e7eb" }]}
                         cx="50%"
                         cy="50%"
-                        innerRadius={35}
-                        outerRadius={50}
+                        innerRadius={50}
+                        outerRadius={72}
                         paddingAngle={2}
                         dataKey="value"
                       >
@@ -500,31 +500,31 @@ export function EventDashboardContent({
                     </PieChart>
                   </ResponsiveContainer>
                   <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <span className="text-2xl font-bold">{guestStats.total}</span>
-                    <span className="text-xs text-muted-foreground">{isRTL ? "אורחים" : "Guests"}</span>
+                    <span className="text-3xl font-bold">{guestStats.total}</span>
+                    <span className="text-sm text-muted-foreground">{isRTL ? "אורחים" : "Guests"}</span>
                   </div>
                 </div>
-                <div className="flex-1 space-y-3">
+                <div className="flex-1 space-y-4">
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 rounded-full bg-emerald-500" />
-                      <span className="text-sm">{isRTL ? "אישרו" : "Confirmed"}</span>
+                    <div className="flex items-center gap-3">
+                      <div className="w-4 h-4 rounded-full bg-emerald-500" />
+                      <span className="text-base">{isRTL ? "אישרו" : "Confirmed"}</span>
                     </div>
-                    <span className="font-semibold">{guestStats.accepted}</span>
+                    <span className="text-lg font-semibold">{guestStats.accepted}</span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 rounded-full bg-amber-500" />
-                      <span className="text-sm">{isRTL ? "ממתינים" : "Pending"}</span>
+                    <div className="flex items-center gap-3">
+                      <div className="w-4 h-4 rounded-full bg-amber-500" />
+                      <span className="text-base">{isRTL ? "ממתינים" : "Pending"}</span>
                     </div>
-                    <span className="font-semibold">{guestStats.pending}</span>
+                    <span className="text-lg font-semibold">{guestStats.pending}</span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 rounded-full bg-red-500" />
-                      <span className="text-sm">{isRTL ? "סירבו" : "Declined"}</span>
+                    <div className="flex items-center gap-3">
+                      <div className="w-4 h-4 rounded-full bg-red-500" />
+                      <span className="text-base">{isRTL ? "סירבו" : "Declined"}</span>
                     </div>
-                    <span className="font-semibold">{guestStats.declined}</span>
+                    <span className="text-lg font-semibold">{guestStats.declined}</span>
                   </div>
                 </div>
               </div>
@@ -532,7 +532,7 @@ export function EventDashboardContent({
           </Card>
 
           {/* Active Tasks List */}
-          <Card>
+          <Card className="flex flex-col">
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-base font-semibold flex items-center gap-2">
@@ -547,9 +547,9 @@ export function EventDashboardContent({
                 </Button>
               </div>
             </CardHeader>
-            <CardContent>
+            <CardContent className="flex-1 flex flex-col">
               {activeTasks.length > 0 ? (
-                <div className="space-y-2">
+                <div className="space-y-2 flex-1">
                   {activeTasks.map((task) => (
                     <div
                       key={task.id}
@@ -569,14 +569,14 @@ export function EventDashboardContent({
                   ))}
                 </div>
               ) : (
-                <div className="py-8 text-center text-muted-foreground">
-                  <CheckCircle className="h-8 w-8 mx-auto mb-2 opacity-50 text-emerald-500" />
+                <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground py-4">
+                  <CheckCircle className="h-8 w-8 mb-2 opacity-50 text-emerald-500" />
                   <p className="text-sm font-medium">{isRTL ? "אין משימות פתוחות" : "No open tasks"}</p>
                   <p className="text-xs mt-1">{isRTL ? "כל המשימות הושלמו!" : "All tasks completed!"}</p>
                 </div>
               )}
               {/* Task Summary */}
-              <div className="flex items-center justify-between mt-4 pt-3 border-t border-border/50 text-xs text-muted-foreground">
+              <div className="flex items-center justify-between mt-auto pt-3 border-t border-border/50 text-xs text-muted-foreground">
                 <span>{taskStats.completed} {isRTL ? "הושלמו" : "completed"}</span>
                 <span>{taskStats.inProgress} {isRTL ? "בתהליך" : "in progress"}</span>
                 <span>{taskStats.pending} {isRTL ? "ממתינים" : "pending"}</span>
