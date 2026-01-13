@@ -165,7 +165,7 @@ export const Testimonials = () => {
                     backgroundColor="var(--color-canvas-fill)"
                     size={2.5}
                     duration={2500}
-                    className="absolute inset-0 scale-[1.01] opacity-20"
+                    className="absolute inset-0 opacity-20"
                   />
                 )}
                 <AnimatePresence initial={false} mode="wait">

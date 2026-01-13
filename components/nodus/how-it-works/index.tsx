@@ -162,7 +162,7 @@ export const HowItWorks = () => {
               <p className="relative z-20 mt-2 text-left text-sm text-gray-600 dark:text-neutral-300">
                 {tab.description}
               </p>
-              <div className="relative mx-auto h-80 w-full overflow-hidden mask-t-from-90% mask-r-from-90% mask-b-from-90% mask-l-from-90% sm:h-80 sm:w-160">
+              <div className="relative mx-auto h-80 w-full max-w-[640px] overflow-hidden mask-t-from-90% mask-r-from-90% mask-b-from-90% mask-l-from-90%">
                 <LazyMobileSkeleton skeleton={tab.skeleton} />
               </div>
             </div>
@@ -201,7 +201,7 @@ const Canvas = ({
         backgroundColor="var(--color-canvas-fill)"
         size={2.5}
         duration={duration}
-        className="absolute inset-0 scale-[1.01] opacity-20"
+        className="absolute inset-0 opacity-20"
       />
     </>
   );

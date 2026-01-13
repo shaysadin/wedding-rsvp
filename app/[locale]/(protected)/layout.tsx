@@ -3,7 +3,6 @@ import { getLocale } from "next-intl/server";
 
 import { getCurrentUser } from "@/lib/session";
 import { prisma } from "@/lib/db";
-import { ProtectedHeader } from "@/components/layout/protected-header";
 
 // Force dynamic rendering to avoid caching issues with role switching
 export const dynamic = "force-dynamic";
@@ -30,25 +29,7 @@ export default async function ProtectedLayout({ children }: ProtectedLayoutProps
     redirect(`/${locale}/login?error=EmailNotVerified`);
   }
 
-  const isRTL = locale === "he";
-
-  // Layout for all protected pages
-  // ProtectedHeader client component handles showing/hiding based on route
-  // Uses app-shell class to prevent iOS Safari body scrolling
-  return (
-    <div className="app-shell flex justify-center w-full bg-sidebar">
-      <div className="flex min-h-0 flex-1 flex-col overflow-hidden md:rounded-xl md:border bg-background md:shadow-md md:p-2 md:m-3">
-        <ProtectedHeader />
-
-        <main
-          className="app-shell-content flex min-h-0 flex-1 flex-col"
-          dir={isRTL ? "rtl" : "ltr"}
-        >
-          <div className="flex w-full min-h-0 flex-1 flex-col gap-4 lg:gap-6 p-4 sm:p-6">
-            {children}
-          </div>
-        </main>
-      </div>
-    </div>
-  );
+  // Dashboard and events routes have their own layouts with sidebars
+  // Just pass through children for those routes
+  return <>{children}</>;
 }

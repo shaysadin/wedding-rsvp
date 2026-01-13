@@ -34,7 +34,7 @@ export const Hero = () => {
       </div>
       <div className="mt-6 flex items-center gap-2">
         <GartnerLogo />
-        <div className="-gap-5 flex items-center">
+        <div className="flex items-center -space-x-1">
           {[...Array(5)].map((_, index) => (
             <motion.div
               key={index}

@@ -36,7 +36,7 @@ export const CTA = () => {
 
   return (
     <Container className="border-divide relative flex min-h-60 flex-col items-center justify-center overflow-hidden border-x px-4 py-8 md:min-h-120 md:py-12">
-      <CTAOrbit className="absolute inset-x-0 -top-120 mask-b-from-30%" />
+      <CTAOrbit className="absolute left-1/2 -translate-x-1/2 -top-120 mask-b-from-30%" />
       <div className="relative z-10 max-w-4xl mx-auto text-center px-4">
         <h2 className="text-2xl md:text-4xl lg:text-5xl font-bold text-gray-900 dark:text-white leading-tight">
           <span className="block">{t("titleLine1")}</span>

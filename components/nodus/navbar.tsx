@@ -205,7 +205,7 @@ const FloatingNav = ({
   return (
     <motion.div
       style={{ y }}
-      className="shadow-aceternity fixed inset-x-0 top-0 z-50 mx-auto hidden max-w-[calc(80rem-4rem)] items-center justify-between bg-white/80 px-4 py-2 backdrop-blur-sm md:flex md:px-8 xl:rounded-2xl dark:bg-neutral-900/80 dark:shadow-[0px_2px_0px_0px_var(--color-neutral-800),0px_-2px_0px_0px_var(--color-neutral-800)]"
+      className="shadow-aceternity fixed left-1/2 -translate-x-1/2 top-0 z-50 hidden w-[calc(100%-2rem)] max-w-[calc(80rem-4rem)] items-center justify-between bg-white/80 px-4 py-2 backdrop-blur-sm md:flex md:px-8 xl:rounded-2xl dark:bg-neutral-900/80 dark:shadow-[0px_2px_0px_0px_var(--color-neutral-800),0px_-2px_0px_0px_var(--color-neutral-800)]"
     >
       <Logo />
       <div className="flex items-center gap-10">
