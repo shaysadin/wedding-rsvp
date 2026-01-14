@@ -186,10 +186,11 @@ async function handleButtonResponse(
 
   if (originalMessageSid) {
     // Look up the notification log that has this message SID in providerResponse
+    // Include both SENT and DELIVERED statuses because the status callback may have already updated the status
     const notificationByMessageSid = await prisma.notificationLog.findFirst({
       where: {
         type: { in: ["INTERACTIVE_INVITE", "INTERACTIVE_REMINDER"] },
-        status: "SENT",
+        status: { in: ["SENT", "DELIVERED"] },
         providerResponse: { contains: originalMessageSid },
       },
       include: {
@@ -211,7 +212,7 @@ async function handleButtonResponse(
     const recentNotification = await prisma.notificationLog.findFirst({
       where: {
         type: { in: ["INTERACTIVE_INVITE", "INTERACTIVE_REMINDER"] },
-        status: "SENT",
+        status: { in: ["SENT", "DELIVERED"] },
         guest: {
           OR: phoneVariations.map(phone => ({ phoneNumber: phone })),
         },
@@ -346,10 +347,11 @@ async function handleListResponse(
   let guest: Awaited<ReturnType<typeof prisma.guest.findFirst<{ include: { rsvp: true; weddingEvent: true } }>>> = null;
 
   if (originalMessageSid) {
+    // Include both SENT and DELIVERED statuses because the status callback may have already updated the status
     const notificationByMessageSid = await prisma.notificationLog.findFirst({
       where: {
         type: { in: ["INTERACTIVE_INVITE", "INTERACTIVE_REMINDER", "GUEST_COUNT_REQUEST"] },
-        status: "SENT",
+        status: { in: ["SENT", "DELIVERED"] },
         providerResponse: { contains: originalMessageSid },
       },
       include: {
@@ -371,7 +373,7 @@ async function handleListResponse(
     const recentNotification = await prisma.notificationLog.findFirst({
       where: {
         type: { in: ["INTERACTIVE_INVITE", "INTERACTIVE_REMINDER", "GUEST_COUNT_REQUEST"] },
-        status: "SENT",
+        status: { in: ["SENT", "DELIVERED"] },
         guest: {
           OR: phoneVariations.map(phone => ({ phoneNumber: phone })),
         },

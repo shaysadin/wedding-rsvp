@@ -5,13 +5,15 @@ import { useTranslations } from "next-intl";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
-import { Guest, GuestRsvp, RsvpStatus } from "@prisma/client";
+import { Guest, GuestRsvp, RsvpStatus, NotificationLog, NotificationStatus } from "@prisma/client";
 
 const PREDEFINED_GROUPS = ["family", "friends", "work", "other"] as const;
 const PREDEFINED_SIDES = ["bride", "groom", "both"] as const;
 const RSVP_STATUSES = ["PENDING", "ACCEPTED", "DECLINED", "MAYBE"] as const;
+const MESSAGE_STATUSES = ["PENDING", "SENT", "DELIVERED", "FAILED", "UNDELIVERED"] as const;
 
 import { updateGuest } from "@/actions/guests";
+import { updateGuestMessageStatus } from "@/actions/notifications";
 import { updateGuestSchema, type UpdateGuestInput } from "@/lib/validations/guest";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -41,12 +43,23 @@ import { Icons } from "@/components/shared/icons";
 
 type GuestWithRsvp = Guest & {
   rsvp: GuestRsvp | null;
+  notificationLogs?: NotificationLog[];
 };
 
 interface EditGuestDialogProps {
   guest: GuestWithRsvp;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+}
+
+// Get the latest notification status from logs
+function getLatestMessageStatus(logs?: NotificationLog[]): NotificationStatus | null {
+  if (!logs || logs.length === 0) return null;
+  // Sort by createdAt descending and get the first one
+  const sorted = [...logs].sort((a, b) =>
+    new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+  );
+  return sorted[0]?.status || null;
 }
 
 export function EditGuestDialog({ guest, open, onOpenChange }: EditGuestDialogProps) {
@@ -59,6 +72,8 @@ export function EditGuestDialog({ guest, open, onOpenChange }: EditGuestDialogPr
   const [customGroupValue, setCustomGroupValue] = useState("");
   const [showCustomSide, setShowCustomSide] = useState(false);
   const [customSideValue, setCustomSideValue] = useState("");
+  const [messageStatus, setMessageStatus] = useState<NotificationStatus | null>(null);
+  const [initialMessageStatus, setInitialMessageStatus] = useState<NotificationStatus | null>(null);
 
   const form = useForm<UpdateGuestInput>({
     resolver: zodResolver(updateGuestSchema),
@@ -86,6 +101,11 @@ export function EditGuestDialog({ guest, open, onOpenChange }: EditGuestDialogPr
       setShowCustomSide(!!isCustomSide);
       setCustomSideValue(isCustomSide ? guest.side ?? "" : "");
 
+      // Initialize message status from notification logs
+      const latestStatus = getLatestMessageStatus(guest.notificationLogs);
+      setMessageStatus(latestStatus);
+      setInitialMessageStatus(latestStatus);
+
       form.reset({
         id: guest.id,
         name: guest.name,
@@ -104,6 +124,7 @@ export function EditGuestDialog({ guest, open, onOpenChange }: EditGuestDialogPr
     setIsLoading(true);
 
     try {
+      // Update guest data
       const result = await updateGuest(data);
 
       if (result.error) {
@@ -114,6 +135,15 @@ export function EditGuestDialog({ guest, open, onOpenChange }: EditGuestDialogPr
           toast.error(result.error);
         }
         return;
+      }
+
+      // Update message status if it changed
+      if (messageStatus !== initialMessageStatus && messageStatus) {
+        const statusResult = await updateGuestMessageStatus(guest.id, messageStatus);
+        if (statusResult.error) {
+          console.error("Failed to update message status:", statusResult.error);
+          // Don't fail the whole operation, just log the error
+        }
       }
 
       toast.success(ts("saved"));
@@ -362,6 +392,28 @@ export function EditGuestDialog({ guest, open, onOpenChange }: EditGuestDialogPr
                 />
               )}
             </div>
+
+            {/* Message Status */}
+            <FormItem>
+              <FormLabel>{t("messageStatus")}</FormLabel>
+              <Select
+                onValueChange={(value) => setMessageStatus(value as NotificationStatus)}
+                value={messageStatus || ""}
+              >
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder={t("selectMessageStatus")} />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value="PENDING">{t("messageStatuses.pending")}</SelectItem>
+                  <SelectItem value="SENT">{t("messageStatuses.sent")}</SelectItem>
+                  <SelectItem value="DELIVERED">{t("messageStatuses.delivered")}</SelectItem>
+                  <SelectItem value="FAILED">{t("messageStatuses.failed")}</SelectItem>
+                  <SelectItem value="UNDELIVERED">{t("messageStatuses.undelivered")}</SelectItem>
+                </SelectContent>
+              </Select>
+            </FormItem>
 
             <FormField
               control={form.control}

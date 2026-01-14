@@ -1002,3 +1002,109 @@ export async function retryFailedNotification(notificationId: string) {
     return { error: "Failed to retry notification" };
   }
 }
+
+/**
+ * Update the message status for a guest's most recent notification
+ */
+export async function updateGuestMessageStatus(
+  guestId: string,
+  newStatus: "PENDING" | "SENT" | "DELIVERED" | "FAILED" | "UNDELIVERED"
+) {
+  try {
+    const user = await getCurrentUser();
+
+    if (!user || !user.roles?.includes(UserRole.ROLE_WEDDING_OWNER)) {
+      return { error: "Unauthorized" };
+    }
+
+    // Get the guest and verify ownership
+    const guest = await prisma.guest.findUnique({
+      where: { id: guestId },
+      include: {
+        weddingEvent: true,
+        notificationLogs: {
+          orderBy: { createdAt: "desc" },
+          take: 1,
+        },
+      },
+    });
+
+    if (!guest || guest.weddingEvent.ownerId !== user.id) {
+      return { error: "Guest not found" };
+    }
+
+    // If there's an existing notification log, update its status
+    if (guest.notificationLogs.length > 0) {
+      await prisma.notificationLog.update({
+        where: { id: guest.notificationLogs[0].id },
+        data: {
+          status: newStatus,
+          // Clear error fields when setting to a non-failed status
+          ...(newStatus !== "FAILED" && newStatus !== "UNDELIVERED" ? {
+            errorCode: null,
+            errorMessage: null,
+          } : {}),
+        },
+      });
+    } else {
+      // If no notification log exists, create one with the specified status
+      await prisma.notificationLog.create({
+        data: {
+          guestId: guest.id,
+          type: "INVITE",
+          channel: "WHATSAPP",
+          status: newStatus,
+          sentAt: newStatus === "SENT" || newStatus === "DELIVERED" ? new Date() : null,
+        },
+      });
+    }
+
+    revalidatePath(`/dashboard/events/${guest.weddingEventId}`);
+
+    return { success: true };
+  } catch (error) {
+    console.error("Error updating message status:", error);
+    return { error: "Failed to update message status" };
+  }
+}
+
+/**
+ * Get the current message status for a guest
+ */
+export async function getGuestMessageStatus(guestId: string) {
+  try {
+    const user = await getCurrentUser();
+
+    if (!user || !user.roles?.includes(UserRole.ROLE_WEDDING_OWNER)) {
+      return { error: "Unauthorized" };
+    }
+
+    const guest = await prisma.guest.findUnique({
+      where: { id: guestId },
+      include: {
+        weddingEvent: true,
+        notificationLogs: {
+          orderBy: { createdAt: "desc" },
+          take: 1,
+        },
+      },
+    });
+
+    if (!guest || guest.weddingEvent.ownerId !== user.id) {
+      return { error: "Guest not found" };
+    }
+
+    const latestLog = guest.notificationLogs[0];
+
+    return {
+      success: true,
+      status: latestLog?.status || null,
+      type: latestLog?.type || null,
+      errorCode: latestLog?.errorCode || null,
+      errorMessage: latestLog?.errorMessage || null,
+    };
+  } catch (error) {
+    console.error("Error getting message status:", error);
+    return { error: "Failed to get message status" };
+  }
+}

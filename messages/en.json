@@ -271,6 +271,15 @@
       "declined": "Declined",
       "maybe": "Maybe"
     },
+    "messageStatus": "Message Status",
+    "selectMessageStatus": "Select message status",
+    "messageStatuses": {
+      "pending": "Not Sent",
+      "sent": "Sent",
+      "delivered": "Delivered",
+      "failed": "Failed",
+      "undelivered": "Undelivered"
+    },
     "importInstructions": "Upload an Excel or CSV file with columns: Name, Phone, Side, Group, Guest Count",
     "downloadTemplate": "Download Template",
     "downloadTemplateDescription": "Download a ready-to-use Excel file with all required columns",

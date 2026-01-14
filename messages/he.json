@@ -271,6 +271,15 @@
       "declined": "סירב",
       "maybe": "אולי"
     },
+    "messageStatus": "סטטוס הודעה",
+    "selectMessageStatus": "בחר סטטוס הודעה",
+    "messageStatuses": {
+      "pending": "לא נשלחה",
+      "sent": "נשלחה",
+      "delivered": "נמסרה",
+      "failed": "נכשלה",
+      "undelivered": "לא נמסרה"
+    },
     "importInstructions": "העלה קובץ Excel או CSV עם העמודות: שם, טלפון, צד, קבוצה, מספר אורחים",
     "downloadTemplate": "הורד תבנית",
     "downloadTemplateDescription": "הורד קובץ Excel מוכן עם כל העמודות הנדרשות",
