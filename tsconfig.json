@@ -44,6 +44,7 @@
   ],
   "exclude": [
     "node_modules",
-    "nodus-agent-template"
+    "nodus-agent-template",
+    "free-nextjs-admin-dashboard-main"
   ]
 }

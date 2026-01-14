@@ -68,7 +68,11 @@
     "error": "אירעה שגיאה",
     "refresh": "רענן",
     "expand": "הרחב",
-    "collapse": "צמצם"
+    "collapse": "צמצם",
+    "send": "שלח",
+    "remind": "תזכיר",
+    "call": "התקשר",
+    "overview": "סקירה כללית"
   },
   "navigation": {
     "dashboard": "לוח בקרה",
@@ -373,7 +377,42 @@
       "skipped": "הרשומה הוסרה מהייבוא"
     },
     "deleteConfirmTitle": "למחוק אורח?",
-    "deleteConfirmDescription": "האם אתה בטוח שברצונך למחוק את {name}? פעולה זו לא ניתנת לביטול."
+    "deleteConfirmDescription": "האם אתה בטוח שברצונך למחוק את {name}? פעולה זו לא ניתנת לביטול.",
+    "description": "נהל ועקוב אחר אורחי החתונה שלך",
+    "allGuests": "כל האורחים",
+    "showingGuests": "מציג {from} עד {to} מתוך {total} אורחים",
+    "addGuests": "הוסף אורחים"
+  },
+  "voiceCall": {
+    "title": "מרכז שיחות קוליות",
+    "description": "התקשר לאורחים שלך באמצעות סוכן קולי AI",
+    "callSingleGuest": "התקשר ל{name}",
+    "callMultipleGuests": "התקשר ל{count} אורחים",
+    "callScript": "תסריט שיחה",
+    "scriptPreview": "שלום {guestName}, אני מתקשר מטעם הזוג כדי לאשר את הגעתך לחתונה...",
+    "progress": "התקדמות",
+    "successful": "הצליחו",
+    "failed": "נכשלו",
+    "guestToCall": "אורח להתקשר",
+    "guestsToCall": "אורחים להתקשר",
+    "withPhone": "עם טלפון",
+    "noGuestsWithPhone": "אין אורחים עם מספרי טלפון",
+    "callStarted": "השיחה החלה",
+    "bulkCallStarted": "התחלת התקשרות ל{count} אורחים",
+    "callsInProgress": "שיחות עדיין בתהליך",
+    "calling": "מתקשר...",
+    "starting": "מתחיל...",
+    "startCall": "התחל שיחה",
+    "startCalls": "התחל שיחות",
+    "status": {
+      "pending": "ממתין",
+      "calling": "מתקשר",
+      "completed": "הושלם",
+      "noAnswer": "אין מענה",
+      "busy": "תפוס",
+      "failed": "נכשל",
+      "cancelled": "בוטל"
+    }
   },
   "messageStatus": {
     "notSent": "לא נשלח",

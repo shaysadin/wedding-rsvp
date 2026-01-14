@@ -7,6 +7,7 @@ import { prisma } from "@/lib/db";
 import { getEventTemplates, initializeEventTemplates } from "@/actions/message-templates";
 import { MessageTemplateList } from "@/components/dashboard/message-template-list";
 import { PageFadeIn } from "@/components/shared/page-fade-in";
+import { PageBreadcrumb } from "@/components/shared/page-breadcrumb";
 import { cn } from "@/lib/utils";
 
 interface MessagesPageProps {
@@ -18,6 +19,7 @@ export default async function MessagesPage({ params }: MessagesPageProps) {
   const user = await getCurrentUser();
   const locale = await getLocale();
   const t = await getTranslations("messageTemplates");
+  const tn = await getTranslations("navigation");
   const isRTL = locale === "he";
 
   // Check if user has ROLE_WEDDING_OWNER in their roles array
@@ -46,16 +48,15 @@ export default async function MessagesPage({ params }: MessagesPageProps) {
   }
 
   return (
-    <PageFadeIn>
-      {/* Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between mb-6">
-        <div className={cn("space-y-1", isRTL && "text-right")}>
-          <h1 className="font-heading text-2xl font-semibold">{t("pageTitle")}</h1>
-          <p className="text-sm text-muted-foreground">
-            {t("pageDescription", { eventTitle: result.event.title })}
-          </p>
-        </div>
-      </div>
+    <PageFadeIn className="space-y-6">
+      {/* Page Breadcrumb */}
+      <PageBreadcrumb
+        pageTitle={tn("messages")}
+        items={[
+          { label: tn("home"), href: `/${locale}/dashboard` },
+          { label: event.title, href: `/${locale}/events/${event.id}` },
+        ]}
+      />
 
       <MessageTemplateList
         templates={result.templates || []}

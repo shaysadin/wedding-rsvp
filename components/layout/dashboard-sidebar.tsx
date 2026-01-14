@@ -82,7 +82,7 @@ export function DashboardSidebar({ links, currentRole, availableRoles = [] }: Da
         )}
       >
         {/* Fixed Header - Logo */}
-        <div className="flex h-14 shrink-0 items-center p-4 lg:h-[60px]">
+        <div className="flex h-14 shrink-0 items-center p-4 lg:h-[61px]">
           <Link
             href={`/${locale}/dashboard`}
             className="flex items-center"

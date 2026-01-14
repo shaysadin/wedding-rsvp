@@ -214,7 +214,7 @@ export function EditEventModal({ event, variant = "button" }: EditEventModalProp
               </Label>
               <Input
                 id="title"
-                placeholder={isHebrew ? "לדוגמה: החתונה של שרה ודוד" : "e.g., Wedding of Sarah & David"}
+                placeholder={isHebrew ? "לדוגמה: חתונה של שרה ודוד" : "e.g., Wedding of Sarah & David"}
                 disabled={isLoading}
                 {...register("title")}
               />

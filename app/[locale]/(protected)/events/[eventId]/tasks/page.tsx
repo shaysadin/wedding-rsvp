@@ -7,6 +7,7 @@ import { prisma } from "@/lib/db";
 import { getTasks } from "@/actions/tasks";
 import { TasksPageClient } from "@/components/tasks/tasks-page-client";
 import { PageFadeIn } from "@/components/shared/page-fade-in";
+import { PageBreadcrumb } from "@/components/shared/page-breadcrumb";
 import { cn } from "@/lib/utils";
 
 interface TasksPageProps {
@@ -18,6 +19,7 @@ export default async function TasksPage({ params }: TasksPageProps) {
   const user = await getCurrentUser();
   const locale = await getLocale();
   const t = await getTranslations("tasks");
+  const tn = await getTranslations("navigation");
   const isRTL = locale === "he";
 
   // Check if user has ROLE_WEDDING_OWNER in their roles array
@@ -45,12 +47,15 @@ export default async function TasksPage({ params }: TasksPageProps) {
   const result = await getTasks(eventId);
 
   return (
-    <PageFadeIn className="flex flex-1 flex-col">
-      {/* Header */}
-      <div className={cn("space-y-1 mb-6", isRTL && "text-right")}>
-        <h1 className="text-2xl font-bold tracking-tight">{t("title")}</h1>
-        <p className="text-muted-foreground">{`${t("manageTasks")} - ${event.title}`}</p>
-      </div>
+    <PageFadeIn className="flex flex-1 flex-col space-y-6">
+      {/* Page Breadcrumb */}
+      <PageBreadcrumb
+        pageTitle={tn("tasks")}
+        items={[
+          { label: tn("home"), href: `/${locale}/dashboard` },
+          { label: event.title, href: `/${locale}/events/${event.id}` },
+        ]}
+      />
 
       {/* Tasks Content */}
       <div className="flex flex-1 flex-col pb-4">

@@ -161,32 +161,34 @@ export function SuppliersPageContent({ eventId, events, locale }: SuppliersPageC
   };
 
   return (
-    <PageFadeIn>
+    <PageFadeIn className="space-y-6">
       {/* Header with Event Dropdown */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between mb-6">
-        <div className="space-y-1 text-start">
-          <h1 className="text-2xl font-bold tracking-tight">
-            {isRTL ? "ניהול ספקים" : "Suppliers"}
-          </h1>
-          <p className="text-muted-foreground">
-            {isRTL ? "נהלו את הספקים, התקציב והתשלומים" : "Manage suppliers, budget and payments"}
-          </p>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <EventDropdownSelector
-            events={events}
-            selectedEventId={eventId}
-            locale={locale}
-            basePath={`/${locale}/dashboard/suppliers`}
-          />
-          <Button variant="outline" onClick={() => setBudgetDialogOpen(true)}>
-            <Wallet className="h-4 w-4 me-2" />
-            {isRTL ? "הגדר תקציב" : "Set Budget"}
-          </Button>
-          <Button onClick={() => setAddSupplierOpen(true)}>
-            <Plus className="h-4 w-4 me-2" />
-            {isRTL ? "הוסף ספק" : "Add Supplier"}
-          </Button>
+      <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03] md:p-6">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div className="space-y-1 text-start">
+            <h1 className="text-xl font-semibold text-gray-800 dark:text-white/90 sm:text-2xl">
+              {isRTL ? "ניהול ספקים" : "Suppliers"}
+            </h1>
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              {isRTL ? "נהלו את הספקים, התקציב והתשלומים" : "Manage suppliers, budget and payments"}
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <EventDropdownSelector
+              events={events}
+              selectedEventId={eventId}
+              locale={locale}
+              basePath={`/${locale}/dashboard/suppliers`}
+            />
+            <Button variant="outline" onClick={() => setBudgetDialogOpen(true)}>
+              <Wallet className="h-4 w-4 me-2" />
+              {isRTL ? "הגדר תקציב" : "Set Budget"}
+            </Button>
+            <Button onClick={() => setAddSupplierOpen(true)}>
+              <Plus className="h-4 w-4 me-2" />
+              {isRTL ? "הוסף ספק" : "Add Supplier"}
+            </Button>
+          </div>
         </div>
       </div>
 

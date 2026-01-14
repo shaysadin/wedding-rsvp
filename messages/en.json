@@ -68,7 +68,11 @@
     "error": "An error occurred",
     "refresh": "Refresh",
     "expand": "Expand",
-    "collapse": "Collapse"
+    "collapse": "Collapse",
+    "send": "Send",
+    "remind": "Remind",
+    "call": "Call",
+    "overview": "Overview"
   },
   "navigation": {
     "dashboard": "Dashboard",
@@ -373,7 +377,42 @@
       "skipped": "Entry skipped from import"
     },
     "deleteConfirmTitle": "Delete Guest?",
-    "deleteConfirmDescription": "Are you sure you want to delete {name}? This action cannot be undone."
+    "deleteConfirmDescription": "Are you sure you want to delete {name}? This action cannot be undone.",
+    "description": "Manage and track your wedding guests",
+    "allGuests": "All Guests",
+    "showingGuests": "Showing {from} to {to} of {total} guests",
+    "addGuests": "Add Guests"
+  },
+  "voiceCall": {
+    "title": "Voice Call Center",
+    "description": "Call your guests using AI voice agent",
+    "callSingleGuest": "Call {name}",
+    "callMultipleGuests": "Call {count} guests",
+    "callScript": "Call Script",
+    "scriptPreview": "Hello {guestName}, I'm calling on behalf of the couple to confirm your attendance at the wedding...",
+    "progress": "Progress",
+    "successful": "successful",
+    "failed": "failed",
+    "guestToCall": "Guest to Call",
+    "guestsToCall": "Guests to Call",
+    "withPhone": "with phone",
+    "noGuestsWithPhone": "No guests with phone numbers",
+    "callStarted": "Call started",
+    "bulkCallStarted": "Started calling {count} guests",
+    "callsInProgress": "Calls are still in progress",
+    "calling": "Calling...",
+    "starting": "Starting...",
+    "startCall": "Start Call",
+    "startCalls": "Start Calls",
+    "status": {
+      "pending": "Pending",
+      "calling": "Calling",
+      "completed": "Completed",
+      "noAnswer": "No Answer",
+      "busy": "Busy",
+      "failed": "Failed",
+      "cancelled": "Cancelled"
+    }
   },
   "messageStatus": {
     "notSent": "Not Sent",

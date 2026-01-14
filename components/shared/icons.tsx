@@ -57,6 +57,7 @@ import {
   MailCheck,
   Map,
   MapPin,
+  Menu,
   MessageCircle,
   MessageSquare,
   MessagesSquare,
@@ -276,4 +277,6 @@ export const Icons = {
   briefcase: Briefcase,
   // Zoom
   zoomIn: ZoomIn,
+  // Menu
+  menu: Menu,
 };

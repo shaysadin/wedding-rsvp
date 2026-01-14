@@ -12,13 +12,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
   Select,
   SelectContent,
   SelectItem,
@@ -108,41 +101,42 @@ export function UserSettingsForm({ user }: UserSettingsFormProps) {
   return (
     <div className="space-y-6">
       {/* Profile Settings */}
-      <Card>
-        <CardHeader>
-          <CardTitle>{t("profile.title")}</CardTitle>
-          <CardDescription>{t("profile.description")}</CardDescription>
-        </CardHeader>
-        <CardContent>
+      <div className="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
+        <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-800 md:px-6">
+          <h3 className="text-base font-semibold text-gray-800 dark:text-white/90">{t("profile.title")}</h3>
+          <p className="mt-0.5 text-sm text-gray-500 dark:text-gray-400">{t("profile.description")}</p>
+        </div>
+        <div className="p-5 md:p-6">
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="name">{t("profile.name")}</Label>
+              <Label htmlFor="name" className="text-sm font-medium text-gray-700 dark:text-gray-300">{t("profile.name")}</Label>
               <Input
                 id="name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder={t("profile.namePlaceholder")}
+                className="h-11 rounded-lg border-gray-300 dark:border-gray-700"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="email">{t("profile.email")}</Label>
+              <Label htmlFor="email" className="text-sm font-medium text-gray-700 dark:text-gray-300">{t("profile.email")}</Label>
               <Input
                 id="email"
                 value={user.email}
                 disabled
-                className="bg-muted"
+                className="h-11 rounded-lg bg-gray-50 dark:bg-gray-800"
               />
-              <p className="text-xs text-muted-foreground">
+              <p className="text-xs text-gray-500 dark:text-gray-400">
                 {t("profile.emailNote")}
               </p>
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="locale">{t("preferences.language")}</Label>
+                <Label htmlFor="locale" className="text-sm font-medium text-gray-700 dark:text-gray-300">{t("preferences.language")}</Label>
                 <Select value={locale} onValueChange={setLocale}>
-                  <SelectTrigger id="locale">
+                  <SelectTrigger id="locale" className="h-11 rounded-lg border-gray-300 dark:border-gray-700">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -158,15 +152,15 @@ export function UserSettingsForm({ user }: UserSettingsFormProps) {
                     </SelectItem>
                   </SelectContent>
                 </Select>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs text-gray-500 dark:text-gray-400">
                   {t("preferences.languageNote")}
                 </p>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="theme">{t("preferences.theme")}</Label>
+                <Label htmlFor="theme" className="text-sm font-medium text-gray-700 dark:text-gray-300">{t("preferences.theme")}</Label>
                 <Select value={theme ?? "system"} onValueChange={setTheme} disabled={!mounted}>
-                  <SelectTrigger id="theme">
+                  <SelectTrigger id="theme" className="h-11 rounded-lg border-gray-300 dark:border-gray-700">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -187,14 +181,14 @@ export function UserSettingsForm({ user }: UserSettingsFormProps) {
                     </SelectItem>
                   </SelectContent>
                 </Select>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs text-gray-500 dark:text-gray-400">
                   {t("preferences.themeNote")}
                 </p>
               </div>
             </div>
 
             <div className="flex justify-end">
-              <Button type="submit" disabled={isPending}>
+              <Button type="submit" disabled={isPending} className="bg-brand-500 hover:bg-brand-600 text-white rounded-lg px-4 py-2.5">
                 {isPending ? (
                   <>
                     <Icons.spinner className="me-2 h-4 w-4 animate-spin" />
@@ -209,34 +203,34 @@ export function UserSettingsForm({ user }: UserSettingsFormProps) {
               </Button>
             </div>
           </form>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       {/* Account Info */}
-      <Card>
-        <CardHeader>
-          <CardTitle>{t("account.title")}</CardTitle>
-          <CardDescription>{t("account.description")}</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
+      <div className="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
+        <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-800 md:px-6">
+          <h3 className="text-base font-semibold text-gray-800 dark:text-white/90">{t("account.title")}</h3>
+          <p className="mt-0.5 text-sm text-gray-500 dark:text-gray-400">{t("account.description")}</p>
+        </div>
+        <div className="p-5 md:p-6">
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-1">
-              <p className="text-sm font-medium text-muted-foreground">{t("account.plan")}</p>
-              <Badge variant="outline" className="text-sm">
+              <p className="text-sm font-medium text-gray-500 dark:text-gray-400">{t("account.plan")}</p>
+              <Badge variant="outline" className="text-sm border-gray-200 dark:border-gray-700">
                 {getPlanLabel(user.plan)}
               </Badge>
             </div>
 
             <div className="space-y-1">
-              <p className="text-sm font-medium text-muted-foreground">{t("account.status")}</p>
+              <p className="text-sm font-medium text-gray-500 dark:text-gray-400">{t("account.status")}</p>
               <Badge variant={getStatusVariant(user.status)}>
                 {getStatusLabel(user.status)}
               </Badge>
             </div>
 
             <div className="space-y-1">
-              <p className="text-sm font-medium text-muted-foreground">{t("account.memberSince")}</p>
-              <p className="text-sm">
+              <p className="text-sm font-medium text-gray-500 dark:text-gray-400">{t("account.memberSince")}</p>
+              <p className="text-sm text-gray-800 dark:text-white/90">
                 {new Date(user.createdAt).toLocaleDateString(locale === "he" ? "he-IL" : "en-US", {
                   year: "numeric",
                   month: "long",
@@ -246,14 +240,14 @@ export function UserSettingsForm({ user }: UserSettingsFormProps) {
             </div>
 
             <div className="space-y-1">
-              <p className="text-sm font-medium text-muted-foreground">{t("account.role")}</p>
-              <p className="text-sm">
+              <p className="text-sm font-medium text-gray-500 dark:text-gray-400">{t("account.role")}</p>
+              <p className="text-sm text-gray-800 dark:text-white/90">
                 {user.role === "ROLE_PLATFORM_OWNER" ? t("account.admin") : t("account.user")}
               </p>
             </div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 }

@@ -3,6 +3,7 @@ import { getLocale } from "next-intl/server";
 
 import { getCurrentUser } from "@/lib/session";
 import { prisma } from "@/lib/db";
+import { SidebarProvider } from "@/contexts/sidebar-context";
 
 // Force dynamic rendering to avoid caching issues with role switching
 export const dynamic = "force-dynamic";
@@ -30,6 +31,6 @@ export default async function ProtectedLayout({ children }: ProtectedLayoutProps
   }
 
   // Dashboard and events routes have their own layouts with sidebars
-  // Just pass through children for those routes
-  return <>{children}</>;
+  // Wrap with SidebarProvider for shared sidebar state across all protected routes
+  return <SidebarProvider>{children}</SidebarProvider>;
 }

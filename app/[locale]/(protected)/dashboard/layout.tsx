@@ -3,8 +3,9 @@ import { PlanTier, UserRole } from "@prisma/client";
 
 import { getCurrentUser } from "@/lib/session";
 import { prisma } from "@/lib/db";
-import { LobbySidebar, MobileSheetLobbySidebar } from "@/components/layout/lobby-sidebar";
+import { LobbySidebar } from "@/components/layout/lobby-sidebar";
 import { LobbyHeader } from "@/components/layout/lobby-header";
+import { DashboardMainWrapper } from "@/components/layout/dashboard-main-wrapper";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -71,7 +72,10 @@ export default async function DashboardLayout({ children }: DashboardLayoutProps
   }));
 
   return (
-    <div className="app-shell flex w-full bg-sidebar" dir={isRTL ? "rtl" : "ltr"}>
+    <div
+      className="app-shell flex w-full min-h-screen bg-gray-50 dark:bg-gray-900"
+      dir={isRTL ? "rtl" : "ltr"}
+    >
       {/* Desktop Sidebar */}
       <LobbySidebar
         events={eventOptions}
@@ -79,7 +83,7 @@ export default async function DashboardLayout({ children }: DashboardLayoutProps
         userPlan={userPlan}
       />
 
-      <div className="flex min-h-0 flex-1 flex-col overflow-hidden md:rounded-xl md:border bg-background md:shadow-md md:p-2 md:m-3 md:ms-0">
+      <DashboardMainWrapper isRTL={isRTL}>
         {/* Header */}
         <LobbyHeader
           events={eventOptions}
@@ -87,15 +91,11 @@ export default async function DashboardLayout({ children }: DashboardLayoutProps
           userPlan={userPlan}
         />
 
-        <main
-          className="app-shell-content flex min-h-0 flex-1 flex-col"
-          dir={isRTL ? "rtl" : "ltr"}
-        >
-          <div className="flex w-full min-h-0 flex-1 flex-col gap-4 lg:gap-6 p-4 sm:p-6">
-            {children}
-          </div>
+        {/* Page Content */}
+        <main className="p-4 mx-auto max-w-[--breakpoint-2xl] md:p-6 w-full">
+          {children}
         </main>
-      </div>
+      </DashboardMainWrapper>
     </div>
   );
 }

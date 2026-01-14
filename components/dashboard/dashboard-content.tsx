@@ -3,7 +3,6 @@
 import * as React from "react";
 import { useState } from "react";
 import Link from "next/link";
-import { motion } from "framer-motion";
 import { useTranslations } from "next-intl";
 import { PlanTier } from "@prisma/client";
 import {
@@ -11,28 +10,31 @@ import {
   Users,
   Clock,
   CheckCircle2,
-  Heart,
   MapPin,
   Plus,
-  Sparkles,
   Send,
   MessageSquare,
   Phone,
   AlertCircle,
   ArrowUpRight,
-  LayoutGrid,
-  List,
+  ArrowUp,
+  ArrowDown,
   UserCheck,
+  XCircle,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { EmptyPlaceholder } from "@/components/shared/empty-placeholder";
 import { Icons } from "@/components/shared/icons";
-import { Progress } from "@/components/ui/progress";
-import { Badge } from "@/components/ui/badge";
 import { AddEventModal } from "@/components/events/add-event-modal";
+import { Button, Badge } from "@/components/template";
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableCell,
+} from "@/components/template/ui/table";
 
 interface EventData {
   id: string;
@@ -87,720 +89,675 @@ interface DashboardContentProps {
   usageData?: UsageData;
 }
 
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.05,
-    },
-  },
-};
-
-const itemVariants = {
-  hidden: { opacity: 0, y: 16 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: {
-      duration: 0.4,
-      ease: [0.25, 0.1, 0.25, 1] as const,
-    },
-  },
-};
-
-const floatingAnimation = {
-  y: [0, -4, 0],
-  transition: {
-    duration: 3,
-    repeat: Infinity,
-    ease: "easeInOut" as const,
-  },
-};
-
-export function DashboardContent({ userName, events, stats, locale, usageData }: DashboardContentProps) {
+export function DashboardContent({
+  userName,
+  events,
+  stats,
+  locale,
+  usageData,
+}: DashboardContentProps) {
   const t = useTranslations("dashboard");
   const tPlans = useTranslations("plans");
   const isRTL = locale === "he";
   const [showAddEventModal, setShowAddEventModal] = useState(false);
-  const [viewMode, setViewMode] = useState<"grid" | "list">(() => {
-    if (typeof window !== "undefined") {
-      return (localStorage.getItem("dashboard-events-view") as "grid" | "list") || "grid";
-    }
-    return "grid";
-  });
-
-  // Save view mode to localStorage
-  const handleViewModeChange = (mode: "grid" | "list") => {
-    setViewMode(mode);
-    if (typeof window !== "undefined") {
-      localStorage.setItem("dashboard-events-view", mode);
-    }
-  };
 
   const getUsagePercent = (sent: number, total: number) => {
     if (total === 0) return 0;
     return Math.min(100, Math.round((sent / total) * 100));
   };
 
-  const planColors: Record<PlanTier, string> = {
-    FREE: "bg-gray-500/10 text-gray-600 dark:text-gray-400",
-    BASIC: "bg-blue-500/10 text-blue-600 dark:text-blue-400",
-    ADVANCED: "bg-indigo-500/10 text-indigo-600 dark:text-indigo-400",
-    PREMIUM: "bg-purple-500/10 text-purple-600 dark:text-purple-400",
-    BUSINESS: "bg-amber-500/10 text-amber-600 dark:text-amber-400",
-  };
-
-  const statCards = [
-    {
-      title: t("totalEvents"),
-      shortTitle: isRTL ? "אירועים" : "Events",
-      value: stats.totalEvents,
-      icon: Calendar,
-      iconBg: "bg-gradient-to-br from-violet-500 to-purple-600",
-      glowColor: "violet",
-      cardBg: "bg-gradient-to-br from-violet-50/80 to-purple-50/50 dark:from-violet-950/40 dark:to-purple-950/20",
-      borderColor: "border-violet-200/60 dark:border-violet-700/30",
-      iconShadow: "shadow-violet-500/30",
-    },
-    {
-      title: t("totalGuests"),
-      shortTitle: isRTL ? "אורחים" : "Guests",
-      value: stats.totalGuests,
-      icon: Users,
-      iconBg: "bg-gradient-to-br from-blue-500 to-cyan-500",
-      glowColor: "blue",
-      cardBg: "bg-gradient-to-br from-blue-50/80 to-cyan-50/50 dark:from-blue-950/40 dark:to-cyan-950/20",
-      borderColor: "border-blue-200/60 dark:border-blue-700/30",
-      iconShadow: "shadow-blue-500/30",
-    },
-    {
-      title: t("pendingRsvps"),
-      shortTitle: isRTL ? "ממתינים" : "Pending",
-      value: stats.totalPending,
-      icon: Clock,
-      iconBg: "bg-gradient-to-br from-amber-500 to-orange-500",
-      glowColor: "amber",
-      cardBg: "bg-gradient-to-br from-amber-50/80 to-orange-50/50 dark:from-amber-950/40 dark:to-orange-950/20",
-      borderColor: "border-amber-200/60 dark:border-amber-700/30",
-      iconShadow: "shadow-amber-500/30",
-    },
-    {
-      title: t("confirmedGuests"),
-      shortTitle: isRTL ? "מאושרים" : "Confirmed",
-      value: stats.totalAttending,
-      icon: CheckCircle2,
-      iconBg: "bg-gradient-to-br from-emerald-500 to-green-500",
-      glowColor: "emerald",
-      cardBg: "bg-gradient-to-br from-emerald-50/80 to-green-50/50 dark:from-emerald-950/40 dark:to-green-950/20",
-      borderColor: "border-emerald-200/60 dark:border-emerald-700/30",
-      iconShadow: "shadow-emerald-500/30",
-    },
-  ];
-
   return (
-    <motion.div
-      className="flex flex-col gap-8 py-4"
-      variants={containerVariants}
-      initial="hidden"
-      animate="visible"
-      dir={isRTL ? "rtl" : "ltr"}
-    >
-      {/* Welcome Header with Action Buttons */}
-      <motion.div variants={itemVariants} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div className="space-y-1.5">
-          <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-bold tracking-tight md:text-3xl bg-gradient-to-r from-foreground via-foreground/90 to-foreground/70 bg-clip-text">
-              {t("welcome")}, {userName}
-            </h1>
-            <motion.div
-              animate={floatingAnimation}
-              className="relative"
-            >
-              <Sparkles className="h-6 w-6 text-amber-500" />
-              <div className="absolute inset-0 blur-md bg-amber-500/30 rounded-full" />
-            </motion.div>
+    <div className="grid grid-cols-12 gap-4 md:gap-6" dir={isRTL ? "rtl" : "ltr"}>
+      {/* Row 1: Metric Cards (Left) + Usage Tracking (Right) */}
+      <div className="col-span-12 xl:col-span-7">
+        {/* Metric Cards Grid - 2x2 */}
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:gap-6">
+          {/* Total Events */}
+          <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03] md:p-6">
+            <div className="flex items-center justify-center w-12 h-12 bg-gray-100 rounded-xl dark:bg-gray-800">
+              <Calendar className="text-gray-800 size-6 dark:text-white/90" />
+            </div>
+            <div className="flex items-end justify-between mt-5">
+              <div>
+                <span className="text-sm text-gray-500 dark:text-gray-400">
+                  {t("totalEvents")}
+                </span>
+                <h4 className="mt-2 font-bold text-gray-800 text-title-sm dark:text-white/90">
+                  {stats.totalEvents}
+                </h4>
+              </div>
+              {stats.totalEvents > 0 && (
+                <Badge color="success">
+                  <ArrowUp className="h-3 w-3" />
+                  {isRTL ? "פעיל" : "Active"}
+                </Badge>
+              )}
+            </div>
           </div>
-          <p className="text-muted-foreground">
-            {isRTL ? "הנה סקירה של האירועים שלך" : "Here's an overview of your events"}
-          </p>
+
+          {/* Total Guests */}
+          <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03] md:p-6">
+            <div className="flex items-center justify-center w-12 h-12 bg-gray-100 rounded-xl dark:bg-gray-800">
+              <Users className="text-gray-800 size-6 dark:text-white/90" />
+            </div>
+            <div className="flex items-end justify-between mt-5">
+              <div>
+                <span className="text-sm text-gray-500 dark:text-gray-400">
+                  {t("totalGuests")}
+                </span>
+                <h4 className="mt-2 font-bold text-gray-800 text-title-sm dark:text-white/90">
+                  {stats.totalGuests}
+                </h4>
+              </div>
+              {stats.totalGuests > 0 && (
+                <Badge color="primary">
+                  <Users className="h-3 w-3" />
+                  {isRTL ? "רשומים" : "Registered"}
+                </Badge>
+              )}
+            </div>
+          </div>
+
+          {/* Confirmed Guests */}
+          <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03] md:p-6">
+            <div className="flex items-center justify-center w-12 h-12 bg-success-50 rounded-xl dark:bg-success-500/15">
+              <CheckCircle2 className="text-success-500 size-6" />
+            </div>
+            <div className="flex items-end justify-between mt-5">
+              <div>
+                <span className="text-sm text-gray-500 dark:text-gray-400">
+                  {t("confirmedGuests")}
+                </span>
+                <h4 className="mt-2 font-bold text-gray-800 text-title-sm dark:text-white/90">
+                  {stats.totalAttending}
+                </h4>
+              </div>
+              {stats.totalGuests > 0 && (
+                <Badge color="success">
+                  <ArrowUp className="h-3 w-3" />
+                  {Math.round((stats.totalAccepted / stats.totalGuests) * 100)}%
+                </Badge>
+              )}
+            </div>
+          </div>
+
+          {/* Pending RSVPs */}
+          <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03] md:p-6">
+            <div className="flex items-center justify-center w-12 h-12 bg-warning-50 rounded-xl dark:bg-warning-500/15">
+              <Clock className="text-warning-500 size-6" />
+            </div>
+            <div className="flex items-end justify-between mt-5">
+              <div>
+                <span className="text-sm text-gray-500 dark:text-gray-400">
+                  {t("pendingRsvps")}
+                </span>
+                <h4 className="mt-2 font-bold text-gray-800 text-title-sm dark:text-white/90">
+                  {stats.totalPending}
+                </h4>
+              </div>
+              {stats.totalPending > 0 && (
+                <Badge color="warning">
+                  <Clock className="h-3 w-3" />
+                  {isRTL ? "ממתין" : "Waiting"}
+                </Badge>
+              )}
+            </div>
+          </div>
         </div>
-        <div className="flex gap-2 shrink-0">
-          <Button
-            onClick={() => setShowAddEventModal(true)}
-            className="bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-lg shadow-primary/20 transition-all hover:shadow-xl hover:shadow-primary/30 hover:-translate-y-0.5"
-          >
-            <Plus className="h-4 w-4 me-2" />
-            {t("createEvent")}
-          </Button>
-          {events.length > 0 && (
-            <Button variant="outline" asChild className="backdrop-blur-sm bg-background/50 hover:bg-background/80 transition-all hover:-translate-y-0.5">
-              <Link href={`/${locale}/events/${events[0].id}/invitations`}>
-                <Send className="h-4 w-4 me-2" />
-                {isRTL ? "שלח הזמנות" : "Send Invitations"}
-              </Link>
-            </Button>
-          )}
-        </div>
-      </motion.div>
+      </div>
 
-      {/* Stats Grid - Always 1 row */}
-      <motion.div
-        className="grid grid-cols-4 gap-2 sm:gap-4"
-        variants={itemVariants}
-      >
-        {statCards.map((stat, index) => (
-          <motion.div
-            key={stat.title}
-            initial={{ opacity: 0, y: 16, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            transition={{ delay: index * 0.05, duration: 0.3, ease: [0.25, 0.1, 0.25, 1] }}
-            whileHover={{ y: -4, scale: 1.02, transition: { duration: 0.2 } }}
-            style={{ willChange: "transform" }}
-          >
-            <Card className={cn(
-              "relative overflow-hidden border backdrop-blur-sm transition-all duration-300",
-              "hover:shadow-xl hover:shadow-black/5 dark:hover:shadow-black/20",
-              stat.cardBg,
-              stat.borderColor
-            )}>
-              {/* Subtle shine effect */}
-              <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 shine-effect pointer-events-none" />
-
-              <CardContent className="px-2 py-3 sm:p-4 relative">
-                <div className="flex flex-col sm:flex-row items-center gap-1.5 sm:gap-3">
-                  {/* Icon with glow */}
-                  <div className="relative">
-                    <div
-                      className={cn(
-                        "flex h-8 w-8 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-xl transition-all duration-300",
-                        "shadow-lg",
-                        stat.iconBg,
-                        stat.iconShadow
-                      )}
-                    >
-                      <stat.icon className="h-3.5 w-3.5 sm:h-5 sm:w-5 text-white" />
-                    </div>
-                    {/* Glow effect behind icon */}
-                    <div className={cn(
-                      "absolute inset-0 rounded-xl blur-lg opacity-40",
-                      stat.iconBg
-                    )} />
-                  </div>
-
-                  {/* Content */}
-                  <div className="flex-1 min-w-0 text-center sm:text-start">
-                    {/* Short title on mobile, full title on desktop */}
-                    <p className="sm:hidden text-[12px] font-medium text-muted-foreground/80 truncate">
-                      {stat.shortTitle}
-                    </p>
-                    <p className="hidden sm:block text-xs sm:text-sm font-medium text-muted-foreground/80 truncate">
-                      {stat.title}
-                    </p>
-                    <p className="text-lg sm:text-2xl font-bold tracking-tight">
-                      {stat.value}
-                    </p>
-                  </div>
+      {/* Usage Tracking - Right Side of Row 1 */}
+      <div className="col-span-12 xl:col-span-5">
+        {usageData ? (
+          <div className="rounded-2xl border border-gray-200 bg-gray-100 dark:border-gray-800 dark:bg-white/[0.03]">
+            <div className="px-5 pt-5 bg-white shadow-default rounded-2xl pb-6 dark:bg-gray-900 sm:px-6 sm:pt-6">
+              <div className="flex justify-between items-start mb-6">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-800 dark:text-white/90">
+                    {isRTL ? "מעקב שימוש" : "Usage Tracking"}
+                  </h3>
+                  <p className="mt-1 font-normal text-gray-500 text-theme-sm dark:text-gray-400">
+                    {isRTL ? "סטטוס השימוש החודשי שלך" : "Your monthly usage status"}
+                  </p>
                 </div>
-              </CardContent>
-            </Card>
-          </motion.div>
-        ))}
-      </motion.div>
+                <Badge
+                  color={
+                    usageData.plan === "FREE"
+                      ? "light"
+                      : usageData.plan === "BUSINESS"
+                      ? "warning"
+                      : "primary"
+                  }
+                >
+                  {tPlans(
+                    usageData.plan.toLowerCase() as
+                      | "free"
+                      | "basic"
+                      | "advanced"
+                      | "premium"
+                      | "business"
+                  )}
+                </Badge>
+              </div>
 
-
-
-      {/* Events Section */}
-      <motion.div variants={itemVariants} className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div className="flex flex-col gap-0.5">
-            <h2 className="text-lg font-semibold">{t("upcomingEvents")}</h2>
-            <p className="text-sm text-muted-foreground">
-              {isRTL ? "בחר אירוע לניהול" : "Select an event to manage"}
-            </p>
-          </div>
-          {events && events.length > 0 && (
-            <div className="flex gap-1 border rounded-lg p-1 bg-muted/30 backdrop-blur-sm">
-              <Button
-                variant={viewMode === "grid" ? "secondary" : "ghost"}
-                size="sm"
-                className={cn(
-                  "h-7 w-7 p-0 transition-all",
-                  viewMode === "grid" && "shadow-sm"
-                )}
-                onClick={() => handleViewModeChange("grid")}
-              >
-                <LayoutGrid className="h-4 w-4" />
-              </Button>
-              <Button
-                variant={viewMode === "list" ? "secondary" : "ghost"}
-                size="sm"
-                className={cn(
-                  "h-7 w-7 p-0 transition-all",
-                  viewMode === "list" && "shadow-sm"
-                )}
-                onClick={() => handleViewModeChange("list")}
-              >
-                <List className="h-4 w-4" />
-              </Button>
-            </div>
-          )}
-        </div>
-
-        {!events || events.length === 0 ? (
-          <EmptyPlaceholder>
-            <EmptyPlaceholder.Icon name="calendar" />
-            <EmptyPlaceholder.Title>{t("noEventsYet")}</EmptyPlaceholder.Title>
-            <EmptyPlaceholder.Description>
-              {t("createFirstEvent")}
-            </EmptyPlaceholder.Description>
-            <Button onClick={() => setShowAddEventModal(true)}>
-              <Icons.add className="me-2 h-4 w-4" />
-              {t("createEvent")}
-            </Button>
-          </EmptyPlaceholder>
-        ) : viewMode === "grid" ? (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {events.slice(0, 6).map((event, index) => (
-              <EventCard
-                key={event.id}
-                event={event}
-                locale={locale}
-                index={index}
-                isRTL={isRTL}
-              />
-            ))}
-          </div>
-        ) : (
-          <div className="rounded-lg border">
-            {events.slice(0, 10).map((event, index) => (
-              <EventListItem
-                key={event.id}
-                event={event}
-                locale={locale}
-                index={index}
-                isRTL={isRTL}
-                isLast={index === Math.min(events.length - 1, 9)}
-              />
-            ))}
-          </div>
-        )}
-      </motion.div>
-
-            {/* Usage Tracking Section */}
-      {usageData && (
-        <motion.div variants={itemVariants} className="space-y-4">
-          {/* Header - Outside Card */}
-          <div className="flex items-center justify-between">
-            <div className="flex flex-col gap-0.5">
-              <h2 className="text-lg font-semibold">{isRTL ? "מעקב שימוש" : "Usage Tracking"}</h2>
-              <p className="text-sm text-muted-foreground">
-                {isRTL ? "סטטוס השימוש החודשי שלך" : "Your monthly usage status"}
-              </p>
-            </div>
-            <Badge className={cn("shadow-sm", planColors[usageData.plan])}>
-              {tPlans(usageData.plan.toLowerCase() as "free" | "basic" | "advanced" | "premium" | "business")}
-            </Badge>
-          </div>
-
-          {/* Card with Usage Bars */}
-          <Card className={cn(
-            "relative overflow-hidden border backdrop-blur-sm transition-all duration-300",
-            usageData?.canSendMessages === false
-              ? "border-amber-200/50 dark:border-amber-800/30 bg-gradient-to-br from-amber-50/80 to-orange-50/50 dark:from-amber-950/30 dark:to-orange-950/20"
-              : "border-border/50 bg-gradient-to-br from-background to-muted/30"
-          )}>
-            {/* Decorative background elements */}
-            <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-violet-500/5 to-purple-500/5 rounded-full blur-3xl -translate-y-32 translate-x-32" />
-            <div className="absolute bottom-0 left-0 w-48 h-48 bg-gradient-to-tr from-blue-500/5 to-cyan-500/5 rounded-full blur-3xl translate-y-24 -translate-x-24" />
-
-            <CardContent className="p-4 relative">
-              <div className="flex flex-col gap-4">
-                {/* Usage Bars */}
-                <div className={cn(
-                  "grid gap-4",
-                  usageData.calls ? "sm:grid-cols-3" : "sm:grid-cols-2"
-                )}>
-                  {/* WhatsApp Usage */}
-                  <div className="space-y-2.5 p-3 rounded-xl bg-gradient-to-br from-green-50/50 to-emerald-50/30 dark:from-green-950/30 dark:to-emerald-950/20 border border-green-200/30 dark:border-green-800/20">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="flex items-center gap-2">
-                        <div className="p-1.5 rounded-lg bg-green-500/10">
-                          <MessageSquare className="h-4 w-4 text-green-600 dark:text-green-400" />
-                        </div>
-                        <span className="font-medium">WhatsApp</span>
-                      </span>
-                      <span className="font-semibold text-green-700 dark:text-green-400">
-                        {usageData.whatsapp.remaining}
-                        <span className="text-muted-foreground font-normal ms-0.5">/{usageData.whatsapp.total}</span>
-                      </span>
-                    </div>
-                    <Progress
-                      value={getUsagePercent(usageData.whatsapp.sent, usageData.whatsapp.total)}
-                      className="h-2 bg-green-100 dark:bg-green-900/30"
-                    />
-                    {usageData.whatsapp.bonus > 0 && (
-                      <p className="text-xs text-green-600/70 dark:text-green-400/70">
-                        +{usageData.whatsapp.bonus} {isRTL ? "בונוס" : "bonus"}
-                      </p>
-                    )}
-                  </div>
-
-                  {/* SMS Usage */}
-                  <div className="space-y-2.5 p-3 rounded-xl bg-gradient-to-br from-blue-50/50 to-cyan-50/30 dark:from-blue-950/30 dark:to-cyan-950/20 border border-blue-200/30 dark:border-blue-800/20">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="flex items-center gap-2">
-                        <div className="p-1.5 rounded-lg bg-blue-500/10">
-                          <Send className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                        </div>
-                        <span className="font-medium">SMS</span>
-                      </span>
-                      <span className="font-semibold text-blue-700 dark:text-blue-400">
-                        {usageData.sms.remaining}
-                        <span className="text-muted-foreground font-normal ms-0.5">/{usageData.sms.total}</span>
-                      </span>
-                    </div>
-                    <Progress
-                      value={getUsagePercent(usageData.sms.sent, usageData.sms.total)}
-                      className="h-2 bg-blue-100 dark:bg-blue-900/30"
-                    />
-                    {usageData.sms.bonus > 0 && (
-                      <p className="text-xs text-blue-600/70 dark:text-blue-400/70">
-                        +{usageData.sms.bonus} {isRTL ? "בונוס" : "bonus"}
-                      </p>
-                    )}
-                  </div>
-
-                  {/* Phone Calls Usage */}
-                  {usageData.calls && (
-                    <div className="space-y-2.5 p-3 rounded-xl bg-gradient-to-br from-purple-50/50 to-violet-50/30 dark:from-purple-950/30 dark:to-violet-950/20 border border-purple-200/30 dark:border-purple-800/20">
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="flex items-center gap-2">
-                          <div className="p-1.5 rounded-lg bg-purple-500/10">
-                            <Phone className="h-4 w-4 text-purple-600 dark:text-purple-400" />
-                          </div>
-                          <span className="font-medium">{isRTL ? "שיחות" : "Calls"}</span>
-                        </span>
-                        <span className="font-semibold text-purple-700 dark:text-purple-400">
-                          {usageData.calls.remaining}
-                          <span className="text-muted-foreground font-normal ms-0.5">/{usageData.calls.limit}</span>
-                        </span>
+              {/* Usage Progress Bars */}
+              <div className="space-y-5">
+                {/* WhatsApp */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="flex items-center justify-center w-8 h-8 bg-success-50 rounded-lg dark:bg-success-500/15">
+                        <MessageSquare className="h-4 w-4 text-success-500" />
                       </div>
-                      <Progress
-                        value={getUsagePercent(usageData.calls.made, usageData.calls.limit)}
-                        className="h-2 bg-purple-100 dark:bg-purple-900/30"
-                      />
-                      <p className="text-xs text-purple-600/70 dark:text-purple-400/70">
-                        {usageData.calls.made} {isRTL ? "שיחות בוצעו" : "calls made"}
-                      </p>
+                      <span className="font-medium text-gray-800 text-theme-sm dark:text-white/90">
+                        WhatsApp
+                      </span>
                     </div>
+                    <span className="text-sm font-semibold text-gray-800 dark:text-white/90">
+                      {usageData.whatsapp.remaining}
+                      <span className="font-normal text-gray-500 dark:text-gray-400">
+                        /{usageData.whatsapp.total}
+                      </span>
+                    </span>
+                  </div>
+                  <div className="h-2 overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700">
+                    <div
+                      className="h-full rounded-full bg-success-500 transition-all duration-500"
+                      style={{
+                        width: `${getUsagePercent(usageData.whatsapp.sent, usageData.whatsapp.total)}%`,
+                      }}
+                    />
+                  </div>
+                  {usageData.whatsapp.bonus > 0 && (
+                    <p className="text-theme-xs text-success-500">
+                      +{usageData.whatsapp.bonus} {isRTL ? "בונוס" : "bonus"}
+                    </p>
                   )}
                 </div>
 
-                {/* Upgrade Banner for Free Users */}
-                {!usageData.canSendMessages && (
-                  <div className="flex items-center gap-3 rounded-xl border border-amber-200/50 bg-gradient-to-r from-amber-50 to-orange-50 p-4 dark:border-amber-800/30 dark:from-amber-900/30 dark:to-orange-900/20 shadow-sm">
-                    <div className="p-2 rounded-lg bg-amber-500/10">
-                      <AlertCircle className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+                {/* SMS */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="flex items-center justify-center w-8 h-8 bg-brand-50 rounded-lg dark:bg-brand-500/15">
+                        <Send className="h-4 w-4 text-brand-500" />
+                      </div>
+                      <span className="font-medium text-gray-800 text-theme-sm dark:text-white/90">
+                        SMS
+                      </span>
                     </div>
-                    <div className="flex-1">
-                      <p className="text-sm font-semibold text-amber-800 dark:text-amber-200">
-                        {isRTL ? "שדרג כדי לשלוח הודעות" : "Upgrade to send messages"}
-                      </p>
-                      <p className="text-xs text-amber-700/80 dark:text-amber-300/80 mt-0.5">
-                        {isRTL
-                          ? "התוכנית החינמית שלך לא כוללת הודעות. שדרג כדי להתחיל לשלוח הזמנות."
-                          : "Your free plan doesn't include messages. Upgrade to start sending invitations."}
-                      </p>
+                    <span className="text-sm font-semibold text-gray-800 dark:text-white/90">
+                      {usageData.sms.remaining}
+                      <span className="font-normal text-gray-500 dark:text-gray-400">
+                        /{usageData.sms.total}
+                      </span>
+                    </span>
+                  </div>
+                  <div className="h-2 overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700">
+                    <div
+                      className="h-full rounded-full bg-brand-500 transition-all duration-500"
+                      style={{
+                        width: `${getUsagePercent(usageData.sms.sent, usageData.sms.total)}%`,
+                      }}
+                    />
+                  </div>
+                  {usageData.sms.bonus > 0 && (
+                    <p className="text-theme-xs text-brand-500">
+                      +{usageData.sms.bonus} {isRTL ? "בונוס" : "bonus"}
+                    </p>
+                  )}
+                </div>
+
+                {/* Calls */}
+                {usageData.calls && (
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className="flex items-center justify-center w-8 h-8 bg-warning-50 rounded-lg dark:bg-warning-500/15">
+                          <Phone className="h-4 w-4 text-warning-500" />
+                        </div>
+                        <span className="font-medium text-gray-800 text-theme-sm dark:text-white/90">
+                          {isRTL ? "שיחות" : "Voice Calls"}
+                        </span>
+                      </div>
+                      <span className="text-sm font-semibold text-gray-800 dark:text-white/90">
+                        {usageData.calls.remaining}
+                        <span className="font-normal text-gray-500 dark:text-gray-400">
+                          /{usageData.calls.limit}
+                        </span>
+                      </span>
                     </div>
-                    <Button
-                      size="sm"
-                      className="gap-1 shrink-0 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white shadow-lg shadow-amber-500/20 transition-all hover:shadow-xl hover:shadow-amber-500/30 hover:-translate-y-0.5"
-                      asChild
-                    >
-                      <Link href={`/${locale}/dashboard/billing`}>
-                        {isRTL ? "שדרג" : "Upgrade"}
-                        <ArrowUpRight className="h-4 w-4" />
-                      </Link>
-                    </Button>
+                    <div className="h-2 overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700">
+                      <div
+                        className="h-full rounded-full bg-warning-500 transition-all duration-500"
+                        style={{
+                          width: `${getUsagePercent(usageData.calls.made, usageData.calls.limit)}%`,
+                        }}
+                      />
+                    </div>
                   </div>
                 )}
               </div>
-            </CardContent>
-          </Card>
-        </motion.div>
-      )}
 
-      {/* Add Event Modal */}
-      <AddEventModal
-        open={showAddEventModal}
-        onOpenChange={setShowAddEventModal}
-      />
-    </motion.div>
-  );
-}
-
-const EventCard = React.memo(function EventCard({
-  event,
-  locale,
-  index,
-  isRTL
-}: {
-  event: EventData;
-  locale: string;
-  index: number;
-  isRTL: boolean;
-}) {
-  const eventDate = new Date(event.dateTime);
-  const isUpcoming = eventDate > new Date();
-  const daysUntil = Math.ceil((eventDate.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
-
-  const formattedDate = eventDate.toLocaleDateString(locale === "he" ? "he-IL" : "en-US", {
-    weekday: "short",
-    month: "short",
-    day: "numeric",
-  });
-
-  const formattedTime = eventDate.toLocaleTimeString(locale === "he" ? "he-IL" : "en-US", {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-
-  const acceptanceRate = event.stats.total > 0
-    ? Math.round((event.stats.accepted / event.stats.total) * 100)
-    : 0;
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 16 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.05, duration: 0.3, ease: [0.25, 0.1, 0.25, 1] }}
-    >
-      <Link href={`/${locale}/events/${event.id}`}>
-        <Card className={cn(
-          "group relative overflow-hidden cursor-pointer transition-all duration-200",
-          "bg-background hover:bg-muted/30",
-          "border-2 border-border/60 hover:border-primary/50",
-          "shadow-sm hover:shadow-lg hover:shadow-primary/10 dark:hover:shadow-primary/5",
-          "hover:-translate-y-1"
-        )}>
-          {/* Click indicator arrow - always visible */}
-          <div className="absolute top-4 end-4 flex items-center gap-1.5 text-xs text-muted-foreground group-hover:text-primary transition-colors">
-            <span className="hidden sm:inline">{isRTL ? "לחץ לניהול" : "Click to manage"}</span>
-            <ArrowUpRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
-          </div>
-
-          <CardContent className="p-5 relative">
-            {/* Header */}
-            <div className="flex items-start justify-between gap-3">
-              <div className="flex-1 min-w-0 pe-20">
-                <h3 className="font-semibold truncate group-hover:text-primary transition-colors duration-200">
-                  {event.title}
-                </h3>
-                {event.venue && (
-                  <p className="mt-1.5 flex items-center gap-1.5 text-xs text-muted-foreground truncate">
-                    <MapPin className="h-3 w-3 shrink-0 text-primary/60" />
-                    <span className="truncate">{event.venue}</span>
-                  </p>
-                )}
-              </div>
-            </div>
-
-            {/* Date & Time - Keeping as is per request */}
-            <div className="mt-4 flex items-center gap-2 rounded-lg bg-muted/50 p-2.5">
-              <div className="flex h-10 w-10 flex-col items-center justify-center rounded-md bg-background shadow-sm">
-                <span className="text-[10px] font-medium uppercase text-muted-foreground">
-                  {eventDate.toLocaleDateString(locale === "he" ? "he-IL" : "en-US", { month: "short" })}
-                </span>
-                <span className="text-lg font-bold leading-none">
-                  {eventDate.getDate()}
-                </span>
-              </div>
-              <div className="flex-1">
-                <p className="text-sm font-medium">{formattedDate}</p>
-                <p className="text-xs text-muted-foreground">{formattedTime}</p>
-              </div>
-              {isUpcoming && daysUntil <= 30 && (
-                <span className={cn(
-                  "rounded-full px-2 py-0.5 text-[10px] font-medium",
-                  daysUntil <= 7
-                    ? "bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400"
-                    : "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
-                )}>
-                  {daysUntil === 0
-                    ? (isRTL ? "היום!" : "Today!")
-                    : daysUntil === 1
-                      ? (isRTL ? "מחר" : "Tomorrow")
-                      : (isRTL ? `עוד ${daysUntil} ימים` : `${daysUntil} days`)}
-                </span>
+              {/* Upgrade banner */}
+              {!usageData.canSendMessages && (
+                <div className="mt-6 flex items-center gap-3 rounded-xl border border-warning-200 bg-warning-50 p-4 dark:border-warning-500/30 dark:bg-warning-500/10">
+                  <div className="flex items-center justify-center w-10 h-10 bg-warning-100 rounded-lg dark:bg-warning-500/20">
+                    <AlertCircle className="h-5 w-5 text-warning-600 dark:text-warning-400" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm font-semibold text-warning-800 dark:text-warning-200">
+                      {isRTL ? "שדרג כדי לשלוח הודעות" : "Upgrade to send messages"}
+                    </p>
+                    <p className="text-theme-xs text-warning-700 dark:text-warning-300">
+                      {isRTL
+                        ? "התוכנית החינמית לא כוללת הודעות"
+                        : "Free plan doesn't include messages"}
+                    </p>
+                  </div>
+                  <Button variant="primary" size="sm" asChild>
+                    <Link href={`/${locale}/dashboard/billing`}>
+                      {isRTL ? "שדרג" : "Upgrade"}
+                      <ArrowUpRight className="h-4 w-4 ms-1" />
+                    </Link>
+                  </Button>
+                </div>
               )}
             </div>
 
-            {/* Stats - Clean minimal design */}
-            <div className="mt-4 grid grid-cols-3 gap-3 text-center">
-              <div className="space-y-1">
-                <div className="flex items-center justify-center gap-1.5">
-                  <Users className="h-3.5 w-3.5 text-muted-foreground" />
-                  <p className="text-lg font-bold">{event.stats.total}</p>
-                </div>
-                <p className="text-[10px] text-muted-foreground">
-                  {isRTL ? "אורחים" : "Guests"}
+            {/* Bottom Stats Row */}
+            <div className="flex items-center justify-center gap-5 px-6 py-3.5 sm:gap-8 sm:py-5">
+              <div>
+                <p className="mb-1 text-center text-gray-500 text-theme-xs dark:text-gray-400 sm:text-sm">
+                  {isRTL ? "מאושרים" : "Confirmed"}
+                </p>
+                <p className="flex items-center justify-center gap-1 text-base font-semibold text-gray-800 dark:text-white/90 sm:text-lg">
+                  {stats.totalAccepted}
+                  <ArrowUp className="h-4 w-4 text-success-500" />
                 </p>
               </div>
-              <div className="space-y-1">
-                <div className="flex items-center justify-center gap-1.5">
-                  <UserCheck className="h-3.5 w-3.5 text-emerald-500" />
-                  <p className="text-lg font-bold text-emerald-600 dark:text-emerald-400">
-                    {event.stats.accepted}
-                  </p>
-                </div>
-                <p className="text-[10px] text-emerald-600/70 dark:text-emerald-400/70">
-                  {isRTL ? "מאושר" : "Confirmed"}
+
+              <div className="w-px bg-gray-200 h-7 dark:bg-gray-800"></div>
+
+              <div>
+                <p className="mb-1 text-center text-gray-500 text-theme-xs dark:text-gray-400 sm:text-sm">
+                  {isRTL ? "ממתינים" : "Pending"}
+                </p>
+                <p className="flex items-center justify-center gap-1 text-base font-semibold text-gray-800 dark:text-white/90 sm:text-lg">
+                  {stats.totalPending}
+                  <Clock className="h-4 w-4 text-warning-500" />
                 </p>
               </div>
-              <div className="space-y-1">
-                <div className="flex items-center justify-center gap-1.5">
-                  <Clock className="h-3.5 w-3.5 text-amber-500" />
-                  <p className="text-lg font-bold text-amber-600 dark:text-amber-400">
-                    {event.stats.pending}
-                  </p>
-                </div>
-                <p className="text-[10px] text-amber-600/70 dark:text-amber-400/70">
-                  {isRTL ? "ממתין" : "Pending"}
+
+              <div className="w-px bg-gray-200 h-7 dark:bg-gray-800"></div>
+
+              <div>
+                <p className="mb-1 text-center text-gray-500 text-theme-xs dark:text-gray-400 sm:text-sm">
+                  {isRTL ? "סירבו" : "Declined"}
+                </p>
+                <p className="flex items-center justify-center gap-1 text-base font-semibold text-gray-800 dark:text-white/90 sm:text-lg">
+                  {stats.totalDeclined}
+                  <ArrowDown className="h-4 w-4 text-error-500" />
                 </p>
               </div>
             </div>
-
-            {/* Progress bar - Clean */}
-            <div className="mt-4 pt-3 border-t">
-              <div className="mb-1.5 flex items-center justify-between text-xs">
-                <span className="text-muted-foreground">
-                  {isRTL ? "אחוז אישורים" : "Response rate"}
-                </span>
-                <span className="font-semibold text-emerald-600 dark:text-emerald-400">
-                  {acceptanceRate}%
-                </span>
-              </div>
-              <div className="h-2 overflow-hidden rounded-full bg-muted">
-                <motion.div
-                  className="h-full rounded-full bg-emerald-500"
-                  initial={{ width: 0 }}
-                  animate={{ width: `${acceptanceRate}%` }}
-                  transition={{ delay: 0.2, duration: 0.8, ease: "easeOut" }}
-                />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </Link>
-    </motion.div>
-  );
-});
-
-const EventListItem = React.memo(function EventListItem({
-  event,
-  locale,
-  index,
-  isRTL,
-  isLast
-}: {
-  event: EventData;
-  locale: string;
-  index: number;
-  isRTL: boolean;
-  isLast: boolean;
-}) {
-  const eventDate = new Date(event.dateTime);
-  const isUpcoming = eventDate > new Date();
-  const daysUntil = Math.ceil((eventDate.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
-
-  const formattedDate = eventDate.toLocaleDateString(locale === "he" ? "he-IL" : "en-US", {
-    weekday: "short",
-    month: "short",
-    day: "numeric",
-  });
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, x: isRTL ? 12 : -12 }}
-      animate={{ opacity: 1, x: 0 }}
-      transition={{ delay: index * 0.03, duration: 0.15 }}
-    >
-      <Link href={`/${locale}/events/${event.id}`}>
-        <div className={cn(
-          "flex items-center gap-4 p-4 hover:bg-muted/50 transition-colors",
-          !isLast && "border-b"
-        )}>
-          {/* Date badge */}
-          <div className="flex h-12 w-12 flex-col items-center justify-center rounded-lg bg-muted shrink-0">
-            <span className="text-[10px] font-medium uppercase text-muted-foreground">
-              {eventDate.toLocaleDateString(locale === "he" ? "he-IL" : "en-US", { month: "short" })}
-            </span>
-            <span className="text-lg font-bold leading-none">
-              {eventDate.getDate()}
-            </span>
           </div>
+        ) : (
+          /* Welcome Card when no usage data */
+          <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03] md:p-6">
+            <div className="text-center py-8">
+              <div className="flex items-center justify-center w-16 h-16 mx-auto bg-brand-50 rounded-2xl dark:bg-brand-500/15 mb-4">
+                <Calendar className="text-brand-500 size-8" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-800 dark:text-white/90 mb-2">
+                {t("welcome")}, {userName}!
+              </h3>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mb-6 max-w-sm mx-auto">
+                {isRTL
+                  ? "התחל ליצור את האירוע הראשון שלך ולנהל את האורחים"
+                  : "Start by creating your first event and managing your guests"}
+              </p>
+              <Button variant="primary" onClick={() => setShowAddEventModal(true)}>
+                <Plus className="h-4 w-4 me-2" />
+                {t("createEvent")}
+              </Button>
+            </div>
+          </div>
+        )}
+      </div>
 
-          {/* Event info */}
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2">
-              <h3 className="font-semibold truncate">{event.title}</h3>
-              {isUpcoming && daysUntil <= 7 && (
-                <span className={cn(
-                  "rounded-full px-2 py-0.5 text-[10px] font-medium shrink-0",
-                  daysUntil <= 3
-                    ? "bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400"
-                    : "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
-                )}>
-                  {daysUntil === 0
-                    ? (isRTL ? "היום!" : "Today!")
-                    : daysUntil === 1
-                      ? (isRTL ? "מחר" : "Tomorrow")
-                      : (isRTL ? `עוד ${daysUntil} ימים` : `${daysUntil}d`)}
-                </span>
+      {/* Row 2: Events Table - Full Width */}
+      <div className="col-span-12">
+        <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white px-5 pt-5 dark:border-gray-800 dark:bg-white/[0.03] sm:px-6 sm:pt-6">
+          <div className="flex flex-col gap-2 mb-6 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h3 className="text-lg font-semibold text-gray-800 dark:text-white/90">
+                {t("upcomingEvents")}
+              </h3>
+              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                {isRTL ? "בחר אירוע לניהול" : "Select an event to manage"}
+              </p>
+            </div>
+            <div className="flex items-center gap-3">
+              <Button variant="outline" size="sm" onClick={() => setShowAddEventModal(true)}>
+                <Plus className="h-4 w-4 me-1.5" />
+                {t("createEvent")}
+              </Button>
+              {events.length > 0 && (
+                <Button variant="primary" size="sm" asChild>
+                  <Link href={`/${locale}/events/${events[0].id}/invitations`}>
+                    <Send className="h-4 w-4 me-1.5" />
+                    {isRTL ? "שלח הזמנות" : "Send Invitations"}
+                  </Link>
+                </Button>
               )}
             </div>
-            <p className="text-sm text-muted-foreground truncate">
-              {formattedDate} {event.venue && `• ${event.venue}`}
-            </p>
           </div>
 
-          {/* Stats */}
-          <div className="hidden sm:flex items-center gap-4 shrink-0">
-            <div className="text-center">
-              <p className="text-sm font-semibold">{event.stats.total}</p>
-              <p className="text-[10px] text-muted-foreground">
-                {isRTL ? "אורחים" : "Guests"}
-              </p>
+          {!events || events.length === 0 ? (
+            <div className="py-12">
+              <EmptyPlaceholder>
+                <EmptyPlaceholder.Icon name="calendar" />
+                <EmptyPlaceholder.Title>{t("noEventsYet")}</EmptyPlaceholder.Title>
+                <EmptyPlaceholder.Description>
+                  {t("createFirstEvent")}
+                </EmptyPlaceholder.Description>
+                <Button variant="primary" onClick={() => setShowAddEventModal(true)}>
+                  <Icons.add className="me-2 h-4 w-4" />
+                  {t("createEvent")}
+                </Button>
+              </EmptyPlaceholder>
             </div>
-            <div className="text-center">
-              <p className="text-sm font-semibold text-emerald-600 dark:text-emerald-400">
-                {event.stats.accepted}
-              </p>
-              <p className="text-[10px] text-emerald-600/70 dark:text-emerald-400/70">
-                {isRTL ? "מאושר" : "Confirmed"}
-              </p>
-            </div>
-            <div className="text-center">
-              <p className="text-sm font-semibold text-amber-600 dark:text-amber-400">
-                {event.stats.pending}
-              </p>
-              <p className="text-[10px] text-amber-600/70 dark:text-amber-400/70">
-                {isRTL ? "ממתין" : "Pending"}
-              </p>
-            </div>
-          </div>
+          ) : (
+            <div className="max-w-full overflow-x-auto custom-scrollbar">
+              <Table>
+                <TableHeader className="border-gray-100 dark:border-gray-800 border-y">
+                  <TableRow>
+                    <TableCell
+                      isHeader
+                      className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400"
+                    >
+                      {isRTL ? "אירוע" : "Event"}
+                    </TableCell>
+                    <TableCell
+                      isHeader
+                      className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400"
+                    >
+                      {isRTL ? "תאריך" : "Date"}
+                    </TableCell>
+                    <TableCell
+                      isHeader
+                      className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400"
+                    >
+                      {isRTL ? "אורחים" : "Guests"}
+                    </TableCell>
+                    <TableCell
+                      isHeader
+                      className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400"
+                    >
+                      {isRTL ? "סטטוס" : "Status"}
+                    </TableCell>
+                  </TableRow>
+                </TableHeader>
+                <TableBody className="divide-y divide-gray-100 dark:divide-gray-800">
+                  {events.slice(0, 5).map((event) => {
+                    const eventDate = new Date(event.dateTime);
+                    const isUpcoming = eventDate > new Date();
+                    const daysUntil = Math.ceil(
+                      (eventDate.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)
+                    );
 
-          {/* Mobile stats */}
-          <div className="flex sm:hidden items-center gap-2 text-xs shrink-0">
-            <span className="text-emerald-600 dark:text-emerald-400 font-medium">
-              {event.stats.accepted}
-            </span>
-            <span className="text-muted-foreground">/</span>
-            <span>{event.stats.total}</span>
+                    return (
+                      <TableRow
+                        key={event.id}
+                        className="cursor-pointer hover:bg-gray-50 dark:hover:bg-white/[0.02]"
+                      >
+                        <TableCell className="px-5 py-4">
+                          <Link
+                            href={`/${locale}/events/${event.id}`}
+                            className="flex items-center gap-3"
+                          >
+                            <div className="flex h-12 w-12 flex-col items-center justify-center rounded-xl bg-gray-100 dark:bg-gray-800">
+                              <span className="text-[10px] font-medium uppercase text-gray-500 dark:text-gray-400">
+                                {eventDate.toLocaleDateString(isRTL ? "he-IL" : "en-US", {
+                                  month: "short",
+                                })}
+                              </span>
+                              <span className="text-lg font-bold text-gray-800 dark:text-white/90 leading-none">
+                                {eventDate.getDate()}
+                              </span>
+                            </div>
+                            <div>
+                              <p className="font-medium text-gray-800 text-theme-sm dark:text-white/90">
+                                {event.title}
+                              </p>
+                              {event.venue && (
+                                <span className="flex items-center gap-1 text-gray-500 text-theme-xs dark:text-gray-400">
+                                  <MapPin className="h-3 w-3" />
+                                  {event.venue}
+                                </span>
+                              )}
+                            </div>
+                          </Link>
+                        </TableCell>
+                        <TableCell className="px-5 py-4 text-gray-500 text-theme-sm dark:text-gray-400">
+                          <div>
+                            <p>
+                              {eventDate.toLocaleDateString(isRTL ? "he-IL" : "en-US", {
+                                weekday: "short",
+                                month: "short",
+                                day: "numeric",
+                              })}
+                            </p>
+                            <p className="text-theme-xs">
+                              {eventDate.toLocaleTimeString(isRTL ? "he-IL" : "en-US", {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })}
+                            </p>
+                          </div>
+                        </TableCell>
+                        <TableCell className="px-5 py-4">
+                          <div className="flex items-center gap-3">
+                            <div className="text-center">
+                              <p className="font-semibold text-gray-800 text-theme-sm dark:text-white/90">
+                                {event.stats.total}
+                              </p>
+                              <p className="text-gray-500 text-theme-xs dark:text-gray-400">
+                                {isRTL ? "סה״כ" : "Total"}
+                              </p>
+                            </div>
+                            <div className="text-center">
+                              <p className="font-semibold text-success-500 text-theme-sm">
+                                {event.stats.accepted}
+                              </p>
+                              <p className="text-gray-500 text-theme-xs dark:text-gray-400">
+                                {isRTL ? "אישרו" : "Yes"}
+                              </p>
+                            </div>
+                            <div className="text-center">
+                              <p className="font-semibold text-warning-500 text-theme-sm">
+                                {event.stats.pending}
+                              </p>
+                              <p className="text-gray-500 text-theme-xs dark:text-gray-400">
+                                {isRTL ? "ממתין" : "Pending"}
+                              </p>
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell className="px-5 py-4">
+                          {isUpcoming ? (
+                            daysUntil <= 7 ? (
+                              <Badge color="error" size="sm">
+                                {daysUntil === 0
+                                  ? isRTL
+                                    ? "היום!"
+                                    : "Today!"
+                                  : daysUntil === 1
+                                  ? isRTL
+                                    ? "מחר"
+                                    : "Tomorrow"
+                                  : isRTL
+                                  ? `עוד ${daysUntil} ימים`
+                                  : `${daysUntil} days`}
+                              </Badge>
+                            ) : (
+                              <Badge color="success" size="sm">
+                                {isRTL ? "קרוב" : "Upcoming"}
+                              </Badge>
+                            )
+                          ) : (
+                            <Badge color="light" size="sm">
+                              {isRTL ? "עבר" : "Past"}
+                            </Badge>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Row 3: Quick Actions (5 cols) + Tips (7 cols) - using grid subgrid pattern */}
+      <div className={cn(
+        "col-span-12 xl:col-span-5",
+        events.length === 0 && "hidden"
+      )}>
+        <div className="h-full rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03] md:p-6">
+          <h3 className="text-lg font-semibold text-gray-800 dark:text-white/90 mb-4">
+            {isRTL ? "פעולות מהירות" : "Quick Actions"}
+          </h3>
+          {events.length > 0 && (
+            <div className="space-y-3">
+              <Link
+                href={`/${locale}/events/${events[0].id}/guests`}
+                className="flex items-center gap-3 p-3 rounded-xl border border-gray-200 hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-white/[0.02] transition-colors"
+              >
+                <div className="flex items-center justify-center w-10 h-10 bg-gray-100 rounded-lg dark:bg-gray-800">
+                  <Users className="h-5 w-5 text-gray-600 dark:text-gray-400" />
+                </div>
+                <div className="flex-1">
+                  <p className="font-medium text-gray-800 text-theme-sm dark:text-white/90">
+                    {isRTL ? "נהל אורחים" : "Manage Guests"}
+                  </p>
+                  <p className="text-theme-xs text-gray-500 dark:text-gray-400">
+                    {isRTL ? "הוסף, ערוך ועדכן אורחים" : "Add, edit, and update guests"}
+                  </p>
+                </div>
+                <ArrowUpRight className="h-4 w-4 text-gray-400" />
+              </Link>
+
+              <Link
+                href={`/${locale}/events/${events[0].id}/invitations`}
+                className="flex items-center gap-3 p-3 rounded-xl border border-gray-200 hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-white/[0.02] transition-colors"
+              >
+                <div className="flex items-center justify-center w-10 h-10 bg-brand-50 rounded-lg dark:bg-brand-500/15">
+                  <Send className="h-5 w-5 text-brand-500" />
+                </div>
+                <div className="flex-1">
+                  <p className="font-medium text-gray-800 text-theme-sm dark:text-white/90">
+                    {isRTL ? "שלח הזמנות" : "Send Invitations"}
+                  </p>
+                  <p className="text-theme-xs text-gray-500 dark:text-gray-400">
+                    {isRTL ? "צור ושלח הזמנות לאורחים" : "Create and send invitations"}
+                  </p>
+                </div>
+                <ArrowUpRight className="h-4 w-4 text-gray-400" />
+              </Link>
+
+              <Link
+                href={`/${locale}/events/${events[0].id}/seating`}
+                className="flex items-center gap-3 p-3 rounded-xl border border-gray-200 hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-white/[0.02] transition-colors"
+              >
+                <div className="flex items-center justify-center w-10 h-10 bg-success-50 rounded-lg dark:bg-success-500/15">
+                  <UserCheck className="h-5 w-5 text-success-500" />
+                </div>
+                <div className="flex-1">
+                  <p className="font-medium text-gray-800 text-theme-sm dark:text-white/90">
+                    {isRTL ? "סידורי ישיבה" : "Seating Plan"}
+                  </p>
+                  <p className="text-theme-xs text-gray-500 dark:text-gray-400">
+                    {isRTL ? "תכנן את סידורי הישיבה" : "Plan your seating arrangements"}
+                  </p>
+                </div>
+                <ArrowUpRight className="h-4 w-4 text-gray-400" />
+              </Link>
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div className={cn(
+        "col-span-12 xl:col-span-7",
+        events.length === 0 && "hidden"
+      )}>
+        <div className="h-full rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03] md:p-6">
+          <h3 className="text-lg font-semibold text-gray-800 dark:text-white/90 mb-4">
+            {isRTL ? "טיפים לתכנון האירוע" : "Event Planning Tips"}
+          </h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="flex items-start gap-3 p-3 rounded-xl bg-gray-50 dark:bg-white/[0.02]">
+              <div className="flex items-center justify-center w-8 h-8 bg-brand-50 rounded-lg dark:bg-brand-500/15 shrink-0">
+                <Calendar className="h-4 w-4 text-brand-500" />
+              </div>
+              <div>
+                <p className="font-medium text-gray-800 text-theme-sm dark:text-white/90">
+                  {isRTL ? "שלח הזמנות מוקדם" : "Send invites early"}
+                </p>
+                <p className="text-theme-xs text-gray-500 dark:text-gray-400">
+                  {isRTL ? "לפחות 4-6 שבועות לפני" : "At least 4-6 weeks before"}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-start gap-3 p-3 rounded-xl bg-gray-50 dark:bg-white/[0.02]">
+              <div className="flex items-center justify-center w-8 h-8 bg-success-50 rounded-lg dark:bg-success-500/15 shrink-0">
+                <MessageSquare className="h-4 w-4 text-success-500" />
+              </div>
+              <div>
+                <p className="font-medium text-gray-800 text-theme-sm dark:text-white/90">
+                  {isRTL ? "שלח תזכורות" : "Send reminders"}
+                </p>
+                <p className="text-theme-xs text-gray-500 dark:text-gray-400">
+                  {isRTL ? "למי שלא הגיב" : "To non-responders"}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-start gap-3 p-3 rounded-xl bg-gray-50 dark:bg-white/[0.02]">
+              <div className="flex items-center justify-center w-8 h-8 bg-warning-50 rounded-lg dark:bg-warning-500/15 shrink-0">
+                <Users className="h-4 w-4 text-warning-500" />
+              </div>
+              <div>
+                <p className="font-medium text-gray-800 text-theme-sm dark:text-white/90">
+                  {isRTL ? "עדכן את רשימת האורחים" : "Update guest list"}
+                </p>
+                <p className="text-theme-xs text-gray-500 dark:text-gray-400">
+                  {isRTL ? "לפני סיום הישיבה" : "Before finalizing seating"}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-start gap-3 p-3 rounded-xl bg-gray-50 dark:bg-white/[0.02]">
+              <div className="flex items-center justify-center w-8 h-8 bg-error-50 rounded-lg dark:bg-error-500/15 shrink-0">
+                <Phone className="h-4 w-4 text-error-500" />
+              </div>
+              <div>
+                <p className="font-medium text-gray-800 text-theme-sm dark:text-white/90">
+                  {isRTL ? "השתמש בסוכן הקולי" : "Use voice agent"}
+                </p>
+                <p className="text-theme-xs text-gray-500 dark:text-gray-400">
+                  {isRTL ? "לאישורים אוטומטיים" : "For auto confirmations"}
+                </p>
+              </div>
+            </div>
           </div>
         </div>
-      </Link>
-    </motion.div>
+      </div>
+
+      {/* Add Event Modal */}
+      <AddEventModal open={showAddEventModal} onOpenChange={setShowAddEventModal} />
+    </div>
   );
-});
+}

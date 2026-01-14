@@ -173,19 +173,21 @@ export function InvitationsPageContent({ eventId, events, locale }: InvitationsP
   };
 
   return (
-    <PageFadeIn>
+    <PageFadeIn className="space-y-6">
       {/* Header with Event Dropdown */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between mb-6">
-        <div className="space-y-1">
-          <h1 className="text-2xl font-bold tracking-tight">{t("title")}</h1>
-          <p className="text-muted-foreground">{t("description")}</p>
+      <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03] md:p-6">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div className="space-y-1">
+            <h1 className="text-xl font-semibold text-gray-800 dark:text-white/90 sm:text-2xl">{t("title")}</h1>
+            <p className="text-sm text-gray-500 dark:text-gray-400">{t("description")}</p>
+          </div>
+          <EventDropdownSelector
+            events={events}
+            selectedEventId={eventId}
+            locale={locale}
+            basePath={`/${locale}/dashboard/invitations`}
+          />
         </div>
-        <EventDropdownSelector
-          events={events}
-          selectedEventId={eventId}
-          locale={locale}
-          basePath={`/${locale}/dashboard/invitations`}
-        />
       </div>
 
       {/* Hidden file input */}

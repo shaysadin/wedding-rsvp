@@ -1,28 +1,25 @@
 "use client";
 
-import { Fragment, useEffect, useState } from "react";
+import { Fragment } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { Menu, PanelLeftClose, PanelRightClose, ArrowLeft, ArrowRight } from "lucide-react";
+import { MoreHorizontal, PanelLeftClose, PanelRightClose } from "lucide-react";
 
 import { cn } from "@/lib/utils";
-import { useMediaQuery } from "@/hooks/use-media-query";
-import { Badge } from "@/components/ui/badge";
+import { useSidebar, useSidebarExpanded } from "@/contexts/sidebar-context";
 import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Separator } from "@/components/ui/separator";
 import { EventSwitcher } from "@/components/events/event-switcher";
 import { UpgradeCard } from "@/components/dashboard/upgrade-card";
 import { AppLogo } from "@/components/shared/app-logo";
 import { Icons } from "@/components/shared/icons";
+import { SidebarBackdrop } from "@/components/layout/sidebar-backdrop";
 import { EventOption } from "@/contexts/event-context";
 
 // Event-scoped navigation items
@@ -77,16 +74,8 @@ export function EventSidebar({ currentEvent, events, locale }: EventSidebarProps
   const t = useTranslations();
   const isRTL = locale === "he";
 
-  const { isTablet } = useMediaQuery();
-  const [isSidebarExpanded, setIsSidebarExpanded] = useState(!isTablet);
-
-  const toggleSidebar = () => {
-    setIsSidebarExpanded(!isSidebarExpanded);
-  };
-
-  useEffect(() => {
-    setIsSidebarExpanded(!isTablet);
-  }, [isTablet]);
+  const { isExpanded, isMobileOpen, toggleSidebar, setIsHovered, closeMobileSidebar } = useSidebar();
+  const effectivelyExpanded = useSidebarExpanded();
 
   // Helper function for translations
   const getTitle = (titleKey?: string, fallback?: string) => {
@@ -123,87 +112,170 @@ export function EventSidebar({ currentEvent, events, locale }: EventSidebarProps
 
   return (
     <TooltipProvider delayDuration={0}>
+      <SidebarBackdrop />
       <aside
+        onMouseEnter={() => !isExpanded && setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
         className={cn(
-          isSidebarExpanded ? "w-[220px] xl:w-[260px]" : "w-[68px]",
-          "sticky top-0 hidden h-screen flex-col bg-sidebar border-e border-sidebar-border md:flex",
+          "fixed mt-16 flex flex-col lg:mt-0 top-0 bg-white dark:bg-gray-900 text-gray-900 h-screen transition-all duration-300 ease-in-out z-50",
+          // Border on the correct side based on RTL
+          isRTL ? "border-l border-gray-200 dark:border-gray-800" : "border-r border-gray-200 dark:border-gray-800",
+          isRTL ? "right-0" : "left-0",
+          effectivelyExpanded || isMobileOpen ? "w-[260px]" : "w-[80px]",
+          isMobileOpen
+            ? "translate-x-0"
+            : isRTL
+              ? "translate-x-full lg:translate-x-0"
+              : "-translate-x-full lg:translate-x-0"
         )}
       >
-        {/* Fixed Header - Logo */}
-        <div className="flex h-14 shrink-0 items-center p-4 lg:h-[60px]">
-          <Link
-            href={`/${locale}/dashboard`}
-            className="flex items-center"
-          >
-            <AppLogo size={isSidebarExpanded ? "md" : "sm"} />
+        {/* Logo & Toggle - full width border to sync with header */}
+        <div className={cn(
+          "flex items-center border-b border-gray-200 dark:border-gray-800 px-4 h-[61px]",
+          !effectivelyExpanded && !isMobileOpen ? "lg:justify-center" : "justify-between"
+        )}>
+          <Link href={`/${locale}/dashboard`} onClick={isMobileOpen ? closeMobileSidebar : undefined}>
+            <AppLogo size={effectivelyExpanded || isMobileOpen ? "md" : "sm"} />
           </Link>
 
-          <Button
-            variant="ghost"
-            size="icon"
-            className="size-9 lg:size-8 ms-auto"
-            onClick={toggleSidebar}
-          >
-            {isSidebarExpanded ? (
-              <PanelLeftClose
-                size={18}
-                className="stroke-muted-foreground rtl:rotate-180"
-              />
-            ) : (
-              <PanelRightClose
-                size={18}
-                className="stroke-muted-foreground rtl:rotate-180"
-              />
-            )}
-            <span className="sr-only">Toggle Sidebar</span>
-          </Button>
+          {(effectivelyExpanded || isMobileOpen) && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="size-8 hover:bg-gray-100 dark:hover:bg-gray-800"
+              onClick={toggleSidebar}
+            >
+              {isExpanded ? (
+                <PanelLeftClose
+                  size={18}
+                  className="rtl:rotate-180 text-gray-500"
+                />
+              ) : (
+                <PanelRightClose
+                  size={18}
+                  className="rtl:rotate-180 text-gray-500"
+                />
+              )}
+              <span className="sr-only">Toggle Sidebar</span>
+            </Button>
+          )}
         </div>
 
         {/* Event Switcher */}
-        <div className="shrink-0 px-4 pb-2">
+        <div className="mb-6 pt-6 px-4">
           <EventSwitcher
             currentEvent={currentEvent}
             events={events}
             locale={locale}
-            expanded={isSidebarExpanded}
+            expanded={effectivelyExpanded || isMobileOpen}
+            onEventChange={isMobileOpen ? closeMobileSidebar : undefined}
           />
         </div>
 
         {/* Scrollable Navigation */}
-        <ScrollArea className="flex-1 min-h-0">
-          <nav className="flex flex-col gap-6 px-4 py-4">
+        <div className="flex flex-col overflow-y-auto duration-300 ease-linear no-scrollbar flex-1 px-4">
+          <nav className="flex flex-col gap-4">
             {eventNavSections.map((section) => (
-              <section
-                key={section.title}
-                className="flex flex-col gap-0.5"
-              >
-                {isSidebarExpanded ? (
-                  <p className="text-xs text-muted-foreground rtl:text-end">
-                    {getTitle(section.titleKey, section.title)}
-                  </p>
+              <div key={section.title}>
+                <h2 className={cn(
+                  "mb-4 text-xs uppercase flex leading-5 text-gray-400",
+                  !effectivelyExpanded && !isMobileOpen ? "lg:justify-center" : "justify-start"
+                )}>
+                  {effectivelyExpanded || isMobileOpen ? (
+                    getTitle(section.titleKey, section.title)
+                  ) : (
+                    <MoreHorizontal className="h-4 w-4" />
+                  )}
+                </h2>
+
+                <ul className="flex flex-col gap-1">
+                  {section.items.map((item) => {
+                    const Icon = Icons[item.icon as keyof typeof Icons] || Icons.arrowRight;
+                    const itemTitle = getTitle(item.titleKey, item.title);
+                    const fullHref = `/${locale}/events/${currentEvent.id}${item.href}`;
+                    const isActive = isSubPageActive(item.href);
+
+                    return (
+                      <li key={`nav-${item.title}`}>
+                        {effectivelyExpanded || isMobileOpen ? (
+                          <Link
+                            href={fullHref}
+                            onClick={isMobileOpen ? closeMobileSidebar : undefined}
+                            className={cn(
+                              "menu-item group",
+                              isActive ? "menu-item-active" : "menu-item-inactive"
+                            )}
+                          >
+                            <span className={isActive ? "menu-item-icon-active" : "menu-item-icon-inactive"}>
+                              <Icon className="h-5 w-5" />
+                            </span>
+                            <span>{itemTitle}</span>
+                          </Link>
+                        ) : (
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Link
+                                href={fullHref}
+                                className={cn(
+                                  "menu-item group justify-center",
+                                  isActive ? "menu-item-active" : "menu-item-inactive"
+                                )}
+                              >
+                                <span className={isActive ? "menu-item-icon-active" : "menu-item-icon-inactive"}>
+                                  <Icon className="h-5 w-5" />
+                                </span>
+                              </Link>
+                            </TooltipTrigger>
+                            <TooltipContent side={isRTL ? "left" : "right"}>
+                              {itemTitle}
+                            </TooltipContent>
+                          </Tooltip>
+                        )}
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            ))}
+
+            {/* Separator */}
+            <div className="border-t border-gray-200 dark:border-gray-700 my-2" />
+
+            {/* Global Navigation */}
+            <div>
+              <h2 className={cn(
+                "mb-4 text-xs uppercase flex leading-5 text-gray-400",
+                !effectivelyExpanded && !isMobileOpen ? "lg:justify-center" : "justify-start"
+              )}>
+                {effectivelyExpanded || isMobileOpen ? (
+                  getTitle("navigation.account", "ACCOUNT")
                 ) : (
-                  <div className="h-4" />
+                  <MoreHorizontal className="h-4 w-4" />
                 )}
-                {section.items.map((item) => {
+              </h2>
+
+              <ul className="flex flex-col gap-1">
+                {globalNavItems.map((item) => {
                   const Icon = Icons[item.icon as keyof typeof Icons] || Icons.arrowRight;
                   const itemTitle = getTitle(item.titleKey, item.title);
-                  const fullHref = `/${locale}/events/${currentEvent.id}${item.href}`;
-                  const isActive = isSubPageActive(item.href);
+                  const fullHref = `/${locale}${item.href}`;
+                  const isActive = isGlobalActive(item.href);
 
                   return (
-                    <Fragment key={`link-fragment-${item.title}`}>
-                      {isSidebarExpanded ? (
+                    <li key={`global-${item.title}`}>
+                      {effectivelyExpanded || isMobileOpen ? (
                         <Link
                           href={fullHref}
+                          onClick={isMobileOpen ? closeMobileSidebar : undefined}
                           className={cn(
-                            "flex items-center gap-3 rounded-md p-2 text-sm font-medium hover:bg-muted rtl:flex-row-reverse",
-                            isActive
-                              ? "bg-background/80"
-                              : "text-muted-foreground hover:text-accent-foreground",
+                            "menu-item group",
+                            isActive ? "menu-item-active" : "menu-item-inactive"
                           )}
                         >
-                          <Icon className="size-5 shrink-0" />
-                          {itemTitle}
+                          <span className={isActive ? "menu-item-icon-active" : "menu-item-icon-inactive"}>
+                            <Icon className="h-5 w-5" />
+                          </span>
+                          <span>{itemTitle}</span>
                         </Link>
                       ) : (
                         <Tooltip>
@@ -211,14 +283,12 @@ export function EventSidebar({ currentEvent, events, locale }: EventSidebarProps
                             <Link
                               href={fullHref}
                               className={cn(
-                                "flex items-center gap-3 rounded-md py-2 text-sm font-medium hover:bg-muted",
-                                isActive
-                                  ? "bg-background/80"
-                                  : "text-muted-foreground hover:text-accent-foreground",
+                                "menu-item group justify-center",
+                                isActive ? "menu-item-active" : "menu-item-inactive"
                               )}
                             >
-                              <span className="flex size-full items-center justify-center">
-                                <Icon className="size-5" />
+                              <span className={isActive ? "menu-item-icon-active" : "menu-item-icon-inactive"}>
+                                <Icon className="h-5 w-5" />
                               </span>
                             </Link>
                           </TooltipTrigger>
@@ -227,241 +297,46 @@ export function EventSidebar({ currentEvent, events, locale }: EventSidebarProps
                           </TooltipContent>
                         </Tooltip>
                       )}
-                    </Fragment>
+                    </li>
                   );
                 })}
-              </section>
-            ))}
-
-            {/* Separator before global nav */}
-            <Separator className="my-2" />
-
-            {/* Global Navigation */}
-            <section className="flex flex-col gap-0.5">
-              {isSidebarExpanded && (
-                <p className="text-xs text-muted-foreground rtl:text-end">
-                  {getTitle("navigation.account", "ACCOUNT")}
-                </p>
-              )}
-              {globalNavItems.map((item) => {
-                const Icon = Icons[item.icon as keyof typeof Icons] || Icons.arrowRight;
-                const itemTitle = getTitle(item.titleKey, item.title);
-                const fullHref = `/${locale}${item.href}`;
-                const isActive = isGlobalActive(item.href);
-
-                return (
-                  <Fragment key={`global-${item.title}`}>
-                    {isSidebarExpanded ? (
-                      <Link
-                        href={fullHref}
-                        className={cn(
-                          "flex items-center gap-3 rounded-md p-2 text-sm font-medium hover:bg-muted rtl:flex-row-reverse",
-                          isActive
-                            ? "bg-background/80"
-                            : "text-muted-foreground hover:text-accent-foreground",
-                        )}
-                      >
-                        <Icon className="size-5 shrink-0" />
-                        {itemTitle}
-                      </Link>
-                    ) : (
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Link
-                            href={fullHref}
-                            className={cn(
-                              "flex items-center gap-3 rounded-md py-2 text-sm font-medium hover:bg-muted",
-                              isActive
-                                ? "bg-background/80"
-                                : "text-muted-foreground hover:text-accent-foreground",
-                            )}
-                          >
-                            <span className="flex size-full items-center justify-center">
-                              <Icon className="size-5" />
-                            </span>
-                          </Link>
-                        </TooltipTrigger>
-                        <TooltipContent side={isRTL ? "left" : "right"}>
-                          {itemTitle}
-                        </TooltipContent>
-                      </Tooltip>
-                    )}
-                  </Fragment>
-                );
-              })}
-            </section>
+              </ul>
+            </div>
           </nav>
-        </ScrollArea>
 
-        {/* Fixed Footer - Upgrade Card */}
-        <div className="shrink-0 p-4">
-          {isSidebarExpanded ? <UpgradeCard /> : null}
+          {/* Upgrade Card */}
+          {(effectivelyExpanded || isMobileOpen) && (
+            <div className="mt-auto pt-6">
+              <UpgradeCard />
+            </div>
+          )}
         </div>
       </aside>
     </TooltipProvider>
   );
 }
 
-export function MobileSheetEventSidebar({ currentEvent, events, locale }: EventSidebarProps) {
-  const path = usePathname();
-  const [open, setOpen] = useState(false);
-  const { isSm, isMobile } = useMediaQuery();
+// Mobile header button to toggle sidebar
+export function MobileSidebarEventToggle() {
+  const { isMobileOpen, toggleMobileSidebar } = useSidebar();
   const t = useTranslations();
-  const isRTL = locale === "he";
-
-  // Helper function for translations
-  const getTitle = (titleKey?: string, fallback?: string) => {
-    if (!titleKey) return fallback || "";
-    try {
-      const parts = titleKey.split(".");
-      if (parts.length === 2) {
-        return t(`${parts[0]}.${parts[1]}` as any) || fallback;
-      }
-      return fallback || "";
-    } catch {
-      return fallback || "";
-    }
-  };
-
-  // Check if current path matches the event sub-page
-  const isSubPageActive = (subPage: string) => {
-    if (!path) return false;
-    const eventBasePath = `/${locale}/events/${currentEvent.id}`;
-
-    if (subPage === "") {
-      return path === eventBasePath || path === `${eventBasePath}/`;
-    }
-
-    return path.startsWith(`${eventBasePath}${subPage}`);
-  };
-
-  // Check if path matches global item
-  const isGlobalActive = (href: string) => {
-    if (!path) return false;
-    return path.includes(href);
-  };
-
-  if (isSm || isMobile) {
-    return (
-      <Sheet open={open} onOpenChange={setOpen}>
-        <SheetTrigger asChild>
-          <Button
-            variant="outline"
-            size="icon"
-            className="size-9 shrink-0 md:hidden"
-          >
-            <Menu className="size-5" />
-            <span className="sr-only">{t("common.menu")}</span>
-          </Button>
-        </SheetTrigger>
-        <SheetContent side={isRTL ? "right" : "left"} className="flex h-full flex-col p-0">
-          <SheetTitle className="sr-only">{t("common.menu")}</SheetTitle>
-
-          {/* Fixed Header - Logo */}
-          <div className="shrink-0 p-6 pb-0">
-            <Link
-              href={`/${locale}/dashboard`}
-              className="flex items-center"
-              onClick={() => setOpen(false)}
-            >
-              <AppLogo size="lg" />
-            </Link>
-
-            {/* Event Switcher */}
-            <div className="mt-4">
-              <EventSwitcher
-                currentEvent={currentEvent}
-                events={events}
-                locale={locale}
-                expanded={true}
-                onEventChange={() => setOpen(false)}
-              />
-            </div>
-          </div>
-
-          {/* Scrollable Navigation */}
-          <ScrollArea className="flex-1 min-h-0">
-            <nav className="flex flex-col gap-6 p-6 text-lg font-medium">
-              {eventNavSections.map((section) => (
-                <section
-                  key={section.title}
-                  className="flex flex-col gap-0.5"
-                >
-                  <p className="text-xs text-muted-foreground rtl:text-end">
-                    {getTitle(section.titleKey, section.title)}
-                  </p>
-
-                  {section.items.map((item) => {
-                    const Icon = Icons[item.icon as keyof typeof Icons] || Icons.arrowRight;
-                    const itemTitle = getTitle(item.titleKey, item.title);
-                    const fullHref = `/${locale}/events/${currentEvent.id}${item.href}`;
-                    const isActive = isSubPageActive(item.href);
-
-                    return (
-                      <Link
-                        key={`mobile-link-${item.title}`}
-                        onClick={() => setOpen(false)}
-                        href={fullHref}
-                        className={cn(
-                          "flex items-center gap-3 rounded-md p-2 text-sm font-medium hover:bg-muted rtl:flex-row-reverse",
-                          isActive
-                            ? "bg-background/80"
-                            : "text-muted-foreground hover:text-accent-foreground",
-                        )}
-                      >
-                        <Icon className="size-5 shrink-0" />
-                        {itemTitle}
-                      </Link>
-                    );
-                  })}
-                </section>
-              ))}
-
-              {/* Separator before global nav */}
-              <Separator className="my-2" />
-
-              {/* Global Navigation */}
-              <section className="flex flex-col gap-0.5">
-                <p className="text-xs text-muted-foreground rtl:text-end">
-                  {getTitle("navigation.account", "ACCOUNT")}
-                </p>
-                {globalNavItems.map((item) => {
-                  const Icon = Icons[item.icon as keyof typeof Icons] || Icons.arrowRight;
-                  const itemTitle = getTitle(item.titleKey, item.title);
-                  const fullHref = `/${locale}${item.href}`;
-                  const isActive = isGlobalActive(item.href);
-
-                  return (
-                    <Link
-                      key={`mobile-global-${item.title}`}
-                      onClick={() => setOpen(false)}
-                      href={fullHref}
-                      className={cn(
-                        "flex items-center gap-3 rounded-md p-2 text-sm font-medium hover:bg-muted rtl:flex-row-reverse",
-                        isActive
-                          ? "bg-background/80"
-                          : "text-muted-foreground hover:text-accent-foreground",
-                      )}
-                    >
-                      <Icon className="size-5 shrink-0" />
-                      {itemTitle}
-                    </Link>
-                  );
-                })}
-              </section>
-            </nav>
-          </ScrollArea>
-
-          {/* Fixed Footer - Upgrade Card */}
-          <div className="shrink-0 p-6 pt-2">
-            <UpgradeCard />
-          </div>
-        </SheetContent>
-      </Sheet>
-    );
-  }
 
   return (
-    <div className="flex size-9 animate-pulse rounded-lg bg-muted md:hidden" />
+    <button
+      className="flex items-center justify-center w-10 h-10 text-gray-500 border border-gray-200 rounded-lg z-50 dark:border-gray-800 md:hidden dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800"
+      onClick={toggleMobileSidebar}
+      aria-label={t("common.menu")}
+    >
+      {isMobileOpen ? (
+        <Icons.close className="h-5 w-5" />
+      ) : (
+        <Icons.menu className="h-4 w-4" />
+      )}
+    </button>
   );
+}
+
+// Compatibility export for existing code
+export function MobileSheetEventSidebar({ currentEvent, events, locale }: EventSidebarProps) {
+  return <MobileSidebarEventToggle />;
 }

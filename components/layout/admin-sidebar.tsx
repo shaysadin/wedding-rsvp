@@ -76,7 +76,7 @@ export function AdminSidebar({ locale }: AdminSidebarProps) {
       )}
     >
       {/* Fixed Header - Logo */}
-      <div className="flex h-14 shrink-0 items-center justify-between px-4 lg:h-[60px]">
+      <div className="flex h-14 shrink-0 items-center justify-between px-4 lg:h-[61px]">
         <Link href={`/${locale}/admin`} className="flex items-center">
           <AppLogo size="md" />
         </Link>

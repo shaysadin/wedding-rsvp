@@ -1,20 +1,14 @@
 import { redirect, notFound } from "next/navigation";
 import { getLocale } from "next-intl/server";
 import { UserRole } from "@prisma/client";
-import Link from "next/link";
-import { Home } from "lucide-react";
 
 import { getCurrentUser } from "@/lib/session";
 import { prisma } from "@/lib/db";
 import { EventProvider, EventOption } from "@/contexts/event-context";
 import { EventSidebar } from "@/components/layout/event-sidebar";
-import { EventMobileHeader } from "@/components/layout/event-mobile-header";
 import { EventMobileBottomNav } from "@/components/layout/event-mobile-bottom-nav";
-import { SearchCommand } from "@/components/dashboard/search-command";
-import { UserAccountNav } from "@/components/layout/user-account-nav";
-import { Button } from "@/components/ui/button";
-import MaxWidthWrapper from "@/components/shared/max-width-wrapper";
-import { sidebarLinks } from "@/config/dashboard";
+import { EventMainWrapper } from "@/components/layout/event-main-wrapper";
+import { EventHeader } from "@/components/layout/event-header";
 
 interface EventsLayoutProps {
   children: React.ReactNode;
@@ -77,10 +71,14 @@ export default async function EventsLayout({ children, params }: EventsLayoutPro
     venue: e.venue,
   }));
 
+  const isRTL = locale === "he";
+
   return (
     <EventProvider event={currentEvent} events={events} locale={locale}>
-      {/* This layout is nested inside the protected layout's app-shell */}
-      <div className="app-shell flex w-full bg-sidebar">
+      <div
+        className="app-shell flex w-full h-screen overflow-hidden bg-gray-50 dark:bg-gray-900"
+        dir={isRTL ? "rtl" : "ltr"}
+      >
         {/* Desktop Sidebar */}
         <EventSidebar
           currentEvent={currentEvent}
@@ -88,38 +86,15 @@ export default async function EventsLayout({ children, params }: EventsLayoutPro
           locale={locale}
         />
 
-        <div className="flex min-h-0 flex-1 flex-col overflow-hidden md:rounded-xl md:border bg-background md:shadow-md md:p-2 md:m-3">
-          {/* Desktop Header */}
-          <header className="hidden md:flex shrink-0 h-14 items-center border-b lg:h-[60px] px-4 gap-4">
-            <Button variant="ghost" size="icon" asChild className="size-9 shrink-0">
-              <Link href={`/${locale}/dashboard`}>
-                <Home className="size-5" />
-                <span className="sr-only">Dashboard</span>
-              </Link>
-            </Button>
-            <div className="flex-1" />
-            <div className="w-72 lg:w-96">
-              <SearchCommand links={sidebarLinks} fullWidth />
-            </div>
-            <div className="flex-1" />
-            <div className="shrink-0">
-              <UserAccountNav />
-            </div>
-          </header>
+        <EventMainWrapper isRTL={isRTL}>
+          {/* Header */}
+          <EventHeader locale={locale} />
 
-          {/* Mobile Header */}
-          <EventMobileHeader
-            currentEvent={currentEvent}
-            events={events}
-            locale={locale}
-          />
-
-          <main className="app-shell-content flex min-h-0 flex-1 flex-col md:overflow-hidden">
-            <MaxWidthWrapper className="flex w-full min-h-0 flex-1 pb-[74px] md:pb-0 flex-col gap-4 lg:gap-6">
-              {children}
-            </MaxWidthWrapper>
+          {/* Page Content */}
+          <main className="p-4 mx-auto max-w-[--breakpoint-2xl] md:p-6 w-full pb-[74px] md:pb-6">
+            {children}
           </main>
-        </div>
+        </EventMainWrapper>
 
         {/* Mobile Bottom Navigation */}
         <EventMobileBottomNav eventId={eventId} locale={locale} />

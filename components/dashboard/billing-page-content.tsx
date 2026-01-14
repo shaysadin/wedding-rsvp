@@ -334,12 +334,12 @@ export function BillingPageContent({ userId, subscriptionPlan }: BillingPageCont
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-semibold">{t("title")}</h1>
-        <p className="text-muted-foreground">
-          {t("youAreOn")} <span className="font-medium text-foreground">{isOnFreePlan ? tPlans("free") : subscriptionPlan.title}</span> {t("plan")}. {t("forStandardPlans")}
+      <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03] md:p-6">
+        <h1 className="text-xl font-semibold text-gray-800 dark:text-white/90 sm:text-2xl">{t("title")}</h1>
+        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+          {t("youAreOn")} <span className="font-medium text-gray-800 dark:text-white/90">{isOnFreePlan ? tPlans("free") : subscriptionPlan.title}</span> {t("plan")}. {t("forStandardPlans")}
         </p>
       </div>
 
