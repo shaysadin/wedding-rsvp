@@ -24,6 +24,13 @@ import { prisma } from "@/lib/db";
 import { NotificationResult } from "@/lib/notifications/types";
 import { formatToE164 } from "@/lib/notifications/phone-formatter";
 
+// Get the status callback URL for Twilio message status updates
+function getStatusCallbackUrl(): string | undefined {
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL;
+  if (!appUrl) return undefined;
+  return `${appUrl}/api/twilio/status`;
+}
+
 // Twilio client type
 type TwilioClient = ReturnType<typeof Twilio>;
 
@@ -239,12 +246,26 @@ export async function sendSms(
   isTrialError?: boolean;
 }> {
   try {
-    // Send the message using Twilio's messages.create API
-    const message = await client.messages.create({
+    // Build message params with optional status callback
+    const messageParams: {
+      body: string;
+      from: string;
+      to: string;
+      statusCallback?: string;
+    } = {
       body,
       from: fromNumber,
       to: toNumber,
-    });
+    };
+
+    // Add status callback URL for delivery tracking
+    const statusCallbackUrl = getStatusCallbackUrl();
+    if (statusCallbackUrl) {
+      messageParams.statusCallback = statusCallbackUrl;
+    }
+
+    // Send the message using Twilio's messages.create API
+    const message = await client.messages.create(messageParams);
 
     return {
       success: true,
@@ -309,6 +330,9 @@ export async function sendWhatsApp(
 
     let message;
 
+    // Get status callback URL for delivery tracking
+    const statusCallbackUrl = getStatusCallbackUrl();
+
     if (options?.contentSid) {
       // Use Content Template (required for WhatsApp Business API outside 24h window)
       console.log(`Using Content Template SID: ${options.contentSid}`);
@@ -326,6 +350,11 @@ export async function sendWhatsApp(
         messageParams.contentVariables = JSON.stringify(options.contentVariables);
       }
 
+      // Add status callback for delivery tracking
+      if (statusCallbackUrl) {
+        messageParams.statusCallback = statusCallbackUrl;
+      }
+
       message = await client.messages.create(messageParams);
     } else {
       // Use free-form body (only works within 24h session window)
@@ -333,11 +362,18 @@ export async function sendWhatsApp(
       console.log("-".repeat(60));
       console.log("⚠️  Using free-form message - this only works within 24h session window");
 
-      message = await client.messages.create({
+      const messageParams: any = {
         body,
         from,
         to,
-      });
+      };
+
+      // Add status callback for delivery tracking
+      if (statusCallbackUrl) {
+        messageParams.statusCallback = statusCallbackUrl;
+      }
+
+      message = await client.messages.create(messageParams);
     }
 
     console.log("✅ TWILIO API RESPONSE:");
@@ -419,6 +455,7 @@ export async function sendWhatsAppWithMedia(
       to: string;
       mediaUrl: string[];
       body?: string;
+      statusCallback?: string;
     } = {
       from,
       to,
@@ -427,6 +464,12 @@ export async function sendWhatsAppWithMedia(
 
     if (body) {
       messageParams.body = body;
+    }
+
+    // Add status callback for delivery tracking
+    const statusCallbackUrl = getStatusCallbackUrl();
+    if (statusCallbackUrl) {
+      messageParams.statusCallback = statusCallbackUrl;
     }
 
     const message = await client.messages.create(messageParams);

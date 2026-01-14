@@ -806,3 +806,199 @@ export async function sendInteractiveReminder(guestId: string, includeImage: boo
     return { error: "Failed to send interactive reminder" };
   }
 }
+
+/**
+ * Get failed/undelivered notifications for an event
+ */
+export async function getFailedNotifications(eventId: string) {
+  try {
+    const user = await getCurrentUser();
+
+    if (!user || !user.roles?.includes(UserRole.ROLE_WEDDING_OWNER)) {
+      return { error: "Unauthorized" };
+    }
+
+    // Verify event ownership
+    const event = await prisma.weddingEvent.findFirst({
+      where: { id: eventId, ownerId: user.id },
+      select: { id: true },
+    });
+
+    if (!event) {
+      return { error: "Event not found" };
+    }
+
+    // Fetch failed and undelivered notifications
+    const failedNotifications = await prisma.notificationLog.findMany({
+      where: {
+        guest: {
+          weddingEventId: eventId,
+        },
+        status: { in: ["FAILED", "UNDELIVERED"] },
+      },
+      include: {
+        guest: {
+          select: {
+            id: true,
+            name: true,
+            phoneNumber: true,
+            slug: true,
+          },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    return {
+      success: true,
+      notifications: failedNotifications.map((n) => ({
+        id: n.id,
+        guestId: n.guestId,
+        guestName: n.guest.name,
+        guestPhone: n.guest.phoneNumber,
+        guestSlug: n.guest.slug,
+        type: n.type,
+        channel: n.channel,
+        status: n.status,
+        errorCode: n.errorCode,
+        errorMessage: n.errorMessage,
+        twilioStatus: n.twilioStatus,
+        sentAt: n.sentAt,
+        createdAt: n.createdAt,
+      })),
+    };
+  } catch (error) {
+    console.error("Error fetching failed notifications:", error);
+    return { error: "Failed to fetch failed notifications" };
+  }
+}
+
+/**
+ * Get count of failed notifications for an event (for badge)
+ */
+export async function getFailedNotificationsCount(eventId: string) {
+  try {
+    const user = await getCurrentUser();
+
+    if (!user || !user.roles?.includes(UserRole.ROLE_WEDDING_OWNER)) {
+      return { error: "Unauthorized" };
+    }
+
+    // Verify event ownership
+    const event = await prisma.weddingEvent.findFirst({
+      where: { id: eventId, ownerId: user.id },
+      select: { id: true },
+    });
+
+    if (!event) {
+      return { error: "Event not found" };
+    }
+
+    const count = await prisma.notificationLog.count({
+      where: {
+        guest: {
+          weddingEventId: eventId,
+        },
+        status: { in: ["FAILED", "UNDELIVERED"] },
+      },
+    });
+
+    return { success: true, count };
+  } catch (error) {
+    console.error("Error counting failed notifications:", error);
+    return { error: "Failed to count failed notifications" };
+  }
+}
+
+/**
+ * Retry a failed notification
+ */
+export async function retryFailedNotification(notificationId: string) {
+  try {
+    const user = await getCurrentUser();
+
+    if (!user || !user.roles?.includes(UserRole.ROLE_WEDDING_OWNER)) {
+      return { error: "Unauthorized" };
+    }
+
+    // Fetch the failed notification with guest and event
+    const notification = await prisma.notificationLog.findUnique({
+      where: { id: notificationId },
+      include: {
+        guest: {
+          include: {
+            weddingEvent: true,
+          },
+        },
+      },
+    });
+
+    if (!notification) {
+      return { error: "Notification not found" };
+    }
+
+    // Verify event ownership
+    if (notification.guest.weddingEvent.ownerId !== user.id) {
+      return { error: "Unauthorized" };
+    }
+
+    // Check if it's actually a failed notification
+    if (notification.status !== "FAILED" && notification.status !== "UNDELIVERED") {
+      return { error: "This notification is not in a failed state" };
+    }
+
+    const guest = notification.guest;
+    const event = notification.guest.weddingEvent;
+
+    // Get the notification service
+    const notificationService = getNotificationService();
+
+    // Determine which send method to use based on the original type
+    let result;
+    switch (notification.type) {
+      case "INVITE":
+        result = await notificationService.sendInvite(guest, event, notification.channel);
+        break;
+      case "REMINDER":
+        result = await notificationService.sendReminder(guest, event, notification.channel);
+        break;
+      case "INTERACTIVE_INVITE":
+        result = await notificationService.sendInteractiveInvite(guest, event);
+        break;
+      case "INTERACTIVE_REMINDER":
+        result = await notificationService.sendInteractiveReminder(guest, event);
+        break;
+      default:
+        // For other types, try a basic invite
+        result = await notificationService.sendInvite(guest, event, notification.channel);
+    }
+
+    // Create a new notification log for the retry
+    await prisma.notificationLog.create({
+      data: {
+        guestId: guest.id,
+        type: notification.type,
+        channel: result.channel || notification.channel,
+        status: result.status,
+        providerResponse: result.providerResponse || null,
+        sentAt: result.success ? new Date() : null,
+      },
+    });
+
+    // Update usage tracking if successful
+    if (result.success && result.channel) {
+      await checkAndUpdateUsage(user.id, result.channel, 1);
+    }
+
+    revalidatePath(`/dashboard/events/${event.id}`);
+
+    if (!result.success && result.error) {
+      return { error: result.error };
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error("Error retrying notification:", error);
+    return { error: "Failed to retry notification" };
+  }
+}

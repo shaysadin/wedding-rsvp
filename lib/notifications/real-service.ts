@@ -12,6 +12,13 @@
 import { Guest, WeddingEvent, NotificationChannel, NotificationStatus } from "@prisma/client";
 import { env } from "@/env.mjs";
 import { prisma } from "@/lib/db";
+
+// Get the status callback URL for Twilio message status updates
+function getStatusCallbackUrl(): string | undefined {
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL;
+  if (!appUrl) return undefined;
+  return `${appUrl}/api/twilio/status`;
+}
 import {
   NotificationService,
   NotificationResult,
@@ -402,12 +409,24 @@ export class TwilioNotificationService implements NotificationService {
 
     try {
       // Build message options
-      const messageOptions = {
+      const messageOptions: {
+        from: string;
+        to: string;
+        contentSid: string;
+        contentVariables: string;
+        statusCallback?: string;
+      } = {
         from: `whatsapp:${fromNumber}`,
         to: `whatsapp:${phoneNumber}`,
         contentSid: contentSid,
         contentVariables: JSON.stringify(contentVariables),
       };
+
+      // Add status callback for delivery tracking
+      const statusCallbackUrl = getStatusCallbackUrl();
+      if (statusCallbackUrl) {
+        messageOptions.statusCallback = statusCallbackUrl;
+      }
 
       // Send using Twilio API
       const response = await client.messages.create(messageOptions);
@@ -501,12 +520,24 @@ export class TwilioNotificationService implements NotificationService {
 
     try {
       // Build message options
-      const messageOptions = {
+      const messageOptions: {
+        from: string;
+        to: string;
+        contentSid: string;
+        contentVariables: string;
+        statusCallback?: string;
+      } = {
         from: `whatsapp:${fromNumber}`,
         to: `whatsapp:${phoneNumber}`,
         contentSid: contentSid,
         contentVariables: JSON.stringify(contentVariables),
       };
+
+      // Add status callback for delivery tracking
+      const statusCallbackUrl = getStatusCallbackUrl();
+      if (statusCallbackUrl) {
+        messageOptions.statusCallback = statusCallbackUrl;
+      }
 
       // Send using Twilio API
       const response = await client.messages.create(messageOptions);

@@ -253,6 +253,10 @@ model NotificationLog {
   sentAt           DateTime?           @map("sent_at")
   deliveredAt      DateTime?           @map("delivered_at")
   createdAt        DateTime            @default(now()) @map("created_at")
+  // Delivery status tracking fields
+  errorCode        Int?                @map("error_code")
+  errorMessage     String?             @map("error_message")
+  twilioStatus     String?             @map("twilio_status")
   guest            Guest               @relation(fields: [guestId], references: [id], onDelete: Cascade)
 
   @@index([guestId])
@@ -1006,6 +1010,7 @@ enum NotificationStatus {
   SENT
   DELIVERED
   FAILED
+  UNDELIVERED // Message sent but delivery failed (e.g., 63049, 63024)
 }
 
 enum BulkJobStatus {

@@ -14,9 +14,9 @@ import { InvitationImageUpload } from "@/components/events/invitation-image-uplo
 import { DuplicatePhoneWarning } from "@/components/guests/duplicate-phone-warning";
 import { PageFadeIn } from "@/components/shared/page-fade-in";
 
-// Lazy load the heavy GuestsTable component
-const GuestsTable = dynamic(
-  () => import("@/components/guests/guests-table").then((mod) => mod.GuestsTable),
+// Lazy load the heavy GuestsPageTabs component
+const GuestsPageTabs = dynamic(
+  () => import("@/components/guests/guests-page-tabs").then((mod) => mod.GuestsPageTabs),
   {
     loading: () => <GuestsTableSkeleton />,
   }
@@ -24,7 +24,7 @@ const GuestsTable = dynamic(
 
 interface GuestsPageProps {
   params: Promise<{ eventId: string }>;
-  searchParams: Promise<{ filter?: string }>;
+  searchParams: Promise<{ filter?: string; tab?: string }>;
 }
 
 export default async function GuestsPage({ params, searchParams }: GuestsPageProps) {
@@ -92,9 +92,9 @@ export default async function GuestsPage({ params, searchParams }: GuestsPagePro
       {/* Duplicate Phone Warning */}
       <DuplicatePhoneWarning eventId={event.id} />
 
-      {/* Guest Table */}
+      {/* Guest Table with Failed Messages Tab */}
       <div className="md:min-h-[500px] md:flex-1">
-        <GuestsTable
+        <GuestsPageTabs
           guests={event.guests}
           eventId={event.id}
           initialFilter={activeFilter}

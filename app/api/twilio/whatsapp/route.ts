@@ -470,16 +470,16 @@ async function sendGuestCountList(guestId: string, toNumber: string) {
       1: guestId, // Include guest ID in the list for callback parsing
     });
 
-    await client.messages.create({
+    const response = await client.messages.create({
       from: `whatsapp:${fromNumber}`,
       to: toNumber.startsWith("whatsapp:") ? toNumber : `whatsapp:${toNumber}`,
       contentSid: settings.whatsappGuestCountListContentSid,
       contentVariables: contentVariables,
     });
 
-    console.log(`Guest count list sent to ${toNumber}`);
+    console.log(`Guest count list sent to ${toNumber}: ${response.sid}`);
 
-    // Log the notification
+    // Log the notification WITH the message SID for proper guest lookup on response
     const guest = await prisma.guest.findUnique({ where: { id: guestId } });
     if (guest) {
       await prisma.notificationLog.create({
@@ -489,6 +489,11 @@ async function sendGuestCountList(guestId: string, toNumber: string) {
           channel: "WHATSAPP",
           status: "SENT",
           sentAt: new Date(),
+          // CRITICAL: Store the message SID so we can find the correct guest when they respond
+          providerResponse: JSON.stringify({
+            messageId: response.sid,
+            status: response.status,
+          }),
         },
       });
     }
@@ -600,15 +605,15 @@ async function sendConfirmationMessage(
     console.log("===================================");
 
     // Send simple text message (no template needed - within 24h reply window)
-    await client.messages.create({
+    const response = await client.messages.create({
       from: `whatsapp:${fromNumber}`,
       to: toNumber.startsWith("whatsapp:") ? toNumber : `whatsapp:${toNumber}`,
       body: message,
     });
 
-    console.log(`Confirmation message sent to ${toNumber} (${status})`);
+    console.log(`Confirmation message sent to ${toNumber} (${status}): ${response.sid}`);
 
-    // Log the notification
+    // Log the notification with message SID for delivery tracking
     await prisma.notificationLog.create({
       data: {
         guestId: guest.id,
@@ -616,6 +621,10 @@ async function sendConfirmationMessage(
         channel: "WHATSAPP",
         status: "SENT",
         sentAt: new Date(),
+        providerResponse: JSON.stringify({
+          messageId: response.sid,
+          status: response.status,
+        }),
       },
     });
   } catch (error) {

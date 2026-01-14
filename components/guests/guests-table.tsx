@@ -78,9 +78,19 @@ const statusColors: Record<RsvpStatus, string> = {
 
 // Helper to get message status from notification logs and call logs
 // Status is based on the MOST RECENT interaction
-type MessageStatus = "not_sent" | "invite_sent" | "reminder_1" | "reminder_2_plus" | "called";
+type MessageStatus = "not_sent" | "invite_sent" | "reminder_1" | "reminder_2_plus" | "called" | "has_failed";
+
+// Helper to check if guest has any failed/undelivered messages
+function hasFailedMessages(notificationLogs: NotificationLog[]): boolean {
+  return notificationLogs.some(log =>
+    log.status === NotificationStatus.FAILED || log.status === NotificationStatus.UNDELIVERED
+  );
+}
 
 function getMessageStatus(notificationLogs: NotificationLog[], vapiCallLogs?: VapiCallLog[]): MessageStatus {
+  // Check for failed messages first
+  const hasFailed = hasFailedMessages(notificationLogs);
+
   // Get successfully sent message logs
   const sentLogs = notificationLogs.filter(log =>
     log.status === NotificationStatus.SENT || log.status === NotificationStatus.DELIVERED
@@ -91,8 +101,12 @@ function getMessageStatus(notificationLogs: NotificationLog[], vapiCallLogs?: Va
     call.status === "COMPLETED" || call.status === "NO_ANSWER" || call.status === "BUSY"
   );
 
-  // If no interactions at all, return not_sent
+  // If no successful interactions at all
   if (sentLogs.length === 0 && completedCalls.length === 0) {
+    // If there are failed messages, show that status
+    if (hasFailed) {
+      return "has_failed";
+    }
     return "not_sent";
   }
 
@@ -159,6 +173,7 @@ const messageStatusConfig: Record<MessageStatus, { label: string; className: str
   reminder_1: { label: "reminder1", className: "bg-purple-500/10 text-purple-500" },
   reminder_2_plus: { label: "reminder2Plus", className: "bg-orange-500/10 text-orange-500" },
   called: { label: "called", className: "bg-green-500/10 text-green-500" },
+  has_failed: { label: "undelivered", className: "bg-red-500/10 text-red-500" },
 };
 
 export function GuestsTable({ guests, eventId, initialFilter = "all", invitationImageUrl }: GuestsTableProps) {
