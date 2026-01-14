@@ -103,7 +103,7 @@ export function GuestsPageTabs({
 
   return (
     <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full" dir={isRTL ? "rtl" : "ltr"}>
-      <TabsList className={cn("mb-4", isRTL && "flex-row-reverse")}>
+      <TabsList className={cn("mb-4", isRTL && "flex-row")}>
         <TabsTrigger value="guests" className="gap-2">
           {tGuests("title")}
         </TabsTrigger>

@@ -951,7 +951,7 @@ export async function retryFailedNotification(notificationId: string) {
     const event = notification.guest.weddingEvent;
 
     // Get the notification service
-    const notificationService = getNotificationService();
+    const notificationService = await getNotificationService();
 
     // Determine which send method to use based on the original type
     let result;
