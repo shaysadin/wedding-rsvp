@@ -20,7 +20,8 @@
       "Bash(npx tsc:*)",
       "Bash(find:*)",
       "Bash(ls:*)",
-      "Bash(npm install:*)"
+      "Bash(npm install:*)",
+      "Bash(tree:*)"
     ],
     "deny": [],
     "ask": []
