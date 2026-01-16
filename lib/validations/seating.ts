@@ -129,6 +129,30 @@ export const updateVenueBlockRotationSchema = z.object({
   rotation: z.number().int().min(0).max(359),
 });
 
+// ============ AUTO-ARRANGE SCHEMAS ============
+
+export const autoArrangeSchema = z.object({
+  eventId: z.string().min(1, "Event ID is required"),
+  tableSize: z.number().int().min(1).max(20).default(10),
+  tableShape: tableShapeSchema.default("circle"),
+  groupingStrategy: z.enum(["side-then-group", "group-only"]).default("side-then-group"),
+  sideFilter: z.string().optional(), // "all" or specific side
+  groupFilter: z.string().optional(), // "all" or specific group
+  includeRsvpStatus: z.array(z.enum(["ACCEPTED", "PENDING"])).default(["ACCEPTED", "PENDING"]),
+});
+
+// ============ HOSTESS SCHEMAS ============
+
+export const markGuestArrivedSchema = z.object({
+  guestId: z.string().min(1, "Guest ID is required"),
+  tableId: z.string().optional(), // Optional: assign to different table
+});
+
+export const updateGuestTableSchema = z.object({
+  guestId: z.string().min(1, "Guest ID is required"),
+  tableId: z.string().min(1, "Table ID is required"),
+});
+
 // ============ TYPES ============
 
 export type Shape = z.infer<typeof shapeSchema>;
@@ -150,3 +174,7 @@ export type UpdateVenueBlockInput = z.infer<typeof updateVenueBlockSchema>;
 export type UpdateVenueBlockPositionInput = z.infer<typeof updateVenueBlockPositionSchema>;
 export type UpdateVenueBlockSizeInput = z.infer<typeof updateVenueBlockSizeSchema>;
 export type UpdateVenueBlockRotationInput = z.infer<typeof updateVenueBlockRotationSchema>;
+
+export type AutoArrangeInput = z.infer<typeof autoArrangeSchema>;
+export type MarkGuestArrivedInput = z.infer<typeof markGuestArrivedSchema>;
+export type UpdateGuestTableInput = z.infer<typeof updateGuestTableSchema>;

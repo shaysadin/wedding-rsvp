@@ -19,6 +19,9 @@ import {
   updateVenueBlockPositionSchema,
   updateVenueBlockSizeSchema,
   updateVenueBlockRotationSchema,
+  autoArrangeSchema,
+  markGuestArrivedSchema,
+  updateGuestTableSchema,
   type CreateTableInput,
   type UpdateTableInput,
   type UpdateTablePositionInput,
@@ -32,6 +35,9 @@ import {
   type UpdateVenueBlockPositionInput,
   type UpdateVenueBlockSizeInput,
   type UpdateVenueBlockRotationInput,
+  type AutoArrangeInput,
+  type MarkGuestArrivedInput,
+  type UpdateGuestTableInput,
 } from "@/lib/validations/seating";
 
 // ============ HELPER FUNCTIONS ============
@@ -1103,5 +1109,524 @@ export async function getEventGuestsForHostess(eventId: string) {
   } catch (error) {
     console.error("Error fetching guests for hostess view:", error);
     return { error: "Failed to fetch guest list" };
+  }
+}
+
+// ============ AUTO-ARRANGE FEATURE ============
+
+/**
+ * Auto-arrange guests into tables based on filters and grouping strategy
+ * This will DELETE all existing tables and create new ones
+ */
+export async function autoArrangeTables(input: AutoArrangeInput) {
+  try {
+    const user = await getCurrentUser();
+
+    const hasWeddingOwnerRole = user?.roles?.includes(UserRole.ROLE_WEDDING_OWNER);
+    if (!user || !hasWeddingOwnerRole) {
+      return { error: "Unauthorized" };
+    }
+
+    const validatedData = autoArrangeSchema.parse(input);
+
+    // Verify event ownership
+    const event = await prisma.weddingEvent.findFirst({
+      where: { id: validatedData.eventId, ownerId: user.id },
+    });
+
+    if (!event) {
+      return { error: "Event not found" };
+    }
+
+    // Build guest filter
+    const guestWhere: Record<string, unknown> = {
+      weddingEventId: validatedData.eventId,
+    };
+
+    // Filter by side
+    if (validatedData.sideFilter && validatedData.sideFilter !== "all") {
+      guestWhere.side = validatedData.sideFilter;
+    }
+
+    // Filter by group
+    if (validatedData.groupFilter && validatedData.groupFilter !== "all") {
+      guestWhere.groupName = validatedData.groupFilter;
+    }
+
+    // Get guests matching filters
+    const guests = await prisma.guest.findMany({
+      where: guestWhere,
+      include: { rsvp: true },
+    });
+
+    // Filter by RSVP status
+    const filteredGuests = guests.filter((guest) => {
+      const status = guest.rsvp?.status || "PENDING";
+      return validatedData.includeRsvpStatus.includes(status as "ACCEPTED" | "PENDING");
+    });
+
+    if (filteredGuests.length === 0) {
+      return { error: "No guests match the selected filters" };
+    }
+
+    // Sorting has two purposes:
+    // 1. TABLE ORGANIZATION: Group → Side (determines which guests sit together)
+    // 2. SEATING PRIORITY: RSVP Status (Approved > Pending) - confirmed guests get priority seating
+    //
+    // Within each Group-Side combination, approved guests are seated first
+    const sortedGuests = [...filteredGuests].sort((a, b) => {
+      // 1. Sort by group name (primary - table organization)
+      const groupA = (a.groupName || "zzz_other").toLowerCase();
+      const groupB = (b.groupName || "zzz_other").toLowerCase();
+      if (groupA !== groupB) return groupA.localeCompare(groupB);
+
+      // 2. Sort by side (secondary - table organization)
+      const sideA = (a.side || "zzz_other").toLowerCase();
+      const sideB = (b.side || "zzz_other").toLowerCase();
+      if (sideA !== sideB) return sideA.localeCompare(sideB);
+
+      // 3. Sort by RSVP status (seating priority - ACCEPTED guests seated first)
+      const statusA = a.rsvp?.status || "PENDING";
+      const statusB = b.rsvp?.status || "PENDING";
+      const statusOrder: Record<string, number> = { ACCEPTED: 0, PENDING: 1, DECLINED: 2 };
+      if (statusOrder[statusA] !== statusOrder[statusB]) {
+        return statusOrder[statusA] - statusOrder[statusB];
+      }
+
+      // 4. Sort by name (alphabetically)
+      return a.name.localeCompare(b.name);
+    });
+
+    // Delete all existing tables for this event
+    await prisma.weddingTable.deleteMany({
+      where: { weddingEventId: validatedData.eventId },
+    });
+
+    // Group guests based on strategy
+    // Strategy: Group → Side (guests with same group stay together, then by side)
+    type GuestGroup = { key: string; guests: typeof sortedGuests };
+    const groups: GuestGroup[] = [];
+
+    if (validatedData.groupingStrategy === "side-then-group") {
+      // Group by group first, then by side within each group
+      // This keeps group members together while respecting sides
+      const byKey = new Map<string, typeof sortedGuests>();
+
+      for (const guest of sortedGuests) {
+        const group = guest.groupName || "other";
+        const side = guest.side || "other";
+        const key = `${group}-${side}`;
+
+        if (!byKey.has(key)) {
+          byKey.set(key, []);
+        }
+        byKey.get(key)!.push(guest);
+      }
+
+      for (const [key, guestList] of byKey) {
+        groups.push({ key, guests: guestList });
+      }
+    } else {
+      // Group by group only
+      const byGroup = new Map<string, typeof sortedGuests>();
+
+      for (const guest of sortedGuests) {
+        const group = guest.groupName || "other";
+
+        if (!byGroup.has(group)) {
+          byGroup.set(group, []);
+        }
+        byGroup.get(group)!.push(guest);
+      }
+
+      for (const [key, guestList] of byGroup) {
+        groups.push({ key, guests: guestList });
+      }
+    }
+
+    // Hebrew translations for sides and groups
+    const hebrewSideLabels: Record<string, string> = {
+      bride: "כלה",
+      groom: "חתן",
+      both: "שניהם",
+      other: "אחר",
+    };
+
+    const hebrewGroupLabels: Record<string, string> = {
+      family: "משפחה",
+      friends: "חברים",
+      work: "עבודה",
+      other: "אחר",
+    };
+
+    // Helper to get Hebrew label for a key
+    function getHebrewLabel(key: string, strategy: string): string {
+      if (strategy === "side-then-group") {
+        // Key format: "group-side" (e.g., "family-bride")
+        const [group, side] = key.split("-");
+        const groupLabel = hebrewGroupLabels[group.toLowerCase()] || group;
+        const sideLabel = hebrewSideLabels[side.toLowerCase()] || side;
+        return `${groupLabel} - ${sideLabel}`;
+      } else {
+        // Key is just the group
+        return hebrewGroupLabels[key.toLowerCase()] || key;
+      }
+    }
+
+    // Create tables and assign guests
+    let tableNumber = 1;
+    let tablesCreated = 0;
+    let guestsSeated = 0;
+
+    for (const group of groups) {
+      const guestsInGroup = group.guests;
+      let currentIndex = 0;
+      let groupTableNumber = 1;
+
+      while (currentIndex < guestsInGroup.length) {
+        // Calculate how many guests fit in this table
+        let seatsUsed = 0;
+        const guestsForTable: string[] = [];
+
+        while (currentIndex < guestsInGroup.length && seatsUsed < validatedData.tableSize) {
+          const guest = guestsInGroup[currentIndex];
+          const seats = getSeatsUsed(guest);
+
+          // Allow one more guest even if slightly over capacity
+          if (seatsUsed + seats <= validatedData.tableSize || guestsForTable.length === 0) {
+            guestsForTable.push(guest.id);
+            seatsUsed += seats;
+            currentIndex++;
+          } else {
+            break;
+          }
+        }
+
+        if (guestsForTable.length > 0) {
+          // Create table with Hebrew name format: "1 - קבוצה" or "1 - צד - קבוצה"
+          const hebrewLabel = getHebrewLabel(group.key, validatedData.groupingStrategy);
+          const tableName = `${tableNumber} - ${hebrewLabel}`;
+
+          const table = await prisma.weddingTable.create({
+            data: {
+              weddingEventId: validatedData.eventId,
+              name: tableName,
+              capacity: validatedData.tableSize,
+              shape: validatedData.tableShape,
+            },
+          });
+
+          // Assign guests to this table
+          await prisma.tableAssignment.createMany({
+            data: guestsForTable.map((guestId) => ({
+              tableId: table.id,
+              guestId,
+            })),
+          });
+
+          tablesCreated++;
+          guestsSeated += guestsForTable.length;
+          tableNumber++;
+          groupTableNumber++;
+        }
+      }
+    }
+
+    revalidatePath(`/dashboard/events/${validatedData.eventId}/seating`);
+
+    return {
+      success: true,
+      tablesCreated,
+      guestsSeated,
+    };
+  } catch (error) {
+    console.error("Error auto-arranging tables:", error);
+    return { error: "Failed to auto-arrange tables" };
+  }
+}
+
+// ============ HOSTESS FEATURES ============
+
+/**
+ * Get enhanced hostess data with arrival status and table details
+ * Public route - no auth required
+ */
+export async function getHostessData(eventId: string) {
+  try {
+    // Verify event exists and is active
+    const event = await prisma.weddingEvent.findFirst({
+      where: {
+        id: eventId,
+        isActive: true,
+      },
+      select: {
+        id: true,
+        title: true,
+        dateTime: true,
+        location: true,
+        venue: true,
+      },
+    });
+
+    if (!event) {
+      return { error: "Event not found" };
+    }
+
+    // Get all tables with their assignments
+    const tables = await prisma.weddingTable.findMany({
+      where: { weddingEventId: eventId },
+      include: {
+        assignments: {
+          include: {
+            guest: {
+              include: {
+                rsvp: true,
+              },
+            },
+          },
+        },
+      },
+      orderBy: { name: "asc" },
+    });
+
+    // Get all accepted guests with their table assignments and arrival status
+    const guests = await prisma.guest.findMany({
+      where: {
+        weddingEventId: eventId,
+        rsvp: {
+          status: "ACCEPTED",
+        },
+      },
+      include: {
+        rsvp: true,
+        tableAssignment: {
+          include: {
+            table: true,
+          },
+        },
+      },
+      orderBy: [{ name: "asc" }],
+    });
+
+    // Transform guests data
+    const guestsWithDetails = guests.map((guest) => ({
+      id: guest.id,
+      name: guest.name,
+      guestCount: guest.rsvp?.guestCount || 1,
+      side: guest.side,
+      groupName: guest.groupName,
+      tableId: guest.tableAssignment?.table?.id || null,
+      tableName: guest.tableAssignment?.table?.name || null,
+      arrivedAt: guest.arrivedAt,
+      arrivedTableId: guest.arrivedTableId,
+      isArrived: !!guest.arrivedAt,
+    }));
+
+    // Transform tables data with occupancy info
+    const tablesWithDetails = tables.map((table) => {
+      const assignedGuests = table.assignments.map((a) => ({
+        id: a.guest.id,
+        name: a.guest.name,
+        guestCount: a.guest.rsvp?.guestCount || 1,
+        side: a.guest.side,
+        groupName: a.guest.groupName,
+        arrivedAt: a.guest.arrivedAt,
+        isArrived: !!a.guest.arrivedAt,
+      }));
+
+      const totalSeats = table.assignments.reduce(
+        (sum, a) => sum + (a.guest.rsvp?.guestCount || 1),
+        0
+      );
+
+      // Count arrived guests (not just arrived count, but total arrived people)
+      const arrivedCount = table.assignments.filter((a) => a.guest.arrivedAt).length;
+      const arrivedPeopleCount = table.assignments
+        .filter((a) => a.guest.arrivedAt)
+        .reduce((sum, a) => sum + (a.guest.rsvp?.guestCount || 1), 0);
+
+      return {
+        id: table.id,
+        name: table.name,
+        capacity: table.capacity,
+        seatsUsed: totalSeats,
+        seatsAvailable: table.capacity - totalSeats,
+        guestCount: table.assignments.length,
+        arrivedCount,
+        arrivedPeopleCount,
+        guests: assignedGuests,
+        isFull: totalSeats >= table.capacity,
+      };
+    });
+
+    // Calculate summary stats
+    const totalGuests = guests.length;
+    const arrivedGuests = guests.filter((g) => g.arrivedAt).length;
+    const totalExpected = guests.reduce((sum, g) => sum + (g.rsvp?.guestCount || 1), 0);
+
+    return {
+      success: true,
+      event,
+      guests: guestsWithDetails,
+      tables: tablesWithDetails,
+      stats: {
+        totalGuests,
+        arrivedGuests,
+        totalExpected,
+        tablesCount: tables.length,
+      },
+    };
+  } catch (error) {
+    console.error("Error fetching hostess data:", error);
+    return { error: "Failed to fetch hostess data" };
+  }
+}
+
+/**
+ * Mark a guest as arrived (public route for hostess)
+ * Auto-assigns to their original table if tableId not provided
+ */
+export async function markGuestArrived(input: MarkGuestArrivedInput) {
+  try {
+    const validatedData = markGuestArrivedSchema.parse(input);
+
+    // Get the guest with their table assignment
+    const guest = await prisma.guest.findFirst({
+      where: { id: validatedData.guestId },
+      include: {
+        tableAssignment: true,
+        weddingEvent: true,
+      },
+    });
+
+    if (!guest) {
+      return { error: "Guest not found" };
+    }
+
+    // Check if event is active
+    if (!guest.weddingEvent.isActive) {
+      return { error: "Event is not active" };
+    }
+
+    // Determine which table to mark as arrived at
+    const tableId = validatedData.tableId || guest.tableAssignment?.tableId || null;
+
+    // Update guest with arrival info
+    await prisma.guest.update({
+      where: { id: validatedData.guestId },
+      data: {
+        arrivedAt: new Date(),
+        arrivedTableId: tableId,
+      },
+    });
+
+    return { success: true };
+  } catch (error) {
+    console.error("Error marking guest as arrived:", error);
+    return { error: "Failed to mark guest as arrived" };
+  }
+}
+
+/**
+ * Unmark a guest as arrived (public route for hostess)
+ */
+export async function unmarkGuestArrived(guestId: string) {
+  try {
+    // Get the guest
+    const guest = await prisma.guest.findFirst({
+      where: { id: guestId },
+      include: { weddingEvent: true },
+    });
+
+    if (!guest) {
+      return { error: "Guest not found" };
+    }
+
+    // Check if event is active
+    if (!guest.weddingEvent.isActive) {
+      return { error: "Event is not active" };
+    }
+
+    // Clear arrival info
+    await prisma.guest.update({
+      where: { id: guestId },
+      data: {
+        arrivedAt: null,
+        arrivedTableId: null,
+      },
+    });
+
+    return { success: true };
+  } catch (error) {
+    console.error("Error unmarking guest as arrived:", error);
+    return { error: "Failed to unmark guest as arrived" };
+  }
+}
+
+/**
+ * Update guest's table assignment from hostess view (public route)
+ * This allows real-time table changes during the event
+ */
+export async function updateGuestTableForHostess(input: UpdateGuestTableInput) {
+  try {
+    const validatedData = updateGuestTableSchema.parse(input);
+
+    // Get the guest with their current assignment
+    const guest = await prisma.guest.findFirst({
+      where: { id: validatedData.guestId },
+      include: {
+        weddingEvent: true,
+        tableAssignment: true,
+      },
+    });
+
+    if (!guest) {
+      return { error: "Guest not found" };
+    }
+
+    // Check if event is active
+    if (!guest.weddingEvent.isActive) {
+      return { error: "Event is not active" };
+    }
+
+    // Verify the new table exists and belongs to the same event
+    const newTable = await prisma.weddingTable.findFirst({
+      where: {
+        id: validatedData.tableId,
+        weddingEventId: guest.weddingEventId,
+      },
+    });
+
+    if (!newTable) {
+      return { error: "Table not found" };
+    }
+
+    // Remove existing assignment if any
+    if (guest.tableAssignment) {
+      await prisma.tableAssignment.delete({
+        where: { id: guest.tableAssignment.id },
+      });
+    }
+
+    // Create new assignment
+    await prisma.tableAssignment.create({
+      data: {
+        tableId: validatedData.tableId,
+        guestId: validatedData.guestId,
+      },
+    });
+
+    // If guest has already arrived, update the arrivedTableId too
+    if (guest.arrivedAt) {
+      await prisma.guest.update({
+        where: { id: validatedData.guestId },
+        data: { arrivedTableId: validatedData.tableId },
+      });
+    }
+
+    return { success: true, tableName: newTable.name };
+  } catch (error) {
+    console.error("Error updating guest table:", error);
+    return { error: "Failed to update guest table" };
   }
 }

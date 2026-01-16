@@ -1162,6 +1162,7 @@
     "guestsRemoved": "{count} אורחים הוסרו מהשולחן",
     "guestMoved": "האורח הועבר לשולחן חדש",
     "guestName": "אורח",
+    "sideGroup": "צד/קבוצה",
     "status": "סטטוס",
     "selected": "נבחרו",
     "removeSelected": "הסר נבחרים",
@@ -1196,6 +1197,15 @@
       "assign": "שבץ נבחרים",
       "selectAll": "בחר הכל",
       "deselectAll": "בטל בחירה"
+    },
+    "modal": {
+      "filled": "תפוס",
+      "empty": "פנוי",
+      "guestsAtTable": "אורחים בשולחן",
+      "noGuests": "אין אורחים בשולחן זה",
+      "seats": "מקומות",
+      "moveTo": "העבר ל",
+      "free": "פנויים"
     },
     "dragToReposition": "גרור למיקום מחדש",
     "dropToPosition": "שחרר לקביעת מיקום",
@@ -1248,6 +1258,27 @@
         "gifts": "שולחן מתנות",
         "other": "אחר"
       }
+    },
+    "autoArrange": {
+      "button": "סידור אוטומטי",
+      "title": "סידור אוטומטי של שולחנות",
+      "description": "צור שולחנות אוטומטית ושבץ אורחים לפי פילטרים",
+      "warningTitle": "אזהרה",
+      "warningDescription": "פעולה זו תמחק את כל השולחנות הקיימים ותיצור חדשים. לא ניתן לבטל פעולה זו.",
+      "tableSize": "אורחים לשולחן",
+      "tableShape": "צורת שולחן",
+      "groupBy": "קיבוץ לפי",
+      "sideFirst": "צד ואז קבוצה",
+      "groupOnly": "קבוצה בלבד",
+      "includeRsvp": "כלול סטטוס אישור",
+      "accepted": "מאושרים",
+      "pending": "ממתינים",
+      "preview": "תצוגה מקדימה",
+      "tables": "שולחנות",
+      "guests": "אורחים",
+      "seats": "מקומות",
+      "create": "צור שולחנות",
+      "success": "נוצרו {tables} שולחנות עבור {guests} אורחים"
     }
   },
   "invitations": {

@@ -276,9 +276,11 @@ export async function testSmsConnection() {
       return { error: "SMS credentials not configured" };
     }
 
-    // SMS uses Twilio only
+    // Determine provider type (default to twilio for backwards compatibility)
+    const providerType = (settings.smsProvider as "twilio" | "upsend") || "twilio";
+
     const provider = createSmsProvider({
-      provider: "twilio",
+      provider: providerType,
       authId: settings.smsApiKey,
       authToken: settings.smsApiSecret,
       phoneNumber: settings.smsPhoneNumber || "",

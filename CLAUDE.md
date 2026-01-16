@@ -56,7 +56,8 @@ npm run email        # Email template dev server (port 3333)
 - **Contentlayer2** for blog/docs MDX content
 
 ### Communications
-- **Twilio 5.10.7** - SMS and WhatsApp messaging
+- **Twilio 5.10.7** - WhatsApp messaging + SMS (global provider)
+- **Upsend** - SMS provider for Israeli market (~₪0.07/SMS vs ~$0.26 Twilio) - **NEW, needs testing**
 - **Resend 3.5.0** - Transactional email
 - **react-email 5.0.5** - Email template rendering
 - **VAPI** - Voice AI agent for automated phone calls
@@ -183,11 +184,15 @@ lib/                           # Shared utilities (25+ files)
     html-to-png.ts             # HTML rendering
     generator.ts               # Main generation logic
   notifications/               # Messaging service
-    real-service.ts            # Production messaging
-    twilio-service.ts          # Twilio integration
+    real-service.ts            # Production messaging (multi-provider)
+    twilio-service.ts          # Twilio integration (WhatsApp)
     whatsapp.ts                # WhatsApp sending
     template-renderer.ts       # Message templates
     sms-providers/             # SMS provider adapters
+      types.ts                 # Provider interface
+      index.ts                 # Factory + provider info
+      twilio-sms.ts            # Twilio SMS implementation
+      upsend-sms.ts            # Upsend SMS implementation (Israeli)
   vapi/                        # Voice AI integration
     client.ts                  # VAPI API client
     call-sync.ts               # Call synchronization
@@ -348,6 +353,7 @@ All icons through `components/shared/icons.tsx` - exports Lucide icons as `Icons
 
 ### 3. Notification System (Comprehensive Audit Trail)
 - **Channels**: WhatsApp, SMS, Email
+- **SMS Providers**: Twilio (global) or Upsend (Israeli, cheaper) - configurable in admin panel
 - **Types**: INVITE, REMINDER, CONFIRMATION, IMAGE_INVITE, INTERACTIVE_INVITE, GUEST_COUNT_REQUEST, EVENT_DAY, THANK_YOU, TABLE_ASSIGNMENT
 - **Statuses**: PENDING, SENT, DELIVERED, FAILED
 - **Templates**: Per-event customizable message templates
@@ -383,10 +389,14 @@ All icons through `components/shared/icons.tsx` - exports Lucide icons as `Icons
 
 ### 7. Seating Management
 - Interactive table planner with drag-and-drop
-- Multiple table shapes (round, rectangle, square)
+- Multiple table shapes (circle, rectangle, rectangleRounded, concave, concaveRounded)
 - XY positioning and rotation (floor height up to 3000px)
 - Venue blocks for layout design
-- Guest-to-table assignments
+- Guest-to-table assignments with RSVP status indicators (green=accepted, amber=pending, red=declined)
+- **Auto-arrange feature**: Automatically create tables and assign guests
+  - Groups by: Group → Side (organization), RSVP Status (priority: Approved > Pending)
+  - Configurable table size and shape
+  - Filter by side, group, or RSVP status
 - Fullscreen editing mode with proper coordinate scaling
 - Hostess check-in page (`/[locale]/hostess/[eventId]`) for event day
 

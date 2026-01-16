@@ -28,6 +28,9 @@ import {
 } from "@/components/ui/select";
 import { Icons } from "@/components/shared/icons";
 
+// Predefined groups that have translations
+const PREDEFINED_GROUPS = ["family", "friends", "work", "other"];
+
 interface GuestForAssignment {
   id: string;
   name: string;
@@ -292,7 +295,9 @@ export function AssignGuestsDialog({
                   <SelectItem value="all">{t("filters.all")}</SelectItem>
                   {groups.map((group) => (
                     <SelectItem key={group} value={group}>
-                      {tGuests(`groups.${group.toLowerCase()}`) || group}
+                      {PREDEFINED_GROUPS.includes(group.toLowerCase())
+                        ? tGuests(`groups.${group.toLowerCase()}` as "groups.family" | "groups.friends" | "groups.work" | "groups.other")
+                        : group}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -360,7 +365,11 @@ export function AssignGuestsDialog({
                         )}
                         {guest.side && guest.groupName && <span>•</span>}
                         {guest.groupName && (
-                          <span>{tGuests(`groups.${guest.groupName.toLowerCase()}`) || guest.groupName}</span>
+                          <span>
+                            {PREDEFINED_GROUPS.includes(guest.groupName.toLowerCase())
+                              ? tGuests(`groups.${guest.groupName.toLowerCase()}` as "groups.family" | "groups.friends" | "groups.work" | "groups.other")
+                              : guest.groupName}
+                          </span>
                         )}
                         {guest.tableAssignment && (
                           <>

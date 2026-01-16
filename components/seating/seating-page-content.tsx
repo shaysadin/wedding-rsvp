@@ -22,6 +22,7 @@ import { AddTableDialog } from "@/components/seating/add-table-dialog";
 import { AddVenueBlockDialog } from "@/components/seating/add-venue-block-dialog";
 import { AssignGuestsDialog } from "@/components/seating/assign-guests-dialog";
 import { EditTableDialog } from "@/components/seating/edit-table-dialog";
+import { AutoArrangeDialog } from "@/components/seating/auto-arrange-dialog";
 import { PageFadeIn } from "@/components/shared/page-fade-in";
 import { EventDropdownSelector, type EventOption } from "@/components/events/event-dropdown-selector";
 
@@ -104,6 +105,7 @@ export function SeatingPageContent({ eventId, events, locale }: SeatingPageConte
   const [isLoading, setIsLoading] = useState(true);
   const [addTableOpen, setAddTableOpen] = useState(false);
   const [addBlockOpen, setAddBlockOpen] = useState(false);
+  const [autoArrangeOpen, setAutoArrangeOpen] = useState(false);
 
   // Floor plan dialog states
   const [assignDialogOpen, setAssignDialogOpen] = useState(false);
@@ -211,6 +213,10 @@ export function SeatingPageContent({ eventId, events, locale }: SeatingPageConte
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
+          <Button variant="outline" onClick={() => setAutoArrangeOpen(true)}>
+            <Icons.sparkles className="me-2 h-4 w-4" />
+            {t("autoArrange.button")}
+          </Button>
           <Button variant="outline" onClick={() => setAddBlockOpen(true)}>
             <Icons.add className="me-2 h-4 w-4" />
             {t("venueBlocks.add")}
@@ -284,6 +290,13 @@ export function SeatingPageContent({ eventId, events, locale }: SeatingPageConte
         open={editDialogOpen}
         onOpenChange={setEditDialogOpen}
         table={selectedTableForEdit}
+      />
+
+      {/* Auto Arrange Dialog */}
+      <AutoArrangeDialog
+        open={autoArrangeOpen}
+        onOpenChange={setAutoArrangeOpen}
+        eventId={eventId}
       />
     </PageFadeIn>
   );

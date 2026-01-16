@@ -96,11 +96,26 @@ Action triggers notification
       ↓
 lib/notifications/real-service.ts
       ↓
-Provider-specific service (twilio, resend)
+Channel selection (WhatsApp/SMS/Email)
+      ↓
+WhatsApp → Twilio (always)
+SMS → Provider factory (Twilio or Upsend based on settings)
+Email → Resend
       ↓
 NotificationLog created (audit trail)
       ↓
 Usage tracking updated
+```
+
+### SMS Provider Architecture
+```
+lib/notifications/sms-providers/
+├── types.ts          # SmsProvider interface
+├── index.ts          # createSmsProvider() factory
+├── twilio-sms.ts     # Twilio implementation
+└── upsend-sms.ts     # Upsend implementation (Israeli)
+
+Provider selected via MessagingProviderSettings.smsProvider field
 ```
 
 ### Automation Flow
@@ -141,19 +156,21 @@ AutomationFlowExecution updated
 |--------|----------|--------|--------------|
 | Automation | `lib/automation/` | AutomationFlow, AutomationFlowExecution | `actions/automation.ts` |
 | Invitations | `lib/invitations/` | InvitationTemplate, GeneratedInvitation | `actions/generate-invitation.ts` |
-| Seating | - | WeddingTable, TableAssignment, VenueBlock | `actions/seating.ts` |
+| Seating | `lib/validations/seating.ts` | WeddingTable, TableAssignment, VenueBlock | `actions/seating.ts` |
 | Tasks | - | WeddingTask, TaskNote | `actions/tasks.ts` |
 | Suppliers | - | Supplier, SupplierPayment | `actions/suppliers.ts` |
 | Gifts | `lib/payments/` | GiftPayment, GiftPaymentSettings | `actions/gift-payments.ts` |
 | Voice | `lib/vapi/` | VapiCallJob, VapiCallLog, VapiEmbedding | `actions/vapi/` |
 | Bulk Messaging | `lib/bulk-messaging/` | BulkMessageJob, BulkMessageJobItem | `actions/bulk-notifications.ts` |
+| SMS Providers | `lib/notifications/sms-providers/` | MessagingProviderSettings | `actions/messaging-settings.ts` |
 
 ## External Integrations
 
 | Service | Purpose | Entry Point | Auth |
 |---------|---------|-------------|------|
 | Stripe | Subscriptions | `api/stripe/webhook`, `lib/stripe.ts` | Webhook signature |
-| Twilio | SMS/WhatsApp | `api/twilio/whatsapp`, `lib/notifications/` | Account SID + Auth Token |
+| Twilio | WhatsApp + SMS | `api/twilio/whatsapp`, `lib/notifications/` | Account SID + Auth Token |
+| Upsend | SMS (Israeli) | `lib/notifications/sms-providers/upsend-sms.ts` | Basic Auth (username:token) |
 | VAPI | Voice AI | `api/vapi/webhook`, `lib/vapi/` | API Key |
 | Resend | Email | `lib/email.ts` | API Key |
 | Cloudflare R2 | File storage | `lib/r2.ts` | Access Keys |

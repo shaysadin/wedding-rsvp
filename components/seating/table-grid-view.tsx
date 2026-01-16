@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
+import { motion, AnimatePresence } from "framer-motion";
 
 import { TableCard } from "./table-card";
 import { AssignGuestsDialog } from "./assign-guests-dialog";
@@ -43,12 +44,19 @@ interface TableGridViewProps {
 
 export function TableGridView({ tables, eventId }: TableGridViewProps) {
   const t = useTranslations("seating");
+  const locale = useLocale();
+  const isRTL = locale === "he";
 
+  const [expandedTableId, setExpandedTableId] = useState<string | null>(null);
   const [assignDialogOpen, setAssignDialogOpen] = useState(false);
   const [selectedTableForAssign, setSelectedTableForAssign] = useState<Table | null>(null);
 
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [selectedTableForEdit, setSelectedTableForEdit] = useState<Table | null>(null);
+
+  function handleToggleExpand(tableId: string) {
+    setExpandedTableId((prev) => (prev === tableId ? null : tableId));
+  }
 
   function handleAssignGuests(tableId: string) {
     const table = tables.find((t) => t.id === tableId);
@@ -91,17 +99,26 @@ export function TableGridView({ tables, eventId }: TableGridViewProps) {
 
   return (
     <>
-      <div className="grid gap-8 md:grid-cols-2 2xl:grid-cols-3">
-        {tables.map((table) => (
-          <TableCard
-            key={table.id}
-            table={table}
-            eventId={eventId}
-            onAssignGuests={handleAssignGuests}
-            onEditTable={handleEditTable}
-          />
-        ))}
-      </div>
+      <motion.div
+        layout
+        className="grid grid-cols-2 lg:grid-cols-4 gap-4"
+        dir={isRTL ? "rtl" : "ltr"}
+      >
+        <AnimatePresence mode="popLayout">
+          {tables.map((table) => (
+            <TableCard
+              key={table.id}
+              table={table}
+              allTables={tables}
+              eventId={eventId}
+              isExpanded={expandedTableId === table.id}
+              onToggleExpand={() => handleToggleExpand(table.id)}
+              onAssignGuests={handleAssignGuests}
+              onEditTable={handleEditTable}
+            />
+          ))}
+        </AnimatePresence>
+      </motion.div>
 
       {/* Assign Guests Dialog */}
       {selectedTableForAssign && (

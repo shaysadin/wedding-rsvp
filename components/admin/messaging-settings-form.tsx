@@ -53,8 +53,10 @@ export function MessagingSettingsForm({ settings }: MessagingSettingsFormProps) 
   const [whatsappPhoneNumber, setWhatsappPhoneNumber] = useState(settings?.whatsappPhoneNumber || "");
   const [whatsappEnabled, setWhatsappEnabled] = useState(settings?.whatsappEnabled || false);
 
-  // SMS state (Twilio only)
-  const smsProvider = "twilio";
+  // SMS state (Twilio or Upsend)
+  const [smsProvider, setSmsProvider] = useState<"twilio" | "upsend">(
+    (settings?.smsProvider as "twilio" | "upsend") || "twilio"
+  );
   const [smsApiKey, setSmsApiKey] = useState(settings?.smsApiKey || "");
   const [smsApiSecret, setSmsApiSecret] = useState(settings?.smsApiSecret || "");
   const [smsPhoneNumber, setSmsPhoneNumber] = useState(settings?.smsPhoneNumber || "");
@@ -304,7 +306,9 @@ export function MessagingSettingsForm({ settings }: MessagingSettingsFormProps) 
               <div>
                 <CardTitle>SMS API Credentials</CardTitle>
                 <CardDescription>
-                  Twilio credentials for SMS messaging
+                  {smsProvider === "twilio"
+                    ? "Twilio credentials for SMS messaging"
+                    : "Upsend credentials for SMS messaging (Israeli provider)"}
                 </CardDescription>
               </div>
             </div>
@@ -321,44 +325,98 @@ export function MessagingSettingsForm({ settings }: MessagingSettingsFormProps) 
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="sms-phone">Phone Number</Label>
-              <Input
-                id="sms-phone"
-                placeholder="+1234567890"
-                value={smsPhoneNumber}
-                onChange={(e) => setSmsPhoneNumber(e.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="sms-messaging-service">Messaging Service SID (Optional)</Label>
-              <Input
-                id="sms-messaging-service"
-                placeholder="MGxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-                value={smsMessagingServiceSid}
-                onChange={(e) => setSmsMessagingServiceSid(e.target.value)}
-              />
-            </div>
+          {/* Provider Selection */}
+          <div className="space-y-2">
+            <Label htmlFor="sms-provider">SMS Provider</Label>
+            <Select value={smsProvider} onValueChange={(v) => setSmsProvider(v as "twilio" | "upsend")}>
+              <SelectTrigger id="sms-provider">
+                <SelectValue placeholder="Select provider" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="twilio">Twilio (~$0.26/SMS)</SelectItem>
+                <SelectItem value="upsend">Upsend (~₪0.07/SMS - Israeli)</SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">
+              {smsProvider === "twilio" ? (
+                <>
+                  Get credentials from{" "}
+                  <a
+                    href="https://console.twilio.com"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-primary underline"
+                  >
+                    Twilio Console
+                  </a>
+                </>
+              ) : (
+                <>
+                  Get credentials from{" "}
+                  <a
+                    href="https://upsend.co.il"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-primary underline"
+                  >
+                    Upsend Dashboard
+                  </a>
+                </>
+              )}
+            </p>
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="sms-api-key">Account SID</Label>
+              <Label htmlFor="sms-phone">
+                {smsProvider === "twilio" ? "Phone Number" : "Sender ID"}
+              </Label>
+              <Input
+                id="sms-phone"
+                placeholder={smsProvider === "twilio" ? "+1234567890" : "MySender or 0541234567"}
+                value={smsPhoneNumber}
+                onChange={(e) => setSmsPhoneNumber(e.target.value)}
+              />
+              <p className="text-xs text-muted-foreground">
+                {smsProvider === "upsend"
+                  ? "Max 11 characters or phone number (must be whitelisted)"
+                  : "Your Twilio phone number"}
+              </p>
+            </div>
+            {smsProvider === "twilio" && (
+              <div className="space-y-2">
+                <Label htmlFor="sms-messaging-service">Messaging Service SID (Optional)</Label>
+                <Input
+                  id="sms-messaging-service"
+                  placeholder="MGxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+                  value={smsMessagingServiceSid}
+                  onChange={(e) => setSmsMessagingServiceSid(e.target.value)}
+                />
+              </div>
+            )}
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="sms-api-key">
+                {smsProvider === "twilio" ? "Account SID" : "Username"}
+              </Label>
               <Input
                 id="sms-api-key"
                 type="password"
-                placeholder="ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+                placeholder={smsProvider === "twilio" ? "ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" : "Your Upsend username"}
                 value={smsApiKey}
                 onChange={(e) => setSmsApiKey(e.target.value)}
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="sms-api-secret">Auth Token</Label>
+              <Label htmlFor="sms-api-secret">
+                {smsProvider === "twilio" ? "Auth Token" : "API Token"}
+              </Label>
               <Input
                 id="sms-api-secret"
                 type="password"
-                placeholder="Your Twilio Auth Token"
+                placeholder={smsProvider === "twilio" ? "Your Twilio Auth Token" : "Your Upsend API Token"}
                 value={smsApiSecret}
                 onChange={(e) => setSmsApiSecret(e.target.value)}
               />

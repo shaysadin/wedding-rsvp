@@ -46,6 +46,28 @@
 
 ### January 2026 (Latest)
 
+**Upsend SMS Provider Integration** (NEW - needs testing):
+- Added Upsend (upsend.co.il) as alternative SMS provider to Twilio
+- Significantly cheaper for Israeli market (~₪0.07/SMS vs ~$0.26 Twilio)
+- Admin can switch between providers in Messaging Settings
+- Files created:
+  - `lib/notifications/sms-providers/upsend-sms.ts` - Provider implementation
+  - Updated `types.ts`, `index.ts` for multi-provider support
+- UI updated in `components/admin/messaging-settings-form.tsx` with provider selector
+- **Status**: Implemented but NOT YET TESTED with real credentials
+
+**Seating System Enhancements**:
+- **Auto-arrange feature**: New dialog (`components/seating/auto-arrange-dialog.tsx`)
+  - Automatically creates tables and assigns guests
+  - Algorithm: Groups by Group → Side (table organization), RSVP Status (seating priority)
+  - Configurable table size (1-20) and shape selection
+  - Filter by side, group, or RSVP status (ACCEPTED/PENDING)
+  - Preview stats before creating
+- **RSVP status indicators**: Color-coded dots on table cards
+  - Green = ACCEPTED, Amber = PENDING, Red = DECLINED
+  - Visible in both collapsed and expanded table views
+- **Larger table cards**: Increased scroll area to show 5 guests, larger text
+
 **Hostess Page**:
 - New hostess view for event check-in at `app/[locale]/(public)/hostess/[eventId]/`
 - Locale-aware routing (works with next-intl)
@@ -141,6 +163,7 @@
 ### External Dependencies
 - **Meshulam API credentials** - Gift payments require production credentials
 - **VAPI webhook signature** - Verification not implemented
+- **Upsend SMS testing** - Integration implemented but needs testing with real credentials
 
 ### Schema Migrations
 - Many `@deprecated` enum values remain for backward compatibility

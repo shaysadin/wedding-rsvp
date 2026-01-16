@@ -1162,6 +1162,7 @@
     "guestsRemoved": "{count} guest(s) removed from table",
     "guestMoved": "Guest moved to new table",
     "guestName": "Guest",
+    "sideGroup": "Side/Group",
     "status": "Status",
     "selected": "selected",
     "removeSelected": "Remove Selected",
@@ -1196,6 +1197,15 @@
       "assign": "Assign Selected",
       "selectAll": "Select All",
       "deselectAll": "Deselect All"
+    },
+    "modal": {
+      "filled": "Filled",
+      "empty": "Empty",
+      "guestsAtTable": "Guests at this table",
+      "noGuests": "No guests at this table yet",
+      "seats": "seats",
+      "moveTo": "Move to",
+      "free": "free"
     },
     "dragToReposition": "Drag to reposition",
     "dropToPosition": "Drop to set position",
@@ -1248,6 +1258,27 @@
         "gifts": "Gift Table",
         "other": "Other"
       }
+    },
+    "autoArrange": {
+      "button": "Auto Arrange",
+      "title": "Auto Arrange Tables",
+      "description": "Automatically create tables and assign guests based on filters",
+      "warningTitle": "Warning",
+      "warningDescription": "This will delete all existing tables and create new ones. This action cannot be undone.",
+      "tableSize": "Guests per table",
+      "tableShape": "Table shape",
+      "groupBy": "Group by",
+      "sideFirst": "Side then Group",
+      "groupOnly": "Group only",
+      "includeRsvp": "Include RSVP status",
+      "accepted": "Accepted",
+      "pending": "Pending",
+      "preview": "Preview",
+      "tables": "tables",
+      "guests": "guests",
+      "seats": "seats",
+      "create": "Create Tables",
+      "success": "Created {tables} tables for {guests} guests"
     }
   },
   "invitations": {

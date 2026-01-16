@@ -2,14 +2,14 @@
  * SMS Provider Abstraction Types
  *
  * This module defines the interface for SMS providers.
- * Currently supports Twilio only.
+ * Supports: Twilio, Upsend (Israeli provider)
  */
 
-export type SmsProviderType = "twilio";
+export type SmsProviderType = "twilio" | "upsend";
 
 export interface SmsProviderConfig {
   provider: SmsProviderType;
-  authId: string;      // Account SID (Twilio)
+  authId: string;      // Account SID (Twilio) or Username (Upsend)
   authToken: string;   // Auth Token
   phoneNumber: string; // Sender phone number in E.164 format (fallback if no messaging service)
   messagingServiceSid?: string; // Twilio Messaging Service SID (takes priority over phoneNumber)

@@ -1,12 +1,14 @@
 /**
  * Real Notification Service
  *
- * This service implements the NotificationService interface using Twilio
- * for both SMS and WhatsApp.
+ * This service implements the NotificationService interface using:
+ * - Twilio for WhatsApp (always)
+ * - Configurable SMS provider: Twilio or Upsend (Israeli provider)
  *
  * References:
  * - Twilio SMS: https://www.twilio.com/docs/messaging/tutorials/how-to-send-sms-messages
- * - WhatsApp: https://www.twilio.com/docs/whatsapp/quickstart
+ * - Twilio WhatsApp: https://www.twilio.com/docs/whatsapp/quickstart
+ * - Upsend SMS: https://documenter.getpostman.com/view/12791710/UVsJvmNp
  */
 
 import { Guest, WeddingEvent, NotificationChannel, NotificationStatus } from "@prisma/client";
@@ -139,9 +141,10 @@ export class TwilioNotificationService implements NotificationService {
       const client = createTwilioClient(accountSid, authToken);
       result = await sendWhatsApp(client, fromNumber, phoneNumber, message, whatsappOptions);
     } else {
-      // SMS uses Twilio
+      // SMS uses configured provider (twilio or upsend)
+      const smsProviderType = (settings.smsProvider as "twilio" | "upsend") || "twilio";
       const smsProvider = createSmsProvider({
-        provider: "twilio",
+        provider: smsProviderType,
         authId: accountSid,
         authToken: authToken,
         phoneNumber: fromNumber,
