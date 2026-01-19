@@ -44,6 +44,13 @@ export const adminLinks: SidebarNavItem[] = [
         authorizeOnly: UserRole.ROLE_PLATFORM_OWNER,
       },
       {
+        href: "/admin/usage-tracking",
+        icon: "chart",
+        titleKey: "navigation.usageTracking",
+        title: "Usage Tracking",
+        authorizeOnly: UserRole.ROLE_PLATFORM_OWNER,
+      },
+      {
         href: "/admin/invitation-templates",
         icon: "fileText",
         titleKey: "navigation.invitationTemplates",

@@ -1,8 +1,81 @@
-import { AutomationAction, WhatsAppTemplateType } from "@prisma/client";
+import { AutomationAction, WhatsAppTemplateType, NotificationType } from "@prisma/client";
 import { AutomationContext, ExecutionResult } from "./types";
 import { prisma } from "@/lib/db";
 import { onNotificationSent } from "./event-handlers";
 import { ALL_WHATSAPP_TEMPLATE_DEFINITIONS } from "@/config/whatsapp-templates";
+import { logWhatsAppCost, logSmsCost } from "@/lib/analytics/usage-tracking";
+
+/**
+ * Helper to log message cost in automation flows
+ */
+async function logAutomationCost(
+  weddingEventId: string,
+  guestId: string,
+  channel: "WHATSAPP" | "SMS",
+  notificationType: NotificationType
+): Promise<void> {
+  try {
+    // Get ownerId from event
+    const event = await prisma.weddingEvent.findUnique({
+      where: { id: weddingEventId },
+      select: { ownerId: true },
+    });
+
+    if (!event) return;
+
+    // Log cost based on channel
+    if (channel === "WHATSAPP") {
+      await logWhatsAppCost(event.ownerId, weddingEventId, guestId, {
+        notificationType,
+        source: "automation",
+      });
+    } else if (channel === "SMS") {
+      // Get SMS provider setting
+      const settings = await prisma.messagingProviderSettings.findFirst();
+      const smsProvider = (settings?.smsProvider as "twilio" | "upsend") || "twilio";
+
+      await logSmsCost(event.ownerId, weddingEventId, guestId, smsProvider, {
+        notificationType,
+        source: "automation",
+      });
+    }
+  } catch (error) {
+    // Log error but don't fail the automation
+    console.error("Error logging automation cost:", error);
+  }
+}
+
+/**
+ * Map automation action to notification type for logging
+ */
+function getNotificationType(action: AutomationAction): NotificationType {
+  switch (action) {
+    case "SEND_WHATSAPP_INVITE":
+    case "SEND_WHATSAPP_IMAGE_INVITE":
+    case "SEND_WHATSAPP_INTERACTIVE_INVITE":
+      return NotificationType.INVITE;
+    case "SEND_WHATSAPP_REMINDER":
+    case "SEND_WHATSAPP_INTERACTIVE_REMINDER":
+    case "SEND_SMS_REMINDER":
+    case "SEND_WHATSAPP_TEMPLATE":
+      return NotificationType.REMINDER;
+    case "SEND_WHATSAPP_CONFIRMATION":
+      return NotificationType.CONFIRMATION;
+    case "SEND_WHATSAPP_EVENT_DAY":
+      return NotificationType.EVENT_DAY;
+    case "SEND_WHATSAPP_THANK_YOU":
+      return NotificationType.THANK_YOU;
+    case "SEND_TABLE_ASSIGNMENT":
+      return NotificationType.TABLE_ASSIGNMENT;
+    case "SEND_WHATSAPP_GUEST_COUNT":
+      return NotificationType.GUEST_COUNT_REQUEST;
+    case "SEND_CUSTOM_WHATSAPP":
+    case "SEND_CUSTOM_SMS":
+      return NotificationType.REMINDER; // Default for custom messages
+    default:
+      return NotificationType.REMINDER; // Safe fallback
+  }
+}
 
 /**
  * Map automation action to WhatsApp template type
@@ -371,10 +444,12 @@ async function sendWhatsAppWithTemplate(
     // Log the notification (skip for test guests)
     if (!guestId.startsWith("test-")) {
       const sentAt = new Date();
+      const notificationType = action ? getNotificationType(action) : NotificationType.REMINDER;
+
       await prisma.notificationLog.create({
         data: {
           guestId,
-          type: "REMINDER",
+          type: notificationType,
           channel: "WHATSAPP",
           status: "SENT",
           sentAt,
@@ -382,12 +457,15 @@ async function sendWhatsAppWithTemplate(
         },
       });
 
+      // Log cost for this message
+      await logAutomationCost(weddingEventId, guestId, "WHATSAPP", notificationType);
+
       // Trigger NO_RESPONSE automation scheduling for this new notification
       // This ensures that if guest doesn't respond to this reminder, they get another follow-up
       await onNotificationSent({
         guestId,
         weddingEventId,
-        notificationType: "REMINDER",
+        notificationType: notificationType as string,
         sentAt,
       });
     }
@@ -472,10 +550,12 @@ async function sendCustomWhatsApp(
     // Log the notification (skip for test guests)
     if (!guestId.startsWith("test-")) {
       const sentAt = new Date();
+      const notificationType = NotificationType.REMINDER; // Custom WhatsApp = REMINDER
+
       await prisma.notificationLog.create({
         data: {
           guestId,
-          type: "REMINDER",
+          type: notificationType,
           channel: "WHATSAPP",
           status: "SENT",
           sentAt,
@@ -483,12 +563,15 @@ async function sendCustomWhatsApp(
         },
       });
 
+      // Log cost for this message
+      await logAutomationCost(context.weddingEventId, guestId, "WHATSAPP", notificationType);
+
       // Trigger NO_RESPONSE automation scheduling for this new notification
       if (context.weddingEventId) {
         await onNotificationSent({
           guestId,
           weddingEventId: context.weddingEventId,
-          notificationType: "REMINDER",
+          notificationType: notificationType as string,
           sentAt,
         });
       }
@@ -580,10 +663,12 @@ async function sendCustomSms(
     // Log the notification (skip for test guests)
     if (!guestId.startsWith("test-")) {
       const sentAt = new Date();
+      const notificationType = NotificationType.REMINDER; // Custom SMS = REMINDER
+
       await prisma.notificationLog.create({
         data: {
           guestId,
-          type: "REMINDER",
+          type: notificationType,
           channel: "SMS",
           status: "SENT",
           sentAt,
@@ -591,12 +676,15 @@ async function sendCustomSms(
         },
       });
 
+      // Log cost for this message
+      await logAutomationCost(context.weddingEventId, guestId, "SMS", notificationType);
+
       // Trigger NO_RESPONSE automation scheduling for this new notification
       if (context.weddingEventId) {
         await onNotificationSent({
           guestId,
           weddingEventId: context.weddingEventId,
-          notificationType: "REMINDER",
+          notificationType: notificationType as string,
           sentAt,
         });
       }
@@ -710,6 +798,9 @@ async function sendSmsReminder(
           providerResponse: smsMessage.sid,
         },
       });
+
+      // Log cost for this message
+      await logAutomationCost(weddingEventId, guestId, "SMS", NotificationType.REMINDER);
 
       // Trigger NO_RESPONSE automation scheduling for this new notification
       await onNotificationSent({
@@ -876,6 +967,9 @@ async function sendTableAssignment(
           providerResponse: message.sid,
         },
       });
+
+      // Log cost for this message
+      await logAutomationCost(weddingEventId, guestId, "WHATSAPP", NotificationType.TABLE_ASSIGNMENT);
     }
 
     return {
@@ -1061,6 +1155,9 @@ async function sendEventDayReminder(
           providerResponse: message.sid,
         },
       });
+
+      // Log cost for this message
+      await logAutomationCost(weddingEventId, guestId, "WHATSAPP", NotificationType.EVENT_DAY);
     }
 
     return {
@@ -1186,6 +1283,9 @@ async function sendThankYouMessage(
           providerResponse: message.sid,
         },
       });
+
+      // Log cost for this message
+      await logAutomationCost(weddingEventId, guestId, "WHATSAPP", NotificationType.THANK_YOU);
     }
 
     return {

@@ -63,7 +63,7 @@ async function processItem(
   item: BulkMessageJobItem & { guest: Guest },
   job: BulkMessageJob & { weddingEvent: WeddingEvent },
   templateMessage: string
-): Promise<{ success: boolean; error?: string }> {
+): Promise<{ success: boolean; error?: string; channel?: string }> {
   try {
     const rsvpLink = getRsvpLink(item.guest.slug);
     const renderedMessage = renderTemplate(
@@ -109,7 +109,7 @@ async function processItem(
         },
       });
 
-      return { success: true };
+      return { success: true, channel: result.channel };
     } else {
       throw new Error(result.error || "Failed to send message");
     }
@@ -252,6 +252,8 @@ export async function processJobChunk(
   let processed = 0;
   let success = 0;
   let failed = 0;
+  let whatsappCount = 0;
+  let smsCount = 0;
 
   // Process items with rate limiting
   for (const item of items) {
@@ -260,12 +262,48 @@ export async function processJobChunk(
 
     if (result.success) {
       success++;
+      // Track channel type for batched usage update
+      if (result.channel === "WHATSAPP") {
+        whatsappCount++;
+      } else if (result.channel === "SMS") {
+        smsCount++;
+      }
     } else {
       failed++;
     }
 
     // Rate limiting delay
     await delay(1000); // 1 second between messages
+  }
+
+  // Batch update usage tracking for successful sends
+  const userId = job.weddingEvent.ownerId;
+  if (whatsappCount > 0) {
+    await prisma.usageTracking.upsert({
+      where: { userId },
+      create: {
+        userId,
+        whatsappSent: whatsappCount,
+        periodStart: new Date(),
+      },
+      update: {
+        whatsappSent: { increment: whatsappCount },
+      },
+    });
+  }
+
+  if (smsCount > 0) {
+    await prisma.usageTracking.upsert({
+      where: { userId },
+      create: {
+        userId,
+        smsSent: smsCount,
+        periodStart: new Date(),
+      },
+      update: {
+        smsSent: { increment: smsCount },
+      },
+    });
   }
 
   // Update job progress

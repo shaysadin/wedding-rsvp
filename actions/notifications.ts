@@ -1,97 +1,127 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { UserRole, NotificationType, NotificationChannel, PlanTier } from "@prisma/client";
+import { UserRole, NotificationType, NotificationChannel, NotificationStatus, PlanTier } from "@prisma/client";
 
 import { prisma } from "@/lib/db";
 import { getCurrentUser } from "@/lib/session";
 import { getNotificationService } from "@/lib/notifications";
 import { PLAN_LIMITS, BUSINESS_VOICE_ADDON_CALLS, getVoiceCallLimit } from "@/config/plans";
 import { onNotificationSent } from "@/lib/automation/event-handlers";
+import { logWhatsAppCost, logSmsCost } from "@/lib/analytics/usage-tracking";
 
 export type ChannelType = "WHATSAPP" | "SMS" | "AUTO";
 
-// Helper to check and update usage
+// Helper to log message cost
+async function logMessageCost(
+  userId: string,
+  weddingEventId: string,
+  guestId: string,
+  channel: NotificationChannel,
+  type: NotificationType
+): Promise<void> {
+  try {
+    if (channel === NotificationChannel.WHATSAPP) {
+      await logWhatsAppCost(userId, weddingEventId, guestId, {
+        notificationType: type,
+      });
+    } else if (channel === NotificationChannel.SMS) {
+      // Get SMS provider setting to log correct cost
+      const settings = await prisma.messagingProviderSettings.findFirst();
+      const smsProvider = (settings?.smsProvider as "twilio" | "upsend") || "twilio";
+
+      await logSmsCost(userId, weddingEventId, guestId, smsProvider, {
+        notificationType: type,
+      });
+    }
+  } catch (error) {
+    // Log error but don't fail the operation
+    console.error("Error logging message cost:", error);
+  }
+}
+
+// Helper to check and update usage atomically
+// Uses transaction to prevent race conditions (TOCTOU vulnerability)
 async function checkAndUpdateUsage(
   userId: string,
   channel: NotificationChannel,
   count: number = 1
 ): Promise<{ allowed: boolean; remaining: number; error?: string }> {
-  // Get user with usage tracking
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    include: { usageTracking: true },
-  });
+  try {
+    // Execute check and update atomically in a transaction
+    const result = await prisma.$transaction(async (tx) => {
+      // Get user with usage tracking (locked for update within transaction)
+      const user = await tx.user.findUnique({
+        where: { id: userId },
+        include: { usageTracking: true },
+      });
 
-  if (!user) {
-    return { allowed: false, remaining: 0, error: "User not found" };
-  }
+      if (!user) {
+        return { allowed: false, remaining: 0, error: "User not found" };
+      }
 
-  const planLimits = PLAN_LIMITS[user.plan];
-  const usage = user.usageTracking || {
-    whatsappSent: 0,
-    smsSent: 0,
-    whatsappBonus: 0,
-    smsBonus: 0,
-  };
-
-  if (channel === NotificationChannel.WHATSAPP) {
-    const totalAllowed = planLimits.maxWhatsappMessages + (usage.whatsappBonus || 0);
-    const remaining = totalAllowed - usage.whatsappSent;
-
-    if (remaining < count) {
-      return {
-        allowed: false,
-        remaining,
-        error: `WhatsApp message limit reached. ${remaining} messages remaining.`,
+      const planLimits = PLAN_LIMITS[user.plan];
+      const usage = user.usageTracking || {
+        whatsappSent: 0,
+        smsSent: 0,
+        whatsappBonus: 0,
+        smsBonus: 0,
       };
-    }
 
-    // Update usage
-    await prisma.usageTracking.upsert({
-      where: { userId },
-      create: {
-        userId,
-        whatsappSent: count,
-        periodStart: new Date(),
-      },
-      update: {
-        whatsappSent: { increment: count },
-      },
+      // Calculate limits based on channel
+      const totalAllowed =
+        channel === NotificationChannel.WHATSAPP
+          ? planLimits.maxWhatsappMessages + (usage.whatsappBonus || 0)
+          : planLimits.maxSmsMessages + (usage.smsBonus || 0);
+
+      const currentUsed =
+        channel === NotificationChannel.WHATSAPP
+          ? usage.whatsappSent
+          : usage.smsSent;
+
+      const remaining = totalAllowed - currentUsed;
+
+      // Check if allowed BEFORE incrementing
+      if (remaining < count) {
+        const channelName = channel === NotificationChannel.WHATSAPP ? "WhatsApp" : "SMS";
+        return {
+          allowed: false,
+          remaining,
+          error: `${channelName} message limit reached. ${remaining} messages remaining.`,
+        };
+      }
+
+      // Atomic increment - only executes if check passes
+      await tx.usageTracking.upsert({
+        where: { userId },
+        create: {
+          userId,
+          whatsappSent: channel === NotificationChannel.WHATSAPP ? count : 0,
+          smsSent: channel === NotificationChannel.SMS ? count : 0,
+          periodStart: new Date(),
+        },
+        update: {
+          ...(channel === NotificationChannel.WHATSAPP && {
+            whatsappSent: { increment: count },
+          }),
+          ...(channel === NotificationChannel.SMS && {
+            smsSent: { increment: count },
+          }),
+        },
+      });
+
+      return { allowed: true, remaining: remaining - count };
     });
 
-    return { allowed: true, remaining: remaining - count };
+    return result;
+  } catch (error) {
+    console.error("Error in checkAndUpdateUsage:", error);
+    return {
+      allowed: false,
+      remaining: 0,
+      error: "Failed to check usage limits",
+    };
   }
-
-  if (channel === NotificationChannel.SMS) {
-    const totalAllowed = planLimits.maxSmsMessages + (usage.smsBonus || 0);
-    const remaining = totalAllowed - usage.smsSent;
-
-    if (remaining < count) {
-      return {
-        allowed: false,
-        remaining,
-        error: `SMS message limit reached. ${remaining} messages remaining.`,
-      };
-    }
-
-    // Update usage
-    await prisma.usageTracking.upsert({
-      where: { userId },
-      create: {
-        userId,
-        smsSent: count,
-        periodStart: new Date(),
-      },
-      update: {
-        smsSent: { increment: count },
-      },
-    });
-
-    return { allowed: true, remaining: remaining - count };
-  }
-
-  return { allowed: true, remaining: 0 };
 }
 
 // Helper to get remaining messages for a user (internal use)
@@ -320,6 +350,9 @@ export async function sendInvite(guestId: string, channel: ChannelType = "AUTO",
     if (result.success) {
       await checkAndUpdateUsage(user.id, result.channel, 1);
 
+      // Log cost for this message
+      await logMessageCost(user.id, guest.weddingEventId, guest.id, result.channel, NotificationType.INVITE);
+
       // Trigger automation scheduling for NO_RESPONSE flows
       await onNotificationSent({
         guestId: guest.id,
@@ -362,9 +395,10 @@ export async function sendReminder(guestId: string, channel: ChannelType = "AUTO
       return { error: "Guest not found" };
     }
 
-    // Only send reminder if RSVP is pending
-    if (guest.rsvp && guest.rsvp.status !== "PENDING") {
-      return { error: "Guest has already responded" };
+    // Only block reminder if guest has confirmed (ACCEPTED) or declined
+    // Allow reminders for PENDING and MAYBE statuses
+    if (guest.rsvp && (guest.rsvp.status === "ACCEPTED" || guest.rsvp.status === "DECLINED")) {
+      return { error: "Guest has already confirmed their response" };
     }
 
     // Determine channel to use
@@ -400,6 +434,9 @@ export async function sendReminder(guestId: string, channel: ChannelType = "AUTO
     // Update usage tracking if message was sent
     if (result.success) {
       await checkAndUpdateUsage(user.id, result.channel, 1);
+
+      // Log cost for this message
+      await logMessageCost(user.id, guest.weddingEventId, guest.id, result.channel, NotificationType.REMINDER);
 
       // Trigger automation scheduling for NO_RESPONSE flows
       await onNotificationSent({
@@ -498,6 +535,10 @@ export async function sendBulkReminders(eventId: string) {
 
         if (result.success) {
           await checkAndUpdateUsage(user.id, result.channel, 1);
+
+          // Log cost for this message
+          await logMessageCost(user.id, guest.weddingEventId, guest.id, result.channel, NotificationType.REMINDER);
+
           // Update local tracking
           if (result.channel === NotificationChannel.WHATSAPP) {
             currentRemaining.whatsapp--;
@@ -510,6 +551,19 @@ export async function sendBulkReminders(eventId: string) {
         }
       } catch (error) {
         console.error(`Error sending reminder to guest ${guest.id}:`, error);
+        // Log the unexpected error
+        await prisma.notificationLog.create({
+          data: {
+            guestId: guest.id,
+            type: NotificationType.REMINDER,
+            channel: NotificationChannel.WHATSAPP,
+            status: NotificationStatus.FAILED,
+            providerResponse: JSON.stringify({
+              error: error instanceof Error ? error.message : "Unknown error"
+            }),
+            sentAt: null,
+          },
+        });
         failed++;
       }
     }
@@ -530,12 +584,14 @@ export async function sendBulkReminders(eventId: string) {
 }
 
 export async function sendBulkInvites(eventId: string) {
+  console.log(`[sendBulkInvites] Starting for event ${eventId}`);
   try {
     const user = await getCurrentUser();
 
     // Check if user has ROLE_WEDDING_OWNER in their roles array
     const hasWeddingOwnerRole = user?.roles?.includes(UserRole.ROLE_WEDDING_OWNER);
     if (!user || !user.id || !hasWeddingOwnerRole) {
+      console.log(`[sendBulkInvites] Unauthorized`);
       return { error: "Unauthorized" };
     }
 
@@ -545,6 +601,7 @@ export async function sendBulkInvites(eventId: string) {
     });
 
     if (!event) {
+      console.log(`[sendBulkInvites] Event not found`);
       return { error: "Event not found" };
     }
 
@@ -574,13 +631,18 @@ export async function sendBulkInvites(eventId: string) {
       include: { weddingEvent: true },
     });
 
+    console.log(`[sendBulkInvites] Found ${uninvitedGuests.length} uninvited guests`);
+
     if (uninvitedGuests.length === 0) {
       return { success: true, sent: 0, message: "All guests have been invited" };
     }
 
     // Check remaining messages
     const remaining = await getRemainingMessages(user.id);
+    console.log(`[sendBulkInvites] Remaining messages - WhatsApp: ${remaining.whatsapp}, SMS: ${remaining.sms}`);
+
     if (remaining.whatsapp <= 0 && remaining.sms <= 0) {
+      console.log(`[sendBulkInvites] Message limit reached`);
       return { error: "Message limit reached", limitReached: true };
     }
 
@@ -595,6 +657,8 @@ export async function sendBulkInvites(eventId: string) {
     // Track remaining messages locally to avoid N+1 queries
     let currentRemaining = { ...remaining };
 
+    console.log(`[sendBulkInvites] Starting to send messages...`);
+
     for (const guest of uninvitedGuests) {
       // Check remaining using local tracking (avoids DB query per guest)
       if (currentRemaining.whatsapp <= 0 && currentRemaining.sms <= 0) {
@@ -603,21 +667,37 @@ export async function sendBulkInvites(eventId: string) {
       }
 
       try {
+        console.log(`[sendBulkInvites] Sending to guest ${guest.id} (${guest.name})`);
         const result = await notificationService.sendInvite(guest, guest.weddingEvent);
+        console.log(`[sendBulkInvites] Result for ${guest.id}: ${result.success ? 'SUCCESS' : 'FAILED'}`);
 
-        await prisma.notificationLog.create({
-          data: {
-            guestId: guest.id,
-            type: NotificationType.INVITE,
-            channel: result.channel,
-            status: result.status,
-            providerResponse: result.providerResponse,
-            sentAt: result.success ? new Date() : null,
-          },
-        });
+        // Always create notification log, wrapped in try-catch to ensure it doesn't break the flow
+        try {
+          await prisma.notificationLog.create({
+            data: {
+              guestId: guest.id,
+              type: NotificationType.INVITE,
+              channel: result.channel,
+              status: result.status,
+              providerResponse: result.providerResponse,
+              sentAt: result.success ? new Date() : null,
+            },
+          });
+          console.log(`[sendBulkInvites] Log created for guest ${guest.id}`);
+        } catch (logError) {
+          console.error(`[sendBulkInvites] CRITICAL: Failed to create notification log for guest ${guest.id}:`, logError);
+        }
 
         if (result.success) {
           await checkAndUpdateUsage(user.id, result.channel, 1);
+
+          // Log cost for this message
+          try {
+            await logMessageCost(user.id, guest.weddingEventId, guest.id, result.channel, NotificationType.INVITE);
+          } catch (costError) {
+            console.error(`[sendBulkInvites] Failed to log cost for guest ${guest.id}:`, costError);
+          }
+
           // Update local tracking
           if (result.channel === NotificationChannel.WHATSAPP) {
             currentRemaining.whatsapp--;
@@ -629,12 +709,32 @@ export async function sendBulkInvites(eventId: string) {
           failed++;
         }
       } catch (error) {
-        console.error(`Error sending invite to guest ${guest.id}:`, error);
+        console.error(`[sendBulkInvites] Error sending invite to guest ${guest.id}:`, error);
+        // Log the unexpected error - wrap in try-catch
+        try {
+          await prisma.notificationLog.create({
+            data: {
+              guestId: guest.id,
+              type: NotificationType.INVITE,
+              channel: NotificationChannel.WHATSAPP,
+              status: NotificationStatus.FAILED,
+              providerResponse: JSON.stringify({
+                error: error instanceof Error ? error.message : "Unknown error"
+              }),
+              sentAt: null,
+            },
+          });
+          console.log(`[sendBulkInvites] Error log created for guest ${guest.id}`);
+        } catch (logError) {
+          console.error(`[sendBulkInvites] CRITICAL: Failed to create error log for guest ${guest.id}:`, logError);
+        }
         failed++;
       }
     }
 
     revalidatePath(`/dashboard/events/${eventId}`);
+
+    console.log(`[sendBulkInvites] Complete - Sent: ${sent}, Failed: ${failed}, Skipped: ${skippedLimit}`);
 
     return {
       success: true,
@@ -644,7 +744,7 @@ export async function sendBulkInvites(eventId: string) {
       total: uninvitedGuests.length,
     };
   } catch (error) {
-    console.error("Error sending bulk invites:", error);
+    console.error("[sendBulkInvites] CRITICAL ERROR:", error);
     return { error: "Failed to send invites" };
   }
 }
@@ -705,6 +805,9 @@ export async function sendInteractiveInvite(guestId: string, includeImage: boole
     // Update usage tracking if message was sent
     if (result.success) {
       await checkAndUpdateUsage(user.id, NotificationChannel.WHATSAPP, 1);
+
+      // Log cost for this message
+      await logMessageCost(user.id, guest.weddingEventId, guest.id, NotificationChannel.WHATSAPP, NotificationType.INTERACTIVE_INVITE);
 
       // Trigger automation scheduling for NO_RESPONSE flows
       await onNotificationSent({
@@ -784,6 +887,9 @@ export async function sendInteractiveReminder(guestId: string, includeImage: boo
     // Update usage tracking if message was sent
     if (result.success) {
       await checkAndUpdateUsage(user.id, NotificationChannel.WHATSAPP, 1);
+
+      // Log cost for this message
+      await logMessageCost(user.id, guest.weddingEventId, guest.id, NotificationChannel.WHATSAPP, NotificationType.INTERACTIVE_REMINDER);
 
       // Trigger automation scheduling for NO_RESPONSE flows
       await onNotificationSent({
@@ -988,6 +1094,9 @@ export async function retryFailedNotification(notificationId: string) {
     // Update usage tracking if successful
     if (result.success && result.channel) {
       await checkAndUpdateUsage(user.id, result.channel, 1);
+
+      // Log cost for this message
+      await logMessageCost(user.id, event.id, guest.id, result.channel, notification.type);
     }
 
     revalidatePath(`/dashboard/events/${event.id}`);

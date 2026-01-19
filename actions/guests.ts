@@ -93,19 +93,25 @@ export async function createGuest(input: CreateGuestInput) {
       }
     }
 
-    const guest = await prisma.guest.create({
-      data: {
-        ...validatedData,
-        slug: generateGuestSlug(),
-      },
-    });
+    // Create guest and RSVP atomically in a transaction
+    // This prevents orphaned guests if RSVP creation fails
+    const guest = await prisma.$transaction(async (tx) => {
+      const newGuest = await tx.guest.create({
+        data: {
+          ...validatedData,
+          slug: generateGuestSlug(),
+        },
+      });
 
-    // Create initial RSVP record with PENDING status
-    await prisma.guestRsvp.create({
-      data: {
-        guestId: guest.id,
-        status: "PENDING",
-      },
+      // Create initial RSVP record with PENDING status
+      await tx.guestRsvp.create({
+        data: {
+          guestId: newGuest.id,
+          status: "PENDING",
+        },
+      });
+
+      return newGuest;
     });
 
     revalidatePath(`/dashboard/events/${validatedData.weddingEventId}`);

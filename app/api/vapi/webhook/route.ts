@@ -3,14 +3,32 @@ import { headers } from "next/headers";
 
 import { prisma } from "@/lib/db";
 import type { VapiWebhookEvent, VapiCallStatus } from "@/lib/vapi/types";
+import { withRateLimit, RATE_LIMIT_PRESETS } from "@/lib/rate-limit";
+import { vapiWebhookSchema } from "@/lib/validations/webhooks";
+import { logVoiceCallCost } from "@/lib/analytics/usage-tracking";
 
 /**
  * VAPI Webhook Handler
  * Receives call lifecycle events from VAPI
  */
 export async function POST(request: NextRequest) {
+  // Rate limit webhook requests
+  const rateLimitResult = withRateLimit(request, RATE_LIMIT_PRESETS.webhook);
+  if (rateLimitResult) return rateLimitResult;
+
   try {
     const body = await request.json();
+
+    // Validate payload schema
+    const validation = vapiWebhookSchema.safeParse(body);
+    if (!validation.success) {
+      console.error("Invalid VAPI webhook payload:", validation.error);
+      return NextResponse.json(
+        { error: "Invalid webhook payload", details: validation.error.issues },
+        { status: 400 }
+      );
+    }
+
     const headersList = await headers();
 
     // Get webhook secret for verification (optional)
@@ -173,11 +191,49 @@ async function handleCallEnded(event: VapiWebhookEvent) {
     },
   });
 
-  // Update job progress if this call is part of a job
+  // Get call log details for cost tracking
   const callLog = await prisma.vapiCallLog.findUnique({
     where: { vapiCallId: callId },
-    select: { callJobId: true, status: true },
+    select: {
+      id: true,
+      callJobId: true,
+      status: true,
+      weddingEventId: true,
+      guestId: true,
+      duration: true,
+    },
   });
+
+  // Log voice call cost if we have duration and event details
+  if (callLog && duration) {
+    try {
+      // Get ownerId from the wedding event
+      const weddingEvent = await prisma.weddingEvent.findUnique({
+        where: { id: callLog.weddingEventId },
+        select: { ownerId: true },
+      });
+
+      if (weddingEvent) {
+        await logVoiceCallCost(
+          weddingEvent.ownerId,
+          callLog.weddingEventId,
+          callLog.guestId,
+          duration,
+          {
+            vapiCallId: callId,
+            status,
+            endedReason,
+          }
+        );
+      }
+    } catch (error) {
+      console.error("Error logging voice call cost:", error);
+      // Don't fail the webhook if cost logging fails
+    }
+  }
+
+  // Update job progress if this call is part of a job
+  if (!callLog) return;
 
   if (callLog?.callJobId) {
     const isSuccess = status === "COMPLETED";

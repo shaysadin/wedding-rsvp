@@ -87,6 +87,7 @@
     "messaging": "Messaging Settings",
     "billing": "Billing",
     "cronLogs": "Cron Logs",
+    "usageTracking": "Usage Tracking",
     "vapi": "Voice Agent",
     "voiceAgent": "Voice Agent",
     "archives": "Archives",
@@ -617,7 +618,11 @@
     "assignWhatsappPhone": "Assign WhatsApp Phone",
     "useDefault": "Use Default",
     "phoneAssigned": "Phone number assigned",
-    "phoneUnassigned": "Phone number unassigned (using default)"
+    "phoneUnassigned": "Phone number unassigned (using default)",
+    "usageTracking": {
+      "title": "Usage Tracking",
+      "description": "System-wide usage and cost tracking across all users"
+    }
   },
   "plans": {
     "free": "Free",
@@ -1126,6 +1131,8 @@
     "tableNamePlaceholder": "e.g., Table 1, Family Table",
     "capacity": "Capacity",
     "capacityPlaceholder": "Number of seats",
+    "width": "Width",
+    "height": "Height",
     "shape": "Table Shape",
     "shapes": {
       "circle": "Circle",
@@ -1213,6 +1220,33 @@
     "addTableToStart": "Add a table to get started with the floor plan",
     "tablesNeedPositioning": "{count} table(s) need positioning",
     "assignedGuests": "Assigned Guests",
+    "seatingArrangement": "Seating Arrangement",
+    "colorTheme": "Color Theme",
+    "tabs": {
+      "basic": "Basic",
+      "seating": "Seating",
+      "appearance": "Appearance"
+    },
+    "arrangements": {
+      "even": "Even Distribution",
+      "bride-side": "Bride & Groom Sides",
+      "sides-only": "Sides Only",
+      "custom": "Custom"
+    },
+    "preview": "Preview",
+    "seats": "Seats",
+    "canvasHeight": "Canvas Height",
+    "presets": "Presets",
+    "small": "Small",
+    "medium": "Medium",
+    "large": "Large",
+    "guestAssignedToSeat": "Guest assigned to seat",
+    "seatUnassigned": "Guest removed from seat",
+    "assignmentError": "Failed to assign guest",
+    "unassignError": "Failed to remove guest",
+    "assignSeat": "Assign Seat {seat} at {table}",
+    "searchGuests": "Search for a guest...",
+    "noGuestsAvailable": "No guests available",
     "unsavedChanges": "{count} unsaved change(s)",
     "unsavedChangesTitle": "Unsaved Changes",
     "unsavedChangesDescription": "You have unsaved table position changes. Are you sure you want to discard them?",

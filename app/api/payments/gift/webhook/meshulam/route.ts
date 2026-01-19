@@ -2,10 +2,26 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { prisma } from "@/lib/db";
 import { meshulam } from "@/lib/payments/providers/meshulam";
+import { withRateLimit, RATE_LIMIT_PRESETS } from "@/lib/rate-limit";
+import { meshulamWebhookSchema } from "@/lib/validations/webhooks";
 
 export async function POST(req: NextRequest) {
+  // Rate limit webhook requests
+  const rateLimitResult = withRateLimit(req, RATE_LIMIT_PRESETS.webhook);
+  if (rateLimitResult) return rateLimitResult;
+
   try {
     const payload = await req.json();
+
+    // Validate payload schema
+    const validation = meshulamWebhookSchema.safeParse(payload);
+    if (!validation.success) {
+      console.error("Invalid Meshulam webhook payload:", validation.error);
+      return NextResponse.json(
+        { error: "Invalid webhook payload", details: validation.error.issues },
+        { status: 400 }
+      );
+    }
 
     console.log("Meshulam webhook received:", payload);
 

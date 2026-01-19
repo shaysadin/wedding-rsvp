@@ -14,11 +14,32 @@ export const shapeSchema = z.enum([
 
 export const tableShapeSchema = shapeSchema;
 
+export const seatingArrangementSchema = z.enum([
+  "even",
+  "bride-side",
+  "sides-only",
+  "custom",
+]);
+
+export const colorThemeSchema = z.enum([
+  "default",
+  "blue",
+  "green",
+  "purple",
+  "pink",
+  "amber",
+  "rose",
+]);
+
 export const createTableSchema = z.object({
   weddingEventId: z.string().min(1, "Event ID is required"),
   name: z.string().min(1, "Table name is required").max(100, "Table name is too long"),
   capacity: z.number().int().min(1, "Capacity must be at least 1").max(100, "Capacity cannot exceed 100"),
   shape: tableShapeSchema,
+  seatingArrangement: seatingArrangementSchema,
+  colorTheme: colorThemeSchema,
+  width: z.number().int().min(40).max(400).optional(),
+  height: z.number().int().min(40).max(400).optional(),
 });
 
 export const updateTableSchema = z.object({
@@ -31,6 +52,8 @@ export const updateTableSchema = z.object({
   height: z.number().int().min(40).max(400).optional(),
   rotation: z.number().int().min(0).max(359).optional(),
   shape: tableShapeSchema.optional(),
+  seatingArrangement: seatingArrangementSchema.optional(),
+  colorTheme: colorThemeSchema.optional(),
 });
 
 export const updateTablePositionSchema = z.object({
@@ -135,6 +158,7 @@ export const autoArrangeSchema = z.object({
   eventId: z.string().min(1, "Event ID is required"),
   tableSize: z.number().int().min(1).max(20).default(10),
   tableShape: tableShapeSchema.default("circle"),
+  seatingArrangement: seatingArrangementSchema.default("even"),
   groupingStrategy: z.enum(["side-then-group", "group-only"]).default("side-then-group"),
   sideFilter: z.string().optional(), // "all" or specific side
   groupFilter: z.string().optional(), // "all" or specific group
@@ -157,6 +181,8 @@ export const updateGuestTableSchema = z.object({
 
 export type Shape = z.infer<typeof shapeSchema>;
 export type TableShape = z.infer<typeof tableShapeSchema>;
+export type SeatingArrangement = z.infer<typeof seatingArrangementSchema>;
+export type ColorTheme = z.infer<typeof colorThemeSchema>;
 export type CreateTableInput = z.infer<typeof createTableSchema>;
 export type UpdateTableInput = z.infer<typeof updateTableSchema>;
 export type UpdateTablePositionInput = z.infer<typeof updateTablePositionSchema>;

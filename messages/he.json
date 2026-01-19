@@ -87,6 +87,7 @@
     "messaging": "הגדרות הודעות",
     "billing": "חיוב ותשלומים",
     "cronLogs": "יומני משימות",
+    "usageTracking": "מעקב שימוש",
     "vapi": "סוכן קולי",
     "voiceAgent": "סוכן קולי",
     "archives": "ארכיון",
@@ -617,7 +618,11 @@
     "assignWhatsappPhone": "הקצה טלפון לוואטסאפ",
     "useDefault": "השתמש בברירת מחדל",
     "phoneAssigned": "מספר טלפון הוקצה",
-    "phoneUnassigned": "מספר טלפון הוסר (משתמש בברירת מחדל)"
+    "phoneUnassigned": "מספר טלפון הוסר (משתמש בברירת מחדל)",
+    "usageTracking": {
+      "title": "מעקב שימוש",
+      "description": "מעקב שימוש ועלויות של המערכת עבור כל המשתמשים"
+    }
   },
   "plans": {
     "free": "חינם",
@@ -1126,6 +1131,8 @@
     "tableNamePlaceholder": "לדוגמה: שולחן 1, שולחן משפחה",
     "capacity": "תפוסה",
     "capacityPlaceholder": "מספר מקומות",
+    "width": "רוחב",
+    "height": "גובה",
     "shape": "צורת השולחן",
     "shapes": {
       "circle": "עיגול",
@@ -1222,6 +1229,26 @@
     "rotate45": "סובב 45 מעלות",
     "fullscreen": "מסך מלא",
     "exitFullscreen": "יציאה ממסך מלא",
+    "canvasHeight": "גובה קנבס",
+    "presets": "ערכים מוגדרים",
+    "small": "קטן",
+    "medium": "בינוני",
+    "large": "גדול",
+    "preview": "תצוגה מקדימה",
+    "seats": "מקומות ישיבה",
+    "tabs": {
+      "basic": "בסיסי",
+      "seating": "סידור ישיבה",
+      "appearance": "מראה"
+    },
+    "seatingArrangement": "סידור ישיבה",
+    "arrangements": {
+      "even": "אחיד",
+      "bride-side": "צד כלה/חתן",
+      "sides-only": "צדדים בלבד",
+      "custom": "מותאם אישית"
+    },
+    "colorTheme": "ערכת צבעים",
     "hostessView": "תצוגת מארחת",
     "hostessViewDescription": "שתפי קישור זה עם המארחת",
     "copyHostessLink": "העתק קישור",

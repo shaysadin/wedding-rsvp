@@ -122,37 +122,40 @@ export async function onNotificationSent(data: NotificationSentEventData): Promi
     console.log(`[onNotificationSent] Flow ${flow.id} (${flow.trigger}): scheduledFor = ${scheduledFor}`);
 
     if (scheduledFor && scheduledFor > new Date()) {
-      // Check if execution already exists
-      const existing = await prisma.automationFlowExecution.findUnique({
-        where: {
-          flowId_guestId: {
-            flowId: flow.id,
-            guestId,
-          },
-        },
-      });
-
-      if (existing) {
-        // Update scheduled time if execution is still pending
-        if (existing.status === "PENDING") {
-          await prisma.automationFlowExecution.update({
-            where: { id: existing.id },
-            data: { scheduledFor },
-          });
-          console.log(`[onNotificationSent] Updated execution ${existing.id}`);
-        }
-      } else {
-        // Create new execution
-        const newExecution = await prisma.automationFlowExecution.create({
-          data: {
-            flowId: flow.id,
-            guestId,
-            status: "PENDING",
-            scheduledFor,
+      // Use upsert to atomically create or update - prevents race conditions
+      // Separate transaction to handle update conditionally based on status
+      await prisma.$transaction(async (tx) => {
+        const existing = await tx.automationFlowExecution.findUnique({
+          where: {
+            flowId_guestId: {
+              flowId: flow.id,
+              guestId,
+            },
           },
         });
-        console.log(`[onNotificationSent] Created execution ${newExecution.id} scheduled for ${scheduledFor}`);
-      }
+
+        if (existing) {
+          // Only update if still pending
+          if (existing.status === "PENDING") {
+            await tx.automationFlowExecution.update({
+              where: { id: existing.id },
+              data: { scheduledFor },
+            });
+            console.log(`[onNotificationSent] Updated execution ${existing.id}`);
+          }
+        } else {
+          // Create new execution atomically
+          const newExecution = await tx.automationFlowExecution.create({
+            data: {
+              flowId: flow.id,
+              guestId,
+              status: "PENDING",
+              scheduledFor,
+            },
+          });
+          console.log(`[onNotificationSent] Created execution ${newExecution.id} scheduled for ${scheduledFor}`);
+        }
+      });
     }
   }
 }
@@ -193,20 +196,6 @@ export async function onFlowActivated(flowId: string): Promise<void> {
 
   // Schedule executions for eligible guests
   for (const guest of flow.weddingEvent.guests) {
-    // Skip if execution already exists
-    const existing = await prisma.automationFlowExecution.findUnique({
-      where: {
-        flowId_guestId: {
-          flowId: flow.id,
-          guestId: guest.id,
-        },
-      },
-    });
-
-    if (existing) {
-      continue;
-    }
-
     // Calculate when to schedule
     const lastNotification = guest.notificationLogs[0]?.sentAt ?? null;
     const scheduledFor = calculateScheduledTime(
@@ -251,13 +240,27 @@ export async function onFlowActivated(flowId: string): Promise<void> {
     }
 
     if (isEligible && scheduledFor && scheduledFor > new Date()) {
-      await prisma.automationFlowExecution.create({
-        data: {
-          flowId: flow.id,
-          guestId: guest.id,
-          status: "PENDING",
-          scheduledFor,
-        },
+      // Use transaction to atomically check and create - prevents duplicates
+      await prisma.$transaction(async (tx) => {
+        const existing = await tx.automationFlowExecution.findUnique({
+          where: {
+            flowId_guestId: {
+              flowId: flow.id,
+              guestId: guest.id,
+            },
+          },
+        });
+
+        if (!existing) {
+          await tx.automationFlowExecution.create({
+            data: {
+              flowId: flow.id,
+              guestId: guest.id,
+              status: "PENDING",
+              scheduledFor,
+            },
+          });
+        }
       });
     }
   }
@@ -270,41 +273,44 @@ async function createAndExecuteImmediate(
   flowId: string,
   guestId: string
 ): Promise<void> {
-  // Check if execution already exists
-  const existing = await prisma.automationFlowExecution.findUnique({
-    where: {
-      flowId_guestId: {
-        flowId,
-        guestId,
-      },
-    },
-  });
-
-  let executionId: string;
-
-  if (existing) {
-    // Skip if already completed
-    if (existing.status === "COMPLETED") {
-      return;
-    }
-    executionId = existing.id;
-  } else {
-    // Create new execution
-    const execution = await prisma.automationFlowExecution.create({
-      data: {
-        flowId,
-        guestId,
-        status: "PROCESSING",
+  // Use transaction to atomically check, create, and update status
+  const executionId = await prisma.$transaction(async (tx) => {
+    const existing = await tx.automationFlowExecution.findUnique({
+      where: {
+        flowId_guestId: {
+          flowId,
+          guestId,
+        },
       },
     });
-    executionId = execution.id;
-  }
 
-  // Update status to processing
-  await prisma.automationFlowExecution.update({
-    where: { id: executionId },
-    data: { status: "PROCESSING" },
+    if (existing) {
+      // Skip if already completed
+      if (existing.status === "COMPLETED") {
+        return null;
+      }
+      // Update to processing
+      await tx.automationFlowExecution.update({
+        where: { id: existing.id },
+        data: { status: "PROCESSING" },
+      });
+      return existing.id;
+    } else {
+      // Create new execution with PROCESSING status
+      const execution = await tx.automationFlowExecution.create({
+        data: {
+          flowId,
+          guestId,
+          status: "PROCESSING",
+        },
+      });
+      return execution.id;
+    }
   });
+
+  if (!executionId) {
+    return; // Already completed
+  }
 
   try {
     // Get flow and guest details

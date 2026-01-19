@@ -4,6 +4,8 @@ import crypto from "crypto";
 
 import { prisma } from "@/lib/db";
 import { NotificationStatus } from "@prisma/client";
+import { withRateLimit, RATE_LIMIT_PRESETS } from "@/lib/rate-limit";
+import { twilioStatusWebhookSchema } from "@/lib/validations/webhooks";
 
 /**
  * Twilio Message Status Callback Webhook
@@ -101,6 +103,10 @@ async function validateTwilioSignature(
 }
 
 export async function POST(request: NextRequest) {
+  // Rate limit webhook requests
+  const rateLimitResult = withRateLimit(request, RATE_LIMIT_PRESETS.webhook);
+  if (rateLimitResult) return rateLimitResult;
+
   try {
     // Parse the form data from Twilio
     const formData = await request.formData();
@@ -110,18 +116,37 @@ export async function POST(request: NextRequest) {
       payload[key] = value.toString();
     });
 
+    // Validate payload schema
+    const validation = twilioStatusWebhookSchema.safeParse(payload);
+    if (!validation.success) {
+      console.error("Invalid Twilio status webhook payload:", validation.error);
+      return NextResponse.json(
+        { error: "Invalid webhook payload", details: validation.error.issues },
+        { status: 400 }
+      );
+    }
+
     // Log the payload for debugging
     console.log("📬 Twilio Status Callback received:", JSON.stringify(payload, null, 2));
 
-    // Validate Twilio signature (optional but recommended)
+    // Validate Twilio signature (REQUIRED for security)
     const settings = await prisma.messagingProviderSettings.findFirst();
-    if (settings?.whatsappApiSecret) {
-      const isValid = await validateTwilioSignature(request, settings.whatsappApiSecret, payload);
-      if (!isValid) {
-        console.warn("Invalid Twilio signature received for status callback");
-        // In production, you might want to reject invalid signatures
-        // return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
-      }
+
+    if (!settings?.whatsappApiSecret) {
+      console.error("Twilio status callback received but auth token not configured");
+      return NextResponse.json(
+        { error: "Webhook authentication not configured" },
+        { status: 503 }
+      );
+    }
+
+    const isValid = await validateTwilioSignature(request, settings.whatsappApiSecret, payload);
+    if (!isValid) {
+      console.error("Invalid Twilio signature on status callback - possible unauthorized access attempt");
+      return NextResponse.json(
+        { error: "Invalid signature" },
+        { status: 401 }
+      );
     }
 
     // Extract key fields from the payload

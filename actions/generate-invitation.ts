@@ -485,7 +485,7 @@ export async function sendImageInvitation(guestId: string) {
         guestId: guestId,
         type: "IMAGE_INVITE",
         channel: "WHATSAPP",
-        status: "SENT",
+        status: "PENDING",
         sentAt: new Date(),
       },
     });
@@ -564,15 +564,39 @@ export async function sendBulkImageInvitations(guestIds: string[]) {
               guestId: guest.id,
               type: "IMAGE_INVITE",
               channel: "WHATSAPP",
-              status: "SENT",
+              status: "PENDING",
               sentAt: new Date(),
             },
           });
           sent++;
         } else {
+          // Log failed attempt with error details
+          await prisma.notificationLog.create({
+            data: {
+              guestId: guest.id,
+              type: "IMAGE_INVITE",
+              channel: "WHATSAPP",
+              status: "FAILED",
+              providerResponse: JSON.stringify({ error: result.error }),
+              sentAt: new Date(),
+            },
+          });
           failed++;
         }
-      } catch {
+      } catch (error) {
+        // Log unexpected errors
+        await prisma.notificationLog.create({
+          data: {
+            guestId: guest.id,
+            type: "IMAGE_INVITE",
+            channel: "WHATSAPP",
+            status: "FAILED",
+            providerResponse: JSON.stringify({
+              error: error instanceof Error ? error.message : "Unknown error"
+            }),
+            sentAt: new Date(),
+          },
+        });
         failed++;
       }
 

@@ -65,7 +65,9 @@ export function AddTableDialog({ eventId, open: controlledOpen, onOpenChange }: 
       weddingEventId: eventId,
       name: "",
       capacity: 10,
-      shape: "circle",
+      shape: "circle" as const,
+      seatingArrangement: "even" as const,
+      colorTheme: "default" as const,
     },
   });
 

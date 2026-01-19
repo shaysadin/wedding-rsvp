@@ -93,10 +93,14 @@ export class UpsendSmsProvider implements SmsProvider {
   private getSenderId(): string {
     if (this.config.alphaSenderId) {
       // Alpha sender ID - max 11 characters
-      return this.config.alphaSenderId.slice(0, 11);
+      const senderId = this.config.alphaSenderId.slice(0, 11);
+      console.log(`[Upsend] Using alpha sender ID: "${senderId}"`);
+      return senderId;
     }
     // Use phone number - strip any non-digit characters and format for Israeli numbers
-    return this.config.phoneNumber.replace(/[^\d]/g, "").slice(0, 14);
+    const senderId = this.config.phoneNumber.replace(/[^\d]/g, "").slice(0, 14);
+    console.log(`[Upsend] Using phone number sender ID: "${senderId}"`);
+    return senderId;
   }
 
   async sendSms(to: string, message: string): Promise<SendSmsResult> {
@@ -138,6 +142,7 @@ export class UpsendSmsProvider implements SmsProvider {
       const result: UpsendSendSmsResponse = await response.json();
 
       if (result.StatusId === 1) {
+        console.log(`[Upsend] SMS sent successfully. RequestId: ${result.RequestId}`);
         return {
           success: true,
           messageId: result.RequestId,
@@ -149,6 +154,11 @@ export class UpsendSmsProvider implements SmsProvider {
           result.DetailedDescription ||
           result.StatusDescription ||
           "Failed to send SMS";
+
+        console.error(
+          `[Upsend] SMS failed. StatusId: ${result.StatusId}, Error: ${errorMessage}`,
+          { result }
+        );
 
         return {
           success: false,

@@ -7,18 +7,20 @@ import {
   DndContext,
   DragEndEvent,
   DragStartEvent,
+  DragOverlay,
   useDraggable,
   useDroppable,
   PointerSensor,
   useSensor,
   useSensors,
 } from "@dnd-kit/core";
-import { Maximize2, Minimize2, GripHorizontal } from "lucide-react";
+import { Maximize2, Minimize2 } from "lucide-react";
 
-import { updateTablePosition, updateTableSize, updateTableRotation, updateVenueBlockPosition, updateVenueBlockSize, updateVenueBlockRotation, deleteVenueBlock } from "@/actions/seating";
+import { updateTablePosition, updateTableSize, updateTableRotation, updateVenueBlockPosition, updateVenueBlockSize, updateVenueBlockRotation, deleteVenueBlock, deleteTable } from "@/actions/seating";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Popover,
   PopoverContent,
@@ -35,6 +37,9 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Icons } from "@/components/shared/icons";
+import { TableWithSeats, type TableColorTheme } from "@/components/seating/table-with-seats";
+import { AssignSeatDialog } from "@/components/seating/assign-seat-dialog";
+import { assignGuestToSeat, unassignSeat, getGuestsForAssignment } from "@/actions/seating";
 
 interface TableGuest {
   id: string;
@@ -53,17 +58,33 @@ interface TableAssignment {
   guest: TableGuest;
 }
 
+interface TableSeat {
+  id: string;
+  seatNumber: number;
+  relativeX: number;
+  relativeY: number;
+  angle: number;
+  guest?: {
+    id: string;
+    name: string;
+    rsvpStatus?: "ACCEPTED" | "PENDING" | "DECLINED" | "MAYBE";
+  } | null;
+}
+
 interface Table {
   id: string;
   name: string;
   capacity: number;
   shape?: string | null;
+  colorTheme?: string | null;
+  seatingArrangement?: string | null;
   positionX?: number | null;
   positionY?: number | null;
   width?: number;
   height?: number;
   rotation?: number;
   assignments: TableAssignment[];
+  seats?: TableSeat[];
   seatsUsed: number;
   seatsAvailable: number;
 }
@@ -85,7 +106,7 @@ interface TableFloorPlanProps {
   venueBlocks?: VenueBlock[];
   eventId: string;
   onAssignGuests: (tableId: string) => void;
-  onEditTable: (table: { id: string; name: string; capacity: number; shape?: string | null }) => void;
+  onEditTable: (table: { id: string; name: string; capacity: number; shape?: string | null; seatingArrangement?: string | null; colorTheme?: string | null }) => void;
 }
 
 interface LocalPosition {
@@ -178,27 +199,45 @@ function DraggableTable({
   onResizeEnd,
   onRotate,
   isResizing,
+  onSeatClick,
 }: {
   table: Table;
   localPosition?: LocalPosition;
   localSize?: LocalSize;
   localRotation?: number;
   onAssignGuests: (tableId: string) => void;
-  onEditTable: (table: { id: string; name: string; capacity: number; shape?: string | null }) => void;
+  onEditTable: (table: { id: string; name: string; capacity: number; shape?: string | null; seatingArrangement?: string | null; colorTheme?: string | null }) => void;
   onResizeStart: (id: string, type: "table" | "block") => void;
   onResize: (id: string, type: "table" | "block", width: number, height: number) => void;
   onResizeEnd: (id: string, type: "table" | "block") => void;
   onRotate: (id: string, type: "table" | "block") => void;
   isResizing: boolean;
+  onSeatClick?: (seatId: string, seatNumber: number, tableName: string, currentGuest?: TableSeat['guest']) => void;
 }) {
   const t = useTranslations("seating");
+  const tc = useTranslations("common");
   const [popoverOpen, setPopoverOpen] = useState(false);
-  const [hoveredHandle, setHoveredHandle] = useState<string | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: table.id,
     data: { table },
     disabled: isResizing,
   });
+
+  const handleDeleteTable = async () => {
+    try {
+      const result = await deleteTable(table.id);
+      if (result.error) {
+        toast.error(result.error);
+      } else {
+        toast.success(t("tableDeleted"));
+        // Refresh data
+        window.dispatchEvent(new CustomEvent("seating-data-changed"));
+      }
+    } catch {
+      toast.error(t("deleteTableError"));
+    }
+  };
 
   const shape = (table.shape || "circle") as keyof typeof DEFAULT_TABLE_SIZE;
   const defaultSize = DEFAULT_TABLE_SIZE[shape] || DEFAULT_TABLE_SIZE.circle;
@@ -235,132 +274,78 @@ function DraggableTable({
     concaveRounded: "rounded-t-full rounded-b-lg",
   };
 
-  // Resize handle mouse down handler - accounts for rotation
-  // Element position stays fixed, only size changes (resize from top-left corner)
-  const handleResizeMouseDown = (e: React.MouseEvent, handle: string) => {
-    e.preventDefault();
-    e.stopPropagation();
 
-    onResizeStart(table.id, "table");
-    const startX = e.clientX;
-    const startY = e.clientY;
-    const startWidth = width;
-    const startHeight = height;
-
-    // Convert rotation to radians for transformation
-    const rotationRad = (rotation * Math.PI) / 180;
-    const cos = Math.cos(rotationRad);
-    const sin = Math.sin(rotationRad);
-
-    const handleMouseMove = (moveEvent: MouseEvent) => {
-      let newWidth = startWidth;
-      let newHeight = startHeight;
-
-      // Get mouse delta in screen coordinates
-      const screenDeltaX = moveEvent.clientX - startX;
-      const screenDeltaY = moveEvent.clientY - startY;
-
-      // Rotate the delta back to local coordinates (inverse rotation)
-      const localDeltaX = screenDeltaX * cos + screenDeltaY * sin;
-      const localDeltaY = -screenDeltaX * sin + screenDeltaY * cos;
-
-      // All handles resize from the top-left corner (element stays in place)
-      // East/West handles control width
-      if (handle.includes("e") || handle.includes("w")) {
-        const widthDelta = handle.includes("e") ? localDeltaX : -localDeltaX;
-        newWidth = Math.max(MIN_SIZE, Math.min(MAX_SIZE, startWidth + widthDelta));
-      }
-      // South/North handles control height
-      if (handle.includes("s") || handle.includes("n")) {
-        const heightDelta = handle.includes("s") ? localDeltaY : -localDeltaY;
-        newHeight = Math.max(MIN_SIZE, Math.min(MAX_SIZE, startHeight + heightDelta));
-      }
-
-      // Don't snap during resize - smooth resize follows cursor
-      onResize(table.id, "table", newWidth, newHeight);
-    };
-
-    const handleMouseUp = () => {
-      document.removeEventListener("mousemove", handleMouseMove);
-      document.removeEventListener("mouseup", handleMouseUp);
-      onResizeEnd(table.id, "table");
-    };
-
-    document.addEventListener("mousemove", handleMouseMove);
-    document.addEventListener("mouseup", handleMouseUp);
-  };
-
-  // All 8 resize handles (element stays in place during resize)
-  const resizeHandles = [
-    { position: "n", cursor: "ns-resize", className: "top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-2" },
-    { position: "s", cursor: "ns-resize", className: "bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 w-4 h-2" },
-    { position: "e", cursor: "ew-resize", className: "right-0 top-1/2 translate-x-1/2 -translate-y-1/2 w-2 h-4" },
-    { position: "w", cursor: "ew-resize", className: "left-0 top-1/2 -translate-x-1/2 -translate-y-1/2 w-2 h-4" },
-    { position: "ne", cursor: "nesw-resize", className: "top-0 right-0 -translate-y-1/2 translate-x-1/2 w-3 h-3" },
-    { position: "nw", cursor: "nwse-resize", className: "top-0 left-0 -translate-y-1/2 -translate-x-1/2 w-3 h-3" },
-    { position: "se", cursor: "nwse-resize", className: "bottom-0 right-0 translate-y-1/2 translate-x-1/2 w-3 h-3" },
-    { position: "sw", cursor: "nesw-resize", className: "bottom-0 left-0 translate-y-1/2 -translate-x-1/2 w-3 h-3" },
-  ];
+  // Prepare seats data for TableWithSeats component
+  const tableSeats = (table.seats || []).map((seat) => ({
+    id: seat.id,
+    seatNumber: seat.seatNumber,
+    relativeX: seat.relativeX,
+    relativeY: seat.relativeY,
+    angle: seat.angle,
+    guest: seat.guest ? {
+      id: seat.guest.id,
+      name: seat.guest.name,
+      rsvpStatus: seat.guest.rsvpStatus || "PENDING",
+    } : null,
+  }));
 
   return (
+    <>
     <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
       <PopoverTrigger asChild>
         <div
           ref={setNodeRef}
-          style={style}
+          style={{
+            position: "absolute" as const,
+            left: posX,
+            top: posY,
+            width,
+            height,
+            zIndex: isDragging ? 1000 : 1,
+            opacity: isDragging ? 0.8 : 1,
+          }}
           {...(isResizing ? {} : listeners)}
           {...(isResizing ? {} : attributes)}
           className={cn(
-            "flex flex-col items-center justify-center shadow-md transition-shadow group relative",
-            !isResizing && "cursor-grab active:cursor-grabbing",
-            "hover:shadow-lg",
-            isDragging && "shadow-xl",
-            // Only apply border and background classes for non-concave shapes
-            !isConcave && [
-              "border-2 bg-card",
-              shapeClasses[shape] || shapeClasses.circle,
-              isOverCapacity ? "border-destructive" : "border-primary/50",
-            ]
+            "group relative",
+            !isResizing && "cursor-grab active:cursor-grabbing"
           )}
           onDoubleClick={() => {
             setPopoverOpen(false);
             onEditTable(table);
           }}
         >
-          {/* SVG background for concave shapes */}
-          {isConcave && (
-            <ConcaveShape
-              width={width}
-              height={height}
-              rounded={shape === "concaveRounded"}
-              borderColor={borderColor}
+          {/* Use TableWithSeats component for visual rendering */}
+          <div
+            style={{
+              width: "100%",
+              height: "100%",
+              transform: transform
+                ? `translate3d(${transform.x}px, ${transform.y}px, 0) rotate(${rotation}deg)`
+                : `rotate(${rotation}deg)`,
+            }}
+          >
+            <TableWithSeats
+              table={{
+                id: table.id,
+                name: table.name,
+                capacity: table.capacity,
+                shape: shape,
+                colorTheme: (table.colorTheme as TableColorTheme) || "default",
+                width,
+                height,
+                rotation: 0, // Rotation is handled by parent div
+              }}
+              seats={tableSeats}
+              positionX={0}
+              positionY={0}
+              onSeatClick={(seatId, seatNumber) => {
+                const seat = table.seats?.find(s => s.id === seatId);
+                onSeatClick?.(seatId, seatNumber, table.name, seat?.guest);
+              }}
+              onTableClick={() => setPopoverOpen(true)}
             />
-          )}
-          <span className="font-semibold text-sm truncate max-w-[80%] pointer-events-none z-10">
-            {table.name}
-          </span>
-          <span className={cn(
-            "text-xs pointer-events-none z-10",
-            isOverCapacity ? "text-destructive" : "text-muted-foreground"
-          )}>
-            {table.seatsUsed}/{table.capacity}
-          </span>
-
-          {/* Resize handles */}
-          {resizeHandles.map(({ position, cursor, className }) => (
-            <div
-              key={position}
-              className={cn(
-                "absolute bg-primary rounded-sm opacity-0 group-hover:opacity-100 transition-opacity",
-                className,
-                hoveredHandle === position && "opacity-100 bg-primary/80"
-              )}
-              style={{ cursor }}
-              onMouseDown={(e) => handleResizeMouseDown(e, position)}
-              onMouseEnter={() => setHoveredHandle(position)}
-              onMouseLeave={() => setHoveredHandle(null)}
-            />
-          ))}
+          </div>
 
           {/* Rotation button - only for non-circle shapes */}
           {!isCircle && (
@@ -424,10 +409,43 @@ function DraggableTable({
               <Icons.pencil className="me-2 h-4 w-4" />
               {t("editTable")}
             </Button>
+            <Button
+              size="sm"
+              variant="destructive"
+              className="w-full justify-start"
+              onClick={() => {
+                setPopoverOpen(false);
+                setShowDeleteConfirm(true);
+              }}
+            >
+              <Icons.trash className="me-2 h-4 w-4" />
+              {tc("delete")}
+            </Button>
           </div>
         </div>
       </PopoverContent>
     </Popover>
+
+    <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>{t("deleteTableTitle")}</AlertDialogTitle>
+          <AlertDialogDescription>
+            {t("deleteTableDescription", { name: table.name })}
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>{tc("cancel")}</AlertDialogCancel>
+          <AlertDialogAction
+            onClick={handleDeleteTable}
+            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+          >
+            {tc("delete")}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  </>
   );
 }
 
@@ -495,7 +513,6 @@ function DraggableVenueBlock({
   const tc = useTranslations("common");
   const [popoverOpen, setPopoverOpen] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [hoveredHandle, setHoveredHandle] = useState<string | null>(null);
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: `block-${block.id}`,
     data: { block, type: "venue-block" },
@@ -545,72 +562,6 @@ function DraggableVenueBlock({
     opacity: isDragging ? 0.8 : 1,
   };
 
-  // Resize handle mouse down handler - accounts for rotation
-  // Element position stays fixed, only size changes (resize from top-left corner)
-  const handleResizeMouseDown = (e: React.MouseEvent, handle: string) => {
-    e.preventDefault();
-    e.stopPropagation();
-
-    onResizeStart(block.id, "block");
-    const startX = e.clientX;
-    const startY = e.clientY;
-    const startWidth = width;
-    const startHeight = height;
-
-    // Convert rotation to radians for transformation
-    const rotationRad = (rotation * Math.PI) / 180;
-    const cos = Math.cos(rotationRad);
-    const sin = Math.sin(rotationRad);
-
-    const handleMouseMove = (moveEvent: MouseEvent) => {
-      let newWidth = startWidth;
-      let newHeight = startHeight;
-
-      // Get mouse delta in screen coordinates
-      const screenDeltaX = moveEvent.clientX - startX;
-      const screenDeltaY = moveEvent.clientY - startY;
-
-      // Rotate the delta back to local coordinates (inverse rotation)
-      const localDeltaX = screenDeltaX * cos + screenDeltaY * sin;
-      const localDeltaY = -screenDeltaX * sin + screenDeltaY * cos;
-
-      // All handles resize from the top-left corner (element stays in place)
-      // East/West handles control width
-      if (handle.includes("e") || handle.includes("w")) {
-        const widthDelta = handle.includes("e") ? localDeltaX : -localDeltaX;
-        newWidth = Math.max(MIN_SIZE, Math.min(MAX_SIZE, startWidth + widthDelta));
-      }
-      // South/North handles control height
-      if (handle.includes("s") || handle.includes("n")) {
-        const heightDelta = handle.includes("s") ? localDeltaY : -localDeltaY;
-        newHeight = Math.max(MIN_SIZE, Math.min(MAX_SIZE, startHeight + heightDelta));
-      }
-
-      // Don't snap during resize - smooth resize follows cursor
-      onResize(block.id, "block", newWidth, newHeight);
-    };
-
-    const handleMouseUp = () => {
-      document.removeEventListener("mousemove", handleMouseMove);
-      document.removeEventListener("mouseup", handleMouseUp);
-      onResizeEnd(block.id, "block");
-    };
-
-    document.addEventListener("mousemove", handleMouseMove);
-    document.addEventListener("mouseup", handleMouseUp);
-  };
-
-  // All 8 resize handles (element stays in place during resize)
-  const resizeHandles = [
-    { position: "n", cursor: "ns-resize", className: "top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-2" },
-    { position: "s", cursor: "ns-resize", className: "bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 w-4 h-2" },
-    { position: "e", cursor: "ew-resize", className: "right-0 top-1/2 translate-x-1/2 -translate-y-1/2 w-2 h-4" },
-    { position: "w", cursor: "ew-resize", className: "left-0 top-1/2 -translate-x-1/2 -translate-y-1/2 w-2 h-4" },
-    { position: "ne", cursor: "nesw-resize", className: "top-0 right-0 -translate-y-1/2 translate-x-1/2 w-3 h-3" },
-    { position: "nw", cursor: "nwse-resize", className: "top-0 left-0 -translate-y-1/2 -translate-x-1/2 w-3 h-3" },
-    { position: "se", cursor: "nwse-resize", className: "bottom-0 right-0 translate-y-1/2 translate-x-1/2 w-3 h-3" },
-    { position: "sw", cursor: "nesw-resize", className: "bottom-0 left-0 translate-y-1/2 -translate-x-1/2 w-3 h-3" },
-  ];
 
   return (
     <>
@@ -643,22 +594,6 @@ function DraggableVenueBlock({
             <span className="text-xs font-medium text-center truncate max-w-[90%] mt-1 pointer-events-none z-10">
               {block.name}
             </span>
-
-            {/* Resize handles */}
-            {resizeHandles.map(({ position, cursor, className }) => (
-              <div
-                key={position}
-                className={cn(
-                  "absolute bg-primary rounded-sm opacity-0 group-hover:opacity-100 transition-opacity z-20",
-                  className,
-                  hoveredHandle === position && "opacity-100 bg-primary/80"
-                )}
-                style={{ cursor }}
-                onMouseDown={(e) => handleResizeMouseDown(e, position)}
-                onMouseEnter={() => setHoveredHandle(position)}
-                onMouseLeave={() => setHoveredHandle(null)}
-              />
-            ))}
 
             {/* Rotation button - only for non-circle shapes */}
             {!isCircle && (
@@ -744,17 +679,12 @@ const FloorArea = React.forwardRef<HTMLDivElement, { children: React.ReactNode; 
         ref={combinedRef}
         className={cn(
           "relative w-full border-2 border-dashed rounded-lg overflow-hidden",
-          "bg-muted/20",
+          "bg-muted/30",
           isOver && "border-primary bg-primary/5",
           isFullscreen && "rounded-none border-0"
         )}
         style={{
           height: isFullscreen ? "100%" : height,
-          backgroundImage: `
-            linear-gradient(to right, hsl(var(--border)) 1px, transparent 1px),
-            linear-gradient(to bottom, hsl(var(--border)) 1px, transparent 1px)
-          `,
-          backgroundSize: `${GRID_SIZE}px ${GRID_SIZE}px`,
         }}
       >
         {children}
@@ -786,12 +716,79 @@ export function TableFloorPlan({
   const [floorWidth, setFloorWidth] = useState(800); // Default width, will be updated
   const [floorHeight, setFloorHeight] = useState(DEFAULT_FLOOR_HEIGHT);
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [isResizingHeight, setIsResizingHeight] = useState(false);
+  const [heightInputValue, setHeightInputValue] = useState(DEFAULT_FLOOR_HEIGHT.toString());
   const containerRef = useRef<HTMLDivElement>(null);
   const floorRef = useRef<HTMLDivElement>(null);
   const fullscreenRef = useRef<HTMLDivElement>(null);
   // Store base dimensions (non-fullscreen) for proper position saving
   const baseFloorDimensions = useRef({ width: 800, height: DEFAULT_FLOOR_HEIGHT });
+
+  // Seat assignment dialog state
+  const [assignSeatDialogOpen, setAssignSeatDialogOpen] = useState(false);
+  const [selectedSeat, setSelectedSeat] = useState<{ seatId: string; seatNumber: number; tableName: string } | null>(null);
+  const [selectedSeatGuest, setSelectedSeatGuest] = useState<TableSeat['guest'] | null>(null);
+  const [allGuests, setAllGuests] = useState<Array<{ id: string; name: string; rsvpStatus?: string }>>([]);
+
+  // Fetch all guests for the event
+  useEffect(() => {
+    async function fetchGuests() {
+      const result = await getGuestsForAssignment(eventId);
+      if (result.guests) {
+        setAllGuests(result.guests.map(g => ({
+          id: g.id,
+          name: g.name,
+          rsvpStatus: g.rsvp?.status || "PENDING",
+        })));
+      }
+    }
+    fetchGuests();
+
+    // Refresh guests when seating data changes
+    const handleRefresh = () => fetchGuests();
+    window.addEventListener("seating-data-changed", handleRefresh);
+    return () => window.removeEventListener("seating-data-changed", handleRefresh);
+  }, [eventId]);
+
+  // Handle seat click - open assignment dialog
+  const handleSeatClick = useCallback((seatId: string, seatNumber: number, tableName: string, currentGuest?: TableSeat['guest']) => {
+    setSelectedSeat({ seatId, seatNumber, tableName });
+    setSelectedSeatGuest(currentGuest || null);
+    setAssignSeatDialogOpen(true);
+  }, []);
+
+  // Available guests - all guests excluding those already seated
+  const seatedGuestIds = new Set(
+    tables.flatMap(t => t.seats?.map(s => s.guest?.id).filter(Boolean) || [])
+  );
+  const availableGuests = allGuests.filter(g => !seatedGuestIds.has(g.id));
+
+  // Handle assign guest to seat
+  const handleAssignSeat = async (guestId: string) => {
+    if (!selectedSeat) return;
+
+    const result = await assignGuestToSeat(selectedSeat.seatId, guestId);
+    if (result.error) {
+      toast.error(result.error);
+    } else {
+      toast.success(t("guestAssignedToSeat"));
+      // Refresh data
+      window.dispatchEvent(new CustomEvent("seating-data-changed"));
+    }
+  };
+
+  // Handle unassign seat
+  const handleUnassignSeat = async () => {
+    if (!selectedSeat) return;
+
+    const result = await unassignSeat(selectedSeat.seatId);
+    if (result.error) {
+      toast.error(result.error);
+    } else {
+      toast.success(t("seatUnassigned"));
+      // Refresh data
+      window.dispatchEvent(new CustomEvent("seating-data-changed"));
+    }
+  };
 
   // Load floor height from localStorage on mount
   useEffect(() => {
@@ -800,6 +797,7 @@ export function TableFloorPlan({
       const height = parseInt(savedHeight, 10);
       if (!isNaN(height) && height >= MIN_FLOOR_HEIGHT && height <= MAX_FLOOR_HEIGHT) {
         setFloorHeight(height);
+        setHeightInputValue(height.toString());
         // Also set base dimensions
         baseFloorDimensions.current.height = height;
       }
@@ -848,38 +846,78 @@ export function TableFloorPlan({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isFullscreen]);
 
-  // Height resize handler
-  const handleHeightResizeStart = useCallback((e: React.MouseEvent) => {
-    e.preventDefault();
-    setIsResizingHeight(true);
-    const startY = e.clientY;
-    const startHeight = floorHeight;
-    let currentHeight = startHeight;
+  // Handle canvas height change with proportional scaling
+  const handleHeightChange = useCallback((newHeight: number) => {
+    const oldHeight = floorHeight;
+    const height = Math.max(MIN_FLOOR_HEIGHT, Math.min(MAX_FLOOR_HEIGHT, newHeight));
 
-    const handleMouseMove = (moveEvent: MouseEvent) => {
-      const deltaY = moveEvent.clientY - startY;
-      currentHeight = Math.max(MIN_FLOOR_HEIGHT, Math.min(MAX_FLOOR_HEIGHT, startHeight + deltaY));
-      setFloorHeight(currentHeight);
-      // Update base dimensions as we resize
-      if (floorRef.current) {
-        baseFloorDimensions.current = {
-          width: floorRef.current.clientWidth,
-          height: currentHeight,
-        };
-      }
-    };
+    // Calculate scale factor
+    const scaleY = height / oldHeight;
 
-    const handleMouseUp = () => {
-      setIsResizingHeight(false);
-      // Save the final height to localStorage
-      localStorage.setItem(FLOOR_HEIGHT_STORAGE_KEY, currentHeight.toString());
-      document.removeEventListener("mousemove", handleMouseMove);
-      document.removeEventListener("mouseup", handleMouseUp);
-    };
+    // Scale all table positions proportionally
+    if (scaleY !== 1 && tables.length > 0) {
+      const updatedTablePositions = new Map(localPositions);
 
-    document.addEventListener("mousemove", handleMouseMove);
-    document.addEventListener("mouseup", handleMouseUp);
-  }, [floorHeight]);
+      tables.forEach((table, index) => {
+        const currentPos = getTablePosition(table, index);
+        const scaledY = currentPos.y * scaleY;
+
+        // Ensure within bounds
+        const shape = (table.shape || "circle") as keyof typeof DEFAULT_TABLE_SIZE;
+        const defaultSize = DEFAULT_TABLE_SIZE[shape] || DEFAULT_TABLE_SIZE.circle;
+        const localTableSize = tableSizes.get(table.id);
+        const tableHeight = localTableSize?.height ?? table.height ?? defaultSize.height;
+        const maxY = Math.max(0, height - tableHeight);
+        const boundedY = Math.max(0, Math.min(scaledY, maxY));
+
+        updatedTablePositions.set(table.id, {
+          x: currentPos.x,
+          y: boundedY,
+        });
+      });
+
+      setLocalPositions(updatedTablePositions);
+
+      // Scale venue block positions
+      const updatedBlockPositions = new Map(blockPositions);
+
+      venueBlocks.forEach((block, index) => {
+        const currentPos = getBlockPosition(block, index);
+        const scaledY = currentPos.y * scaleY;
+
+        // Ensure within bounds
+        const maxY = Math.max(0, height - block.height);
+        const boundedY = Math.max(0, Math.min(scaledY, maxY));
+
+        updatedBlockPositions.set(block.id, {
+          x: currentPos.x,
+          y: boundedY,
+        });
+      });
+
+      setBlockPositions(updatedBlockPositions);
+    }
+
+    setFloorHeight(height);
+    setHeightInputValue(height.toString());
+    localStorage.setItem(FLOOR_HEIGHT_STORAGE_KEY, height.toString());
+    // Update base dimensions
+    if (floorRef.current) {
+      baseFloorDimensions.current = {
+        width: floorRef.current.clientWidth,
+        height,
+      };
+    }
+  }, [floorHeight, tables, venueBlocks, localPositions, blockPositions, tableSizes]);
+
+  // Handle input field change
+  const handleHeightInputChange = useCallback((value: string) => {
+    setHeightInputValue(value);
+    const parsed = parseInt(value, 10);
+    if (!isNaN(parsed)) {
+      handleHeightChange(parsed);
+    }
+  }, [handleHeightChange]);
 
   // Fullscreen toggle handler
   const toggleFullscreen = useCallback(() => {
@@ -917,12 +955,12 @@ export function TableFloorPlan({
     };
   }, [blockPositions, floorHeight]);
 
-  // Configure sensors with distance activation - drag only starts after moving 8px
-  // This allows clicks to pass through for the popover
+  // Configure sensors with distance activation - drag starts after moving 3px
+  // This allows clicks to pass through for the popover while being responsive
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
-        distance: 8,
+        distance: 3,
       },
     })
   );
@@ -984,9 +1022,9 @@ export function TableFloorPlan({
 
       const currentPos = getBlockPosition(block, blockIndex);
 
-      // Snap to grid
-      const newX = Math.round((currentPos.x + delta.x) / GRID_SIZE) * GRID_SIZE;
-      const newY = Math.round((currentPos.y + delta.y) / GRID_SIZE) * GRID_SIZE;
+      // Calculate new position (no grid snapping)
+      const newX = currentPos.x + delta.x;
+      const newY = currentPos.y + delta.y;
 
       // Ensure within bounds
       const maxX = floorWidth - block.width;
@@ -1016,9 +1054,9 @@ export function TableFloorPlan({
       const tableWidth = localTableSize?.width ?? table.width ?? defaultSize.width;
       const tableHeight = localTableSize?.height ?? table.height ?? defaultSize.height;
 
-      // Snap to grid
-      const newX = Math.round((currentPos.x + delta.x) / GRID_SIZE) * GRID_SIZE;
-      const newY = Math.round((currentPos.y + delta.y) / GRID_SIZE) * GRID_SIZE;
+      // Calculate new position (no grid snapping)
+      const newX = currentPos.x + delta.x;
+      const newY = currentPos.y + delta.y;
 
       // Ensure within bounds - account for table size so it stays fully visible
       const maxX = floorWidth - tableWidth;
@@ -1178,30 +1216,7 @@ export function TableFloorPlan({
 
   const handleResizeEnd = useCallback((id: string, type: "table" | "block") => {
     setIsResizing(false);
-    // Snap size to grid on resize end
-    if (type === "table") {
-      setTableSizes((prev) => {
-        const size = prev.get(id);
-        if (!size) return prev;
-        const next = new Map(prev);
-        next.set(id, {
-          width: Math.round(size.width / GRID_SIZE) * GRID_SIZE,
-          height: Math.round(size.height / GRID_SIZE) * GRID_SIZE,
-        });
-        return next;
-      });
-    } else {
-      setBlockSizes((prev) => {
-        const size = prev.get(id);
-        if (!size) return prev;
-        const next = new Map(prev);
-        next.set(id, {
-          width: Math.round(size.width / GRID_SIZE) * GRID_SIZE,
-          height: Math.round(size.height / GRID_SIZE) * GRID_SIZE,
-        });
-        return next;
-      });
-    }
+    // No grid snapping - sizes are already set by handleResize
   }, []);
 
   // Rotation handler - increments by 45 degrees
@@ -1301,6 +1316,7 @@ export function TableFloorPlan({
                 onResizeEnd={handleResizeEnd}
                 onRotate={handleRotate}
                 isResizing={isResizing}
+                onSeatClick={handleSeatClick}
               />
             );
           })
@@ -1339,6 +1355,126 @@ export function TableFloorPlan({
           </div>
         )}
       </FloorArea>
+
+      {/* Drag Overlay - shows the dragged item */}
+      <DragOverlay dropAnimation={null}>
+        {activeDragId ? (
+          activeDragId.startsWith("block-") ? (
+            (() => {
+              const blockId = activeDragId.replace("block-", "");
+              const block = venueBlocks.find((b) => b.id === blockId);
+              if (!block) return null;
+
+              const size = blockSizes.get(block.id) || { width: block.width || 100, height: block.height || 100 };
+              const rotation = blockRotations.get(block.id) ?? block.rotation ?? 0;
+
+              const IconComponent = Icons[VENUE_BLOCK_ICONS[block.type] || "box"];
+              const colorClasses = VENUE_BLOCK_COLORS[block.type] || VENUE_BLOCK_COLORS.other;
+              const shapeClass = VENUE_BLOCK_SHAPE_CLASSES[block.shape || "rectangleRounded"] || VENUE_BLOCK_SHAPE_CLASSES.rectangleRounded;
+              const isConcave = block.shape === "concave" || block.shape === "concaveRounded";
+
+              const borderColorMap: Record<string, string> = {
+                dj: "hsl(270, 60%, 50%)",
+                bar: "hsl(38, 60%, 50%)",
+                stage: "hsl(0, 60%, 50%)",
+                danceFloor: "hsl(330, 60%, 50%)",
+                entrance: "hsl(120, 60%, 50%)",
+                photoBooth: "hsl(210, 60%, 50%)",
+                buffet: "hsl(30, 60%, 50%)",
+                cake: "hsl(350, 60%, 50%)",
+                gifts: "hsl(170, 60%, 50%)",
+                other: "hsl(0, 0%, 50%)",
+              };
+              const blockBorderColor = borderColorMap[block.type] || borderColorMap.other;
+
+              return (
+                <div
+                  className={cn(
+                    "flex flex-col items-center justify-center shadow-lg cursor-grabbing",
+                    !isConcave && "border-2",
+                    !isConcave && colorClasses,
+                    !isConcave && shapeClass
+                  )}
+                  style={{
+                    width: size.width,
+                    height: size.height,
+                    transform: `rotate(${rotation}deg)`,
+                  }}
+                >
+                  {isConcave && (
+                    <ConcaveShape
+                      width={size.width}
+                      height={size.height}
+                      rounded={block.shape === "concaveRounded"}
+                      borderColor={blockBorderColor}
+                    />
+                  )}
+                  <IconComponent className="h-6 w-6 text-muted-foreground pointer-events-none z-10" />
+                  <span className="text-xs font-medium text-center truncate max-w-[90%] mt-1 pointer-events-none z-10">
+                    {block.name}
+                  </span>
+                </div>
+              );
+            })()
+          ) : (
+            (() => {
+              const table = tables.find((t) => t.id === activeDragId);
+              if (!table) return null;
+
+              const size = tableSizes.get(table.id) || { width: table.width || 100, height: table.height || 100 };
+              const rotation = tableRotations.get(table.id) ?? table.rotation ?? 0;
+
+              // Prepare seats data
+              const tableSeats = (table.seats || []).map((seat) => ({
+                id: seat.id,
+                seatNumber: seat.seatNumber,
+                relativeX: seat.relativeX,
+                relativeY: seat.relativeY,
+                angle: seat.angle,
+                guest: seat.guest ? {
+                  id: seat.guest.id,
+                  name: seat.guest.name,
+                  rsvpStatus: seat.guest.rsvpStatus || "PENDING",
+                } : null,
+              }));
+
+              return (
+                <div
+                  className="cursor-grabbing"
+                  style={{
+                    width: size.width,
+                    height: size.height,
+                  }}
+                >
+                  <div
+                    style={{
+                      width: "100%",
+                      height: "100%",
+                      transform: `rotate(${rotation}deg)`,
+                    }}
+                  >
+                    <TableWithSeats
+                      table={{
+                        id: table.id,
+                        name: table.name,
+                        capacity: table.capacity,
+                        shape: table.shape || "circle",
+                        colorTheme: (table.colorTheme as TableColorTheme) || "default",
+                        width: size.width,
+                        height: size.height,
+                        rotation: 0,
+                      }}
+                      seats={tableSeats}
+                      positionX={0}
+                      positionY={0}
+                    />
+                  </div>
+                </div>
+              );
+            })()
+          )
+        ) : null}
+      </DragOverlay>
     </DndContext>
   );
 
@@ -1481,22 +1617,63 @@ export function TableFloorPlan({
       {/* Floor Plan */}
       {floorPlanContent}
 
-      {/* Resize Handle */}
-      <div
-        className={cn(
-          "flex items-center justify-center h-3 -mt-2 cursor-ns-resize group select-none",
-          isResizingHeight && "cursor-ns-resize"
-        )}
-        onMouseDown={handleHeightResizeStart}
-      >
-        <div className={cn(
-          "flex items-center justify-center w-24 h-2 rounded-full transition-colors",
-          "bg-muted hover:bg-muted-foreground/30",
-          isResizingHeight && "bg-primary/50"
-        )}>
-          <GripHorizontal className="h-3 w-3 text-muted-foreground" />
+      {/* Canvas Size Controls */}
+      <div className="flex items-center justify-between gap-4 p-3 bg-muted/30 rounded-lg border">
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-medium">{t("canvasHeight")}:</span>
+          <Input
+            type="number"
+            min={MIN_FLOOR_HEIGHT}
+            max={MAX_FLOOR_HEIGHT}
+            value={heightInputValue}
+            onChange={(e) => handleHeightInputChange(e.target.value)}
+            className="w-24 h-8"
+          />
+          <span className="text-xs text-muted-foreground">px</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-muted-foreground">{t("presets")}:</span>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handleHeightChange(600)}
+            className={cn("h-7", floorHeight === 600 && "bg-accent")}
+          >
+            {t("small")}
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handleHeightChange(1200)}
+            className={cn("h-7", floorHeight === 1200 && "bg-accent")}
+          >
+            {t("medium")}
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handleHeightChange(2000)}
+            className={cn("h-7", floorHeight === 2000 && "bg-accent")}
+          >
+            {t("large")}
+          </Button>
         </div>
       </div>
+
+      {/* Seat Assignment Dialog */}
+      {selectedSeat && (
+        <AssignSeatDialog
+          open={assignSeatDialogOpen}
+          onOpenChange={setAssignSeatDialogOpen}
+          seatId={selectedSeat.seatId}
+          seatNumber={selectedSeat.seatNumber}
+          tableName={selectedSeat.tableName}
+          currentGuest={selectedSeatGuest}
+          availableGuests={availableGuests}
+          onAssign={handleAssignSeat}
+          onUnassign={handleUnassignSeat}
+        />
+      )}
 
       {/* Unsaved Changes Confirmation Dialog */}
       <AlertDialog open={showUnsavedDialog} onOpenChange={setShowUnsavedDialog}>

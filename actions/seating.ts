@@ -39,6 +39,7 @@ import {
   type MarkGuestArrivedInput,
   type UpdateGuestTableInput,
 } from "@/lib/validations/seating";
+import { calculateSeatPositions } from "@/lib/seating/seat-calculator";
 
 // ============ HELPER FUNCTIONS ============
 
@@ -80,12 +81,33 @@ export async function createTable(input: CreateTableInput) {
       return { error: "Event not found" };
     }
 
+    // Calculate seat positions
+    const seatPositions = calculateSeatPositions(
+      validatedData.capacity,
+      validatedData.shape,
+      validatedData.seatingArrangement || "even"
+    );
+
+    // Create table with seats in a transaction
     const table = await prisma.weddingTable.create({
       data: {
         weddingEventId: validatedData.weddingEventId,
         name: validatedData.name,
         capacity: validatedData.capacity,
         shape: validatedData.shape,
+        seatingArrangement: validatedData.seatingArrangement || "even",
+        colorTheme: validatedData.colorTheme || "default",
+        seats: {
+          create: seatPositions.map((seat) => ({
+            seatNumber: seat.seatNumber,
+            relativeX: seat.relativeX,
+            relativeY: seat.relativeY,
+            angle: seat.angle,
+          })),
+        },
+      },
+      include: {
+        seats: true,
       },
     });
 
@@ -121,10 +143,25 @@ export async function updateTable(input: UpdateTableInput) {
       return { error: "Table not found" };
     }
 
+    // Check if capacity or arrangement changed - if so, regenerate seats
+    const shouldRegenerateSeats =
+      (updateData.capacity && updateData.capacity !== existingTable.capacity) ||
+      (updateData.seatingArrangement && updateData.seatingArrangement !== existingTable.seatingArrangement);
+
     const table = await prisma.weddingTable.update({
       where: { id },
       data: updateData,
     });
+
+    // Regenerate seats if needed
+    if (shouldRegenerateSeats) {
+      await regenerateTableSeats(
+        id,
+        table.capacity,
+        table.shape || "circle",
+        table.seatingArrangement || "even"
+      );
+    }
 
     revalidatePath(`/dashboard/events/${existingTable.weddingEventId}/seating`);
 
@@ -317,6 +354,16 @@ export async function getEventTables(eventId: string) {
             },
           },
         },
+        seats: {
+          include: {
+            guest: {
+              include: {
+                rsvp: true,
+              },
+            },
+          },
+          orderBy: { seatNumber: "asc" },
+        },
       },
       orderBy: { createdAt: "asc" },
     });
@@ -407,13 +454,35 @@ export async function assignGuestsToTable(input: AssignGuestsInput) {
       where: { guestId: { in: validatedData.guestIds } },
     });
 
-    // Create new assignments
+    // Remove guests from any existing seats
+    await prisma.tableSeat.updateMany({
+      where: { guestId: { in: validatedData.guestIds } },
+      data: { guestId: null },
+    });
+
+    // Create new table assignments
     await prisma.tableAssignment.createMany({
       data: validatedData.guestIds.map((guestId) => ({
         tableId: validatedData.tableId,
         guestId,
       })),
     });
+
+    // Auto-assign guests to available seats
+    const tableSeats = await prisma.tableSeat.findMany({
+      where: { tableId: validatedData.tableId },
+      orderBy: { seatNumber: "asc" },
+    });
+
+    const emptySeats = tableSeats.filter((seat) => !seat.guestId);
+
+    // Assign guests to empty seats (as many as possible)
+    for (let i = 0; i < Math.min(validatedData.guestIds.length, emptySeats.length); i++) {
+      await prisma.tableSeat.update({
+        where: { id: emptySeats[i].id },
+        data: { guestId: validatedData.guestIds[i] },
+      });
+    }
 
     revalidatePath(`/dashboard/events/${table.weddingEventId}/seating`);
 
@@ -1197,15 +1266,17 @@ export async function autoArrangeTables(input: AutoArrangeInput) {
       return a.name.localeCompare(b.name);
     });
 
-    // Delete all existing tables for this event
-    await prisma.weddingTable.deleteMany({
-      where: { weddingEventId: validatedData.eventId },
-    });
+    // Wrap deletion and table creation in a transaction for atomicity
+    const result = await prisma.$transaction(async (tx) => {
+      // Delete all existing tables for this event
+      await tx.weddingTable.deleteMany({
+        where: { weddingEventId: validatedData.eventId },
+      });
 
-    // Group guests based on strategy
-    // Strategy: Group → Side (guests with same group stay together, then by side)
-    type GuestGroup = { key: string; guests: typeof sortedGuests };
-    const groups: GuestGroup[] = [];
+      // Group guests based on strategy
+      // Strategy: Group → Side (guests with same group stay together, then by side)
+      type GuestGroup = { key: string; guests: typeof sortedGuests };
+      const groups: GuestGroup[] = [];
 
     if (validatedData.groupingStrategy === "side-then-group") {
       // Group by group first, then by side within each group
@@ -1273,71 +1344,92 @@ export async function autoArrangeTables(input: AutoArrangeInput) {
       }
     }
 
-    // Create tables and assign guests
-    let tableNumber = 1;
-    let tablesCreated = 0;
-    let guestsSeated = 0;
+      // Create tables and assign guests
+      let tableNumber = 1;
+      let tablesCreated = 0;
+      let guestsSeated = 0;
 
-    for (const group of groups) {
-      const guestsInGroup = group.guests;
-      let currentIndex = 0;
-      let groupTableNumber = 1;
+      for (const group of groups) {
+        const guestsInGroup = group.guests;
+        let currentIndex = 0;
+        let groupTableNumber = 1;
 
-      while (currentIndex < guestsInGroup.length) {
-        // Calculate how many guests fit in this table
-        let seatsUsed = 0;
-        const guestsForTable: string[] = [];
+        while (currentIndex < guestsInGroup.length) {
+          // Calculate how many guests fit in this table
+          let seatsUsed = 0;
+          const guestsForTable: string[] = [];
 
-        while (currentIndex < guestsInGroup.length && seatsUsed < validatedData.tableSize) {
-          const guest = guestsInGroup[currentIndex];
-          const seats = getSeatsUsed(guest);
+          while (currentIndex < guestsInGroup.length && seatsUsed < validatedData.tableSize) {
+            const guest = guestsInGroup[currentIndex];
+            const seats = getSeatsUsed(guest);
 
-          // Allow one more guest even if slightly over capacity
-          if (seatsUsed + seats <= validatedData.tableSize || guestsForTable.length === 0) {
-            guestsForTable.push(guest.id);
-            seatsUsed += seats;
-            currentIndex++;
-          } else {
-            break;
+            // Allow one more guest even if slightly over capacity
+            if (seatsUsed + seats <= validatedData.tableSize || guestsForTable.length === 0) {
+              guestsForTable.push(guest.id);
+              seatsUsed += seats;
+              currentIndex++;
+            } else {
+              break;
+            }
+          }
+
+          if (guestsForTable.length > 0) {
+            // Create table with Hebrew name format: "1 - קבוצה" or "1 - צד - קבוצה"
+            const hebrewLabel = getHebrewLabel(group.key, validatedData.groupingStrategy);
+            const tableName = `${tableNumber} - ${hebrewLabel}`;
+
+            // Calculate seat positions
+            const seatPositions = calculateSeatPositions(
+              validatedData.tableSize,
+              validatedData.tableShape,
+              validatedData.seatingArrangement
+            );
+
+            const table = await tx.weddingTable.create({
+              data: {
+                weddingEventId: validatedData.eventId,
+                name: tableName,
+                capacity: validatedData.tableSize,
+                shape: validatedData.tableShape,
+                seatingArrangement: validatedData.seatingArrangement,
+                colorTheme: "default",
+                seats: {
+                  create: seatPositions.map((seat) => ({
+                    seatNumber: seat.seatNumber,
+                    relativeX: seat.relativeX,
+                    relativeY: seat.relativeY,
+                    angle: seat.angle,
+                    side: seat.side,
+                  })),
+                },
+              },
+            });
+
+            // Assign guests to this table
+            await tx.tableAssignment.createMany({
+              data: guestsForTable.map((guestId) => ({
+                tableId: table.id,
+                guestId,
+              })),
+            });
+
+            tablesCreated++;
+            guestsSeated += guestsForTable.length;
+            tableNumber++;
+            groupTableNumber++;
           }
         }
-
-        if (guestsForTable.length > 0) {
-          // Create table with Hebrew name format: "1 - קבוצה" or "1 - צד - קבוצה"
-          const hebrewLabel = getHebrewLabel(group.key, validatedData.groupingStrategy);
-          const tableName = `${tableNumber} - ${hebrewLabel}`;
-
-          const table = await prisma.weddingTable.create({
-            data: {
-              weddingEventId: validatedData.eventId,
-              name: tableName,
-              capacity: validatedData.tableSize,
-              shape: validatedData.tableShape,
-            },
-          });
-
-          // Assign guests to this table
-          await prisma.tableAssignment.createMany({
-            data: guestsForTable.map((guestId) => ({
-              tableId: table.id,
-              guestId,
-            })),
-          });
-
-          tablesCreated++;
-          guestsSeated += guestsForTable.length;
-          tableNumber++;
-          groupTableNumber++;
-        }
       }
-    }
+
+      return { tablesCreated, guestsSeated };
+    });
 
     revalidatePath(`/dashboard/events/${validatedData.eventId}/seating`);
 
     return {
       success: true,
-      tablesCreated,
-      guestsSeated,
+      tablesCreated: result.tablesCreated,
+      guestsSeated: result.guestsSeated,
     };
   } catch (error) {
     console.error("Error auto-arranging tables:", error);
@@ -1628,5 +1720,279 @@ export async function updateGuestTableForHostess(input: UpdateGuestTableInput) {
   } catch (error) {
     console.error("Error updating guest table:", error);
     return { error: "Failed to update guest table" };
+  }
+}
+
+// ============ SEAT MANAGEMENT ============
+
+/**
+ * Assign a guest to a specific seat
+ */
+export async function assignGuestToSeat(seatId: string, guestId: string) {
+  try {
+    const user = await getCurrentUser();
+    const hasWeddingOwnerRole = user?.roles?.includes(UserRole.ROLE_WEDDING_OWNER);
+    if (!user || !hasWeddingOwnerRole) {
+      return { error: "Unauthorized" };
+    }
+
+    // Verify seat exists and belongs to user's event
+    const seat = await prisma.tableSeat.findFirst({
+      where: { id: seatId },
+      include: {
+        table: {
+          include: { weddingEvent: true },
+        },
+      },
+    });
+
+    if (!seat || seat.table.weddingEvent.ownerId !== user.id) {
+      return { error: "Seat not found" };
+    }
+
+    // Verify guest exists and belongs to same event
+    const guest = await prisma.guest.findFirst({
+      where: {
+        id: guestId,
+        weddingEventId: seat.table.weddingEventId,
+      },
+      include: {
+        seatAssignment: true,
+        tableAssignment: true,
+      },
+    });
+
+    if (!guest) {
+      return { error: "Guest not found" };
+    }
+
+    // Remove guest from any existing seat
+    if (guest.seatAssignment) {
+      await prisma.tableSeat.update({
+        where: { id: guest.seatAssignment.id },
+        data: { guestId: null },
+      });
+    }
+
+    // Assign guest to the new seat
+    await prisma.tableSeat.update({
+      where: { id: seatId },
+      data: { guestId },
+    });
+
+    // Also create/update table assignment for backward compatibility
+    if (guest.tableAssignment) {
+      await prisma.tableAssignment.update({
+        where: { id: guest.tableAssignment.id },
+        data: { tableId: seat.tableId },
+      });
+    } else {
+      await prisma.tableAssignment.create({
+        data: {
+          guestId,
+          tableId: seat.tableId,
+        },
+      });
+    }
+
+    revalidatePath(`/dashboard/events/${seat.table.weddingEventId}/seating`);
+
+    return { success: true };
+  } catch (error) {
+    console.error("Error assigning guest to seat:", error);
+    return { error: "Failed to assign guest to seat" };
+  }
+}
+
+/**
+ * Unassign a guest from a seat
+ */
+export async function unassignSeat(seatId: string) {
+  try {
+    const user = await getCurrentUser();
+    const hasWeddingOwnerRole = user?.roles?.includes(UserRole.ROLE_WEDDING_OWNER);
+    if (!user || !hasWeddingOwnerRole) {
+      return { error: "Unauthorized" };
+    }
+
+    // Verify seat exists and belongs to user's event
+    const seat = await prisma.tableSeat.findFirst({
+      where: { id: seatId },
+      include: {
+        table: {
+          include: { weddingEvent: true },
+        },
+        guest: true,
+      },
+    });
+
+    if (!seat || seat.table.weddingEvent.ownerId !== user.id) {
+      return { error: "Seat not found" };
+    }
+
+    if (!seat.guestId) {
+      return { error: "Seat is already empty" };
+    }
+
+    // Remove the guest from the seat
+    await prisma.tableSeat.update({
+      where: { id: seatId },
+      data: { guestId: null },
+    });
+
+    // Also remove table assignment if no other seats for this guest
+    if (seat.guest) {
+      const otherSeats = await prisma.tableSeat.count({
+        where: {
+          guestId: seat.guest.id,
+          id: { not: seatId },
+        },
+      });
+
+      if (otherSeats === 0) {
+        await prisma.tableAssignment.deleteMany({
+          where: { guestId: seat.guest.id },
+        });
+      }
+    }
+
+    revalidatePath(`/dashboard/events/${seat.table.weddingEventId}/seating`);
+
+    return { success: true };
+  } catch (error) {
+    console.error("Error unassigning seat:", error);
+    return { error: "Failed to unassign seat" };
+  }
+}
+
+/**
+ * Update seat position (for custom arrangement)
+ */
+export async function updateSeatPosition(
+  seatId: string,
+  relativeX: number,
+  relativeY: number
+) {
+  try {
+    const user = await getCurrentUser();
+    const hasWeddingOwnerRole = user?.roles?.includes(UserRole.ROLE_WEDDING_OWNER);
+    if (!user || !hasWeddingOwnerRole) {
+      return { error: "Unauthorized" };
+    }
+
+    // Verify seat exists and belongs to user's event
+    const seat = await prisma.tableSeat.findFirst({
+      where: { id: seatId },
+      include: {
+        table: {
+          include: { weddingEvent: true },
+        },
+      },
+    });
+
+    if (!seat || seat.table.weddingEvent.ownerId !== user.id) {
+      return { error: "Seat not found" };
+    }
+
+    // Update seat position
+    await prisma.tableSeat.update({
+      where: { id: seatId },
+      data: {
+        relativeX,
+        relativeY,
+      },
+    });
+
+    revalidatePath(`/dashboard/events/${seat.table.weddingEventId}/seating`);
+
+    return { success: true };
+  } catch (error) {
+    console.error("Error updating seat position:", error);
+    return { error: "Failed to update seat position" };
+  }
+}
+
+/**
+ * Regenerate seats for a table (when capacity or arrangement changes)
+ */
+export async function regenerateTableSeats(
+  tableId: string,
+  capacity: number,
+  shape: string,
+  arrangement: string
+) {
+  try {
+    const user = await getCurrentUser();
+    const hasWeddingOwnerRole = user?.roles?.includes(UserRole.ROLE_WEDDING_OWNER);
+    if (!user || !hasWeddingOwnerRole) {
+      return { error: "Unauthorized" };
+    }
+
+    // Verify table exists and belongs to user's event
+    const table = await prisma.weddingTable.findFirst({
+      where: { id: tableId },
+      include: {
+        weddingEvent: true,
+        seats: {
+          include: { guest: true },
+        },
+      },
+    });
+
+    if (!table || table.weddingEvent.ownerId !== user.id) {
+      return { error: "Table not found" };
+    }
+
+    // Calculate new seat positions
+    const seatPositions = calculateSeatPositions(
+      capacity,
+      shape as any,
+      (arrangement as any) || "even"
+    );
+
+    // Get current seat assignments
+    const currentAssignments = table.seats
+      .filter((s) => s.guestId)
+      .map((s) => ({ seatNumber: s.seatNumber, guestId: s.guestId }));
+
+    // Delete all existing seats
+    await prisma.tableSeat.deleteMany({
+      where: { tableId },
+    });
+
+    // Create new seats
+    const newSeats = await prisma.tableSeat.createMany({
+      data: seatPositions.map((seat) => ({
+        tableId,
+        seatNumber: seat.seatNumber,
+        relativeX: seat.relativeX,
+        relativeY: seat.relativeY,
+        angle: seat.angle,
+      })),
+    });
+
+    // Try to preserve seat assignments where possible
+    const seatsToUpdate = await prisma.tableSeat.findMany({
+      where: { tableId },
+    });
+
+    for (const assignment of currentAssignments) {
+      const matchingSeat = seatsToUpdate.find(
+        (s) => s.seatNumber === assignment.seatNumber && !s.guestId
+      );
+      if (matchingSeat && assignment.guestId) {
+        await prisma.tableSeat.update({
+          where: { id: matchingSeat.id },
+          data: { guestId: assignment.guestId },
+        });
+      }
+    }
+
+    revalidatePath(`/dashboard/events/${table.weddingEventId}/seating`);
+
+    return { success: true, seatsCreated: newSeats.count };
+  } catch (error) {
+    console.error("Error regenerating table seats:", error);
+    return { error: "Failed to regenerate table seats" };
   }
 }

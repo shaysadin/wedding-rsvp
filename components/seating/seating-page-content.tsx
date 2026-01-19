@@ -14,11 +14,11 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { SeatingStats } from "@/components/seating/seating-stats";
+import { SeatingStatsCompact } from "@/components/seating/seating-stats-compact";
 import { SeatingViewToggle } from "@/components/seating/seating-view-toggle";
 import { TableGridView } from "@/components/seating/table-grid-view";
 import { TableFloorPlanSkeleton } from "@/components/skeletons";
-import { AddTableDialog } from "@/components/seating/add-table-dialog";
+import { AddTableDialogEnhanced } from "@/components/seating/add-table-dialog-enhanced";
 import { AddVenueBlockDialog } from "@/components/seating/add-venue-block-dialog";
 import { AssignGuestsDialog } from "@/components/seating/assign-guests-dialog";
 import { EditTableDialog } from "@/components/seating/edit-table-dialog";
@@ -236,7 +236,7 @@ export function SeatingPageContent({ eventId, events, locale }: SeatingPageConte
       ) : (
         <div className="space-y-6 overflow-auto">
           {/* Stats Cards */}
-          {stats && <SeatingStats stats={stats} />}
+          {stats && <SeatingStatsCompact stats={stats} />}
 
           {/* View Toggle and Table Content */}
           <div className="space-y-4">
@@ -261,7 +261,7 @@ export function SeatingPageContent({ eventId, events, locale }: SeatingPageConte
       )}
 
       {/* Add Table Dialog */}
-      <AddTableDialog
+      <AddTableDialogEnhanced
         open={addTableOpen}
         onOpenChange={setAddTableOpen}
         eventId={eventId}

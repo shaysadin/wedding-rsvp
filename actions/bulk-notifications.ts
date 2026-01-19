@@ -7,6 +7,7 @@ import { prisma } from "@/lib/db";
 import { getCurrentUser } from "@/lib/session";
 import { getNotificationService } from "@/lib/notifications";
 import { PLAN_LIMITS } from "@/config/plans";
+import { logWhatsAppCost, logSmsCost } from "@/lib/analytics/usage-tracking";
 
 // Constants for batch processing
 const BATCH_SIZE = 10; // Process 10 messages at a time
@@ -423,6 +424,26 @@ export async function sendBulkMessages(options: BulkMessageOptions): Promise<Bul
 
         if (result.success) {
           sent++;
+
+          // Log cost for this message
+          try {
+            if (result.channel === NotificationChannel.WHATSAPP) {
+              await logWhatsAppCost(user.id, options.eventId, result.guestId, {
+                notificationType,
+                source: "bulk",
+              });
+            } else if (result.channel === NotificationChannel.SMS) {
+              const settings = await prisma.messagingProviderSettings.findFirst();
+              const smsProvider = (settings?.smsProvider as "twilio" | "upsend") || "twilio";
+              await logSmsCost(user.id, options.eventId, result.guestId, smsProvider, {
+                notificationType,
+                source: "bulk",
+              });
+            }
+          } catch (costError) {
+            console.error("Error logging cost:", costError);
+            // Don't fail the bulk send if cost logging fails
+          }
         } else {
           failed++;
           if (result.error && !errors.includes(result.error)) {
