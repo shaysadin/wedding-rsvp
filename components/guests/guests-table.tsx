@@ -6,7 +6,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { Maximize2, Minimize2 } from "lucide-react";
 
-import { deleteGuest, deleteGuests } from "@/actions/guests";
+import { deleteGuest, deleteGuests, bulkUpdateRsvpStatus } from "@/actions/guests";
 import { sendInvite, sendReminder } from "@/actions/notifications";
 import { callGuest, startBulkCalling } from "@/actions/vapi/calls";
 import { getVapiAvailability } from "@/actions/vapi/settings";
@@ -22,6 +22,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -213,6 +215,11 @@ export function GuestsTable({ guests, eventId, initialFilter = "all", invitation
   const [vapiAvailable, setVapiAvailable] = useState(false);
   const [showBulkCallModal, setShowBulkCallModal] = useState(false);
   const [isBulkCalling, setIsBulkCalling] = useState(false);
+
+  // Bulk edit status state
+  const [showBulkEditStatusModal, setShowBulkEditStatusModal] = useState(false);
+  const [bulkEditStatus, setBulkEditStatus] = useState<"PENDING" | "ACCEPTED" | "DECLINED">("PENDING");
+  const [isBulkEditingStatus, setIsBulkEditingStatus] = useState(false);
 
   // Check VAPI availability on mount
   useEffect(() => {
@@ -430,6 +437,26 @@ export function GuestsTable({ guests, eventId, initialFilter = "all", invitation
     } else {
       toast.success(t("bulkDeleteSuccess", { count: selectedIds.size }));
       setSelectedIds(new Set());
+    }
+  };
+
+  const handleBulkEditStatusSubmit = async () => {
+    if (selectedIds.size === 0) return;
+
+    setIsBulkEditingStatus(true);
+    const result = await bulkUpdateRsvpStatus({
+      guestIds: Array.from(selectedIds),
+      eventId,
+      status: bulkEditStatus,
+    });
+    setIsBulkEditingStatus(false);
+
+    if (result.error) {
+      toast.error(result.error);
+    } else {
+      toast.success(t("bulkEditStatusSuccess", { count: selectedIds.size, status: tStatus(bulkEditStatus.toLowerCase()) }));
+      setSelectedIds(new Set());
+      setShowBulkEditStatusModal(false);
     }
   };
 
@@ -660,6 +687,68 @@ export function GuestsTable({ guests, eventId, initialFilter = "all", invitation
         </DialogContent>
       </Dialog>
 
+      {/* Bulk Edit Status Modal */}
+      <Dialog open={showBulkEditStatusModal} onOpenChange={setShowBulkEditStatusModal}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <div className="h-8 w-8 rounded-full bg-blue-100 dark:bg-blue-500/20 flex items-center justify-center">
+                <Icons.edit className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+              </div>
+              {t("bulkEditStatusTitle")}
+            </DialogTitle>
+            <DialogDescription>
+              {t("bulkEditStatusDescription", { count: selectedIds.size })}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            <div className="space-y-3">
+              <Label>{t("selectNewStatus")}</Label>
+              <RadioGroup value={bulkEditStatus} onValueChange={(value: any) => setBulkEditStatus(value)}>
+                <div className="flex items-center space-x-2 rtl:space-x-reverse">
+                  <RadioGroupItem value="PENDING" id="status-pending" />
+                  <Label htmlFor="status-pending" className="cursor-pointer font-normal">
+                    <Badge variant="secondary">{tStatus("pending")}</Badge>
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2 rtl:space-x-reverse">
+                  <RadioGroupItem value="ACCEPTED" id="status-accepted" />
+                  <Label htmlFor="status-accepted" className="cursor-pointer font-normal">
+                    <Badge variant="default">{tStatus("accepted")}</Badge>
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2 rtl:space-x-reverse">
+                  <RadioGroupItem value="DECLINED" id="status-declined" />
+                  <Label htmlFor="status-declined" className="cursor-pointer font-normal">
+                    <Badge variant="destructive">{tStatus("declined")}</Badge>
+                  </Label>
+                </div>
+              </RadioGroup>
+            </div>
+          </div>
+
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="outline" onClick={() => setShowBulkEditStatusModal(false)}>
+              {tc("cancel")}
+            </Button>
+            <Button onClick={handleBulkEditStatusSubmit} disabled={isBulkEditingStatus}>
+              {isBulkEditingStatus ? (
+                <>
+                  <Icons.spinner className="me-2 h-4 w-4 animate-spin" />
+                  {tc("updating")}
+                </>
+              ) : (
+                <>
+                  <Icons.check className="me-2 h-4 w-4" />
+                  {t("updateStatus")}
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Search and Filter Bar */}
       <div className="shrink-0 space-y-3">
         <div className="relative">
@@ -759,6 +848,16 @@ export function GuestsTable({ guests, eventId, initialFilter = "all", invitation
                 {t("callSelected")} ({selectedGuestsWithPhone.length})
               </Button>
             )}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowBulkEditStatusModal(true)}
+              disabled={bulkLoading}
+              className="gap-2"
+            >
+              <Icons.edit className="h-4 w-4" />
+              {t("editStatus")}
+            </Button>
             <Button
               variant="outline"
               size="sm"

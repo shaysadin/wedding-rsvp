@@ -57,7 +57,7 @@ export function GuestsFilterBar({
   const tMsg = useTranslations("messageStatus");
 
   return (
-    <div className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:overflow-visible sm:px-0">
+    <div className="overflow-x-auto px-4 sm:mx-0 sm:overflow-visible sm:px-0">
       <div className="flex items-center gap-2 pb-2 sm:flex-wrap sm:pb-0">
       {/* Side Filter */}
       <DropdownMenu>

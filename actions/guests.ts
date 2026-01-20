@@ -621,3 +621,88 @@ export async function getDuplicatePhoneGuests(eventId: string) {
     return { error: "Failed to fetch duplicate phone guests" };
   }
 }
+
+/**
+ * Bulk update RSVP status for multiple guests
+ */
+export async function bulkUpdateRsvpStatus(input: {
+  guestIds: string[];
+  eventId: string;
+  status: "PENDING" | "ACCEPTED" | "DECLINED";
+  guestCount?: number;
+}) {
+  try {
+    const user = await getCurrentUser();
+
+    // Check if user has ROLE_WEDDING_OWNER in their roles array
+    const hasWeddingOwnerRole = user?.roles?.includes(UserRole.ROLE_WEDDING_OWNER);
+    if (!user || !hasWeddingOwnerRole) {
+      return { error: "Unauthorized" };
+    }
+
+    // Verify event ownership
+    const event = await prisma.weddingEvent.findFirst({
+      where: { id: input.eventId, ownerId: user.id },
+    });
+
+    if (!event) {
+      return { error: "Event not found" };
+    }
+
+    if (input.guestIds.length === 0) {
+      return { error: "No guests selected" };
+    }
+
+    // Verify all guests belong to this event
+    const guests = await prisma.guest.findMany({
+      where: {
+        id: { in: input.guestIds },
+        weddingEventId: input.eventId,
+      },
+      include: {
+        rsvp: true,
+      },
+    });
+
+    if (guests.length !== input.guestIds.length) {
+      return { error: "Some guests do not belong to this event" };
+    }
+
+    // Prepare RSVP data
+    const rsvpData: any = {
+      status: input.status,
+      respondedAt: new Date(),
+    };
+
+    // Only set guestCount for ACCEPTED status
+    if (input.status === "ACCEPTED" && input.guestCount !== undefined) {
+      rsvpData.guestCount = input.guestCount;
+    } else if (input.status !== "ACCEPTED") {
+      rsvpData.guestCount = 0;
+    }
+
+    // Update or create RSVP for each guest
+    const operations = input.guestIds.map((guestId) =>
+      prisma.guestRsvp.upsert({
+        where: { guestId },
+        create: {
+          guestId,
+          ...rsvpData,
+        },
+        update: rsvpData,
+      })
+    );
+
+    await prisma.$transaction(operations);
+
+    revalidatePath(`/events/${input.eventId}/guests`);
+
+    return {
+      success: true,
+      updated: input.guestIds.length,
+    };
+  } catch (error) {
+    console.error("Error bulk updating RSVP status:", error);
+    return { error: "Failed to update RSVP status" };
+  }
+}
