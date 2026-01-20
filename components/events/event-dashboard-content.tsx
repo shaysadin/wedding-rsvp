@@ -31,21 +31,25 @@ import {
   MessageSquare,
   CircleDot,
   Play,
+  HelpCircle,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { GlowingButton } from "@/components/ui/glowing-button";
 import { Badge } from "@/components/ui/badge";
 import { Icons } from "@/components/shared/icons";
 import { EditEventModal } from "@/components/events/edit-event-modal";
 import { CopyLinkButton } from "@/components/events/copy-link-button";
+import { InvitationImageUpload } from "@/components/events/invitation-image-upload";
 
 interface GuestStats {
   total: number;
   pending: number;
   accepted: number;
   declined: number;
+  maybe: number;
   totalAttending: number;
 }
 
@@ -235,31 +239,31 @@ export function EventDashboardContent({
     return isRTL ? "עכשיו" : "Just now";
   };
 
-  // Quick action buttons - neutral style
+  // Quick action buttons with glow colors
   const quickActions = [
     {
       label: isRTL ? "שלח הזמנות" : "Send Invitations",
       icon: Send,
       href: `/${locale}/events/${event.id}/rsvp`,
-      primary: true,
       external: false,
       disabled: false,
+      glowColor: "#8b5cf6", // purple
     },
     {
       label: isRTL ? "הוסף אורח" : "Add Guest",
       icon: UserPlus,
       href: `/${locale}/events/${event.id}/guests?action=add`,
-      primary: false,
       external: false,
       disabled: false,
+      glowColor: "#10b981", // green
     },
     {
       label: isRTL ? "צפה ב-RSVP" : "View RSVP",
       icon: ExternalLink,
       href: firstGuestSlug ? `/rsvp/${firstGuestSlug}` : "#",
-      primary: false,
       external: true,
       disabled: !firstGuestSlug,
+      glowColor: "#06b6d4", // cyan
     },
   ];
 
@@ -352,37 +356,49 @@ export function EventDashboardContent({
           <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-rose-500/10 to-pink-500/5 rounded-full blur-2xl pointer-events-none" />
           <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-violet-500/10 to-purple-500/5 rounded-full blur-2xl pointer-events-none" />
 
-          <div className="relative flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-3 mb-2">
-                <h1 className="font-heading text-2xl font-bold sm:text-3xl bg-gradient-to-r from-gray-900 via-gray-800 to-gray-700 dark:from-white dark:via-gray-100 dark:to-gray-200 bg-clip-text text-transparent break-words">
-                  {event.title}
-                </h1>
-                {daysUntilEvent > 0 && daysUntilEvent <= 30 && (
-                  <Badge className="bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400 border-0 shrink-0">
-                    <CalendarCheck className="h-3 w-3 mr-1" />
-                    {daysUntilEvent} {isRTL ? "ימים" : "days"}
-                  </Badge>
-                )}
+          <div className="relative flex gap-4">
+          
+
+            {/* Event Info */}
+            <div className="flex flex-col gap-3 flex-1 min-w-0">
+              <div className="min-w-0">
+                <div className="flex items-center gap-3 mb-2">
+                  <h1 className="font-heading text-2xl font-bold sm:text-3xl bg-gradient-to-r from-gray-900 via-gray-800 to-gray-700 dark:from-white dark:via-gray-100 dark:to-gray-200 bg-clip-text text-transparent break-words">
+                    {event.title}
+                  </h1>
+                  {daysUntilEvent > 0 && daysUntilEvent <= 30 && (
+                    <Badge className="bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400 border-0 shrink-0">
+                      <CalendarCheck className="h-3 w-3 mr-1" />
+                      {daysUntilEvent} {isRTL ? "ימים" : "days"}
+                    </Badge>
+                  )}
+                </div>
+                <div className="flex flex-col gap-1.5 text-muted-foreground">
+                  <div className="flex items-center gap-2">
+                    <Icons.calendar className="h-4 w-4 text-rose-500" />
+                    <span className="text-sm">{formatDate(event.dateTime)}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Icons.mapPin className="h-4 w-4 text-violet-500" />
+                    <span className="text-sm">
+                      {event.location}
+                      {event.venue && <span className="font-medium"> • {event.venue}</span>}
+                    </span>
+                  </div>
+                </div>
               </div>
-              <div className="flex flex-col gap-1.5 text-muted-foreground">
-                <div className="flex items-center gap-2">
-                  <Icons.calendar className="h-4 w-4 text-rose-500" />
-                  <span className="text-sm">{formatDate(event.dateTime)}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Icons.mapPin className="h-4 w-4 text-violet-500" />
-                  <span className="text-sm">
-                    {event.location}
-                    {event.venue && <span className="font-medium"> • {event.venue}</span>}
-                  </span>
-                </div>
+
+              <div className="flex items-center gap-2">
+                <EditEventModal event={event} />
+                <CopyLinkButton eventId={event.id} firstGuestSlug={firstGuestSlug} />
               </div>
             </div>
-
-            <div className="flex items-center gap-2 shrink-0">
-              <EditEventModal event={event} />
-              <CopyLinkButton eventId={event.id} firstGuestSlug={firstGuestSlug} />
+              {/* Invitation Preview */}
+            <div className="flex flex-col items-center justify-center gap-1 shrink-0">
+              <InvitationImageUpload eventId={event.id} currentImageUrl={event.invitationImageUrl} />
+              <span className="text-[10px] text-muted-foreground">
+                {isRTL ? "הזמנת החתונה" : "Invitation"}
+              </span>
             </div>
           </div>
         </div>
@@ -392,33 +408,31 @@ export function EventDashboardContent({
       <motion.div variants={itemVariants}>
         <div className="grid grid-cols-3 gap-2 sm:flex sm:flex-wrap sm:gap-3">
           {quickActions.map((action) => (
-            <Button
-              key={action.label}
-              asChild={!action.disabled}
-              disabled={action.disabled}
-              variant={action.primary ? "default" : "outline"}
-              className={cn(
-                "transition-all duration-200",
-                "h-auto py-2.5 px-3 sm:py-2.5 sm:px-4",
-                action.disabled && "opacity-50 cursor-not-allowed"
-              )}
-            >
-              {action.disabled ? (
-                <span className="flex items-center justify-center gap-1.5 sm:gap-2">
-                  <action.icon className="h-4 w-4 shrink-0" />
-                  <span className="text-[11px] sm:text-sm whitespace-nowrap">{action.label}</span>
-                </span>
-              ) : (
-                <Link
-                  href={action.href}
-                  target={action.external ? "_blank" : undefined}
-                  className="flex items-center justify-center gap-1.5 sm:gap-2"
+            action.disabled ? (
+              <GlowingButton
+                key={action.label}
+                disabled
+                glowColor={action.glowColor}
+                className="h-auto py-2.5 px-3 sm:py-2.5 sm:px-4 opacity-50 cursor-not-allowed"
+              >
+                <action.icon className="h-4 w-4 shrink-0" />
+                <span className="text-[12px] sm:text-sm whitespace-nowrap">{action.label}</span>
+              </GlowingButton>
+            ) : (
+              <Link
+                key={action.label}
+                href={action.href}
+                target={action.external ? "_blank" : undefined}
+              >
+                <GlowingButton
+                  glowColor={action.glowColor}
+                  className="w-full h-auto py-2.5 px-3 sm:py-2.5 sm:px-4"
                 >
                   <action.icon className="h-4 w-4 shrink-0" />
-                  <span className="text-[11px] sm:text-sm whitespace-nowrap">{action.label}</span>
-                </Link>
-              )}
-            </Button>
+                  <span className="text-[12px] sm:text-sm whitespace-nowrap">{action.label}</span>
+                </GlowingButton>
+              </Link>
+            )
           ))}
         </div>
       </motion.div>
@@ -439,10 +453,10 @@ export function EventDashboardContent({
           <Card className="border-emerald-200/50 dark:border-emerald-700/30 bg-gradient-to-br from-emerald-50 to-green-100/80 dark:from-emerald-950/80 dark:to-green-950/60">
             <CardContent className="p-4 text-center">
               <div className="flex items-center justify-center gap-2 mb-1">
-                <CheckCircle className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
-                <span className="text-2xl font-bold text-emerald-700 dark:text-emerald-300">{guestStats.accepted}</span>
+                <PartyPopper className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+                <span className="text-2xl font-bold text-emerald-700 dark:text-emerald-300">{guestStats.totalAttending}</span>
               </div>
-              <p className="text-xs text-emerald-700/70 dark:text-emerald-400/70">{isRTL ? "אישרו הגעה" : "Confirmed"}</p>
+              <p className="text-xs text-emerald-700/70 dark:text-emerald-400/70">{isRTL ? "מגיעים" : "Arriving"}</p>
             </CardContent>
           </Card>
 
@@ -459,10 +473,10 @@ export function EventDashboardContent({
           <Card className="border-violet-200/50 dark:border-violet-700/30 bg-gradient-to-br from-violet-50 to-purple-100/80 dark:from-violet-950/80 dark:to-purple-950/60">
             <CardContent className="p-4 text-center">
               <div className="flex items-center justify-center gap-2 mb-1">
-                <PartyPopper className="h-5 w-5 text-violet-600 dark:text-violet-400" />
-                <span className="text-2xl font-bold text-violet-700 dark:text-violet-300">{guestStats.totalAttending}</span>
+                <HelpCircle className="h-5 w-5 text-violet-600 dark:text-violet-400" />
+                <span className="text-2xl font-bold text-violet-700 dark:text-violet-300">{guestStats.maybe}</span>
               </div>
-              <p className="text-xs text-violet-700/70 dark:text-violet-400/70">{isRTL ? "מגיעים" : "Attending"}</p>
+              <p className="text-xs text-violet-700/70 dark:text-violet-400/70">{isRTL ? "מתלבטים" : "Maybe"}</p>
             </CardContent>
           </Card>
         </div>

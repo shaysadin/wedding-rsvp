@@ -115,7 +115,7 @@ export function InvitationImageUpload({ eventId, currentImageUrl }: InvitationIm
       <DialogTrigger asChild>
         <button
           type="button"
-          className="group relative h-16 w-16 shrink-0 overflow-hidden rounded-xl border-2 border-dashed border-muted-foreground/25 bg-muted/50 transition-all hover:border-muted-foreground/50 hover:shadow-md sm:h-[88px] sm:w-[88px]"
+          className="group relative h-26 w-26 shrink-0 overflow-hidden rounded-xl border-2 border-dashed border-muted-foreground/25 bg-muted/50 transition-all hover:border-muted-foreground/50 hover:shadow-md sm:h-[88px] sm:w-[88px]"
         >
           {previewUrl ? (
             <>

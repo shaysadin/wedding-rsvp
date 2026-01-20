@@ -79,7 +79,7 @@ export default async function GuestsPage({ params, searchParams }: GuestsPagePro
             <div className="flex flex-col items-center gap-1.5 shrink-0">
               <InvitationImageUpload eventId={event.id} currentImageUrl={event.invitationImageUrl} />
               <span className="text-[10px] text-muted-foreground">
-                {locale === "he" ? "הזמנה" : "Invite"}
+                {locale === "he" ? "הזמנת החתונה" : "Invite"}
               </span>
             </div>
           </div>
