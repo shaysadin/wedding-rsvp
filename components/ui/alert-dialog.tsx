@@ -7,11 +7,12 @@ import { cn } from "@/lib/utils"
 import { buttonVariants } from "@/components/ui/button"
 
 // Hook for swipe-to-dismiss on mobile bottom sheets
+// Uses direct DOM manipulation for smooth 60fps performance
 function useSwipeToDismiss(onDismiss: () => void, enabled: boolean = true) {
-  const [dragY, setDragY] = React.useState(0)
-  const [isDragging, setIsDragging] = React.useState(false)
+  const contentRef = React.useRef<HTMLElement | null>(null)
+  const overlayRef = React.useRef<HTMLElement | null>(null)
   const startY = React.useRef(0)
-  const currentY = React.useRef(0)
+  const isDragging = React.useRef(false)
 
   const handleTouchStart = React.useCallback((e: React.TouchEvent) => {
     if (!enabled) return
@@ -22,36 +23,54 @@ function useSwipeToDismiss(onDismiss: () => void, enabled: boolean = true) {
 
     if (touchY <= 60) {
       startY.current = touch.clientY
-      currentY.current = touch.clientY
-      setIsDragging(true)
+      isDragging.current = true
+      contentRef.current = target
+      overlayRef.current = target.previousElementSibling as HTMLElement
+      target.style.transition = 'none'
     }
   }, [enabled])
 
   const handleTouchMove = React.useCallback((e: React.TouchEvent) => {
-    if (!isDragging || !enabled) return
+    if (!isDragging.current || !enabled || !contentRef.current) return
     const touch = e.touches[0]
-    currentY.current = touch.clientY
-    const delta = Math.max(0, currentY.current - startY.current)
-    setDragY(delta)
-  }, [isDragging, enabled])
+    const delta = Math.max(0, touch.clientY - startY.current)
 
-  const handleTouchEnd = React.useCallback(() => {
-    if (!isDragging || !enabled) return
-    const delta = currentY.current - startY.current
+    contentRef.current.style.transform = `translateY(${delta}px)`
+    if (overlayRef.current) {
+      overlayRef.current.style.opacity = String(Math.max(0.2, 1 - delta / 300))
+    }
+  }, [enabled])
+
+  const handleTouchEnd = React.useCallback((e: React.TouchEvent) => {
+    if (!isDragging.current || !enabled || !contentRef.current) return
+
+    const touch = e.changedTouches[0]
+    const delta = touch.clientY - startY.current
+
+    contentRef.current.style.transition = 'transform 0.2s ease-out'
 
     if (delta > 100) {
-      onDismiss()
+      contentRef.current.style.transform = 'translateY(100%)'
+      // Disable CSS animation to prevent conflict with our JS animation
+      contentRef.current.style.animation = 'none'
+      if (overlayRef.current) {
+        overlayRef.current.style.transition = 'opacity 0.2s ease-out'
+        overlayRef.current.style.opacity = '0'
+        overlayRef.current.style.animation = 'none'
+      }
+      setTimeout(onDismiss, 200)
+    } else {
+      contentRef.current.style.transform = 'translateY(0)'
+      if (overlayRef.current) {
+        overlayRef.current.style.opacity = '1'
+      }
     }
 
-    setDragY(0)
-    setIsDragging(false)
+    isDragging.current = false
     startY.current = 0
-    currentY.current = 0
-  }, [isDragging, enabled, onDismiss])
+  }, [enabled, onDismiss])
 
   return {
-    dragY,
-    isDragging,
     handlers: {
       onTouchStart: handleTouchStart,
       onTouchMove: handleTouchMove,
@@ -72,7 +91,7 @@ const AlertDialogOverlay = React.forwardRef<
 >(({ className, style, ...props }, ref) => (
   <AlertDialogPrimitive.Overlay
     className={cn(
-      "fixed inset-0 z-[60] bg-background/80 backdrop-blur-sm data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
+      "dialog-overlay fixed inset-0 z-[60] bg-background/80 backdrop-blur-sm",
       className
     )}
     style={style}
@@ -85,7 +104,7 @@ AlertDialogOverlay.displayName = AlertDialogPrimitive.Overlay.displayName
 const AlertDialogContent = React.forwardRef<
   React.ElementRef<typeof AlertDialogPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof AlertDialogPrimitive.Content>
->(({ className, children, dir, ...props }, ref) => {
+>(({ className, children, dir, style, ...props }, ref) => {
   const [autoDir, setAutoDir] = React.useState<"ltr" | "rtl" | undefined>(undefined)
   const [isMobile, setIsMobile] = React.useState(false)
   const cancelRef = React.useRef<HTMLButtonElement>(null)
@@ -110,36 +129,28 @@ const AlertDialogContent = React.forwardRef<
     cancelRef.current?.click()
   }, [])
 
-  const { dragY, isDragging, handlers } = useSwipeToDismiss(handleDismiss, isMobile)
+  const { handlers } = useSwipeToDismiss(handleDismiss, isMobile)
 
   return (
     <AlertDialogPortal>
-      <AlertDialogOverlay style={isDragging ? { opacity: Math.max(0.2, 1 - dragY / 300) } : undefined} />
+      <AlertDialogOverlay />
       <AlertDialogPrimitive.Content
         ref={ref}
         dir={dir || autoDir}
         className={cn(
-          // Base styles
-          "fixed z-[61] grid w-full gap-4 border bg-background shadow-lg duration-200",
+          // Base styles with CSS animation class
+          "dialog-content fixed z-[61] grid w-full gap-4 border bg-background shadow-lg min-h-[50vh]",
           // Mobile: bottom sheet style
           "inset-x-0 bottom-0 top-auto max-h-[96vh] rounded-t-2xl border-b-0 p-4 pt-2",
           // Desktop: centered modal
           "sm:inset-auto sm:left-1/2 sm:top-1/2 sm:bottom-auto sm:max-w-lg sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-xl sm:border sm:p-6",
-          // Animations - mobile slide up, desktop zoom
-          "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
-          "data-[state=closed]:slide-out-to-bottom-[100%] data-[state=open]:slide-in-from-bottom-[100%]",
-          "sm:data-[state=closed]:slide-out-to-bottom-0 sm:data-[state=open]:slide-in-from-bottom-0 sm:data-[state=closed]:zoom-out-95 sm:data-[state=open]:zoom-in-95",
           className
         )}
-        style={
-          isMobile && dragY > 0
-            ? {
-                transform: `translateY(${dragY}px)`,
-                transition: isDragging ? "none" : "transform 0.2s ease-out",
-              }
-            : undefined
-        }
-        {...handlers}
+        style={{
+          ...style,
+          minHeight: "50vh",
+        }}
+        {...(isMobile ? handlers : {})}
         {...props}
       >
         {/* Mobile drag handle indicator */}

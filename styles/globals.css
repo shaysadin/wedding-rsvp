@@ -437,6 +437,221 @@
   animation: slideDown 0.2s ease-out;
 }
 
+/* ============================================
+   DIALOG/SHEET ANIMATIONS (tailwindcss-animate replacement)
+   ============================================ */
+
+/* Enter animations */
+@keyframes enter-from-bottom {
+  from {
+    opacity: 0;
+    transform: translateY(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes exit-to-bottom {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(100%);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes fade-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes zoom-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+@keyframes zoom-out {
+  from {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.95);
+  }
+}
+
+/* Overlay animations */
+.dialog-overlay[data-state="open"] {
+  animation: fade-in 300ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.dialog-overlay[data-state="closed"] {
+  animation: fade-out 200ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+/* Dialog content base styles - 50vh minimum on ALL screen sizes */
+.dialog-content {
+  min-height: 80vh !important;
+}
+
+/* Dialog content animations - responsive */
+.dialog-content[data-state="open"] {
+  animation: enter-from-bottom 400ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.dialog-content[data-state="closed"] {
+  animation: exit-to-bottom 300ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+/* Desktop: override with zoom animation */
+@media (min-width: 640px) {
+  .dialog-content[data-state="open"] {
+    animation: zoom-in 300ms cubic-bezier(0.32, 0.72, 0, 1);
+  }
+
+  .dialog-content[data-state="closed"] {
+    animation: zoom-out 200ms cubic-bezier(0.32, 0.72, 0, 1);
+  }
+}
+
+/* Sheet animations - direction based */
+@keyframes enter-from-top {
+  from {
+    opacity: 0;
+    transform: translateY(-100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes exit-to-top {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-100%);
+  }
+}
+
+@keyframes enter-from-left {
+  from {
+    opacity: 0;
+    transform: translateX(-100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes exit-to-left {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(-100%);
+  }
+}
+
+@keyframes enter-from-right {
+  from {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes exit-to-right {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+}
+
+/* Sheet content base styles - 50vh minimum */
+.sheet-content-bottom {
+  min-height: 50vh !important;
+}
+
+/* Sheet content animations */
+.sheet-content[data-state="open"] {
+  animation: enter-from-bottom 400ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.sheet-content[data-state="closed"] {
+  animation: exit-to-bottom 300ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+/* Side-specific sheet animations */
+.sheet-content-top[data-state="open"] {
+  animation: enter-from-top 400ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.sheet-content-top[data-state="closed"] {
+  animation: exit-to-top 300ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.sheet-content-bottom[data-state="open"] {
+  animation: enter-from-bottom 400ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.sheet-content-bottom[data-state="closed"] {
+  animation: exit-to-bottom 300ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.sheet-content-left[data-state="open"] {
+  animation: enter-from-left 400ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.sheet-content-left[data-state="closed"] {
+  animation: exit-to-left 300ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.sheet-content-right[data-state="open"] {
+  animation: enter-from-right 400ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.sheet-content-right[data-state="closed"] {
+  animation: exit-to-right 300ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
 @keyframes gradient-rotate {
   0% { --gradient-angle: 0deg; }
   100% { --gradient-angle: 360deg; }

@@ -189,8 +189,8 @@ export function BulkAddGuestsDialog({ eventId }: BulkAddGuestsDialogProps) {
 
         <div className="mt-4 space-y-4">
           {/* Scrollable container - both X and Y axis */}
-          <div className="max-h-[400px] overflow-auto rounded-md border">
-            <Table className="min-w-[700px]">
+          <div className="max-h-100 min-h-80 overflow-auto rounded-md border">
+            <Table className="min-w-175">
               <TableHeader>
                 <TableRow className="bg-muted/50">
                   <TableHead className="min-w-[160px] text-start sticky top-0 bg-muted/50">{t("name")} *</TableHead>

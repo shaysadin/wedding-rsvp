@@ -8,11 +8,12 @@ import { X } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 // Hook for swipe-to-dismiss on bottom sheets
+// Uses direct DOM manipulation for smooth 60fps performance
 function useSwipeToDismiss(onDismiss: () => void, enabled: boolean = true) {
-  const [dragY, setDragY] = React.useState(0)
-  const [isDragging, setIsDragging] = React.useState(false)
+  const contentRef = React.useRef<HTMLElement | null>(null)
+  const overlayRef = React.useRef<HTMLElement | null>(null)
   const startY = React.useRef(0)
-  const currentY = React.useRef(0)
+  const isDragging = React.useRef(false)
 
   const handleTouchStart = React.useCallback((e: React.TouchEvent) => {
     if (!enabled) return
@@ -23,36 +24,54 @@ function useSwipeToDismiss(onDismiss: () => void, enabled: boolean = true) {
 
     if (touchY <= 60) {
       startY.current = touch.clientY
-      currentY.current = touch.clientY
-      setIsDragging(true)
+      isDragging.current = true
+      contentRef.current = target
+      overlayRef.current = target.previousElementSibling as HTMLElement
+      target.style.transition = 'none'
     }
   }, [enabled])
 
   const handleTouchMove = React.useCallback((e: React.TouchEvent) => {
-    if (!isDragging || !enabled) return
+    if (!isDragging.current || !enabled || !contentRef.current) return
     const touch = e.touches[0]
-    currentY.current = touch.clientY
-    const delta = Math.max(0, currentY.current - startY.current)
-    setDragY(delta)
-  }, [isDragging, enabled])
+    const delta = Math.max(0, touch.clientY - startY.current)
 
-  const handleTouchEnd = React.useCallback(() => {
-    if (!isDragging || !enabled) return
-    const delta = currentY.current - startY.current
+    contentRef.current.style.transform = `translateY(${delta}px)`
+    if (overlayRef.current) {
+      overlayRef.current.style.opacity = String(Math.max(0.2, 1 - delta / 300))
+    }
+  }, [enabled])
+
+  const handleTouchEnd = React.useCallback((e: React.TouchEvent) => {
+    if (!isDragging.current || !enabled || !contentRef.current) return
+
+    const touch = e.changedTouches[0]
+    const delta = touch.clientY - startY.current
+
+    contentRef.current.style.transition = 'transform 0.2s ease-out'
 
     if (delta > 100) {
-      onDismiss()
+      contentRef.current.style.transform = 'translateY(100%)'
+      // Disable CSS animation to prevent conflict with our JS animation
+      contentRef.current.style.animation = 'none'
+      if (overlayRef.current) {
+        overlayRef.current.style.transition = 'opacity 0.2s ease-out'
+        overlayRef.current.style.opacity = '0'
+        overlayRef.current.style.animation = 'none'
+      }
+      setTimeout(onDismiss, 200)
+    } else {
+      contentRef.current.style.transform = 'translateY(0)'
+      if (overlayRef.current) {
+        overlayRef.current.style.opacity = '1'
+      }
     }
 
-    setDragY(0)
-    setIsDragging(false)
+    isDragging.current = false
     startY.current = 0
-    currentY.current = 0
-  }, [isDragging, enabled, onDismiss])
+  }, [enabled, onDismiss])
 
   return {
-    dragY,
-    isDragging,
     handlers: {
       onTouchStart: handleTouchStart,
       onTouchMove: handleTouchMove,
@@ -75,7 +94,7 @@ const SheetOverlay = React.forwardRef<
 >(({ className, style, ...props }, ref) => (
   <SheetPrimitive.Overlay
     className={cn(
-      "fixed inset-0 z-50 bg-background/80 backdrop-blur-sm data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
+      "dialog-overlay fixed inset-0 z-50 bg-background/80 backdrop-blur-sm",
       className
     )}
     style={style}
@@ -86,16 +105,14 @@ const SheetOverlay = React.forwardRef<
 SheetOverlay.displayName = SheetPrimitive.Overlay.displayName
 
 const sheetVariants = cva(
-  "fixed z-50 gap-4 bg-background shadow-lg transition ease-in-out data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:duration-300 data-[state=open]:duration-500",
+  "fixed z-50 gap-4 bg-background shadow-lg",
   {
     variants: {
       side: {
-        top: "inset-x-0 top-0 border-b p-6 data-[state=closed]:slide-out-to-top data-[state=open]:slide-in-from-top",
-        bottom:
-          "inset-x-0 bottom-0 max-h-[96vh] rounded-t-2xl border border-b-0 pt-2 px-6 pb-6 data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom",
-        left: "inset-y-0 left-0 h-full w-3/4 border-r p-6 data-[state=closed]:slide-out-to-left data-[state=open]:slide-in-from-left sm:max-w-sm",
-        right:
-          "inset-y-0 right-0 h-full w-3/4 border-l p-6 data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right sm:max-w-sm",
+        top: "sheet-content-top inset-x-0 top-0 border-b p-6",
+        bottom: "sheet-content-bottom inset-x-0 bottom-0 max-h-[96vh] rounded-t-2xl border border-b-0 pt-2 px-6 pb-6",
+        left: "sheet-content-left inset-y-0 left-0 h-full w-3/4 border-r p-6 sm:max-w-sm",
+        right: "sheet-content-right inset-y-0 right-0 h-full w-3/4 border-l p-6 sm:max-w-sm",
       },
     },
     defaultVariants: {
@@ -119,22 +136,14 @@ const SheetContent = React.forwardRef<
     closeRef.current?.click()
   }, [])
 
-  const { dragY, isDragging, handlers } = useSwipeToDismiss(handleDismiss, isBottomSheet)
+  const { handlers } = useSwipeToDismiss(handleDismiss, isBottomSheet)
 
   return (
     <SheetPortal>
-      <SheetOverlay style={isDragging ? { opacity: Math.max(0.2, 1 - dragY / 300) } : undefined} />
+      <SheetOverlay />
       <SheetPrimitive.Content
         ref={ref}
         className={cn(sheetVariants({ side }), className)}
-        style={
-          isBottomSheet && dragY > 0
-            ? {
-                transform: `translateY(${dragY}px)`,
-                transition: isDragging ? "none" : "transform 0.2s ease-out",
-              }
-            : undefined
-        }
         {...(isBottomSheet ? handlers : {})}
         {...props}
       >

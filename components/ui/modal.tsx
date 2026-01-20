@@ -61,7 +61,7 @@ export function Modal({
         <Drawer.Portal>
           <Drawer.Content
             className={cn(
-              "fixed inset-x-0 bottom-0 z-50 mt-24 overflow-hidden rounded-t-[10px] border bg-background",
+              "fixed inset-x-0 bottom-0 z-50 mt-24 min-h-[50vh] overflow-hidden rounded-t-[10px] border bg-background",
               className,
             )}
           >
