@@ -7,6 +7,7 @@ import * as XLSX from "xlsx";
 
 import { bulkImportGuests } from "@/actions/guests";
 import { Button } from "@/components/ui/button";
+import { GlowingButton } from "@/components/ui/glowing-button";
 
 const PREDEFINED_GROUPS = ["family", "friends", "work", "other"] as const;
 const PREDEFINED_SIDES = ["bride", "groom", "both"] as const;
@@ -234,10 +235,10 @@ export function ImportGuestsDialog({ eventId }: ImportGuestsDialogProps) {
     <>
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline">
-          <Icons.upload className="me-2 h-4 w-4" />
-          {t("import")}
-        </Button>
+        <GlowingButton glowColor="#06b6d4" className="w-full sm:w-auto">
+          <Icons.upload className="h-4 w-4" />
+          <span>{t("import")}</span>
+        </GlowingButton>
       </DialogTrigger>
       <DialogContent className="sm:max-w-3xl">
         <DialogHeader>

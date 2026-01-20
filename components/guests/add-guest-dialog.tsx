@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { createGuest } from "@/actions/guests";
 import { createGuestSchema, type CreateGuestInput } from "@/lib/validations/guest";
 import { Button } from "@/components/ui/button";
+import { GlowingButton } from "@/components/ui/glowing-button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -126,10 +127,10 @@ export function AddGuestDialog({ eventId }: AddGuestDialogProps) {
     <>
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button>
-          <Icons.userPlus className="me-2 h-4 w-4" />
-          {t("add")}
-        </Button>
+        <GlowingButton glowColor="#10b981" className="w-full sm:w-auto">
+          <Icons.userPlus className="h-4 w-4" />
+          <span>{t("add")}</span>
+        </GlowingButton>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader className="shrink-0">

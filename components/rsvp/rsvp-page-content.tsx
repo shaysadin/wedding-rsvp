@@ -32,6 +32,7 @@ interface RsvpStats {
   pending: number;
   accepted: number;
   declined: number;
+  maybe: number;
   totalAttending: number;
 }
 
@@ -70,13 +71,18 @@ export function RsvpPageContent({
       </div>
 
       {/* Event Title */}
-      <div className="flex items-center gap-3 rounded-lg border bg-card/50 p-4 mt-6">
-        <Icons.calendar className="h-5 w-5 text-muted-foreground" />
+      <div className="flex items-start gap-3 rounded-lg border bg-card/50 p-4 mt-6 sm:items-center">
+        <Icons.calendar className="h-5 w-5 text-muted-foreground shrink-0" />
         <div className="min-w-0 flex-1">
           <h2 className="font-medium truncate">{event.title}</h2>
           <p className="text-sm text-muted-foreground truncate">{event.location}</p>
         </div>
-        <InvitationImageUpload eventId={event.id} currentImageUrl={event.invitationImageUrl} />
+        <div className="flex flex-col items-center gap-1.5 shrink-0">
+          <InvitationImageUpload eventId={event.id} currentImageUrl={event.invitationImageUrl} />
+          <span className="text-[10px] text-muted-foreground">
+            {isRTL ? "הזמנה" : "Invite"}
+          </span>
+        </div>
       </div>
 
       {/* Event Stats - Clickable Filters */}

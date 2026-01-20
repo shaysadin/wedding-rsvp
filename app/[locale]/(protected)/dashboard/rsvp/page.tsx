@@ -100,13 +100,14 @@ export default async function RsvpPage({ searchParams }: RsvpPageProps) {
     pending: event.guests.filter(g => !g.rsvp || g.rsvp.status === "PENDING").length,
     accepted: event.guests.filter(g => g.rsvp?.status === "ACCEPTED").length,
     declined: event.guests.filter(g => g.rsvp?.status === "DECLINED").length,
+    maybe: event.guests.filter(g => g.rsvp?.status === "MAYBE").length,
     totalAttending: event.guests
       .filter(g => g.rsvp?.status === "ACCEPTED")
       .reduce((sum, g) => sum + (g.rsvp?.guestCount || 0), 0),
   };
 
   // Validate filter parameter
-  const validFilters = ["all", "pending", "accepted", "declined"];
+  const validFilters = ["all", "pending", "accepted", "declined", "maybe"];
   const activeFilter = filter && validFilters.includes(filter) ? filter : "all";
 
   return (

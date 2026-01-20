@@ -6,6 +6,7 @@ import { toast } from "sonner";
 
 import { createGuest } from "@/actions/guests";
 import { Button } from "@/components/ui/button";
+import { GlowingButton } from "@/components/ui/glowing-button";
 import { Input } from "@/components/ui/input";
 import {
   Dialog,
@@ -31,7 +32,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Icons } from "@/components/shared/icons";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { DuplicateErrorDialog } from "./duplicate-error-dialog";
 
 interface BulkAddGuestsDialogProps {
@@ -174,10 +174,10 @@ export function BulkAddGuestsDialog({ eventId }: BulkAddGuestsDialogProps) {
     <>
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
-        <Button variant="outline">
-          <Icons.users className="me-2 h-4 w-4" />
-          {t("bulkAdd")}
-        </Button>
+        <GlowingButton glowColor="#8b5cf6" className="w-full sm:w-auto">
+          <Icons.users className="h-4 w-4" />
+          <span>{t("bulkAdd")}</span>
+        </GlowingButton>
       </DialogTrigger>
       <DialogContent className="sm:max-w-4xl">
         <DialogHeader>
@@ -188,16 +188,17 @@ export function BulkAddGuestsDialog({ eventId }: BulkAddGuestsDialogProps) {
         </DialogHeader>
 
         <div className="mt-4 space-y-4">
-          <ScrollArea className="h-[400px] rounded-md border">
-            <Table>
+          {/* Scrollable container - both X and Y axis */}
+          <div className="max-h-[400px] overflow-auto rounded-md border">
+            <Table className="min-w-[700px]">
               <TableHeader>
                 <TableRow className="bg-muted/50">
-                  <TableHead className="w-[180px] text-start">{t("name")} *</TableHead>
-                  <TableHead className="w-[130px] text-start">{t("phone")}</TableHead>
-                  <TableHead className="w-[120px] text-start">{t("side")}</TableHead>
-                  <TableHead className="w-[120px] text-start">{t("group")}</TableHead>
-                  <TableHead className="w-[80px] text-start">{t("guestCount")}</TableHead>
-                  <TableHead className="w-[50px]"></TableHead>
+                  <TableHead className="min-w-[160px] text-start sticky top-0 bg-muted/50">{t("name")} *</TableHead>
+                  <TableHead className="min-w-[140px] text-start sticky top-0 bg-muted/50">{t("phone")}</TableHead>
+                  <TableHead className="min-w-[130px] text-start sticky top-0 bg-muted/50">{t("side")}</TableHead>
+                  <TableHead className="min-w-[130px] text-start sticky top-0 bg-muted/50">{t("group")}</TableHead>
+                  <TableHead className="min-w-[80px] text-start sticky top-0 bg-muted/50">{t("guestCount")}</TableHead>
+                  <TableHead className="min-w-[50px] sticky top-0 bg-muted/50"></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -208,7 +209,7 @@ export function BulkAddGuestsDialog({ eventId }: BulkAddGuestsDialogProps) {
                         value={row.name}
                         onChange={(e) => updateRow(row.id, "name", e.target.value)}
                         placeholder={t("namePlaceholder")}
-                        className="h-9"
+                        className="h-10 min-w-[140px] text-base"
                       />
                     </TableCell>
                     <TableCell className="p-2">
@@ -216,7 +217,7 @@ export function BulkAddGuestsDialog({ eventId }: BulkAddGuestsDialogProps) {
                         value={row.phoneNumber}
                         onChange={(e) => updateRow(row.id, "phoneNumber", e.target.value)}
                         placeholder="050..."
-                        className="h-9"
+                        className="h-10 min-w-[120px] text-base"
                         dir="ltr"
                       />
                     </TableCell>
@@ -234,7 +235,7 @@ export function BulkAddGuestsDialog({ eventId }: BulkAddGuestsDialogProps) {
                             }
                           }}
                         >
-                          <SelectTrigger className="h-9">
+                          <SelectTrigger className="h-10 min-w-[110px] text-base">
                             <SelectValue placeholder={t("selectSide")} />
                           </SelectTrigger>
                           <SelectContent>
@@ -250,13 +251,13 @@ export function BulkAddGuestsDialog({ eventId }: BulkAddGuestsDialogProps) {
                             value={row.side}
                             onChange={(e) => updateRow(row.id, "side", e.target.value)}
                             placeholder={t("customSidePlaceholder")}
-                            className="h-9"
+                            className="h-10 text-base"
                           />
                           <Button
                             type="button"
                             variant="ghost"
                             size="icon"
-                            className="h-9 w-9 shrink-0"
+                            className="h-10 w-10 shrink-0"
                             onClick={() => {
                               setRows(rows.map(r =>
                                 r.id === row.id ? { ...r, showCustomSide: false, side: "" } : r
@@ -282,7 +283,7 @@ export function BulkAddGuestsDialog({ eventId }: BulkAddGuestsDialogProps) {
                             }
                           }}
                         >
-                          <SelectTrigger className="h-9">
+                          <SelectTrigger className="h-10 min-w-[110px] text-base">
                             <SelectValue placeholder={t("selectGroup")} />
                           </SelectTrigger>
                           <SelectContent>
@@ -299,13 +300,13 @@ export function BulkAddGuestsDialog({ eventId }: BulkAddGuestsDialogProps) {
                             value={row.groupName}
                             onChange={(e) => updateRow(row.id, "groupName", e.target.value)}
                             placeholder={t("customGroupPlaceholder")}
-                            className="h-9"
+                            className="h-10 text-base"
                           />
                           <Button
                             type="button"
                             variant="ghost"
                             size="icon"
-                            className="h-9 w-9 shrink-0"
+                            className="h-10 w-10 shrink-0"
                             onClick={() => {
                               setRows(rows.map(r =>
                                 r.id === row.id ? { ...r, showCustomGroup: false, groupName: "" } : r
@@ -324,7 +325,7 @@ export function BulkAddGuestsDialog({ eventId }: BulkAddGuestsDialogProps) {
                         max={20}
                         value={row.expectedGuests}
                         onChange={(e) => updateRow(row.id, "expectedGuests", parseInt(e.target.value) || 1)}
-                        className="h-9 w-16"
+                        className="h-10 w-20 text-base text-center"
                       />
                     </TableCell>
                     <TableCell className="p-2">
@@ -333,7 +334,7 @@ export function BulkAddGuestsDialog({ eventId }: BulkAddGuestsDialogProps) {
                         size="sm"
                         onClick={() => removeRow(row.id)}
                         disabled={rows.length === 1}
-                        className="h-9 w-9 p-0 text-muted-foreground hover:text-destructive"
+                        className="h-10 w-10 p-0 text-muted-foreground hover:text-destructive"
                       >
                         <Icons.trash className="h-4 w-4" />
                       </Button>
@@ -342,7 +343,7 @@ export function BulkAddGuestsDialog({ eventId }: BulkAddGuestsDialogProps) {
                 ))}
               </TableBody>
             </Table>
-          </ScrollArea>
+          </div>
 
           <Button
             variant="outline"

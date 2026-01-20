@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { motion } from "framer-motion";
-import { Users, Clock, CheckCircle2, XCircle, UserCheck } from "lucide-react";
+import { Users, Clock, CheckCircle2, XCircle, HelpCircle } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { Card, CardContent } from "@/components/ui/card";
@@ -15,6 +15,7 @@ interface EventStatsCardsProps {
     pending: number;
     accepted: number;
     declined: number;
+    maybe: number;
     totalAttending: number;
   };
   eventId: string;
@@ -26,7 +27,6 @@ export function EventStatsCards({ stats, eventId, activeFilter, basePath: custom
   const pathname = usePathname();
   const tGuests = useTranslations("guests");
   const tStatus = useTranslations("status");
-  const tEvents = useTranslations("events");
 
   // Get base path without query params (use custom if provided)
   const basePath = customBasePath || pathname?.split("?")[0] || `/dashboard/events/${eventId}`;
@@ -41,6 +41,7 @@ export function EventStatsCards({ stats, eventId, activeFilter, basePath: custom
       cardBg: "bg-blue-50 dark:bg-blue-950/40",
       borderColor: "border-blue-200/50 dark:border-blue-800/30",
       activeClass: "ring-2 ring-blue-500 ring-offset-2",
+      largeScreenOnly: false,
     },
     {
       key: "pending",
@@ -51,16 +52,18 @@ export function EventStatsCards({ stats, eventId, activeFilter, basePath: custom
       cardBg: "bg-amber-50 dark:bg-amber-950/40",
       borderColor: "border-amber-200/50 dark:border-amber-800/30",
       activeClass: "ring-2 ring-amber-500 ring-offset-2",
+      largeScreenOnly: false,
     },
     {
       key: "accepted",
       label: tStatus("accepted"),
-      value: stats.accepted,
+      value: stats.totalAttending,
       icon: CheckCircle2,
       iconBg: "bg-emerald-500",
       cardBg: "bg-emerald-50 dark:bg-emerald-950/40",
       borderColor: "border-emerald-200/50 dark:border-emerald-800/30",
       activeClass: "ring-2 ring-emerald-500 ring-offset-2",
+      largeScreenOnly: false,
     },
     {
       key: "declined",
@@ -71,14 +74,26 @@ export function EventStatsCards({ stats, eventId, activeFilter, basePath: custom
       cardBg: "bg-red-50 dark:bg-red-950/40",
       borderColor: "border-red-200/50 dark:border-red-800/30",
       activeClass: "ring-2 ring-red-500 ring-offset-2",
+      largeScreenOnly: false,
+    },
+    {
+      key: "maybe",
+      label: tStatus("maybe"),
+      value: stats.maybe,
+      icon: HelpCircle,
+      iconBg: "bg-violet-500",
+      cardBg: "bg-violet-50 dark:bg-violet-950/40",
+      borderColor: "border-violet-200/50 dark:border-violet-800/30",
+      activeClass: "ring-2 ring-violet-500 ring-offset-2",
+      largeScreenOnly: true,
     },
   ];
 
   return (
     <div className="w-full">
       {/* Mobile: Horizontal scroll */}
-      <div className="overflow-x-auto py-2 px-4 sm:mx-0 sm:px-0 sm:overflow-visible sm:pb-0">
-        <div className="flex gap-3 sm:grid sm:grid-cols-2 sm:gap-4 lg:grid-cols-5 min-w-max sm:min-w-0">
+      <div className="py-2 sm:mx-0 sm:px-0 sm:overflow-visible sm:pb-0">
+        <div className="grid grid-cols-2 gap-4 sm:gap-4 lg:grid-cols-4 xl:grid-cols-5 min-w-max">
           {cards.map((card, index) => (
             <motion.div
               key={card.key}
@@ -87,6 +102,7 @@ export function EventStatsCards({ stats, eventId, activeFilter, basePath: custom
               transition={{ delay: index * 0.03, duration: 0.15, ease: "easeOut" }}
               whileHover={{ y: -2, transition: { duration: 0.15 } }}
               style={{ willChange: "transform" }}
+              className={card.largeScreenOnly ? "hidden xl:block" : ""}
             >
               <Link
                 href={card.key === "all" ? basePath : `${basePath}?filter=${card.key}`}
@@ -94,27 +110,27 @@ export function EventStatsCards({ stats, eventId, activeFilter, basePath: custom
               >
                 <Card
                   className={cn(
-                    "relative w-[130px] cursor-pointer overflow-hidden border transition-all duration-300 hover:shadow-md sm:w-auto",
+                    "relative w-full cursor-pointer overflow-hidden border transition-all duration-300 hover:shadow-md sm:w-auto",
                     card.cardBg,
                     card.borderColor,
                     activeFilter === card.key && card.activeClass
                   )}
                 >
-                  <CardContent className="p-3 sm:p-4">
+                  <CardContent className="px-3 py-4 sm:p-4">
                     <div className="flex items-center gap-2.5 sm:gap-3">
                       {/* Icon */}
                       <div
                         className={cn(
-                          "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-transform duration-150 sm:h-10 sm:w-10 sm:rounded-xl",
+                          "flex h-10 w-10 shrink-0 items-center justify-center rounded-lg transition-transform duration-150 sm:h-10 sm:w-10 sm:rounded-xl",
                           card.iconBg
                         )}
                       >
-                        <card.icon className="h-4 w-4 text-white sm:h-5 sm:w-5" />
+                        <card.icon className="h-5 w-5 text-white sm:h-5 sm:w-5" />
                       </div>
 
                       {/* Content */}
                       <div className="flex-1 min-w-0 text-start">
-                        <p className="text-[11px] font-medium text-muted-foreground truncate sm:text-xs">
+                        <p className="text-[12px] font-medium text-muted-foreground truncate sm:text-xs">
                           {card.label}
                         </p>
                         <p className="text-lg font-bold tracking-tight sm:text-xl">
@@ -128,39 +144,6 @@ export function EventStatsCards({ stats, eventId, activeFilter, basePath: custom
             </motion.div>
           ))}
 
-          {/* Total Attending - Not clickable, just informational */}
-          <motion.div
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 4 * 0.03, duration: 0.15, ease: "easeOut" }}
-            whileHover={{ y: -2, transition: { duration: 0.15 } }}
-            style={{ willChange: "transform" }}
-          >
-            <Card className={cn(
-              "relative w-[130px] overflow-hidden border transition-all duration-300 hover:shadow-md sm:w-auto",
-              "bg-violet-50 dark:bg-violet-950/40",
-              "border-violet-200/50 dark:border-violet-800/30"
-            )}>
-              <CardContent className="p-3 sm:p-4">
-                <div className="flex items-center gap-2.5 sm:gap-3">
-                  {/* Icon */}
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-violet-500 transition-transform duration-150 sm:h-10 sm:w-10 sm:rounded-xl">
-                    <UserCheck className="h-4 w-4 text-white sm:h-5 sm:w-5" />
-                  </div>
-
-                  {/* Content */}
-                  <div className="flex-1 min-w-0 text-start">
-                    <p className="text-[11px] font-medium text-muted-foreground truncate sm:text-xs">
-                      {tEvents("totalAttending")}
-                    </p>
-                    <p className="text-lg font-bold tracking-tight sm:text-xl">
-                      {stats.totalAttending}
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
         </div>
       </div>
     </div>

@@ -113,15 +113,29 @@ export function InvitationImageUpload({ eventId, currentImageUrl }: InvitationIm
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button
-          variant={previewUrl ? "outline" : "default"}
-          className={!previewUrl ? "bg-purple-600 hover:bg-purple-700 text-white" : ""}
+        <button
+          type="button"
+          className="group relative h-16 w-16 shrink-0 overflow-hidden rounded-xl border-2 border-dashed border-muted-foreground/25 bg-muted/50 transition-all hover:border-muted-foreground/50 hover:shadow-md sm:h-[88px] sm:w-[88px]"
         >
-          <Icons.media className="me-2 h-4 w-4" />
-          {previewUrl
-            ? (isRTL ? "תמונת הזמנה ✓" : "Invitation Image ✓")
-            : (isRTL ? "העלה תמונת הזמנה" : "Upload Invitation")}
-        </Button>
+          {previewUrl ? (
+            <>
+              <Image
+                src={previewUrl}
+                alt="Invitation"
+                fill
+                className="object-cover"
+              />
+              <div className="absolute inset-0 flex items-center justify-center bg-black/0 transition-colors group-hover:bg-black/40">
+                <Icons.edit className="h-4 w-4 text-white opacity-0 transition-opacity group-hover:opacity-100" />
+              </div>
+            </>
+          ) : (
+            <div className="flex h-full w-full flex-col items-center justify-center gap-0.5">
+              <Icons.media className="h-5 w-5 text-muted-foreground/70 transition-colors group-hover:text-muted-foreground" />
+              <Icons.add className="absolute -bottom-0.5 -end-0.5 h-3.5 w-3.5 rounded-full bg-primary text-primary-foreground" />
+            </div>
+          )}
+        </button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>

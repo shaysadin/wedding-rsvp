@@ -58,13 +58,14 @@ export default async function EventPage({ params, searchParams }: EventPageProps
     pending: event.guests.filter(g => !g.rsvp || g.rsvp.status === "PENDING").length,
     accepted: event.guests.filter(g => g.rsvp?.status === "ACCEPTED").length,
     declined: event.guests.filter(g => g.rsvp?.status === "DECLINED").length,
+    maybe: event.guests.filter(g => g.rsvp?.status === "MAYBE").length,
     totalAttending: event.guests
       .filter(g => g.rsvp?.status === "ACCEPTED")
       .reduce((sum, g) => sum + (g.rsvp?.guestCount || 0), 0),
   };
 
   // Validate filter parameter
-  const validFilters = ["all", "pending", "accepted", "declined"];
+  const validFilters = ["all", "pending", "accepted", "declined", "maybe"];
   const activeFilter = filter && validFilters.includes(filter) ? filter : "all";
 
   // Get the first guest's slug for RSVP preview
@@ -164,13 +165,43 @@ export default async function EventPage({ params, searchParams }: EventPageProps
 
       {/* Guest Management - flex-1 and min-h-0 to allow table to take remaining space and scroll on desktop */}
       <div className="flex flex-col gap-3 sm:gap-4 md:min-h-0 md:flex-1">
-        <div className="flex shrink-0 flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
-          <h2 className="text-lg font-semibold sm:text-xl">{tGuests("title")}</h2>
-          <div className="flex flex-wrap gap-1.5 sm:gap-2">
-            <InvitationImageUpload eventId={event.id} currentImageUrl={event.invitationImageUrl} />
-            <BulkAddGuestsDialog eventId={event.id} />
-            <ImportGuestsDialog eventId={event.id} />
-            <AddGuestDialog eventId={event.id} />
+        <div className="shrink-0 space-y-4 sm:space-y-0">
+          {/* Mobile layout */}
+          <div className="flex flex-col gap-4 sm:hidden">
+            {/* Title row with invitation */}
+            <div className="flex items-start justify-between gap-4">
+              <h2 className="text-lg font-semibold">{tGuests("title")}</h2>
+              <div className="flex flex-col items-center gap-1.5 shrink-0">
+                <InvitationImageUpload eventId={event.id} currentImageUrl={event.invitationImageUrl} />
+                <span className="text-[10px] text-muted-foreground">
+                  {locale === "he" ? "הזמנה" : "Invite"}
+                </span>
+              </div>
+            </div>
+            {/* Action buttons */}
+            <div className="grid grid-cols-3 gap-2">
+              <BulkAddGuestsDialog eventId={event.id} />
+              <ImportGuestsDialog eventId={event.id} />
+              <AddGuestDialog eventId={event.id} />
+            </div>
+          </div>
+
+          {/* Desktop layout - Title + Buttons on left, Invitation on right */}
+          <div className="hidden sm:flex sm:items-start sm:justify-between sm:gap-6">
+            <div className="flex flex-col gap-2">
+              <h2 className="text-xl font-semibold">{tGuests("title")}</h2>
+              <div className="flex gap-2">
+                <BulkAddGuestsDialog eventId={event.id} />
+                <ImportGuestsDialog eventId={event.id} />
+                <AddGuestDialog eventId={event.id} />
+              </div>
+            </div>
+            <div className="flex flex-col items-center gap-1 shrink-0">
+              <InvitationImageUpload eventId={event.id} currentImageUrl={event.invitationImageUrl} />
+              <span className="text-[10px] text-muted-foreground">
+                {locale === "he" ? "הזמנה" : "Invite"}
+              </span>
+            </div>
           </div>
         </div>
         <div className="md:min-h-[500px] md:flex-1">

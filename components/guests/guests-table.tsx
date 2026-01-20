@@ -84,9 +84,7 @@ type MessageStatus = "not_sent" | "invite_sent" | "reminder_1" | "reminder_2_plu
 
 // Helper to check if guest has any failed/undelivered messages
 function hasFailedMessages(notificationLogs: NotificationLog[]): boolean {
-  return notificationLogs.some(log =>
-    log.status === NotificationStatus.FAILED || log.status === NotificationStatus.UNDELIVERED
-  );
+  return notificationLogs.some(log => log.status === NotificationStatus.FAILED);
 }
 
 function getMessageStatus(notificationLogs: NotificationLog[], vapiCallLogs?: VapiCallLog[]): MessageStatus {
@@ -762,41 +760,43 @@ export function GuestsTable({ guests, eventId, initialFilter = "all", invitation
         </div>
 
         {/* Filter Bar with Quick Bulk Actions */}
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
           {/* Quick Bulk Actions - on the left/start */}
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleSelectNotSentGuests}
-            disabled={notSentCount === 0}
-            className="gap-2"
-          >
-            <Icons.send className="h-4 w-4" />
-            {t("sendToAllNotSent")}
-            {notSentCount > 0 && (
-              <Badge variant="secondary" className="ms-1">
-                {notSentCount}
-              </Badge>
-            )}
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleSelectPendingGuests}
-            disabled={pendingGuestsCount === 0}
-            className="gap-2"
-          >
-            <Icons.bell className="h-4 w-4" />
-            {t("sendReminders")}
-            {pendingGuestsCount > 0 && (
-              <Badge variant="secondary" className="ms-1">
-                {pendingGuestsCount}
-              </Badge>
-            )}
-          </Button>
+          <div className="grid grid-cols-2 gap-2 sm:flex sm:gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleSelectNotSentGuests}
+              disabled={notSentCount === 0}
+              className="w-full gap-2 border-blue-200 bg-blue-50/50 text-blue-700 hover:bg-blue-100/80 hover:text-blue-800 dark:border-blue-800/50 dark:bg-blue-950/30 dark:text-blue-400 dark:hover:bg-blue-900/50 sm:w-auto"
+            >
+              <Icons.send className="h-4 w-4" />
+              {t("sendToAllNotSent")}
+              {notSentCount > 0 && (
+                <Badge variant="secondary" className="ms-1 bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300">
+                  {notSentCount}
+                </Badge>
+              )}
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleSelectPendingGuests}
+              disabled={pendingGuestsCount === 0}
+              className="w-full gap-2 border-amber-200 bg-amber-50/50 text-amber-700 hover:bg-amber-100/80 hover:text-amber-800 dark:border-amber-800/50 dark:bg-amber-950/30 dark:text-amber-400 dark:hover:bg-amber-900/50 sm:w-auto"
+            >
+              <Icons.bell className="h-4 w-4" />
+              {t("sendReminders")}
+              {pendingGuestsCount > 0 && (
+                <Badge variant="secondary" className="ms-1 bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300">
+                  {pendingGuestsCount}
+                </Badge>
+              )}
+            </Button>
+          </div>
 
-          {/* Spacer to push filter bar to the right */}
-          <div className="flex-1" />
+          {/* Spacer to push filter bar to the right - hidden on mobile */}
+          <div className="hidden flex-1 sm:block" />
 
           {/* Filter Bar */}
           <GuestsFilterBar

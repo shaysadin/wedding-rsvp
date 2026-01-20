@@ -18,7 +18,7 @@ export type GroupFilter = string; // Changed to string to support custom groups
 
 const PREDEFINED_SIDES = ["bride", "groom", "both"] as const;
 export type MessageStatusFilter = "all" | "not_sent" | "invite_sent" | "reminder_sent";
-export type RsvpStatusFilter = "all" | "pending" | "accepted" | "declined";
+export type RsvpStatusFilter = "all" | "pending" | "accepted" | "declined" | "maybe";
 
 const PREDEFINED_GROUPS = ["family", "friends", "work", "other"] as const;
 
@@ -57,12 +57,12 @@ export function GuestsFilterBar({
   const tMsg = useTranslations("messageStatus");
 
   return (
-    <div className="overflow-x-auto px-4 sm:mx-0 sm:overflow-visible sm:px-0">
-      <div className="flex items-center gap-2 pb-2 sm:flex-wrap sm:pb-0">
+    <div className="w-full sm:flex sm:w-auto sm:items-center">
+      <div className="grid grid-cols-4 gap-1.5 sm:flex sm:items-center sm:gap-2">
       {/* Side Filter */}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="outline" size="sm" className="h-8 shrink-0 gap-1">
+          <Button variant="outline" size="sm" className="h-8 w-full justify-center gap-0.5 px-2 text-xs sm:w-auto sm:gap-1 sm:px-3 sm:text-sm">
             <Icons.users className="h-3.5 w-3.5" />
             {t("side")}
             {sideFilter !== "all" && (
@@ -121,7 +121,7 @@ export function GuestsFilterBar({
       {/* Group Filter */}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="outline" size="sm" className="h-8 shrink-0 gap-1">
+          <Button variant="outline" size="sm" className="h-8 w-full justify-center gap-0.5 px-2 text-xs sm:w-auto sm:gap-1 sm:px-3 sm:text-sm">
             <Icons.folder className="h-3.5 w-3.5" />
             {t("group")}
             {groupFilter !== "all" && (
@@ -186,12 +186,12 @@ export function GuestsFilterBar({
       {/* RSVP Status Filter */}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="outline" size="sm" className="h-8 shrink-0 gap-1">
+          <Button variant="outline" size="sm" className="h-8 w-full justify-center gap-0.5 px-2 text-xs sm:w-auto sm:gap-1 sm:px-3 sm:text-sm">
             <Icons.check className="h-3.5 w-3.5" />
             {t("status")}
             {rsvpStatusFilter !== "all" && (
               <Badge variant="secondary" className="ms-1 h-5 px-1.5 text-xs">
-                {tStatus(rsvpStatusFilter as "pending" | "accepted" | "declined")}
+                {tStatus(rsvpStatusFilter as "pending" | "accepted" | "declined" | "maybe")}
               </Badge>
             )}
           </Button>
@@ -223,13 +223,19 @@ export function GuestsFilterBar({
           >
             {tStatus("declined")}
           </DropdownMenuCheckboxItem>
+          <DropdownMenuCheckboxItem
+            checked={rsvpStatusFilter === "maybe"}
+            onCheckedChange={() => setRsvpStatusFilter("maybe")}
+          >
+            {tStatus("maybe")}
+          </DropdownMenuCheckboxItem>
         </DropdownMenuContent>
       </DropdownMenu>
 
       {/* Message Status Filter */}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="outline" size="sm" className="h-8 shrink-0 gap-1">
+          <Button variant="outline" size="sm" className="h-8 w-full justify-center gap-0.5 px-2 text-xs sm:w-auto sm:gap-1 sm:px-3 sm:text-sm">
             <Icons.messageSquare className="h-3.5 w-3.5" />
             {t("messageSent")}
             {messageStatusFilter !== "all" && (
@@ -271,12 +277,14 @@ export function GuestsFilterBar({
         </DropdownMenuContent>
       </DropdownMenu>
 
-      {/* Clear Filters */}
+      </div>
+
+      {/* Clear Filters - separate row on mobile */}
       {activeFilterCount > 0 && (
         <Button
           variant="ghost"
           size="sm"
-          className="h-8 shrink-0 gap-1 text-muted-foreground"
+          className="mt-1.5 h-8 w-full gap-1 text-muted-foreground sm:mt-0 sm:ms-2 sm:w-auto"
           onClick={onClearFilters}
         >
           <Icons.x className="h-3.5 w-3.5" />
@@ -286,7 +294,6 @@ export function GuestsFilterBar({
           </Badge>
         </Button>
       )}
-      </div>
     </div>
   );
 }
