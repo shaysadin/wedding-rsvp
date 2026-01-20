@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -8,7 +8,7 @@ import { toast } from "sonner";
 import { z } from "zod";
 
 import { updateTable } from "@/actions/seating";
-import { Shape, SeatingArrangement, ColorTheme } from "@/lib/validations/seating";
+import { Shape, SeatingArrangement, ColorTheme, SizePreset, SIZE_PRESETS } from "@/lib/validations/seating";
 import { getAvailableArrangements } from "@/lib/seating/seat-calculator";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -37,11 +37,10 @@ import { Icons } from "@/components/shared/icons";
 import { cn } from "@/lib/utils";
 
 const SHAPES: Shape[] = [
+  "square",
   "circle",
   "rectangle",
-  "rectangleRounded",
-  "concave",
-  "concaveRounded",
+  "oval",
 ];
 
 const SEATING_ARRANGEMENTS: SeatingArrangement[] = [
@@ -62,11 +61,10 @@ const COLOR_THEMES: ColorTheme[] = [
 
 // Shape visual previews
 const SHAPE_PREVIEWS: Record<Shape, { icon: string; description: string }> = {
+  square: { icon: "▢", description: "Square table, seats on all sides" },
   circle: { icon: "⭕", description: "Round table" },
-  rectangle: { icon: "▭", description: "Rectangular table" },
-  rectangleRounded: { icon: "▢", description: "Rounded rectangle" },
-  concave: { icon: "⌓", description: "Half circle" },
-  concaveRounded: { icon: "⌒", description: "Rounded half circle" },
+  rectangle: { icon: "▭", description: "Long table, seats on long sides" },
+  oval: { icon: "⬭", description: "Ellipse table" },
 };
 
 // Seating arrangement descriptions
@@ -91,13 +89,30 @@ const THEME_COLORS: Record<ColorTheme, { bg: string; border: string }> = {
 const editTableSchema = z.object({
   id: z.string(),
   name: z.string().min(1).max(100),
-  capacity: z.number().int().min(1).max(100),
-  shape: z.enum(["circle", "rectangle", "rectangleRounded", "concave", "concaveRounded"]).optional(),
+  capacity: z.number().int().min(1).max(32),
+  shape: z.enum(["square", "circle", "rectangle", "oval"]).optional(),
   seatingArrangement: z.enum(["even", "bride-side", "sides-only", "custom"]).optional(),
   colorTheme: z.enum(["default", "blue", "green", "purple", "pink", "amber", "rose"]).optional(),
   width: z.number().int().min(40).max(400).optional(),
   height: z.number().int().min(40).max(400).optional(),
 });
+
+// Helper function to determine size preset from dimensions
+function getSizePresetFromDimensions(shape: Shape, width?: number, height?: number): SizePreset {
+  if (!width || !height) return "medium";
+
+  const presets = SIZE_PRESETS[shape];
+
+  // Check each preset to find matching dimensions
+  for (const [preset, dims] of Object.entries(presets) as [SizePreset, { width: number; height: number }][]) {
+    if (dims.width === width && dims.height === height) {
+      return preset;
+    }
+  }
+
+  // Default to custom dimensions (use medium as fallback display)
+  return "medium";
+}
 
 type EditTableInput = z.infer<typeof editTableSchema>;
 
@@ -119,6 +134,7 @@ interface EditTableDialogProps {
 export function EditTableDialog({ open, onOpenChange, table }: EditTableDialogProps) {
   const t = useTranslations("seating");
   const tc = useTranslations("common");
+  const [sizePreset, setSizePreset] = useState<SizePreset>("medium");
 
   const form = useForm<EditTableInput>({
     resolver: zodResolver(editTableSchema),
@@ -129,23 +145,31 @@ export function EditTableDialog({ open, onOpenChange, table }: EditTableDialogPr
       shape: "circle" as const,
       seatingArrangement: "even" as const,
       colorTheme: "default" as const,
-      width: 100,
-      height: 100,
+      width: SIZE_PRESETS.circle.medium.width,
+      height: SIZE_PRESETS.circle.medium.height,
     },
   });
 
   // Reset form when table changes
   useEffect(() => {
     if (table) {
+      const shape = (table.shape as Shape) || "circle";
+      const detectedPreset = getSizePresetFromDimensions(
+        shape,
+        table.width,
+        table.height
+      );
+      setSizePreset(detectedPreset);
+
       form.reset({
         id: table.id,
         name: table.name,
         capacity: table.capacity,
-        shape: (table.shape as Shape) || "circle",
+        shape: shape,
         seatingArrangement: (table.seatingArrangement as SeatingArrangement) || "even",
         colorTheme: (table.colorTheme as ColorTheme) || "default",
-        width: table.width || 100,
-        height: table.height || 100,
+        width: table.width || SIZE_PRESETS[shape].medium.width,
+        height: table.height || SIZE_PRESETS[shape].medium.height,
       });
     }
   }, [table, form]);
@@ -153,6 +177,23 @@ export function EditTableDialog({ open, onOpenChange, table }: EditTableDialogPr
   // Watch shape to filter available arrangements
   const watchedShape = form.watch("shape");
   const availableArrangements = getAvailableArrangements(watchedShape || "circle");
+
+  // Handle size preset change
+  function handleSizePresetChange(preset: SizePreset) {
+    setSizePreset(preset);
+    const shape = watchedShape || "circle";
+    const newSize = SIZE_PRESETS[shape][preset];
+    form.setValue("width", newSize.width);
+    form.setValue("height", newSize.height);
+  }
+
+  // Handle shape change - update dimensions based on current size preset
+  function handleShapeChange(shape: Shape) {
+    form.setValue("shape", shape);
+    const newSize = SIZE_PRESETS[shape][sizePreset];
+    form.setValue("width", newSize.width);
+    form.setValue("height", newSize.height);
+  }
 
   async function onSubmit(data: EditTableInput) {
     try {
@@ -198,43 +239,22 @@ export function EditTableDialog({ open, onOpenChange, table }: EditTableDialogPr
               )}
             />
 
-            <FormField
-              control={form.control}
-              name="capacity"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t("capacity")}</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="number"
-                      min={1}
-                      max={100}
-                      placeholder={t("capacityPlaceholder")}
-                      {...field}
-                      onChange={(e) => field.onChange(parseInt(e.target.value) || 1)}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
             <div className="grid grid-cols-2 gap-4">
               <FormField
                 control={form.control}
-                name="width"
+                name="capacity"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>{t("width")}</FormLabel>
+                    <FormLabel>{t("capacity")}</FormLabel>
                     <FormControl>
                       <Input
                         type="number"
-                        min={40}
-                        max={400}
-                        placeholder="100"
+                        min={1}
+                        max={32}
+                        placeholder={t("capacityPlaceholder")}
                         {...field}
                         onChange={(e) =>
-                          field.onChange(parseInt(e.target.value) || 100)
+                          field.onChange(Math.max(1, Math.min(32, parseInt(e.target.value) || 1)))
                         }
                       />
                     </FormControl>
@@ -243,28 +263,27 @@ export function EditTableDialog({ open, onOpenChange, table }: EditTableDialogPr
                 )}
               />
 
-              <FormField
-                control={form.control}
-                name="height"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t("height")}</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        min={40}
-                        max={400}
-                        placeholder="100"
-                        {...field}
-                        onChange={(e) =>
-                          field.onChange(parseInt(e.target.value) || 100)
-                        }
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              {/* Size Preset */}
+              <FormItem>
+                <FormLabel>{t("sizePreset.label")}</FormLabel>
+                <div className="flex gap-2">
+                  {(["small", "medium", "large"] as SizePreset[]).map((preset) => (
+                    <button
+                      key={preset}
+                      type="button"
+                      onClick={() => handleSizePresetChange(preset)}
+                      className={cn(
+                        "flex-1 px-3 py-2 text-sm border-2 rounded-lg transition-all hover:bg-accent",
+                        sizePreset === preset
+                          ? "border-primary bg-accent"
+                          : "border-muted"
+                      )}
+                    >
+                      {t(`sizePreset.${preset}`)}
+                    </button>
+                  ))}
+                </div>
+              </FormItem>
             </div>
 
             <FormField
@@ -278,7 +297,7 @@ export function EditTableDialog({ open, onOpenChange, table }: EditTableDialogPr
                       <button
                         key={shape}
                         type="button"
-                        onClick={() => field.onChange(shape)}
+                        onClick={() => handleShapeChange(shape)}
                         className={cn(
                           "flex items-center gap-3 p-3 border-2 rounded-lg transition-all hover:bg-accent",
                           field.value === shape

@@ -68,7 +68,7 @@ export function AutoArrangeDialog({
   const [isLoading, setIsLoading] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [tableSize, setTableSize] = useState(10);
-  const [tableShape, setTableShape] = useState<"circle" | "rectangle" | "rectangleRounded" | "concave" | "concaveRounded">("circle");
+  const [tableShape, setTableShape] = useState<"square" | "circle" | "rectangle" | "oval">("circle");
   const [seatingArrangement, setSeatingArrangement] = useState<"even" | "bride-side" | "sides-only">("even");
   const [groupingStrategy, setGroupingStrategy] = useState<"side-then-group" | "group-only">("side-then-group");
   const [sideFilter, setSideFilter] = useState<string>("all");
@@ -245,11 +245,10 @@ export function AutoArrangeDialog({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="square">{t("shapes.square")}</SelectItem>
                   <SelectItem value="circle">{t("shapes.circle")}</SelectItem>
                   <SelectItem value="rectangle">{t("shapes.rectangle")}</SelectItem>
-                  <SelectItem value="rectangleRounded">{t("shapes.rectangleRounded")}</SelectItem>
-                  <SelectItem value="concave">{t("shapes.concave")}</SelectItem>
-                  <SelectItem value="concaveRounded">{t("shapes.concaveRounded")}</SelectItem>
+                  <SelectItem value="oval">{t("shapes.oval")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>

@@ -22,9 +22,9 @@ import { AddTableDialogEnhanced } from "@/components/seating/add-table-dialog-en
 import { AddVenueBlockDialog } from "@/components/seating/add-venue-block-dialog";
 import { AssignGuestsDialog } from "@/components/seating/assign-guests-dialog";
 import { EditTableDialog } from "@/components/seating/edit-table-dialog";
-import { AutoArrangeDialog } from "@/components/seating/auto-arrange-dialog";
+import { AutoArrangeStepper } from "@/components/seating/auto-arrange-stepper";
 import { PageFadeIn } from "@/components/shared/page-fade-in";
-import { EventDropdownSelector, type EventOption } from "@/components/events/event-dropdown-selector";
+import { type EventOption } from "@/components/events/event-dropdown-selector";
 
 // Lazy load the heavy TableFloorPlan component
 const TableFloorPlan = dynamic(
@@ -185,27 +185,66 @@ export function SeatingPageContent({ eventId, events, locale }: SeatingPageConte
     };
   }, [loadData]);
 
+  // Get the selected event for displaying title
+  const selectedEvent = events.find((e) => e.id === eventId) || events[0];
+
   return (
     <PageFadeIn>
-      {/* Header with Event Dropdown */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div className="space-y-1">
-          <h1 className="text-2xl font-bold tracking-tight">{t("title")}</h1>
+      {/* Header */}
+      <div className="space-y-4">
+        {/* Title Row */}
+        <div className="flex flex-col gap-1">
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Icons.layoutGrid className="h-4 w-4" />
+            <span>{t("title")}</span>
+          </div>
+          <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">
+            {selectedEvent?.title || t("title")}
+          </h1>
           <p className="text-muted-foreground">{t("description")}</p>
         </div>
+
+        {/* Action Buttons */}
         <div className="flex flex-wrap items-center gap-2">
-          <EventDropdownSelector
-            events={events}
-            selectedEventId={eventId}
-            locale={locale}
-            basePath={`/${locale}/dashboard/seating`}
-          />
+          {/* Primary Action */}
+          <Button
+            onClick={() => setAddTableOpen(true)}
+            className="bg-primary hover:bg-primary/90"
+          >
+            <Icons.add className="me-2 h-4 w-4" />
+            {t("addTable")}
+          </Button>
+
+          {/* Secondary Actions */}
+          <Button
+            variant="outline"
+            onClick={() => setAutoArrangeOpen(true)}
+            className="border-violet-200 bg-violet-50 text-violet-700 hover:bg-violet-100 hover:text-violet-800 dark:border-violet-800 dark:bg-violet-950 dark:text-violet-300 dark:hover:bg-violet-900"
+          >
+            <Icons.sparkles className="me-2 h-4 w-4" />
+            {t("autoArrange.button")}
+          </Button>
+
+          <Button
+            variant="outline"
+            onClick={() => setAddBlockOpen(true)}
+            className="border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100 hover:text-amber-800 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-300 dark:hover:bg-amber-900"
+          >
+            <Icons.add className="me-2 h-4 w-4" />
+            {t("venueBlocks.add")}
+          </Button>
+
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button variant="outline" onClick={copyHostessLink}>
+                <Button
+                  variant="outline"
+                  onClick={copyHostessLink}
+                  className="border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 hover:text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 dark:hover:bg-emerald-900"
+                >
                   <Icons.copy className="me-2 h-4 w-4" />
-                  {isRTL ? "קישור לאשת קבלה" : "Hostess Link"}
+                  <span className="hidden sm:inline">{isRTL ? "קישור לאשת קבלה" : "Hostess Link"}</span>
+                  <span className="sm:hidden">{isRTL ? "קישור" : "Link"}</span>
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
@@ -213,18 +252,6 @@ export function SeatingPageContent({ eventId, events, locale }: SeatingPageConte
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
-          <Button variant="outline" onClick={() => setAutoArrangeOpen(true)}>
-            <Icons.sparkles className="me-2 h-4 w-4" />
-            {t("autoArrange.button")}
-          </Button>
-          <Button variant="outline" onClick={() => setAddBlockOpen(true)}>
-            <Icons.add className="me-2 h-4 w-4" />
-            {t("venueBlocks.add")}
-          </Button>
-          <Button onClick={() => setAddTableOpen(true)}>
-            <Icons.add className="me-2 h-4 w-4" />
-            {t("addTable")}
-          </Button>
         </div>
       </div>
 
@@ -292,8 +319,8 @@ export function SeatingPageContent({ eventId, events, locale }: SeatingPageConte
         table={selectedTableForEdit}
       />
 
-      {/* Auto Arrange Dialog */}
-      <AutoArrangeDialog
+      {/* Auto Arrange Stepper */}
+      <AutoArrangeStepper
         open={autoArrangeOpen}
         onOpenChange={setAutoArrangeOpen}
         eventId={eventId}

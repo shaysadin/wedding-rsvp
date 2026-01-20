@@ -10,11 +10,10 @@ import { createTable } from "@/actions/seating";
 import { createTableSchema, type CreateTableInput, type Shape } from "@/lib/validations/seating";
 
 const SHAPES: Shape[] = [
+  "square",
   "circle",
   "rectangle",
-  "rectangleRounded",
-  "concave",
-  "concaveRounded",
+  "oval",
 ];
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -137,10 +136,12 @@ export function AddTableDialog({ eventId, open: controlledOpen, onOpenChange }: 
                     <Input
                       type="number"
                       min={1}
-                      max={100}
+                      max={32}
                       placeholder={t("capacityPlaceholder")}
                       {...field}
-                      onChange={(e) => field.onChange(parseInt(e.target.value) || 1)}
+                      onChange={(e) =>
+                        field.onChange(Math.max(1, Math.min(32, parseInt(e.target.value) || 1)))
+                      }
                     />
                   </FormControl>
                   <FormMessage />

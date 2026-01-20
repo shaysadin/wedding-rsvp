@@ -115,18 +115,21 @@ interface LocalPosition {
 }
 
 const GRID_SIZE = 20; // Snap to grid
-const DEFAULT_FLOOR_HEIGHT = 600; // Default floor height
+const DEFAULT_FLOOR_WIDTH = 1200; // Default floor width
+const DEFAULT_FLOOR_HEIGHT = 500; // Default floor height
+const MIN_FLOOR_WIDTH = 600;
 const MIN_FLOOR_HEIGHT = 300;
+const MAX_FLOOR_WIDTH = 4000; // Allow very wide floor plans
 const MAX_FLOOR_HEIGHT = 3000; // Allow very large floor plans
+const FLOOR_WIDTH_STORAGE_KEY = "seating-floor-width";
 const FLOOR_HEIGHT_STORAGE_KEY = "seating-floor-height";
 const MIN_SIZE = 40;
 const MAX_SIZE = 400;
 const DEFAULT_TABLE_SIZE = {
-  circle: { width: 100, height: 100 },
-  rectangle: { width: 140, height: 80 },
-  rectangleRounded: { width: 140, height: 80 },
-  concave: { width: 140, height: 80 },
-  concaveRounded: { width: 140, height: 80 },
+  square: { width: 75, height: 75 },
+  circle: { width: 75, height: 75 },
+  rectangle: { width: 120, height: 60 },
+  oval: { width: 100, height: 70 },
 };
 
 // SVG component for concave (crescent) shape - half-ring with parallel curves
@@ -246,7 +249,7 @@ function DraggableTable({
   const isOverCapacity = table.seatsUsed > table.capacity;
   const rotation = localRotation ?? table.rotation ?? 0;
   const isCircle = shape === "circle";
-  const isConcave = shape === "concave" || shape === "concaveRounded";
+  const isOval = shape === "oval";
   const borderColor = isOverCapacity ? "hsl(var(--destructive))" : "hsl(var(--primary) / 0.5)";
 
   // Use local position if available, otherwise fall back to table's saved position
@@ -267,11 +270,10 @@ function DraggableTable({
   };
 
   const shapeClasses: Record<string, string> = {
+    square: "rounded-none",
     circle: "rounded-full",
     rectangle: "rounded-none",
-    rectangleRounded: "rounded-lg",
-    concave: "rounded-t-full rounded-b-none",
-    concaveRounded: "rounded-t-full rounded-b-lg",
+    oval: "rounded-[50%]", // 50% radius creates ellipse
   };
 
 
@@ -303,6 +305,9 @@ function DraggableTable({
             height,
             zIndex: isDragging ? 1000 : 1,
             opacity: isDragging ? 0.8 : 1,
+            touchAction: "none", // Prevent scroll during drag on touch devices
+            willChange: "transform", // Always enable hardware acceleration
+            backfaceVisibility: "hidden",
           }}
           {...(isResizing ? {} : listeners)}
           {...(isResizing ? {} : attributes)}
@@ -323,6 +328,8 @@ function DraggableTable({
               transform: transform
                 ? `translate3d(${transform.x}px, ${transform.y}px, 0) rotate(${rotation}deg)`
                 : `rotate(${rotation}deg)`,
+              willChange: "transform",
+              backfaceVisibility: "hidden",
             }}
           >
             <TableWithSeats
@@ -347,8 +354,8 @@ function DraggableTable({
             />
           </div>
 
-          {/* Rotation button - only for non-circle shapes */}
-          {!isCircle && (
+          {/* Rotation button - only for non-circular shapes */}
+          {!isCircle && !isOval && (
             <button
               type="button"
               className="absolute -top-3 -right-3 w-6 h-6 bg-primary text-primary-foreground rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-md hover:bg-primary/90"
@@ -479,11 +486,10 @@ const VENUE_BLOCK_COLORS: Record<string, string> = {
 
 // Shape classes for venue blocks
 const VENUE_BLOCK_SHAPE_CLASSES: Record<string, string> = {
+  square: "rounded-none",
   circle: "rounded-full",
   rectangle: "rounded-none",
-  rectangleRounded: "rounded-lg",
-  concave: "rounded-t-full rounded-b-none",
-  concaveRounded: "rounded-t-full rounded-b-lg",
+  oval: "rounded-[50%]", // 50% radius creates ellipse
 };
 
 function DraggableVenueBlock({
@@ -521,9 +527,9 @@ function DraggableVenueBlock({
 
   const IconComponent = Icons[VENUE_BLOCK_ICONS[block.type] || "box"];
   const colorClasses = VENUE_BLOCK_COLORS[block.type] || VENUE_BLOCK_COLORS.other;
-  const shapeClass = VENUE_BLOCK_SHAPE_CLASSES[block.shape || "rectangleRounded"] || VENUE_BLOCK_SHAPE_CLASSES.rectangleRounded;
+  const shapeClass = VENUE_BLOCK_SHAPE_CLASSES[block.shape || "rectangle"] || VENUE_BLOCK_SHAPE_CLASSES.rectangle;
   const isCircle = block.shape === "circle";
-  const isConcave = block.shape === "concave" || block.shape === "concaveRounded";
+  const isOval = block.shape === "oval";
 
   // Use local size if available, otherwise fall back to block's saved size
   const width = localSize?.width ?? block.width;
@@ -560,6 +566,9 @@ function DraggableVenueBlock({
       : `rotate(${rotation}deg)`,
     zIndex: isDragging ? 1000 : 0,
     opacity: isDragging ? 0.8 : 1,
+    touchAction: "none" as const, // Prevent scroll during drag on touch devices
+    willChange: "transform" as const, // Always enable hardware acceleration
+    backfaceVisibility: "hidden" as const,
   };
 
 
@@ -573,30 +582,20 @@ function DraggableVenueBlock({
             {...(isResizing ? {} : listeners)}
             {...(isResizing ? {} : attributes)}
             className={cn(
-              "flex flex-col items-center justify-center shadow-sm transition-shadow group",
+              "flex flex-col items-center justify-center shadow-sm transition-shadow group border-2",
               !isResizing && "cursor-grab active:cursor-grabbing",
-              !isConcave && "border-2",
-              !isConcave && colorClasses,
-              !isConcave && shapeClass,
+              colorClasses,
+              shapeClass,
               isDragging && "shadow-lg"
             )}
           >
-            {/* Concave shape SVG */}
-            {isConcave && (
-              <ConcaveShape
-                width={width}
-                height={height}
-                rounded={block.shape === "concaveRounded"}
-                borderColor={blockBorderColor}
-              />
-            )}
             <IconComponent className="h-6 w-6 text-muted-foreground pointer-events-none z-10" />
             <span className="text-xs font-medium text-center truncate max-w-[90%] mt-1 pointer-events-none z-10">
               {block.name}
             </span>
 
-            {/* Rotation button - only for non-circle shapes */}
-            {!isCircle && (
+            {/* Rotation button - only for non-circular shapes */}
+            {!isCircle && !isOval && (
               <button
                 type="button"
                 className="absolute -top-3 -right-3 w-6 h-6 bg-primary text-primary-foreground rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-md hover:bg-primary/90 z-20"
@@ -658,11 +657,25 @@ function DraggableVenueBlock({
   );
 }
 
-const FloorArea = React.forwardRef<HTMLDivElement, { children: React.ReactNode; height: number; isFullscreen?: boolean }>(
-  function FloorArea({ children, height, isFullscreen }, ref) {
+interface FloorAreaProps {
+  children: React.ReactNode;
+  width: number;
+  height: number;
+  isFullscreen?: boolean;
+  fullscreenButton?: React.ReactNode;
+}
+
+const FloorArea = React.forwardRef<HTMLDivElement, FloorAreaProps>(
+  function FloorArea({ children, width, height, isFullscreen, fullscreenButton }, ref) {
     const { setNodeRef, isOver } = useDroppable({
       id: "floor-area",
     });
+    const scrollContainerRef = useRef<HTMLDivElement>(null);
+    const isDraggingToScroll = useRef(false);
+    const startX = useRef(0);
+    const scrollLeft = useRef(0);
+    const rafId = useRef<number | null>(null);
+    const lastMouseX = useRef(0);
 
     // Combine refs for both droppable and measurement
     const combinedRef = useCallback((node: HTMLDivElement | null) => {
@@ -674,20 +687,113 @@ const FloorArea = React.forwardRef<HTMLDivElement, { children: React.ReactNode; 
       }
     }, [ref, setNodeRef]);
 
+    // Cleanup RAF on unmount
+    useEffect(() => {
+      return () => {
+        if (rafId.current) {
+          cancelAnimationFrame(rafId.current);
+        }
+      };
+    }, []);
+
+    // Drag-to-scroll handlers for desktop
+    const handleMouseDown = useCallback((e: React.MouseEvent) => {
+      // Only start drag-to-scroll if clicking directly on the scroll container or floor area background
+      const target = e.target as HTMLElement;
+      const isFloorArea = target.classList.contains('floor-area-bg') || target === scrollContainerRef.current;
+      if (!isFloorArea) return;
+
+      isDraggingToScroll.current = true;
+      startX.current = e.pageX - (scrollContainerRef.current?.offsetLeft || 0);
+      scrollLeft.current = scrollContainerRef.current?.scrollLeft || 0;
+      lastMouseX.current = e.pageX;
+
+      if (scrollContainerRef.current) {
+        scrollContainerRef.current.style.cursor = 'grabbing';
+        scrollContainerRef.current.style.userSelect = 'none';
+      }
+    }, []);
+
+    const handleMouseMove = useCallback((e: React.MouseEvent) => {
+      if (!isDraggingToScroll.current || !scrollContainerRef.current) return;
+
+      // Store the latest mouse position
+      lastMouseX.current = e.pageX;
+
+      // Use requestAnimationFrame for smooth scrolling
+      if (rafId.current === null) {
+        rafId.current = requestAnimationFrame(() => {
+          if (scrollContainerRef.current && isDraggingToScroll.current) {
+            const x = lastMouseX.current - (scrollContainerRef.current.offsetLeft || 0);
+            const walk = (x - startX.current) * 1.5; // Scroll speed multiplier
+            scrollContainerRef.current.scrollLeft = scrollLeft.current - walk;
+          }
+          rafId.current = null;
+        });
+      }
+    }, []);
+
+    const handleMouseUp = useCallback(() => {
+      isDraggingToScroll.current = false;
+      if (rafId.current) {
+        cancelAnimationFrame(rafId.current);
+        rafId.current = null;
+      }
+      if (scrollContainerRef.current) {
+        scrollContainerRef.current.style.cursor = '';
+        scrollContainerRef.current.style.userSelect = '';
+      }
+    }, []);
+
+    const handleMouseLeave = useCallback(() => {
+      isDraggingToScroll.current = false;
+      if (rafId.current) {
+        cancelAnimationFrame(rafId.current);
+        rafId.current = null;
+      }
+      if (scrollContainerRef.current) {
+        scrollContainerRef.current.style.cursor = '';
+        scrollContainerRef.current.style.userSelect = '';
+      }
+    }, []);
+
     return (
-      <div
-        ref={combinedRef}
-        className={cn(
-          "relative w-full border-2 border-dashed rounded-lg overflow-hidden",
-          "bg-muted/30",
-          isOver && "border-primary bg-primary/5",
-          isFullscreen && "rounded-none border-0"
+      <div className="relative">
+        {/* Fullscreen button - fixed position outside scroll area */}
+        {fullscreenButton && (
+          <div className="absolute top-2 start-2 z-50">
+            {fullscreenButton}
+          </div>
         )}
-        style={{
-          height: isFullscreen ? "100%" : height,
-        }}
-      >
-        {children}
+
+        <div
+          ref={scrollContainerRef}
+          className={cn(
+            "overflow-x-auto overflow-y-hidden",
+            isFullscreen && "h-full w-full overflow-auto"
+          )}
+          onMouseDown={handleMouseDown}
+          onMouseMove={handleMouseMove}
+          onMouseUp={handleMouseUp}
+          onMouseLeave={handleMouseLeave}
+        >
+          <div
+            ref={combinedRef}
+            className={cn(
+              "floor-area-bg relative border-2 border-dashed rounded-lg",
+              "bg-muted/30",
+              isOver && "border-primary bg-primary/5",
+              isFullscreen && "rounded-none border-0 w-full h-full"
+            )}
+            style={{
+              width: isFullscreen ? "100%" : width,
+              height: isFullscreen ? "100%" : height,
+              minHeight: isFullscreen ? "100%" : height,
+            }}
+          >
+            {children}
+          </div>
+        </div>
       </div>
     );
   }
@@ -713,15 +819,16 @@ export function TableFloorPlan({
   const [isSaving, setIsSaving] = useState(false);
   const [showUnsavedDialog, setShowUnsavedDialog] = useState(false);
   const [pendingAction, setPendingAction] = useState<(() => void) | null>(null);
-  const [floorWidth, setFloorWidth] = useState(800); // Default width, will be updated
+  const [floorWidth, setFloorWidth] = useState(DEFAULT_FLOOR_WIDTH);
   const [floorHeight, setFloorHeight] = useState(DEFAULT_FLOOR_HEIGHT);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [widthInputValue, setWidthInputValue] = useState(DEFAULT_FLOOR_WIDTH.toString());
   const [heightInputValue, setHeightInputValue] = useState(DEFAULT_FLOOR_HEIGHT.toString());
   const containerRef = useRef<HTMLDivElement>(null);
   const floorRef = useRef<HTMLDivElement>(null);
   const fullscreenRef = useRef<HTMLDivElement>(null);
   // Store base dimensions (non-fullscreen) for proper position saving
-  const baseFloorDimensions = useRef({ width: 800, height: DEFAULT_FLOOR_HEIGHT });
+  const baseFloorDimensions = useRef({ width: DEFAULT_FLOOR_WIDTH, height: DEFAULT_FLOOR_HEIGHT });
 
   // Seat assignment dialog state
   const [assignSeatDialogOpen, setAssignSeatDialogOpen] = useState(false);
@@ -790,49 +897,73 @@ export function TableFloorPlan({
     }
   };
 
-  // Load floor height from localStorage on mount
+  // Auto-arrange tables that don't have positions
+  const getAutoPosition = useCallback((index: number) => {
+    const cols = 5;
+    const row = Math.floor(index / cols);
+    const col = index % cols;
+    return {
+      x: 20 + col * 100,
+      y: 20 + row * 100,
+    };
+  }, []);
+
+  // Get current position for a table (local > saved > auto)
+  const getTablePosition = useCallback((table: Table, index: number): LocalPosition => {
+    const local = localPositions.get(table.id);
+    if (local) return local;
+    if (table.positionX != null && table.positionY != null) {
+      return { x: table.positionX, y: table.positionY };
+    }
+    return getAutoPosition(index);
+  }, [localPositions, getAutoPosition]);
+
+  // Get current position for a block (local > saved > default)
+  const getBlockPosition = useCallback((block: VenueBlock, index: number): LocalPosition => {
+    const local = blockPositions.get(block.id);
+    if (local) return local;
+    if (block.positionX != null && block.positionY != null) {
+      return { x: block.positionX, y: block.positionY };
+    }
+    // Auto position blocks along the bottom
+    return {
+      x: 50 + index * 120,
+      y: floorHeight - block.height - 50,
+    };
+  }, [blockPositions, floorHeight]);
+
+  // Load floor dimensions from localStorage on mount
   useEffect(() => {
+    const savedWidth = localStorage.getItem(FLOOR_WIDTH_STORAGE_KEY);
+    if (savedWidth) {
+      const width = parseInt(savedWidth, 10);
+      if (!isNaN(width) && width >= MIN_FLOOR_WIDTH && width <= MAX_FLOOR_WIDTH) {
+        setFloorWidth(width);
+        setWidthInputValue(width.toString());
+        baseFloorDimensions.current.width = width;
+      }
+    }
+
     const savedHeight = localStorage.getItem(FLOOR_HEIGHT_STORAGE_KEY);
     if (savedHeight) {
       const height = parseInt(savedHeight, 10);
       if (!isNaN(height) && height >= MIN_FLOOR_HEIGHT && height <= MAX_FLOOR_HEIGHT) {
         setFloorHeight(height);
         setHeightInputValue(height.toString());
-        // Also set base dimensions
         baseFloorDimensions.current.height = height;
       }
     }
   }, []);
 
-  // Measure floor dimensions on mount, resize, and fullscreen change
+  // Update base dimensions when dimensions change
   useEffect(() => {
-    const updateFloorDimensions = () => {
-      if (floorRef.current) {
-        const currentWidth = floorRef.current.clientWidth;
-        setFloorWidth(currentWidth);
-
-        // In fullscreen mode, use actual element height
-        if (isFullscreen) {
-          setFloorHeight(floorRef.current.clientHeight);
-        } else {
-          // Update base dimensions when not in fullscreen
-          baseFloorDimensions.current = {
-            width: currentWidth,
-            height: floorHeight,
-          };
-        }
-      }
-    };
-
-    // Use requestAnimationFrame to ensure DOM has updated after fullscreen toggle
-    const rafId = requestAnimationFrame(updateFloorDimensions);
-    window.addEventListener("resize", updateFloorDimensions);
-
-    return () => {
-      cancelAnimationFrame(rafId);
-      window.removeEventListener("resize", updateFloorDimensions);
-    };
-  }, [isFullscreen, floorHeight]);
+    if (!isFullscreen) {
+      baseFloorDimensions.current = {
+        width: floorWidth,
+        height: floorHeight,
+      };
+    }
+  }, [isFullscreen, floorWidth, floorHeight]);
 
   // Handle fullscreen mode with Escape key
   useEffect(() => {
@@ -901,16 +1032,10 @@ export function TableFloorPlan({
     setFloorHeight(height);
     setHeightInputValue(height.toString());
     localStorage.setItem(FLOOR_HEIGHT_STORAGE_KEY, height.toString());
-    // Update base dimensions
-    if (floorRef.current) {
-      baseFloorDimensions.current = {
-        width: floorRef.current.clientWidth,
-        height,
-      };
-    }
-  }, [floorHeight, tables, venueBlocks, localPositions, blockPositions, tableSizes]);
+    baseFloorDimensions.current.height = height;
+  }, [floorHeight, tables, venueBlocks, localPositions, blockPositions, tableSizes, getTablePosition, getBlockPosition]);
 
-  // Handle input field change
+  // Handle input field change for height
   const handleHeightInputChange = useCallback((value: string) => {
     setHeightInputValue(value);
     const parsed = parseInt(value, 10);
@@ -919,11 +1044,92 @@ export function TableFloorPlan({
     }
   }, [handleHeightChange]);
 
+  // Handle canvas width change with proportional scaling
+  const handleWidthChange = useCallback((newWidth: number) => {
+    const oldWidth = floorWidth;
+    const width = Math.max(MIN_FLOOR_WIDTH, Math.min(MAX_FLOOR_WIDTH, newWidth));
+
+    // Calculate scale factor
+    const scaleX = width / oldWidth;
+
+    // Scale all table positions proportionally
+    if (scaleX !== 1 && tables.length > 0) {
+      const updatedTablePositions = new Map(localPositions);
+
+      tables.forEach((table, index) => {
+        const currentPos = getTablePosition(table, index);
+        const scaledX = currentPos.x * scaleX;
+
+        // Ensure within bounds
+        const shape = (table.shape || "circle") as keyof typeof DEFAULT_TABLE_SIZE;
+        const defaultSize = DEFAULT_TABLE_SIZE[shape] || DEFAULT_TABLE_SIZE.circle;
+        const localTableSize = tableSizes.get(table.id);
+        const tableWidth = localTableSize?.width ?? table.width ?? defaultSize.width;
+        const maxX = Math.max(0, width - tableWidth);
+        const boundedX = Math.max(0, Math.min(scaledX, maxX));
+
+        updatedTablePositions.set(table.id, {
+          x: boundedX,
+          y: currentPos.y,
+        });
+      });
+
+      setLocalPositions(updatedTablePositions);
+
+      // Scale venue block positions
+      const updatedBlockPositions = new Map(blockPositions);
+
+      venueBlocks.forEach((block, index) => {
+        const currentPos = getBlockPosition(block, index);
+        const scaledX = currentPos.x * scaleX;
+
+        // Ensure within bounds
+        const maxX = Math.max(0, width - block.width);
+        const boundedX = Math.max(0, Math.min(scaledX, maxX));
+
+        updatedBlockPositions.set(block.id, {
+          x: boundedX,
+          y: currentPos.y,
+        });
+      });
+
+      setBlockPositions(updatedBlockPositions);
+    }
+
+    setFloorWidth(width);
+    setWidthInputValue(width.toString());
+    localStorage.setItem(FLOOR_WIDTH_STORAGE_KEY, width.toString());
+    // Update base dimensions
+    baseFloorDimensions.current = {
+      width,
+      height: floorHeight,
+    };
+  }, [floorWidth, floorHeight, tables, venueBlocks, localPositions, blockPositions, tableSizes, getTablePosition, getBlockPosition]);
+
+  // Handle input field change for width
+  const handleWidthInputChange = useCallback((value: string) => {
+    setWidthInputValue(value);
+    const parsed = parseInt(value, 10);
+    if (!isNaN(parsed)) {
+      handleWidthChange(parsed);
+    }
+  }, [handleWidthChange]);
+
   // Fullscreen toggle handler
   const toggleFullscreen = useCallback(() => {
     setIsFullscreen((prev) => {
       if (prev) {
-        // Exiting fullscreen - restore saved height
+        // Exiting fullscreen - restore saved dimensions
+        const savedWidth = localStorage.getItem(FLOOR_WIDTH_STORAGE_KEY);
+        if (savedWidth) {
+          const width = parseInt(savedWidth, 10);
+          if (!isNaN(width) && width >= MIN_FLOOR_WIDTH && width <= MAX_FLOOR_WIDTH) {
+            setFloorWidth(width);
+          }
+        } else {
+          setFloorWidth(DEFAULT_FLOOR_WIDTH);
+        }
+
         const savedHeight = localStorage.getItem(FLOOR_HEIGHT_STORAGE_KEY);
         if (savedHeight) {
           const height = parseInt(savedHeight, 10);
@@ -941,50 +1147,14 @@ export function TableFloorPlan({
   const hasUnsavedChanges = localPositions.size > 0 || blockPositions.size > 0 || tableSizes.size > 0 || blockSizes.size > 0 || tableRotations.size > 0 || blockRotations.size > 0;
   const totalUnsavedCount = localPositions.size + blockPositions.size + tableSizes.size + blockSizes.size + tableRotations.size + blockRotations.size;
 
-  // Get current position for a block (local > saved > default)
-  const getBlockPosition = useCallback((block: VenueBlock, index: number): LocalPosition => {
-    const local = blockPositions.get(block.id);
-    if (local) return local;
-    if (block.positionX != null && block.positionY != null) {
-      return { x: block.positionX, y: block.positionY };
-    }
-    // Auto position blocks along the bottom
-    return {
-      x: 50 + index * 120,
-      y: floorHeight - block.height - 50,
-    };
-  }, [blockPositions, floorHeight]);
-
-  // Configure sensors with distance activation - drag starts after moving 3px
-  // This allows clicks to pass through for the popover while being responsive
+  // Small distance allows clicks for popover while enabling smooth drag
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
-        distance: 3,
+        distance: 3, // Must move 3px to start drag - allows clicks through
       },
     })
   );
-
-  // Auto-arrange tables that don't have positions
-  const getAutoPosition = useCallback((index: number) => {
-    const cols = 4;
-    const row = Math.floor(index / cols);
-    const col = index % cols;
-    return {
-      x: 50 + col * 180,
-      y: 50 + row * 150,
-    };
-  }, []);
-
-  // Get current position for a table (local > saved > auto)
-  const getTablePosition = useCallback((table: Table, index: number): LocalPosition => {
-    const local = localPositions.get(table.id);
-    if (local) return local;
-    if (table.positionX != null && table.positionY != null) {
-      return { x: table.positionX, y: table.positionY };
-    }
-    return getAutoPosition(index);
-  }, [localPositions, getAutoPosition]);
 
   // Warn user before leaving page with unsaved changes
   useEffect(() => {
@@ -1026,9 +1196,9 @@ export function TableFloorPlan({
       const newX = currentPos.x + delta.x;
       const newY = currentPos.y + delta.y;
 
-      // Ensure within bounds
-      const maxX = floorWidth - block.width;
-      const maxY = floorHeight - block.height;
+      // Ensure within bounds (allow positioning at edges)
+      const maxX = Math.max(0, floorWidth - block.width);
+      const maxY = Math.max(0, floorHeight - block.height);
       const boundedX = Math.max(0, Math.min(newX, maxX));
       const boundedY = Math.max(0, Math.min(newY, maxY));
 
@@ -1058,9 +1228,9 @@ export function TableFloorPlan({
       const newX = currentPos.x + delta.x;
       const newY = currentPos.y + delta.y;
 
-      // Ensure within bounds - account for table size so it stays fully visible
-      const maxX = floorWidth - tableWidth;
-      const maxY = floorHeight - tableHeight;
+      // Ensure within bounds (allow positioning at edges)
+      const maxX = Math.max(0, floorWidth - tableWidth);
+      const maxY = Math.max(0, floorHeight - tableHeight);
       const boundedX = Math.max(0, Math.min(newX, maxX));
       const boundedY = Math.max(0, Math.min(newY, maxY));
 
@@ -1268,25 +1438,27 @@ export function TableFloorPlan({
     (t) => t.positionX === null || t.positionY === null
   );
 
+  // Fullscreen toggle button - rendered outside scroll area
+  const fullscreenButton = (
+    <Button
+      variant="outline"
+      size="icon"
+      className="bg-background/80 backdrop-blur-sm hover:bg-background shadow-sm"
+      onClick={toggleFullscreen}
+      title={isFullscreen ? t("exitFullscreen") : t("fullscreen")}
+    >
+      {isFullscreen ? (
+        <Minimize2 className="h-4 w-4" />
+      ) : (
+        <Maximize2 className="h-4 w-4" />
+      )}
+    </Button>
+  );
+
   // Floor plan content - reused in both normal and fullscreen modes
   const floorPlanContent = (
     <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
-      <FloorArea ref={floorRef} height={floorHeight} isFullscreen={isFullscreen}>
-        {/* Fullscreen toggle button - always visible */}
-        <Button
-          variant="outline"
-          size="icon"
-          className="absolute top-2 end-2 z-50 bg-background/80 backdrop-blur-sm hover:bg-background"
-          onClick={toggleFullscreen}
-          title={isFullscreen ? t("exitFullscreen") : t("fullscreen")}
-        >
-          {isFullscreen ? (
-            <Minimize2 className="h-4 w-4" />
-          ) : (
-            <Maximize2 className="h-4 w-4" />
-          )}
-        </Button>
-
+      <FloorArea ref={floorRef} width={floorWidth} height={floorHeight} isFullscreen={isFullscreen} fullscreenButton={fullscreenButton}>
         {tables.length === 0 ? (
           <div className="absolute inset-0 flex flex-col items-center justify-center text-muted-foreground">
             <Icons.layoutGrid className="h-12 w-12 mb-4" />
@@ -1370,30 +1542,14 @@ export function TableFloorPlan({
 
               const IconComponent = Icons[VENUE_BLOCK_ICONS[block.type] || "box"];
               const colorClasses = VENUE_BLOCK_COLORS[block.type] || VENUE_BLOCK_COLORS.other;
-              const shapeClass = VENUE_BLOCK_SHAPE_CLASSES[block.shape || "rectangleRounded"] || VENUE_BLOCK_SHAPE_CLASSES.rectangleRounded;
-              const isConcave = block.shape === "concave" || block.shape === "concaveRounded";
-
-              const borderColorMap: Record<string, string> = {
-                dj: "hsl(270, 60%, 50%)",
-                bar: "hsl(38, 60%, 50%)",
-                stage: "hsl(0, 60%, 50%)",
-                danceFloor: "hsl(330, 60%, 50%)",
-                entrance: "hsl(120, 60%, 50%)",
-                photoBooth: "hsl(210, 60%, 50%)",
-                buffet: "hsl(30, 60%, 50%)",
-                cake: "hsl(350, 60%, 50%)",
-                gifts: "hsl(170, 60%, 50%)",
-                other: "hsl(0, 0%, 50%)",
-              };
-              const blockBorderColor = borderColorMap[block.type] || borderColorMap.other;
+              const shapeClass = VENUE_BLOCK_SHAPE_CLASSES[block.shape || "rectangle"] || VENUE_BLOCK_SHAPE_CLASSES.rectangle;
 
               return (
                 <div
                   className={cn(
-                    "flex flex-col items-center justify-center shadow-lg cursor-grabbing",
-                    !isConcave && "border-2",
-                    !isConcave && colorClasses,
-                    !isConcave && shapeClass
+                    "flex flex-col items-center justify-center shadow-lg cursor-grabbing border-2",
+                    colorClasses,
+                    shapeClass
                   )}
                   style={{
                     width: size.width,
@@ -1401,14 +1557,6 @@ export function TableFloorPlan({
                     transform: `rotate(${rotation}deg)`,
                   }}
                 >
-                  {isConcave && (
-                    <ConcaveShape
-                      width={size.width}
-                      height={size.height}
-                      rounded={block.shape === "concaveRounded"}
-                      borderColor={blockBorderColor}
-                    />
-                  )}
                   <IconComponent className="h-6 w-6 text-muted-foreground pointer-events-none z-10" />
                   <span className="text-xs font-medium text-center truncate max-w-[90%] mt-1 pointer-events-none z-10">
                     {block.name}
@@ -1489,6 +1637,10 @@ export function TableFloorPlan({
         <div className="flex items-center justify-between p-4 border-b bg-background/95 backdrop-blur-sm">
           <div className="flex items-center gap-4 text-sm text-muted-foreground">
             <div className="flex items-center gap-2">
+              <div className="w-4 h-4 rounded-none border-2 border-primary/50 bg-card" />
+              <span>{t("shapes.square")}</span>
+            </div>
+            <div className="flex items-center gap-2">
               <div className="w-4 h-4 rounded-full border-2 border-primary/50 bg-card" />
               <span>{t("shapes.circle")}</span>
             </div>
@@ -1497,8 +1649,8 @@ export function TableFloorPlan({
               <span>{t("shapes.rectangle")}</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-5 h-3 rounded-t-full rounded-b-none border-2 border-primary/50 bg-card" />
-              <span>{t("shapes.concave")}</span>
+              <div className="w-5 h-3 rounded-[50%] border-2 border-primary/50 bg-card" />
+              <span>{t("shapes.oval")}</span>
             </div>
           </div>
 
@@ -1556,6 +1708,10 @@ export function TableFloorPlan({
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div className="flex items-center gap-4 text-sm text-muted-foreground flex-wrap">
           <div className="flex items-center gap-2">
+            <div className="w-4 h-4 rounded-none border-2 border-primary/50 bg-card" />
+            <span>{t("shapes.square")}</span>
+          </div>
+          <div className="flex items-center gap-2">
             <div className="w-4 h-4 rounded-full border-2 border-primary/50 bg-card" />
             <span>{t("shapes.circle")}</span>
           </div>
@@ -1564,8 +1720,8 @@ export function TableFloorPlan({
             <span>{t("shapes.rectangle")}</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-5 h-3 rounded-t-full rounded-b-none border-2 border-primary/50 bg-card" />
-            <span>{t("shapes.concave")}</span>
+            <div className="w-5 h-3 rounded-[50%] border-2 border-primary/50 bg-card" />
+            <span>{t("shapes.oval")}</span>
           </div>
           <div className="flex items-center gap-2 ms-4">
             <Icons.arrowRight className="h-4 w-4" />
@@ -1618,45 +1774,121 @@ export function TableFloorPlan({
       {floorPlanContent}
 
       {/* Canvas Size Controls */}
-      <div className="flex items-center justify-between gap-4 p-3 bg-muted/30 rounded-lg border">
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-medium">{t("canvasHeight")}:</span>
-          <Input
-            type="number"
-            min={MIN_FLOOR_HEIGHT}
-            max={MAX_FLOOR_HEIGHT}
-            value={heightInputValue}
-            onChange={(e) => handleHeightInputChange(e.target.value)}
-            className="w-24 h-8"
-          />
-          <span className="text-xs text-muted-foreground">px</span>
+      <div className="flex flex-col gap-3 p-3 bg-muted/30 rounded-lg border">
+        {/* Width Controls */}
+        <div className="flex items-center justify-between gap-4 flex-wrap">
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium">{t("canvasWidth")}:</span>
+            <Input
+              type="text"
+              inputMode="numeric"
+              pattern="[0-9]*"
+              value={widthInputValue}
+              onChange={(e) => handleWidthInputChange(e.target.value)}
+              onBlur={() => {
+                const parsed = parseInt(widthInputValue, 10);
+                if (isNaN(parsed) || parsed < MIN_FLOOR_WIDTH) {
+                  handleWidthChange(MIN_FLOOR_WIDTH);
+                } else if (parsed > MAX_FLOOR_WIDTH) {
+                  handleWidthChange(MAX_FLOOR_WIDTH);
+                }
+              }}
+              className="w-24 h-8"
+            />
+            <span className="text-xs text-muted-foreground">px</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handleWidthChange(800)}
+              className={cn("h-7", floorWidth === 800 && "bg-accent")}
+            >
+              800
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handleWidthChange(1200)}
+              className={cn("h-7", floorWidth === 1200 && "bg-accent")}
+            >
+              1200
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handleWidthChange(1600)}
+              className={cn("h-7", floorWidth === 1600 && "bg-accent")}
+            >
+              1600
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handleWidthChange(2000)}
+              className={cn("h-7", floorWidth === 2000 && "bg-accent")}
+            >
+              2000
+            </Button>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-muted-foreground">{t("presets")}:</span>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => handleHeightChange(600)}
-            className={cn("h-7", floorHeight === 600 && "bg-accent")}
-          >
-            {t("small")}
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => handleHeightChange(1200)}
-            className={cn("h-7", floorHeight === 1200 && "bg-accent")}
-          >
-            {t("medium")}
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => handleHeightChange(2000)}
-            className={cn("h-7", floorHeight === 2000 && "bg-accent")}
-          >
-            {t("large")}
-          </Button>
+
+        {/* Height Controls */}
+        <div className="flex items-center justify-between gap-4 flex-wrap">
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium">{t("canvasHeight")}:</span>
+            <Input
+              type="text"
+              inputMode="numeric"
+              pattern="[0-9]*"
+              value={heightInputValue}
+              onChange={(e) => handleHeightInputChange(e.target.value)}
+              onBlur={() => {
+                const parsed = parseInt(heightInputValue, 10);
+                if (isNaN(parsed) || parsed < MIN_FLOOR_HEIGHT) {
+                  handleHeightChange(MIN_FLOOR_HEIGHT);
+                } else if (parsed > MAX_FLOOR_HEIGHT) {
+                  handleHeightChange(MAX_FLOOR_HEIGHT);
+                }
+              }}
+              className="w-24 h-8"
+            />
+            <span className="text-xs text-muted-foreground">px</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handleHeightChange(800)}
+              className={cn("h-7", floorHeight === 800 && "bg-accent")}
+            >
+              800
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handleHeightChange(1200)}
+              className={cn("h-7", floorHeight === 1200 && "bg-accent")}
+            >
+              1200
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handleHeightChange(1600)}
+              className={cn("h-7", floorHeight === 1600 && "bg-accent")}
+            >
+              1600
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handleHeightChange(2000)}
+              className={cn("h-7", floorHeight === 2000 && "bg-accent")}
+            >
+              2000
+            </Button>
+          </div>
         </div>
       </div>
 

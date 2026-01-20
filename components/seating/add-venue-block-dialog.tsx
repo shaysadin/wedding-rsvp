@@ -48,11 +48,10 @@ const VENUE_BLOCK_TYPES: VenueBlockType[] = [
 ];
 
 const SHAPES: Shape[] = [
+  "square",
   "circle",
   "rectangle",
-  "rectangleRounded",
-  "concave",
-  "concaveRounded",
+  "oval",
 ];
 
 interface AddVenueBlockDialogProps {

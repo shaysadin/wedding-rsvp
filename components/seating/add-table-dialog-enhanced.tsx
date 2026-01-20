@@ -13,6 +13,8 @@ import {
   type Shape,
   type SeatingArrangement,
   type ColorTheme,
+  type SizePreset,
+  SIZE_PRESETS,
 } from "@/lib/validations/seating";
 import { calculateSeatPositions, getAvailableArrangements } from "@/lib/seating/seat-calculator";
 
@@ -43,11 +45,10 @@ interface AddTableDialogEnhancedProps {
 }
 
 const SHAPES: Shape[] = [
+  "square",
   "circle",
   "rectangle",
-  "rectangleRounded",
-  "concave",
-  "concaveRounded",
+  "oval",
 ];
 
 const SEATING_ARRANGEMENTS: SeatingArrangement[] = [
@@ -68,11 +69,10 @@ const COLOR_THEMES: ColorTheme[] = [
 
 // Shape visual previews
 const SHAPE_PREVIEWS: Record<Shape, { icon: string; description: string }> = {
+  square: { icon: "▢", description: "Square table, seats on all sides" },
   circle: { icon: "⭕", description: "Round table" },
-  rectangle: { icon: "▭", description: "Rectangular table" },
-  rectangleRounded: { icon: "▢", description: "Rounded rectangle" },
-  concave: { icon: "⌓", description: "Half circle" },
-  concaveRounded: { icon: "⌒", description: "Rounded half circle" },
+  rectangle: { icon: "▭", description: "Long table, seats on long sides" },
+  oval: { icon: "⬭", description: "Ellipse table" },
 };
 
 // Seating arrangement descriptions
@@ -103,6 +103,7 @@ export function AddTableDialogEnhanced({
   const tc = useTranslations("common");
   const [isLoading, setIsLoading] = useState(false);
   const [currentTab, setCurrentTab] = useState("basic");
+  const [sizePreset, setSizePreset] = useState<SizePreset>("medium");
 
   const form = useForm<CreateTableInput>({
     resolver: zodResolver(createTableSchema),
@@ -113,8 +114,8 @@ export function AddTableDialogEnhanced({
       shape: "circle" as const,
       seatingArrangement: "even" as const,
       colorTheme: "default" as const,
-      width: 100,
-      height: 100,
+      width: SIZE_PRESETS.circle.medium.width,
+      height: SIZE_PRESETS.circle.medium.height,
     },
   });
 
@@ -124,6 +125,22 @@ export function AddTableDialogEnhanced({
 
   // Get available arrangements for the current shape
   const availableArrangements = getAvailableArrangements(watchedShape);
+
+  // Handle size preset change
+  function handleSizePresetChange(preset: SizePreset) {
+    setSizePreset(preset);
+    const newSize = SIZE_PRESETS[watchedShape][preset];
+    form.setValue("width", newSize.width);
+    form.setValue("height", newSize.height);
+  }
+
+  // Handle shape change
+  function handleShapeChange(shape: Shape) {
+    form.setValue("shape", shape);
+    const newSize = SIZE_PRESETS[shape][sizePreset];
+    form.setValue("width", newSize.width);
+    form.setValue("height", newSize.height);
+  }
 
   async function onSubmit(data: CreateTableInput) {
     setIsLoading(true);
@@ -200,45 +217,22 @@ export function AddTableDialogEnhanced({
                   )}
                 />
 
-                <FormField
-                  control={form.control}
-                  name="capacity"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t("capacity")}</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="number"
-                          min={1}
-                          max={100}
-                          placeholder={t("capacityPlaceholder")}
-                          {...field}
-                          onChange={(e) =>
-                            field.onChange(parseInt(e.target.value) || 1)
-                          }
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
                 <div className="grid grid-cols-2 gap-4">
                   <FormField
                     control={form.control}
-                    name="width"
+                    name="capacity"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>{t("width")}</FormLabel>
+                        <FormLabel>{t("capacity")}</FormLabel>
                         <FormControl>
                           <Input
                             type="number"
-                            min={40}
-                            max={400}
-                            placeholder="100"
+                            min={1}
+                            max={32}
+                            placeholder={t("capacityPlaceholder")}
                             {...field}
                             onChange={(e) =>
-                              field.onChange(parseInt(e.target.value) || 100)
+                              field.onChange(Math.max(1, Math.min(32, parseInt(e.target.value) || 1)))
                             }
                           />
                         </FormControl>
@@ -247,28 +241,27 @@ export function AddTableDialogEnhanced({
                     )}
                   />
 
-                  <FormField
-                    control={form.control}
-                    name="height"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>{t("height")}</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="number"
-                            min={40}
-                            max={400}
-                            placeholder="100"
-                            {...field}
-                            onChange={(e) =>
-                              field.onChange(parseInt(e.target.value) || 100)
-                            }
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                  {/* Size Preset */}
+                  <FormItem>
+                    <FormLabel>{t("sizePreset.label")}</FormLabel>
+                    <div className="flex gap-2">
+                      {(["small", "medium", "large"] as SizePreset[]).map((preset) => (
+                        <button
+                          key={preset}
+                          type="button"
+                          onClick={() => handleSizePresetChange(preset)}
+                          className={cn(
+                            "flex-1 px-3 py-2 text-sm border-2 rounded-lg transition-all hover:bg-accent",
+                            sizePreset === preset
+                              ? "border-primary bg-accent"
+                              : "border-muted"
+                          )}
+                        >
+                          {t(`sizePreset.${preset}`)}
+                        </button>
+                      ))}
+                    </div>
+                  </FormItem>
                 </div>
 
                 <FormField
@@ -282,7 +275,7 @@ export function AddTableDialogEnhanced({
                           <button
                             key={shape}
                             type="button"
-                            onClick={() => field.onChange(shape)}
+                            onClick={() => handleShapeChange(shape)}
                             className={cn(
                               "flex items-center gap-3 p-3 border-2 rounded-lg transition-all hover:bg-accent",
                               field.value === shape
@@ -370,12 +363,10 @@ export function AddTableDialogEnhanced({
                       <div
                         className={cn(
                           "absolute inset-0 border-2 border-primary/50 bg-card",
+                          watchedShape === "square" && "rounded-none",
                           watchedShape === "circle" && "rounded-full",
                           watchedShape === "rectangle" && "rounded-none",
-                          watchedShape === "rectangleRounded" && "rounded-lg",
-                          watchedShape === "concave" && "rounded-t-full",
-                          watchedShape === "concaveRounded" &&
-                            "rounded-t-full rounded-b-lg"
+                          watchedShape === "oval" && "rounded-[50%]"
                         )}
                       />
                       {/* Seat preview */}

@@ -3,11 +3,10 @@ import { z } from "zod";
 // ============ SHARED SHAPE SCHEMA ============
 
 export const shapeSchema = z.enum([
+  "square",
   "circle",
   "rectangle",
-  "rectangleRounded",
-  "concave",
-  "concaveRounded",
+  "oval",
 ]);
 
 // ============ TABLE SCHEMAS ============
@@ -34,7 +33,7 @@ export const colorThemeSchema = z.enum([
 export const createTableSchema = z.object({
   weddingEventId: z.string().min(1, "Event ID is required"),
   name: z.string().min(1, "Table name is required").max(100, "Table name is too long"),
-  capacity: z.number().int().min(1, "Capacity must be at least 1").max(100, "Capacity cannot exceed 100"),
+  capacity: z.number().int().min(1, "Capacity must be at least 1").max(32, "Capacity cannot exceed 32"),
   shape: tableShapeSchema,
   seatingArrangement: seatingArrangementSchema,
   colorTheme: colorThemeSchema,
@@ -45,7 +44,7 @@ export const createTableSchema = z.object({
 export const updateTableSchema = z.object({
   id: z.string().min(1, "Table ID is required"),
   name: z.string().min(1).max(100).optional(),
-  capacity: z.number().int().min(1).max(100).optional(),
+  capacity: z.number().int().min(1).max(32).optional(),
   positionX: z.number().int().optional().nullable(),
   positionY: z.number().int().optional().nullable(),
   width: z.number().int().min(40).max(400).optional(),
@@ -156,7 +155,7 @@ export const updateVenueBlockRotationSchema = z.object({
 
 export const autoArrangeSchema = z.object({
   eventId: z.string().min(1, "Event ID is required"),
-  tableSize: z.number().int().min(1).max(20).default(10),
+  tableSize: z.number().int().min(1).max(32).default(10),
   tableShape: tableShapeSchema.default("circle"),
   seatingArrangement: seatingArrangementSchema.default("even"),
   groupingStrategy: z.enum(["side-then-group", "group-only"]).default("side-then-group"),
@@ -176,6 +175,39 @@ export const updateGuestTableSchema = z.object({
   guestId: z.string().min(1, "Guest ID is required"),
   tableId: z.string().min(1, "Table ID is required"),
 });
+
+// ============ SIZE PRESETS ============
+
+export type SizePreset = "small" | "medium" | "large";
+
+export const SIZE_PRESETS: Record<Shape, Record<SizePreset, { width: number; height: number }>> = {
+  square: {
+    small: { width: 60, height: 60 },
+    medium: { width: 80, height: 80 },
+    large: { width: 100, height: 100 },
+  },
+  circle: {
+    small: { width: 60, height: 60 },
+    medium: { width: 80, height: 80 },
+    large: { width: 100, height: 100 },
+  },
+  rectangle: {
+    small: { width: 100, height: 50 },
+    medium: { width: 140, height: 60 },
+    large: { width: 180, height: 70 },
+  },
+  oval: {
+    small: { width: 80, height: 55 },
+    medium: { width: 110, height: 70 },
+    large: { width: 140, height: 85 },
+  },
+};
+
+export const DEFAULT_SIZE_PRESET: SizePreset = "medium";
+
+export function getDefaultSizeForShape(shape: Shape): { width: number; height: number } {
+  return SIZE_PRESETS[shape][DEFAULT_SIZE_PRESET];
+}
 
 // ============ TYPES ============
 

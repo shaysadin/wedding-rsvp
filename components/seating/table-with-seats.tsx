@@ -120,7 +120,7 @@ const COLOR_THEMES: Record<TableColorTheme, {
   },
 };
 
-const SEAT_SIZE = 32; // Seat chair size in pixels
+const SEAT_SIZE = 20; // Seat chair size in pixels
 
 // Chair SVG Component
 function ChairIcon({ color, className }: { color: string; className?: string }) {
@@ -155,11 +155,10 @@ export function TableWithSeats({
 
   const theme = COLOR_THEMES[table.colorTheme || "default"];
   const shapeClasses: Record<string, string> = {
+    square: "rounded-none",
     circle: "rounded-full",
     rectangle: "rounded-none",
-    rectangleRounded: "rounded-lg",
-    concave: "rounded-t-full rounded-b-none",
-    concaveRounded: "rounded-t-full rounded-b-lg",
+    oval: "rounded-[50%]", // 50% radius creates ellipse
   };
 
   // Calculate occupied seats

@@ -1125,7 +1125,7 @@
   },
   "seating": {
     "title": "סידורי ישיבה",
-    "description": "ניהול שיבוץ אורחים לשולחנות החתונה",
+    "description": "ניהול שיבוץ אורחים",
     "selectEventDescription": "בחר אירוע לניהול סידורי ישיבה",
     "addTable": "הוסף שולחן",
     "editTable": "ערוך שולחן",
@@ -1141,13 +1141,10 @@
     "height": "גובה",
     "shape": "צורת השולחן",
     "shapes": {
+      "square": "ריבוע",
       "circle": "עיגול",
       "rectangle": "מלבן",
-      "rectangular": "מלבני",
-      "rectangleRounded": "מלבן (פינות מעוגלות)",
-      "semicircle": "חצי עיגול",
-      "concave": "חצי עיגול קעור",
-      "concaveRounded": "חצי עיגול קעור (מעוגל)"
+      "oval": "אליפסה"
     },
     "seatsUsed": "{used} מתוך {total} מקומות",
     "seatsAvailable": "{available} מקומות פנויים",
@@ -1183,8 +1180,8 @@
     "capacityWarning": "הוספת אורחים אלו תחרוג מתפוסת השולחן",
     "partySize": "קבוצה של {count}",
     "stats": {
-      "totalTables": "סה\"כ שולחנות",
-      "totalSeats": "סה\"כ מקומות",
+      "totalTables": "שולחנות",
+      "totalSeats": "מקומות",
       "seatedGuests": "משובצים",
       "seatedCount": "{count} אורחים משובצים",
       "unseatedGuests": "לא משובצים",
@@ -1235,11 +1232,8 @@
     "rotate45": "סובב 45 מעלות",
     "fullscreen": "מסך מלא",
     "exitFullscreen": "יציאה ממסך מלא",
+    "canvasWidth": "רוחב קנבס",
     "canvasHeight": "גובה קנבס",
-    "presets": "ערכים מוגדרים",
-    "small": "קטן",
-    "medium": "בינוני",
-    "large": "גדול",
     "preview": "תצוגה מקדימה",
     "seats": "מקומות ישיבה",
     "tabs": {
@@ -1253,6 +1247,12 @@
       "bride-side": "צד כלה/חתן",
       "sides-only": "צדדים בלבד",
       "custom": "מותאם אישית"
+    },
+    "sizePreset": {
+      "label": "גודל",
+      "small": "קטן",
+      "medium": "בינוני",
+      "large": "גדול"
     },
     "colorTheme": "ערכת צבעים",
     "hostessView": "תצוגת מארחת",
@@ -1296,6 +1296,7 @@
       "button": "סידור אוטומטי",
       "title": "סידור אוטומטי של שולחנות",
       "description": "צור שולחנות אוטומטית ושבץ אורחים לפי פילטרים",
+      "stepperDescription": "הגדר את השולחנות והישיבה ב-4 צעדים פשוטים",
       "warningTitle": "אזהרה",
       "warningDescription": "פעולה זו תמחק את כל השולחנות הקיימים ותיצור חדשים. לא ניתן לבטל פעולה זו.",
       "tableSize": "אורחים לשולחן",
@@ -1311,7 +1312,31 @@
       "guests": "אורחים",
       "seats": "מקומות",
       "create": "צור שולחנות",
-      "success": "נוצרו {tables} שולחנות עבור {guests} אורחים"
+      "success": "נוצרו {tables} שולחנות עבור {guests} אורחים",
+      "step1Title": "בחירת אורחים",
+      "step1Description": "בחר אילו אורחים לכלול בסידור",
+      "step2Title": "הגדרת שולחנות",
+      "step2Description": "הגדר את סוגי וכמות השולחנות ליצירה",
+      "step3Title": "תצוגה מקדימה",
+      "step3Description": "סקור כיצד האורחים ישובצו לשולחנות",
+      "step4Title": "אישור וביצוע",
+      "step4Description": "סקור את ההגדרות ואשר את הסידור",
+      "matchingGuests": "אורחים תואמים",
+      "seatsNeeded": "מקומות נדרשים",
+      "tableType": "סוג שולחן",
+      "tableCount": "כמות",
+      "dimensions": "מידות",
+      "addTableType": "הוסף סוג שולחן",
+      "totalConfiguration": "סה״כ הגדרות",
+      "totalSeats": "סה״כ מקומות",
+      "notEnoughSeats": "נדרשים {needed} מקומות אבל רק {configured} הוגדרו",
+      "arrangementOrder": "אורחים ישובצו לפי הסדר: קבוצה, אז צד, אז סטטוס אישור (מאושרים קודם), ואז אלפביתית",
+      "more": "עוד",
+      "summary": "סיכום",
+      "guestsToSeat": "אורחים לשיבוץ",
+      "tablesToCreate": "שולחנות ליצירה",
+      "totalCapacity": "קיבולת כוללת",
+      "tableBreakdown": "פירוט שולחנות"
     }
   },
   "invitations": {

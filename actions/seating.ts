@@ -1996,3 +1996,247 @@ export async function regenerateTableSeats(
     return { error: "Failed to regenerate table seats" };
   }
 }
+
+// ============ AUTO-ARRANGE WITH CONFIGURATIONS ============
+
+interface AutoArrangeWithConfigsInput {
+  eventId: string;
+  filters: {
+    side?: string;
+    groupId?: string;
+    rsvpStatus: ("ACCEPTED" | "PENDING")[];
+  };
+  tableConfigs: {
+    shape: "square" | "circle" | "rectangle" | "oval";
+    capacity: number;
+    count: number;
+    width: number;
+    height: number;
+  }[];
+  clearExisting: boolean;
+}
+
+/**
+ * Auto-arrange guests into tables using multiple table configurations
+ * This will DELETE all existing tables and create new ones based on the configurations
+ */
+export async function autoArrangeTablesWithConfigs(input: AutoArrangeWithConfigsInput) {
+  try {
+    const user = await getCurrentUser();
+
+    const hasWeddingOwnerRole = user?.roles?.includes(UserRole.ROLE_WEDDING_OWNER);
+    if (!user || !hasWeddingOwnerRole) {
+      return { error: "Unauthorized" };
+    }
+
+    // Verify event ownership
+    const event = await prisma.weddingEvent.findFirst({
+      where: { id: input.eventId, ownerId: user.id },
+    });
+
+    if (!event) {
+      return { error: "Event not found" };
+    }
+
+    // Build guest filter
+    const guestWhere: Record<string, unknown> = {
+      weddingEventId: input.eventId,
+    };
+
+    // Filter by side
+    if (input.filters.side) {
+      guestWhere.side = input.filters.side;
+    }
+
+    // Filter by group
+    if (input.filters.groupId) {
+      guestWhere.groupName = input.filters.groupId;
+    }
+
+    // Get guests matching filters
+    const guests = await prisma.guest.findMany({
+      where: guestWhere,
+      include: { rsvp: true },
+    });
+
+    // Filter by RSVP status
+    const filteredGuests = guests.filter((guest) => {
+      const status = guest.rsvp?.status || "PENDING";
+      return input.filters.rsvpStatus.includes(status as "ACCEPTED" | "PENDING");
+    });
+
+    if (filteredGuests.length === 0) {
+      return { error: "No guests match the selected filters" };
+    }
+
+    // Calculate total configured seats
+    const totalConfiguredSeats = input.tableConfigs.reduce(
+      (sum, config) => sum + config.capacity * config.count,
+      0
+    );
+
+    // Calculate total seats needed
+    const totalSeatsNeeded = filteredGuests.reduce(
+      (sum, g) => sum + getSeatsUsed(g),
+      0
+    );
+
+    if (totalConfiguredSeats < totalSeatsNeeded) {
+      return { error: "Not enough seats configured for all guests" };
+    }
+
+    // Sort guests: Group -> Side -> RSVP Status (ACCEPTED first) -> Name
+    const sortedGuests = [...filteredGuests].sort((a, b) => {
+      // 1. Sort by group name
+      const groupA = (a.groupName || "zzz_other").toLowerCase();
+      const groupB = (b.groupName || "zzz_other").toLowerCase();
+      if (groupA !== groupB) return groupA.localeCompare(groupB);
+
+      // 2. Sort by side
+      const sideA = (a.side || "zzz_other").toLowerCase();
+      const sideB = (b.side || "zzz_other").toLowerCase();
+      if (sideA !== sideB) return sideA.localeCompare(sideB);
+
+      // 3. Sort by RSVP status (ACCEPTED guests seated first)
+      const statusA = a.rsvp?.status || "PENDING";
+      const statusB = b.rsvp?.status || "PENDING";
+      const statusOrder: Record<string, number> = { ACCEPTED: 0, PENDING: 1, DECLINED: 2 };
+      if (statusOrder[statusA] !== statusOrder[statusB]) {
+        return statusOrder[statusA] - statusOrder[statusB];
+      }
+
+      // 4. Sort by name
+      return a.name.localeCompare(b.name);
+    });
+
+    // Hebrew translations for sides and groups
+    const hebrewSideLabels: Record<string, string> = {
+      bride: "כלה",
+      groom: "חתן",
+      both: "שניהם",
+      other: "אחר",
+    };
+
+    const hebrewGroupLabels: Record<string, string> = {
+      family: "משפחה",
+      friends: "חברים",
+      work: "עבודה",
+      other: "אחר",
+    };
+
+    // Wrap deletion and table creation in a transaction
+    const result = await prisma.$transaction(async (tx) => {
+      // Delete all existing tables for this event if clearExisting is true
+      if (input.clearExisting) {
+        await tx.weddingTable.deleteMany({
+          where: { weddingEventId: input.eventId },
+        });
+      }
+
+      // Create tables from configurations and assign guests
+      let tableNumber = 1;
+      let tablesCreated = 0;
+      let guestsSeated = 0;
+      let guestIndex = 0;
+
+      // Create all tables from configurations
+      const allTables: { id: string; capacity: number; shape: string; width: number; height: number }[] = [];
+
+      for (const config of input.tableConfigs) {
+        for (let i = 0; i < config.count; i++) {
+          // Calculate seat positions
+          const seatPositions = calculateSeatPositions(
+            config.capacity,
+            config.shape,
+            "even"
+          );
+
+          const table = await tx.weddingTable.create({
+            data: {
+              weddingEventId: input.eventId,
+              name: `${t("table")} ${tableNumber}`,
+              capacity: config.capacity,
+              shape: config.shape,
+              seatingArrangement: "even",
+              colorTheme: "default",
+              width: config.width,
+              height: config.height,
+              seats: {
+                create: seatPositions.map((seat) => ({
+                  seatNumber: seat.seatNumber,
+                  relativeX: seat.relativeX,
+                  relativeY: seat.relativeY,
+                  angle: seat.angle,
+                  side: seat.side,
+                })),
+              },
+            },
+          });
+
+          allTables.push({
+            id: table.id,
+            capacity: config.capacity,
+            shape: config.shape,
+            width: config.width,
+            height: config.height,
+          });
+
+          tableNumber++;
+          tablesCreated++;
+        }
+      }
+
+      // Assign guests to tables in order
+      for (const table of allTables) {
+        let seatsUsed = 0;
+        const guestsForTable: string[] = [];
+
+        while (guestIndex < sortedGuests.length && seatsUsed < table.capacity) {
+          const guest = sortedGuests[guestIndex];
+          const seats = getSeatsUsed(guest);
+
+          // Allow one more guest even if slightly over capacity
+          if (seatsUsed + seats <= table.capacity || guestsForTable.length === 0) {
+            guestsForTable.push(guest.id);
+            seatsUsed += seats;
+            guestIndex++;
+          } else {
+            break;
+          }
+        }
+
+        // Create assignments for this table
+        if (guestsForTable.length > 0) {
+          await tx.tableAssignment.createMany({
+            data: guestsForTable.map((guestId) => ({
+              tableId: table.id,
+              guestId,
+            })),
+          });
+          guestsSeated += guestsForTable.length;
+        }
+      }
+
+      return { tablesCreated, guestsSeated };
+    });
+
+    revalidatePath(`/dashboard/events/${input.eventId}/seating`);
+
+    return {
+      success: true,
+      tablesCreated: result.tablesCreated,
+      guestsSeated: result.guestsSeated,
+    };
+  } catch (error) {
+    console.error("Error auto-arranging tables with configs:", error);
+    return { error: "Failed to auto-arrange tables" };
+  }
+}
+
+// Helper for table naming (not using translations server-side)
+function t(key: string): string {
+  const translations: Record<string, string> = {
+    table: "שולחן",
+  };
+  return translations[key] || key;
+}
