@@ -112,6 +112,7 @@ export function SeatingPageContent({ eventId, events, locale }: SeatingPageConte
   const [selectedTableForAssign, setSelectedTableForAssign] = useState<Table | null>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [selectedTableForEdit, setSelectedTableForEdit] = useState<Table | null>(null);
+  const [linkCopied, setLinkCopied] = useState(false);
 
   function handleAssignGuests(tableId: string) {
     const table = tables.find((t) => t.id === tableId);
@@ -131,6 +132,8 @@ export function SeatingPageContent({ eventId, events, locale }: SeatingPageConte
     const hostessUrl = `${baseUrl}/${locale}/hostess/${eventId}`;
     navigator.clipboard.writeText(hostessUrl);
     toast.success(isRTL ? "קישור הועתק ללוח" : "Link copied to clipboard");
+    setLinkCopied(true);
+    setTimeout(() => setLinkCopied(false), 2000);
   }
 
   const loadData = useCallback(async () => {
@@ -242,7 +245,10 @@ export function SeatingPageContent({ eventId, events, locale }: SeatingPageConte
                   onClick={copyHostessLink}
                   className="border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 hover:text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 dark:hover:bg-emerald-900"
                 >
-                  <Icons.copy className="me-2 h-4 w-4" />
+                  <span className="relative me-2 h-4 w-4">
+                    <Icons.copy className={`absolute inset-0 h-4 w-4 transition-all duration-300 ${linkCopied ? "scale-0 opacity-0" : "scale-100 opacity-100"}`} />
+                    <Icons.check className={`absolute inset-0 h-4 w-4 transition-all duration-300 ${linkCopied ? "scale-100 opacity-100" : "scale-0 opacity-0"}`} />
+                  </span>
                   <span className="hidden sm:inline">{isRTL ? "קישור לאשת קבלה" : "Hostess Link"}</span>
                   <span className="sm:hidden">{isRTL ? "קישור" : "Link"}</span>
                 </Button>

@@ -275,6 +275,7 @@ export function HostessTableView({ tables, locale }: HostessTableViewProps) {
                 <>
                   {/* Backdrop */}
                   <motion.div
+                    key={`backdrop-${table.id}`}
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
@@ -285,6 +286,7 @@ export function HostessTableView({ tables, locale }: HostessTableViewProps) {
 
                   {/* Modal */}
                   <motion.div
+                    key={`modal-${table.id}`}
                     initial={{ opacity: 0, scale: 0.95, y: 10 }}
                     animate={{ opacity: 1, scale: 1, y: 0 }}
                     exit={{ opacity: 0, scale: 0.95, y: 10 }}

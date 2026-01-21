@@ -120,6 +120,9 @@ export const createVenueBlockSchema = z.object({
   name: z.string().min(1, "Block name is required").max(100, "Block name is too long"),
   type: venueBlockTypeSchema,
   shape: venueBlockShapeSchema,
+  colorTheme: colorThemeSchema.optional(),
+  width: z.number().int().min(40).max(400).optional(),
+  height: z.number().int().min(40).max(400).optional(),
 });
 
 export const updateVenueBlockSchema = z.object({
@@ -127,6 +130,7 @@ export const updateVenueBlockSchema = z.object({
   name: z.string().min(1).max(100).optional(),
   type: venueBlockTypeSchema.optional(),
   shape: venueBlockShapeSchema.optional(),
+  colorTheme: colorThemeSchema.optional(),
   width: z.number().int().min(40).max(400).optional(),
   height: z.number().int().min(40).max(400).optional(),
   positionX: z.number().int().optional().nullable(),

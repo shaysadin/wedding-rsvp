@@ -159,6 +159,8 @@ export default async function EventDashboardPage({ params }: EventDashboardPageP
     rsvpDeclinedMessage: event.rsvpDeclinedMessage,
     rsvpMaybeMessage: event.rsvpMaybeMessage,
     rsvpMaybeReminderDelay: event.rsvpMaybeReminderDelay,
+    seatingCanvasWidth: event.seatingCanvasWidth,
+    seatingCanvasHeight: event.seatingCanvasHeight,
   };
 
   return (

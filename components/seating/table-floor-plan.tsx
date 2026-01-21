@@ -16,7 +16,7 @@ import {
 } from "@dnd-kit/core";
 import { Maximize2, Minimize2 } from "lucide-react";
 
-import { updateTablePosition, updateTableSize, updateTableRotation, updateVenueBlockPosition, updateVenueBlockSize, updateVenueBlockRotation, deleteVenueBlock, deleteTable } from "@/actions/seating";
+import { updateTablePosition, updateTableSize, updateTableRotation, updateVenueBlockPosition, updateVenueBlockSize, updateVenueBlockRotation, deleteVenueBlock, deleteTable, getCanvasDimensions, updateCanvasDimensions } from "@/actions/seating";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -38,8 +38,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Icons } from "@/components/shared/icons";
 import { TableWithSeats, type TableColorTheme } from "@/components/seating/table-with-seats";
-import { AssignSeatDialog } from "@/components/seating/assign-seat-dialog";
-import { assignGuestToSeat, unassignSeat, getGuestsForAssignment } from "@/actions/seating";
+import { ManageTableGuestDialog } from "@/components/seating/assign-seat-dialog";
+import { assignGuestsToTable, removeGuestFromTable, getGuestsForAssignment } from "@/actions/seating";
 
 interface TableGuest {
   id: string;
@@ -58,19 +58,6 @@ interface TableAssignment {
   guest: TableGuest;
 }
 
-interface TableSeat {
-  id: string;
-  seatNumber: number;
-  relativeX: number;
-  relativeY: number;
-  angle: number;
-  guest?: {
-    id: string;
-    name: string;
-    rsvpStatus?: "ACCEPTED" | "PENDING" | "DECLINED" | "MAYBE";
-  } | null;
-}
-
 interface Table {
   id: string;
   name: string;
@@ -84,7 +71,6 @@ interface Table {
   height?: number;
   rotation?: number;
   assignments: TableAssignment[];
-  seats?: TableSeat[];
   seatsUsed: number;
   seatsAvailable: number;
 }
@@ -116,13 +102,11 @@ interface LocalPosition {
 
 const GRID_SIZE = 20; // Snap to grid
 const DEFAULT_FLOOR_WIDTH = 1200; // Default floor width
-const DEFAULT_FLOOR_HEIGHT = 500; // Default floor height
+const DEFAULT_FLOOR_HEIGHT = 800; // Default floor height
 const MIN_FLOOR_WIDTH = 600;
 const MIN_FLOOR_HEIGHT = 300;
 const MAX_FLOOR_WIDTH = 4000; // Allow very wide floor plans
 const MAX_FLOOR_HEIGHT = 3000; // Allow very large floor plans
-const FLOOR_WIDTH_STORAGE_KEY = "seating-floor-width";
-const FLOOR_HEIGHT_STORAGE_KEY = "seating-floor-height";
 const MIN_SIZE = 40;
 const MAX_SIZE = 400;
 const DEFAULT_TABLE_SIZE = {
@@ -190,6 +174,14 @@ interface LocalSize {
   height: number;
 }
 
+// Guest type for chair display
+interface ChairGuest {
+  id: string;
+  name: string;
+  rsvpStatus?: "ACCEPTED" | "PENDING" | "DECLINED" | "MAYBE";
+  guestCount: number; // Number of seats this guest occupies (party size)
+}
+
 function DraggableTable({
   table,
   localPosition,
@@ -202,7 +194,7 @@ function DraggableTable({
   onResizeEnd,
   onRotate,
   isResizing,
-  onSeatClick,
+  onChairClick,
 }: {
   table: Table;
   localPosition?: LocalPosition;
@@ -215,7 +207,7 @@ function DraggableTable({
   onResizeEnd: (id: string, type: "table" | "block") => void;
   onRotate: (id: string, type: "table" | "block") => void;
   isResizing: boolean;
-  onSeatClick?: (seatId: string, seatNumber: number, tableName: string, currentGuest?: TableSeat['guest']) => void;
+  onChairClick?: (tableId: string, tableName: string, chairIndex: number, guest: ChairGuest | null) => void;
 }) {
   const t = useTranslations("seating");
   const tc = useTranslations("common");
@@ -276,19 +268,13 @@ function DraggableTable({
     oval: "rounded-[50%]", // 50% radius creates ellipse
   };
 
-
-  // Prepare seats data for TableWithSeats component
-  const tableSeats = (table.seats || []).map((seat) => ({
-    id: seat.id,
-    seatNumber: seat.seatNumber,
-    relativeX: seat.relativeX,
-    relativeY: seat.relativeY,
-    angle: seat.angle,
-    guest: seat.guest ? {
-      id: seat.guest.id,
-      name: seat.guest.name,
-      rsvpStatus: seat.guest.rsvpStatus || "PENDING",
-    } : null,
+  // Convert assignments to the format expected by TableWithSeats
+  // Use rsvp.guestCount if available, otherwise fall back to expectedGuests
+  const tableAssignments: ChairGuest[] = table.assignments.map((assignment) => ({
+    id: assignment.guest.id,
+    name: assignment.guest.name,
+    rsvpStatus: (assignment.guest.rsvp?.status as ChairGuest['rsvpStatus']) || "PENDING",
+    guestCount: assignment.guest.rsvp?.guestCount || assignment.guest.expectedGuests || 1,
   }));
 
   return (
@@ -338,17 +324,17 @@ function DraggableTable({
                 name: table.name,
                 capacity: table.capacity,
                 shape: shape,
+                seatingArrangement: table.seatingArrangement || "even",
                 colorTheme: (table.colorTheme as TableColorTheme) || "default",
                 width,
                 height,
                 rotation: 0, // Rotation is handled by parent div
               }}
-              seats={tableSeats}
+              assignments={tableAssignments}
               positionX={0}
               positionY={0}
-              onSeatClick={(seatId, seatNumber) => {
-                const seat = table.seats?.find(s => s.id === seatId);
-                onSeatClick?.(seatId, seatNumber, table.name, seat?.guest);
+              onChairClick={(chairIndex, guest) => {
+                onChairClick?.(table.id, table.name, chairIndex, guest);
               }}
               onTableClick={() => setPopoverOpen(true)}
             />
@@ -758,7 +744,7 @@ const FloorArea = React.forwardRef<HTMLDivElement, FloorAreaProps>(
     }, []);
 
     return (
-      <div className="relative">
+      <div className={cn("relative", isFullscreen && "h-full w-full")}>
         {/* Fullscreen button - fixed position outside scroll area */}
         {fullscreenButton && (
           <div className="absolute top-2 start-2 z-50">
@@ -783,12 +769,12 @@ const FloorArea = React.forwardRef<HTMLDivElement, FloorAreaProps>(
               "floor-area-bg relative border-2 border-dashed rounded-lg",
               "bg-muted/30",
               isOver && "border-primary bg-primary/5",
-              isFullscreen && "rounded-none border-0 w-full h-full"
+              !isFullscreen && "mx-auto"
             )}
             style={{
-              width: isFullscreen ? "100%" : width,
-              height: isFullscreen ? "100%" : height,
-              minHeight: isFullscreen ? "100%" : height,
+              width: width,
+              height: height,
+              minHeight: height,
             }}
           >
             {children}
@@ -830,10 +816,10 @@ export function TableFloorPlan({
   // Store base dimensions (non-fullscreen) for proper position saving
   const baseFloorDimensions = useRef({ width: DEFAULT_FLOOR_WIDTH, height: DEFAULT_FLOOR_HEIGHT });
 
-  // Seat assignment dialog state
-  const [assignSeatDialogOpen, setAssignSeatDialogOpen] = useState(false);
-  const [selectedSeat, setSelectedSeat] = useState<{ seatId: string; seatNumber: number; tableName: string } | null>(null);
-  const [selectedSeatGuest, setSelectedSeatGuest] = useState<TableSeat['guest'] | null>(null);
+  // Chair assignment dialog state
+  const [chairDialogOpen, setChairDialogOpen] = useState(false);
+  const [selectedChair, setSelectedChair] = useState<{ tableId: string; tableName: string; chairIndex: number } | null>(null);
+  const [selectedChairGuest, setSelectedChairGuest] = useState<ChairGuest | null>(null);
   const [allGuests, setAllGuests] = useState<Array<{ id: string; name: string; rsvpStatus?: string }>>([]);
 
   // Fetch all guests for the event
@@ -856,42 +842,59 @@ export function TableFloorPlan({
     return () => window.removeEventListener("seating-data-changed", handleRefresh);
   }, [eventId]);
 
-  // Handle seat click - open assignment dialog
-  const handleSeatClick = useCallback((seatId: string, seatNumber: number, tableName: string, currentGuest?: TableSeat['guest']) => {
-    setSelectedSeat({ seatId, seatNumber, tableName });
-    setSelectedSeatGuest(currentGuest || null);
-    setAssignSeatDialogOpen(true);
+  // Handle chair click - open assignment dialog
+  const handleChairClick = useCallback((tableId: string, tableName: string, chairIndex: number, guest: ChairGuest | null) => {
+    setSelectedChair({ tableId, tableName, chairIndex });
+    setSelectedChairGuest(guest);
+    setChairDialogOpen(true);
   }, []);
 
-  // Available guests - all guests excluding those already seated
-  const seatedGuestIds = new Set(
-    tables.flatMap(t => t.seats?.map(s => s.guest?.id).filter(Boolean) || [])
+  // Available guests - all guests excluding those already assigned to any table
+  const assignedGuestIds = new Set(
+    tables.flatMap(t => t.assignments.map(a => a.guest.id))
   );
-  const availableGuests = allGuests.filter(g => !seatedGuestIds.has(g.id));
+  const availableGuests = allGuests.filter(g => !assignedGuestIds.has(g.id));
 
-  // Handle assign guest to seat
-  const handleAssignSeat = async (guestId: string) => {
-    if (!selectedSeat) return;
+  // Handle assign guest to table
+  const handleAssignGuest = async (guestId: string) => {
+    if (!selectedChair) return;
 
-    const result = await assignGuestToSeat(selectedSeat.seatId, guestId);
+    const result = await assignGuestsToTable({ tableId: selectedChair.tableId, guestIds: [guestId] });
     if (result.error) {
       toast.error(result.error);
     } else {
-      toast.success(t("guestAssignedToSeat"));
       // Refresh data
       window.dispatchEvent(new CustomEvent("seating-data-changed"));
     }
   };
 
-  // Handle unassign seat
-  const handleUnassignSeat = async () => {
-    if (!selectedSeat) return;
+  // Handle replace guest on table (remove old, add new)
+  const handleReplaceGuest = async (oldGuestId: string, newGuestId: string) => {
+    if (!selectedChair) return;
 
-    const result = await unassignSeat(selectedSeat.seatId);
+    // First remove the old guest
+    const removeResult = await removeGuestFromTable({ guestId: oldGuestId });
+    if (removeResult.error) {
+      toast.error(removeResult.error);
+      return;
+    }
+
+    // Then add the new guest
+    const assignResult = await assignGuestsToTable({ tableId: selectedChair.tableId, guestIds: [newGuestId] });
+    if (assignResult.error) {
+      toast.error(assignResult.error);
+    } else {
+      // Refresh data
+      window.dispatchEvent(new CustomEvent("seating-data-changed"));
+    }
+  };
+
+  // Handle unassign guest from table
+  const handleUnassignGuest = async (guestId: string) => {
+    const result = await removeGuestFromTable({ guestId });
     if (result.error) {
       toast.error(result.error);
     } else {
-      toast.success(t("seatUnassigned"));
       // Refresh data
       window.dispatchEvent(new CustomEvent("seating-data-changed"));
     }
@@ -932,28 +935,31 @@ export function TableFloorPlan({
     };
   }, [blockPositions, floorHeight]);
 
-  // Load floor dimensions from localStorage on mount
+  // Load floor dimensions from database on mount or when eventId changes
   useEffect(() => {
-    const savedWidth = localStorage.getItem(FLOOR_WIDTH_STORAGE_KEY);
-    if (savedWidth) {
-      const width = parseInt(savedWidth, 10);
-      if (!isNaN(width) && width >= MIN_FLOOR_WIDTH && width <= MAX_FLOOR_WIDTH) {
-        setFloorWidth(width);
-        setWidthInputValue(width.toString());
-        baseFloorDimensions.current.width = width;
-      }
-    }
+    async function loadDimensions() {
+      const result = await getCanvasDimensions(eventId);
+      if (result.success && result.width && result.height) {
+        setFloorWidth(result.width);
+        setWidthInputValue(result.width.toString());
+        baseFloorDimensions.current.width = result.width;
 
-    const savedHeight = localStorage.getItem(FLOOR_HEIGHT_STORAGE_KEY);
-    if (savedHeight) {
-      const height = parseInt(savedHeight, 10);
-      if (!isNaN(height) && height >= MIN_FLOOR_HEIGHT && height <= MAX_FLOOR_HEIGHT) {
-        setFloorHeight(height);
-        setHeightInputValue(height.toString());
-        baseFloorDimensions.current.height = height;
+        setFloorHeight(result.height);
+        setHeightInputValue(result.height.toString());
+        baseFloorDimensions.current.height = result.height;
+      } else {
+        // Use defaults if no saved value
+        setFloorWidth(DEFAULT_FLOOR_WIDTH);
+        setWidthInputValue(DEFAULT_FLOOR_WIDTH.toString());
+        baseFloorDimensions.current.width = DEFAULT_FLOOR_WIDTH;
+
+        setFloorHeight(DEFAULT_FLOOR_HEIGHT);
+        setHeightInputValue(DEFAULT_FLOOR_HEIGHT.toString());
+        baseFloorDimensions.current.height = DEFAULT_FLOOR_HEIGHT;
       }
     }
-  }, []);
+    loadDimensions();
+  }, [eventId]);
 
   // Update base dimensions when dimensions change
   useEffect(() => {
@@ -1031,8 +1037,9 @@ export function TableFloorPlan({
 
     setFloorHeight(height);
     setHeightInputValue(height.toString());
-    localStorage.setItem(FLOOR_HEIGHT_STORAGE_KEY, height.toString());
     baseFloorDimensions.current.height = height;
+
+    // Save to database (debounced via the effect below)
   }, [floorHeight, tables, venueBlocks, localPositions, blockPositions, tableSizes, getTablePosition, getBlockPosition]);
 
   // Handle input field change for height
@@ -1098,12 +1105,13 @@ export function TableFloorPlan({
 
     setFloorWidth(width);
     setWidthInputValue(width.toString());
-    localStorage.setItem(FLOOR_WIDTH_STORAGE_KEY, width.toString());
     // Update base dimensions
     baseFloorDimensions.current = {
       width,
       height: floorHeight,
     };
+
+    // Save to database (debounced via the effect below)
   }, [floorWidth, floorHeight, tables, venueBlocks, localPositions, blockPositions, tableSizes, getTablePosition, getBlockPosition]);
 
   // Handle input field change for width
@@ -1119,39 +1127,47 @@ export function TableFloorPlan({
   const toggleFullscreen = useCallback(() => {
     setIsFullscreen((prev) => {
       if (prev) {
-        // Exiting fullscreen - restore saved dimensions
-        const savedWidth = localStorage.getItem(FLOOR_WIDTH_STORAGE_KEY);
-        if (savedWidth) {
-          const width = parseInt(savedWidth, 10);
-          if (!isNaN(width) && width >= MIN_FLOOR_WIDTH && width <= MAX_FLOOR_WIDTH) {
-            setFloorWidth(width);
-          }
-        } else {
-          setFloorWidth(DEFAULT_FLOOR_WIDTH);
-        }
-
-        const savedHeight = localStorage.getItem(FLOOR_HEIGHT_STORAGE_KEY);
-        if (savedHeight) {
-          const height = parseInt(savedHeight, 10);
-          if (!isNaN(height) && height >= MIN_FLOOR_HEIGHT && height <= MAX_FLOOR_HEIGHT) {
-            setFloorHeight(height);
-          }
-        } else {
-          setFloorHeight(DEFAULT_FLOOR_HEIGHT);
-        }
+        // Exiting fullscreen - restore saved dimensions from baseFloorDimensions
+        setFloorWidth(baseFloorDimensions.current.width);
+        setFloorHeight(baseFloorDimensions.current.height);
       }
       return !prev;
     });
   }, []);
 
+  // Debounced save to database when dimensions change
+  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  useEffect(() => {
+    // Skip initial render and fullscreen mode
+    if (isFullscreen) return;
+
+    // Clear previous timeout
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+
+    // Debounce save - wait 1 second after last change
+    saveTimeoutRef.current = setTimeout(async () => {
+      await updateCanvasDimensions(eventId, floorWidth, floorHeight);
+    }, 1000);
+
+    return () => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+    };
+  }, [eventId, floorWidth, floorHeight, isFullscreen]);
+
   const hasUnsavedChanges = localPositions.size > 0 || blockPositions.size > 0 || tableSizes.size > 0 || blockSizes.size > 0 || tableRotations.size > 0 || blockRotations.size > 0;
   const totalUnsavedCount = localPositions.size + blockPositions.size + tableSizes.size + blockSizes.size + tableRotations.size + blockRotations.size;
 
-  // Small distance allows clicks for popover while enabling smooth drag
+  // Combined activation: instant on move OR hold to activate
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
-        distance: 3, // Must move 3px to start drag - allows clicks through
+        distance: 1, // Drag activates with 1px movement (instant feel)
+        delay: 100, // OR drag activates after 150ms hold
+        tolerance: 5, // Allow 5px jitter during hold
       },
     })
   );
@@ -1488,7 +1504,7 @@ export function TableFloorPlan({
                 onResizeEnd={handleResizeEnd}
                 onRotate={handleRotate}
                 isResizing={isResizing}
-                onSeatClick={handleSeatClick}
+                onChairClick={handleChairClick}
               />
             );
           })
@@ -1572,18 +1588,12 @@ export function TableFloorPlan({
               const size = tableSizes.get(table.id) || { width: table.width || 100, height: table.height || 100 };
               const rotation = tableRotations.get(table.id) ?? table.rotation ?? 0;
 
-              // Prepare seats data
-              const tableSeats = (table.seats || []).map((seat) => ({
-                id: seat.id,
-                seatNumber: seat.seatNumber,
-                relativeX: seat.relativeX,
-                relativeY: seat.relativeY,
-                angle: seat.angle,
-                guest: seat.guest ? {
-                  id: seat.guest.id,
-                  name: seat.guest.name,
-                  rsvpStatus: seat.guest.rsvpStatus || "PENDING",
-                } : null,
+              // Convert assignments to format for TableWithSeats
+              const dragAssignments: ChairGuest[] = table.assignments.map((assignment) => ({
+                id: assignment.guest.id,
+                name: assignment.guest.name,
+                rsvpStatus: (assignment.guest.rsvp?.status as ChairGuest['rsvpStatus']) || "PENDING",
+                guestCount: assignment.guest.rsvp?.guestCount || assignment.guest.expectedGuests || 1,
               }));
 
               return (
@@ -1607,12 +1617,13 @@ export function TableFloorPlan({
                         name: table.name,
                         capacity: table.capacity,
                         shape: table.shape || "circle",
+                        seatingArrangement: table.seatingArrangement || "even",
                         colorTheme: (table.colorTheme as TableColorTheme) || "default",
                         width: size.width,
                         height: size.height,
                         rotation: 0,
                       }}
-                      seats={tableSeats}
+                      assignments={dragAssignments}
                       positionX={0}
                       positionY={0}
                     />
@@ -1892,18 +1903,19 @@ export function TableFloorPlan({
         </div>
       </div>
 
-      {/* Seat Assignment Dialog */}
-      {selectedSeat && (
-        <AssignSeatDialog
-          open={assignSeatDialogOpen}
-          onOpenChange={setAssignSeatDialogOpen}
-          seatId={selectedSeat.seatId}
-          seatNumber={selectedSeat.seatNumber}
-          tableName={selectedSeat.tableName}
-          currentGuest={selectedSeatGuest}
+      {/* Chair Assignment Dialog */}
+      {selectedChair && (
+        <ManageTableGuestDialog
+          open={chairDialogOpen}
+          onOpenChange={setChairDialogOpen}
+          tableId={selectedChair.tableId}
+          tableName={selectedChair.tableName}
+          chairIndex={selectedChair.chairIndex}
+          currentGuest={selectedChairGuest}
           availableGuests={availableGuests}
-          onAssign={handleAssignSeat}
-          onUnassign={handleUnassignSeat}
+          onAssign={handleAssignGuest}
+          onReplace={handleReplaceGuest}
+          onUnassign={handleUnassignGuest}
         />
       )}
 

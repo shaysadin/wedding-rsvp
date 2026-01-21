@@ -873,6 +873,9 @@ export async function createVenueBlock(input: CreateVenueBlockInput) {
         name: validatedData.name,
         type: validatedData.type,
         shape: validatedData.shape,
+        colorTheme: validatedData.colorTheme || "default",
+        width: validatedData.width || 100,
+        height: validatedData.height || 100,
       },
     });
 
@@ -2230,6 +2233,85 @@ export async function autoArrangeTablesWithConfigs(input: AutoArrangeWithConfigs
   } catch (error) {
     console.error("Error auto-arranging tables with configs:", error);
     return { error: "Failed to auto-arrange tables" };
+  }
+}
+
+// ============ CANVAS DIMENSIONS ============
+
+export async function getCanvasDimensions(eventId: string) {
+  try {
+    const user = await getCurrentUser();
+
+    const hasWeddingOwnerRole = user?.roles?.includes(UserRole.ROLE_WEDDING_OWNER);
+    if (!user || !hasWeddingOwnerRole) {
+      return { error: "Unauthorized" };
+    }
+
+    const event = await prisma.weddingEvent.findFirst({
+      where: { id: eventId, ownerId: user.id },
+      select: {
+        seatingCanvasWidth: true,
+        seatingCanvasHeight: true,
+      },
+    });
+
+    if (!event) {
+      return { error: "Event not found" };
+    }
+
+    return {
+      success: true,
+      width: event.seatingCanvasWidth,
+      height: event.seatingCanvasHeight,
+    };
+  } catch (error) {
+    console.error("Error getting canvas dimensions:", error);
+    return { error: "Failed to get canvas dimensions" };
+  }
+}
+
+export async function updateCanvasDimensions(
+  eventId: string,
+  width: number,
+  height: number
+) {
+  try {
+    const user = await getCurrentUser();
+
+    const hasWeddingOwnerRole = user?.roles?.includes(UserRole.ROLE_WEDDING_OWNER);
+    if (!user || !hasWeddingOwnerRole) {
+      return { error: "Unauthorized" };
+    }
+
+    // Validate dimensions
+    const MIN_WIDTH = 600;
+    const MAX_WIDTH = 4000;
+    const MIN_HEIGHT = 300;
+    const MAX_HEIGHT = 3000;
+
+    const validWidth = Math.max(MIN_WIDTH, Math.min(MAX_WIDTH, width));
+    const validHeight = Math.max(MIN_HEIGHT, Math.min(MAX_HEIGHT, height));
+
+    const event = await prisma.weddingEvent.updateMany({
+      where: { id: eventId, ownerId: user.id },
+      data: {
+        seatingCanvasWidth: validWidth,
+        seatingCanvasHeight: validHeight,
+      },
+    });
+
+    if (event.count === 0) {
+      return { error: "Event not found" };
+    }
+
+    return {
+      success: true,
+      width: validWidth,
+      height: validHeight,
+    };
+  } catch (error) {
+    console.error("Error updating canvas dimensions:", error);
+    return { error: "Failed to update canvas dimensions" };
   }
 }
 

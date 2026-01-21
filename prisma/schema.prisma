@@ -219,6 +219,9 @@ model WeddingEvent {
   rsvpDeclinedMessage     String?               @map("rsvp_declined_message")
   rsvpMaybeMessage        String?               @map("rsvp_maybe_message")
   rsvpMaybeReminderDelay  Int                   @default(24) @map("rsvp_maybe_reminder_delay") // Hours until follow-up reminder
+  // Seating canvas dimensions
+  seatingCanvasWidth      Int                   @default(1200) @map("seating_canvas_width")
+  seatingCanvasHeight     Int                   @default(800) @map("seating_canvas_height")
   bulkMessageJobs         BulkMessageJob[]
   costLogs                CostLog[]
   guests                  Guest[]
@@ -810,6 +813,7 @@ model VenueBlock {
   createdAt      DateTime     @default(now()) @map("created_at")
   updatedAt      DateTime     @default(now()) @updatedAt @map("updated_at")
   shape          String       @default("rectangle")
+  colorTheme     String       @default("default") @map("color_theme")
   weddingEvent   WeddingEvent @relation(fields: [weddingEventId], references: [id], onDelete: Cascade)
 
   @@index([weddingEventId])

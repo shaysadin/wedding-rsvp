@@ -32,6 +32,7 @@ import {
   CircleDot,
   Play,
   HelpCircle,
+  ClipboardList,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -110,6 +111,8 @@ interface SerializedEvent {
   rsvpDeclinedMessage: string | null;
   rsvpMaybeMessage: string | null;
   rsvpMaybeReminderDelay: number;
+  seatingCanvasWidth: number;
+  seatingCanvasHeight: number;
 }
 
 interface EventDashboardContentProps {
@@ -265,6 +268,14 @@ export function EventDashboardContent({
       disabled: !firstGuestSlug,
       glowColor: "#06b6d4", // cyan
     },
+    {
+      label: isRTL ? "אשת קבלה" : "Hostess",
+      icon: ClipboardList,
+      href: `/${locale}/hostess/${event.id}`,
+      external: true,
+      disabled: false,
+      glowColor: "#ec4899", // pink
+    },
   ];
 
   // Navigation cards - neutral with subtle icon colors
@@ -404,9 +415,9 @@ export function EventDashboardContent({
         </div>
       </motion.div>
 
-      {/* Quick Actions - 3 buttons in one line on mobile, regular size on desktop */}
+      {/* Quick Actions - 4 buttons in one line on mobile, regular size on desktop */}
       <motion.div variants={itemVariants}>
-        <div className="grid grid-cols-3 gap-2 sm:flex sm:flex-wrap sm:gap-3">
+        <div className="grid grid-cols-4 gap-1.5 sm:flex sm:flex-wrap sm:gap-3">
           {quickActions.map((action) => (
             action.disabled ? (
               <GlowingButton

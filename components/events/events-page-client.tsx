@@ -32,6 +32,8 @@ interface EventWithStats {
   rsvpDeclinedMessage: string | null;
   rsvpMaybeMessage: string | null;
   rsvpMaybeReminderDelay: number;
+  seatingCanvasWidth: number;
+  seatingCanvasHeight: number;
   stats: {
     total: number;
     pending: number;

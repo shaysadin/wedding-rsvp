@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import {
   RefreshCw,
   Users,
@@ -12,7 +12,6 @@ import {
   Clock,
   MapPin,
   Calendar,
-  TrendingUp
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -168,7 +167,7 @@ export function HostessPageContent({
   return (
     <div className="min-h-screen bg-gradient-to-b from-zinc-50 to-white dark:from-zinc-950 dark:to-zinc-900" dir={isRTL ? "rtl" : "ltr"}>
       {/* Hero Header */}
-      <div className="bg-gradient-to-r from-violet-600 via-purple-600 to-indigo-600 text-white">
+      <div className="bg-gray-600 dark:bg-gray-700 text-white">
         <div className="container mx-auto px-4 py-6 sm:py-8 max-w-6xl">
           <motion.div
             initial={{ opacity: 0, y: -20 }}
@@ -214,48 +213,43 @@ export function HostessPageContent({
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.1 }}
-          className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6"
+          className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 mb-4"
         >
-          {/* Arrived - Main stat with progress */}
-          <Card className="col-span-2 lg:col-span-1 bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/50 dark:to-emerald-950/30 border-green-200 dark:border-green-800 shadow-lg">
-            <CardContent className="p-4 sm:p-5">
-              <div className="flex items-start justify-between mb-3">
+          {/* Arrived - with progress */}
+          <Card className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/50 dark:to-emerald-950/30 border-green-200 dark:border-green-800 shadow-md">
+            <CardContent className="p-3 sm:p-3">
+              <div className="flex items-start justify-between">
                 <div>
-                  <p className="text-xs sm:text-sm font-medium text-green-700 dark:text-green-400">{t.arrived}</p>
-                  <p className="text-3xl sm:text-4xl font-bold text-green-600 dark:text-green-500">
+                  <p className="text-xs font-medium text-green-700 dark:text-green-400">{t.arrived}</p>
+                  <p className="text-xl sm:text-2xl font-bold text-green-600 dark:text-green-500">
                     {stats.arrivedGuests}
                   </p>
                 </div>
-                <div className="p-2 bg-green-100 dark:bg-green-900/50 rounded-xl">
-                  <UserCheck className="h-6 w-6 text-green-600 dark:text-green-400" />
+                <div className="p-1.5 bg-green-100 dark:bg-green-900/50 rounded-lg">
+                  <UserCheck className="h-4 w-4 text-green-600 dark:text-green-400" />
                 </div>
               </div>
-              <div className="space-y-2">
-                <div className="flex items-center justify-between text-xs">
-                  <span className="text-green-600 dark:text-green-400">
-                    {isRTL ? `${arrivalPercentage}% מהאורחים` : `${arrivalPercentage}% of guests`}
-                  </span>
-                  <TrendingUp className="h-3 w-3 text-green-500" />
-                </div>
-                <Progress value={arrivalPercentage} className="h-2 bg-green-200 dark:bg-green-900" />
+              <div className="mt-1.5">
+                <Progress value={arrivalPercentage} className="h-1 bg-green-200 dark:bg-green-900" />
+                <p className="text-[10px] text-green-600 dark:text-green-400 mt-0.5">{arrivalPercentage}%</p>
               </div>
             </CardContent>
           </Card>
 
           {/* Total Guests */}
-          <Card className="bg-white dark:bg-zinc-900 shadow-lg border-zinc-200 dark:border-zinc-800">
-            <CardContent className="p-4 sm:p-5">
+          <Card className="bg-white dark:bg-zinc-900 shadow-md border-zinc-200 dark:border-zinc-800">
+            <CardContent className="p-3 sm:p-3">
               <div className="flex items-start justify-between">
                 <div>
-                  <p className="text-xs sm:text-sm font-medium text-muted-foreground">{t.totalGuests}</p>
-                  <p className="text-2xl sm:text-3xl font-bold">{stats.totalGuests}</p>
+                  <p className="text-xs font-medium text-muted-foreground">{t.totalGuests}</p>
+                  <p className="text-xl sm:text-2xl font-bold">{stats.totalGuests}</p>
                 </div>
-                <div className="p-2 bg-violet-100 dark:bg-violet-900/50 rounded-xl">
-                  <Users className="h-5 w-5 text-violet-600 dark:text-violet-400" />
+                <div className="p-1.5 bg-violet-100 dark:bg-violet-900/50 rounded-lg">
+                  <Users className="h-4 w-4 text-violet-600 dark:text-violet-400" />
                 </div>
               </div>
-              <div className="mt-2">
-                <Badge variant="secondary" className="text-xs">
+              <div className="mt-1.5">
+                <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
                   {isRTL ? "רשימות" : "Invitations"}
                 </Badge>
               </div>
@@ -263,19 +257,19 @@ export function HostessPageContent({
           </Card>
 
           {/* Expected People */}
-          <Card className="bg-white dark:bg-zinc-900 shadow-lg border-zinc-200 dark:border-zinc-800">
-            <CardContent className="p-4 sm:p-5">
+          <Card className="bg-white dark:bg-zinc-900 shadow-md border-zinc-200 dark:border-zinc-800">
+            <CardContent className="p-3 sm:p-3">
               <div className="flex items-start justify-between">
                 <div>
-                  <p className="text-xs sm:text-sm font-medium text-muted-foreground">{t.expected}</p>
-                  <p className="text-2xl sm:text-3xl font-bold">{stats.totalExpected}</p>
+                  <p className="text-xs font-medium text-muted-foreground">{t.expected}</p>
+                  <p className="text-xl sm:text-2xl font-bold">{stats.totalExpected}</p>
                 </div>
-                <div className="p-2 bg-amber-100 dark:bg-amber-900/50 rounded-xl">
-                  <Users className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+                <div className="p-1.5 bg-amber-100 dark:bg-amber-900/50 rounded-lg">
+                  <Users className="h-4 w-4 text-amber-600 dark:text-amber-400" />
                 </div>
               </div>
-              <div className="mt-2">
-                <Badge variant="secondary" className="text-xs">
+              <div className="mt-1.5">
+                <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
                   {isRTL ? "אנשים" : "People"}
                 </Badge>
               </div>
@@ -283,19 +277,19 @@ export function HostessPageContent({
           </Card>
 
           {/* Tables */}
-          <Card className="bg-white dark:bg-zinc-900 shadow-lg border-zinc-200 dark:border-zinc-800">
-            <CardContent className="p-4 sm:p-5">
+          <Card className="bg-white dark:bg-zinc-900 shadow-md border-zinc-200 dark:border-zinc-800">
+            <CardContent className="p-3 sm:p-3">
               <div className="flex items-start justify-between">
                 <div>
-                  <p className="text-xs sm:text-sm font-medium text-muted-foreground">{t.tables}</p>
-                  <p className="text-2xl sm:text-3xl font-bold">{stats.tablesCount}</p>
+                  <p className="text-xs font-medium text-muted-foreground">{t.tables}</p>
+                  <p className="text-xl sm:text-2xl font-bold">{stats.tablesCount}</p>
                 </div>
-                <div className="p-2 bg-blue-100 dark:bg-blue-900/50 rounded-xl">
-                  <TableProperties className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                <div className="p-1.5 bg-blue-100 dark:bg-blue-900/50 rounded-lg">
+                  <TableProperties className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                 </div>
               </div>
-              <div className="mt-2">
-                <Badge variant="secondary" className="text-xs">
+              <div className="mt-1.5">
+                <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
                   {isRTL ? "סידורי ישיבה" : "Seating"}
                 </Badge>
               </div>
@@ -360,38 +354,20 @@ export function HostessPageContent({
               </TabsTrigger>
             </TabsList>
 
-            <AnimatePresence mode="wait">
-              <TabsContent value="guests" className="mt-0">
-                <motion.div
-                  key="guests"
-                  initial={{ opacity: 0, x: isRTL ? 10 : -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: isRTL ? -10 : 10 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  <HostessGuestList
-                    guests={guests}
-                    tables={tables}
-                    locale={locale}
-                  />
-                </motion.div>
-              </TabsContent>
+            <TabsContent value="guests" className="mt-0">
+              <HostessGuestList
+                guests={guests}
+                tables={tables}
+                locale={locale}
+              />
+            </TabsContent>
 
-              <TabsContent value="tables" className="mt-0">
-                <motion.div
-                  key="tables"
-                  initial={{ opacity: 0, x: isRTL ? -10 : 10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: isRTL ? 10 : -10 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  <HostessTableView
-                    tables={tables}
-                    locale={locale}
-                  />
-                </motion.div>
-              </TabsContent>
-            </AnimatePresence>
+            <TabsContent value="tables" className="mt-0">
+              <HostessTableView
+                tables={tables}
+                locale={locale}
+              />
+            </TabsContent>
           </Tabs>
         </motion.div>
 
