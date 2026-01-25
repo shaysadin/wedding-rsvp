@@ -4,7 +4,9 @@ import { useState, useEffect, useMemo } from "react";
 import { useTranslations, useLocale } from "next-intl";
 import { toast } from "sonner";
 
-import { getGuestsForAssignment, assignGuestsToTable } from "@/actions/seating";
+import { X } from "lucide-react";
+
+import { getGuestsForAssignment, assignGuestsToTable, removeGuestFromTable } from "@/actions/seating";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -78,10 +80,11 @@ export function AssignGuestsDialog({
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [removingGuestId, setRemovingGuestId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [sideFilter, setSideFilter] = useState<string>("all");
   const [groupFilter, setGroupFilter] = useState<string>("all");
-  const [seatedFilter, setSeatedFilter] = useState<string>("unseated");
+  const [seatedFilter, setSeatedFilter] = useState<string>("all");
   const [rsvpFilter, setRsvpFilter] = useState<string>("all");
 
   // Load guests when dialog opens
@@ -109,6 +112,32 @@ export function AssignGuestsDialog({
     }
   }
 
+  // Guests currently assigned to this table
+  const currentTableGuests = useMemo(() => {
+    return guests.filter((g) => g.tableAssignment?.table?.id === tableId);
+  }, [guests, tableId]);
+
+  async function handleRemoveFromTable(guestId: string) {
+    setRemovingGuestId(guestId);
+    try {
+      const result = await removeGuestFromTable({ guestId });
+      if (result.error) {
+        toast.error(result.error);
+      } else {
+        toast.success(t("guestRemoved"));
+        // Update local state
+        setGuests((prev) =>
+          prev.map((g) => g.id === guestId ? { ...g, tableAssignment: null } : g)
+        );
+        window.dispatchEvent(new CustomEvent("seating-data-changed"));
+      }
+    } catch {
+      toast.error(tc("error"));
+    } finally {
+      setRemovingGuestId(null);
+    }
+  }
+
   // Get unique sides and groups for filters
   const { sides, groups } = useMemo(() => {
     const sideSet = new Set<string>();
@@ -123,9 +152,13 @@ export function AssignGuestsDialog({
     };
   }, [guests]);
 
-  // Filter guests
+  // Filter guests (excluding those already at this table - they're managed above)
   const filteredGuests = useMemo(() => {
     return guests.filter((g) => {
+      // Exclude guests at this table (managed in section above)
+      if (g.tableAssignment?.table?.id === tableId) {
+        return false;
+      }
       // Search filter
       if (search && !g.name.toLowerCase().includes(search.toLowerCase())) {
         return false;
@@ -154,7 +187,7 @@ export function AssignGuestsDialog({
       }
       return true;
     });
-  }, [guests, search, sideFilter, groupFilter, seatedFilter, rsvpFilter]);
+  }, [guests, search, sideFilter, groupFilter, seatedFilter, rsvpFilter, tableId]);
 
   // Calculate selected seats
   const selectedSeats = useMemo(() => {
@@ -250,6 +283,57 @@ export function AssignGuestsDialog({
               {t("assignDialog.selectedGuests", { count: selectedIds.size })}
             </span>
           </div>
+
+          {/* Current Table Guests */}
+          {currentTableGuests.length > 0 && (
+            <div className="shrink-0 border rounded-lg overflow-hidden">
+              <div className="flex items-center justify-between px-3 py-2 bg-muted/50 border-b">
+                <span className="text-sm font-medium">
+                  {t("modal.guestsAtTable")} ({currentTableGuests.length})
+                </span>
+              </div>
+              <div className="max-h-[150px] overflow-y-auto">
+                <div className="divide-y">
+                  {currentTableGuests.map((guest) => {
+                    const isRemoving = removingGuestId === guest.id;
+                    return (
+                      <div
+                        key={guest.id}
+                        className="flex items-center gap-3 px-3 py-2 hover:bg-muted/30 transition-colors"
+                      >
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium text-sm truncate">{guest.name}</span>
+                            {guest.seatsNeeded > 1 && (
+                              <Badge variant="outline" className="text-[10px]">
+                                {t("partySize", { count: guest.seatsNeeded })}
+                              </Badge>
+                            )}
+                            <Badge variant={getRsvpBadgeVariant(guest.rsvp?.status)} className="text-[10px]">
+                              {tStatus(guest.rsvp?.status?.toLowerCase() || "pending")}
+                            </Badge>
+                          </div>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive shrink-0"
+                          disabled={isRemoving}
+                          onClick={() => handleRemoveFromTable(guest.id)}
+                        >
+                          {isRemoving ? (
+                            <Icons.spinner className="h-3.5 w-3.5 animate-spin" />
+                          ) : (
+                            <X className="h-3.5 w-3.5" />
+                          )}
+                        </Button>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Filters */}
           <div className="flex flex-wrap items-center gap-2 shrink-0">

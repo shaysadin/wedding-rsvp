@@ -248,6 +248,9 @@ export async function getEventById(eventId: string) {
               },
               orderBy: { createdAt: "desc" },
             },
+            tableAssignment: {
+              include: { table: { select: { name: true } } },
+            },
           },
         },
         _count: {

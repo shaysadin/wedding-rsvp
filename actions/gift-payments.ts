@@ -64,6 +64,7 @@ export async function initiateGiftPayment(data: {
   amount: number;
   currency?: string;
   message?: string;
+  senderName?: string;
 }) {
   try {
     // Look up guest by slug
@@ -102,12 +103,15 @@ export async function initiateGiftPayment(data: {
     const serviceFee = feeResult.serviceFee;
     const total = feeResult.total;
 
+    // Use sender name from form, fallback to guest name
+    const senderName = data.senderName || guest.name;
+
     // Create gift payment record
     const giftPayment = await prisma.giftPayment.create({
       data: {
         weddingEventId: eventId,
         guestId: guest.id,
-        guestName: guest.name,
+        guestName: senderName,
         guestEmail: guest.email,
         guestPhone: guest.phoneNumber,
         amount: data.amount,
@@ -128,7 +132,7 @@ export async function initiateGiftPayment(data: {
       amount: total,
       currency: settings.currency,
       giftPaymentId: giftPayment.id,
-      guestName: guest.name,
+      guestName: senderName,
       guestEmail: guest.email || undefined,
       guestPhone: guest.phoneNumber || undefined,
       description: `Gift for ${guest.weddingEvent.title}`,
@@ -274,6 +278,8 @@ export async function updateGiftPaymentSettings(
     currency?: string;
     thankYouMessage?: string;
     thankYouMessageHe?: string;
+    useExternalProvider?: boolean;
+    externalProviderUrl?: string;
   }
 ) {
   try {

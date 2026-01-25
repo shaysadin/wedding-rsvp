@@ -23,7 +23,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { HostessGuestList } from "@/components/hostess/hostess-guest-list";
-import { HostessTableView } from "@/components/hostess/hostess-table-view";
+import { HostessFloorPlan } from "@/components/hostess/hostess-floor-plan";
+import { HostessTableModal } from "@/components/hostess/hostess-table-modal";
 
 interface Event {
   id: string;
@@ -50,6 +51,14 @@ interface TableWithDetails {
   id: string;
   name: string;
   capacity: number;
+  shape: string;
+  seatingArrangement?: string;
+  colorTheme?: string;
+  positionX: number;
+  positionY: number;
+  width: number;
+  height: number;
+  rotation: number;
   seatsUsed: number;
   seatsAvailable: number;
   guestCount: number;
@@ -67,6 +76,18 @@ interface TableWithDetails {
   isFull: boolean;
 }
 
+interface VenueBlock {
+  id: string;
+  name: string;
+  type: string;
+  shape: string;
+  positionX: number;
+  positionY: number;
+  width: number;
+  height: number;
+  rotation: number;
+}
+
 interface Stats {
   totalGuests: number;
   arrivedGuests: number;
@@ -79,7 +100,10 @@ interface HostessPageContentProps {
   initialEvent: Event;
   initialGuests: GuestWithDetails[];
   initialTables: TableWithDetails[];
+  initialVenueBlocks: VenueBlock[];
   initialStats: Stats;
+  canvasWidth: number;
+  canvasHeight: number;
   locale: string;
 }
 
@@ -88,7 +112,10 @@ export function HostessPageContent({
   initialEvent,
   initialGuests,
   initialTables,
+  initialVenueBlocks,
   initialStats,
+  canvasWidth,
+  canvasHeight,
   locale,
 }: HostessPageContentProps) {
   const isRTL = locale === "he";
@@ -96,10 +123,12 @@ export function HostessPageContent({
   const [event] = useState<Event>(initialEvent);
   const [guests, setGuests] = useState<GuestWithDetails[]>(initialGuests);
   const [tables, setTables] = useState<TableWithDetails[]>(initialTables);
+  const [venueBlocks] = useState<VenueBlock[]>(initialVenueBlocks);
   const [stats, setStats] = useState<Stats>(initialStats);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
   const [activeTab, setActiveTab] = useState<string>("guests");
+  const [expandedTableId, setExpandedTableId] = useState<string | null>(null);
 
   // Translations
   const t = {
@@ -156,6 +185,40 @@ export function HostessPageContent({
     window.addEventListener("hostess-data-changed", handleRefresh);
     return () => {
       window.removeEventListener("hostess-data-changed", handleRefresh);
+    };
+  }, [refreshData]);
+
+  // Real-time polling with visibility API
+  useEffect(() => {
+    let intervalId: NodeJS.Timeout | null = null;
+
+    const startPolling = () => {
+      if (intervalId) return;
+      intervalId = setInterval(refreshData, 5000);
+    };
+
+    const stopPolling = () => {
+      if (intervalId) {
+        clearInterval(intervalId);
+        intervalId = null;
+      }
+    };
+
+    const handleVisibility = () => {
+      if (document.hidden) {
+        stopPolling();
+      } else {
+        refreshData();
+        startPolling();
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibility);
+    startPolling();
+
+    return () => {
+      stopPolling();
+      document.removeEventListener("visibilitychange", handleVisibility);
     };
   }, [refreshData]);
 
@@ -305,6 +368,10 @@ export function HostessPageContent({
           className="flex items-center justify-between mb-4 px-1"
         >
           <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
+            <div className="flex items-center gap-1.5">
+              <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+              <span className="text-xs text-green-600">{isRTL ? "חי" : "Live"}</span>
+            </div>
             <Clock className="h-3.5 w-3.5" />
             <span>{t.lastUpdated} {formatLastUpdated()}</span>
           </div>
@@ -363,9 +430,21 @@ export function HostessPageContent({
             </TabsContent>
 
             <TabsContent value="tables" className="mt-0">
-              <HostessTableView
+              <HostessFloorPlan
                 tables={tables}
+                venueBlocks={venueBlocks}
+                canvasWidth={canvasWidth}
+                canvasHeight={canvasHeight}
                 locale={locale}
+                onTableClick={(id) => setExpandedTableId(id)}
+              />
+              <HostessTableModal
+                table={tables.find((t) => t.id === expandedTableId) || null}
+                tables={tables}
+                allGuests={guests}
+                locale={locale}
+                open={!!expandedTableId}
+                onClose={() => setExpandedTableId(null)}
               />
             </TabsContent>
           </Tabs>

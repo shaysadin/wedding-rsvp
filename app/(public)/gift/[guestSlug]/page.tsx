@@ -41,7 +41,7 @@ export default async function GiftPage({ params, searchParams }: GiftPageProps) 
     isEnabled: settings.isEnabled,
     minAmount: Number(settings.minAmount),
     maxAmount: Number(settings.maxAmount),
-    suggestedAmounts: (settings.suggestedAmounts as number[]) || [100, 250, 500, 1000],
+    suggestedAmounts: (settings.suggestedAmounts as number[]) || [400, 500, 800, 1000],
     currency: settings.currency,
   };
 

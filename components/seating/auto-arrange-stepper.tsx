@@ -46,6 +46,7 @@ interface TableConfiguration {
   sizePreset: SizePreset;
   width: number;
   height: number;
+  groupAssignments: string[];
 }
 
 interface GuestForPreview {
@@ -58,6 +59,9 @@ interface GuestForPreview {
   rsvp?: {
     status: string;
     guestCount: number;
+  } | null;
+  tableAssignment?: {
+    table: { id: string; name: string };
   } | null;
 }
 
@@ -102,8 +106,13 @@ export function AutoArrangeStepper({
       sizePreset: "medium",
       width: SIZE_PRESETS.circle.medium.width,
       height: SIZE_PRESETS.circle.medium.height,
+      groupAssignments: [],
     },
   ]);
+
+  // Step 4: Arrange mode and remaining guests options
+  const [arrangeMode, setArrangeMode] = useState<"add" | "replace">("add");
+  const [mixRemaining, setMixRemaining] = useState(true);
 
   // Load guests when dialog opens
   useEffect(() => {
@@ -170,15 +179,71 @@ export function AutoArrangeStepper({
     const totalSeats = filteredGuests.reduce((sum, g) => sum + g.seatsNeeded, 0);
     const totalConfiguredTables = tableConfigs.reduce((sum, config) => sum + config.count, 0);
     const totalConfiguredSeats = tableConfigs.reduce((sum, config) => sum + (config.capacity * config.count), 0);
+    const alreadySeated = filteredGuests.filter((g) => g.tableAssignment).length;
+    const toBeSeated = arrangeMode === "replace" ? totalGuests : totalGuests - alreadySeated;
+    const seatsNeededForMode = arrangeMode === "replace"
+      ? totalSeats
+      : filteredGuests.filter((g) => !g.tableAssignment).reduce((sum, g) => sum + g.seatsNeeded, 0);
+
+    // Calculate remaining guests that won't fit in configured tables
+    // 1. For group-assigned configs: calculate per-group capacity and overflow
+    const eligibleGuests = filteredGuests.filter((g) => arrangeMode === "replace" || !g.tableAssignment);
+
+    // Track total capacity allocated per group across all configs
+    const groupCapacity = new Map<string, number>();
+    for (const config of tableConfigs) {
+      if (config.groupAssignments.length > 0) {
+        // Each group gets tables proportional to need, at least 1 table
+        const tablesPerGroup = Math.max(1, Math.floor(config.count / config.groupAssignments.length));
+        for (const group of config.groupAssignments) {
+          groupCapacity.set(group, (groupCapacity.get(group) || 0) + tablesPerGroup * config.capacity);
+        }
+      }
+    }
+
+    // Count group overflow (guests exceeding their group's allocated capacity)
+    let groupOverflow = 0;
+    let guestsInGroups = 0;
+    for (const [groupName, capacity] of groupCapacity) {
+      const groupGuests = eligibleGuests.filter((g) => g.groupName === groupName);
+      const seatsNeeded = groupGuests.reduce((sum, g) => sum + g.seatsNeeded, 0);
+      guestsInGroups += groupGuests.length;
+      if (seatsNeeded > capacity) {
+        // Estimate overflow guests (guests that won't fit)
+        let seated = 0;
+        for (const g of groupGuests) {
+          if (seated + g.seatsNeeded <= capacity) {
+            seated += g.seatsNeeded;
+          } else {
+            groupOverflow++;
+          }
+        }
+      }
+    }
+
+    // Guests not in any assigned group
+    const guestsNotInAnyGroup = toBeSeated - guestsInGroups;
+
+    // Open config seats (configs with no group assignments)
+    const openConfigSeats = tableConfigs
+      .filter((c) => c.groupAssignments.length === 0)
+      .reduce((sum, c) => sum + c.capacity * c.count, 0);
+
+    // Remaining = group overflow + unassigned guests that don't fit in open configs
+    const remainingGuests = groupOverflow + Math.max(0, guestsNotInAnyGroup - openConfigSeats);
 
     return {
       totalGuests,
       totalSeats,
       totalConfiguredTables,
       totalConfiguredSeats,
-      hasEnoughSeats: totalConfiguredSeats >= totalSeats,
+      hasEnoughSeats: totalConfiguredSeats >= seatsNeededForMode,
+      alreadySeated,
+      toBeSeated,
+      seatsNeededForMode,
+      remainingGuests,
     };
-  }, [filteredGuests, tableConfigs]);
+  }, [filteredGuests, tableConfigs, arrangeMode]);
 
   // Group guests by group name then side for preview (moved to top level to follow Rules of Hooks)
   const guestsByGroup = useMemo(() => {
@@ -240,6 +305,7 @@ export function AutoArrangeStepper({
         sizePreset: defaultPreset,
         width: SIZE_PRESETS[defaultShape][defaultPreset].width,
         height: SIZE_PRESETS[defaultShape][defaultPreset].height,
+        groupAssignments: [],
       },
     ]);
   }
@@ -305,8 +371,10 @@ export function AutoArrangeStepper({
           count: config.count,
           width: config.width,
           height: config.height,
+          groupAssignments: config.groupAssignments.length > 0 ? config.groupAssignments : undefined,
         })),
-        clearExisting: true,
+        clearExisting: arrangeMode === "replace",
+        mixRemaining,
       });
 
       if (result.error) {
@@ -551,6 +619,44 @@ export function AutoArrangeStepper({
                   />
                 </div>
               </div>
+
+              {/* Group Assignments */}
+              {groups.length > 0 && (
+                <div className="mt-3 space-y-1">
+                  <Label className="text-xs">{t("autoArrange.assignGroups")}</Label>
+                  <div className="flex flex-wrap gap-1.5">
+                    {groups.map((group) => {
+                      const isSelected = config.groupAssignments.includes(group);
+                      const groupLabel = PREDEFINED_GROUPS.includes(group.toLowerCase())
+                        ? tGuests(`groups.${group.toLowerCase()}` as "groups.family" | "groups.friends" | "groups.work" | "groups.other")
+                        : group;
+                      return (
+                        <button
+                          key={group}
+                          type="button"
+                          onClick={() => {
+                            const newGroups = isSelected
+                              ? config.groupAssignments.filter((g) => g !== group)
+                              : [...config.groupAssignments, group];
+                            updateTableConfig(config.id, { groupAssignments: newGroups });
+                          }}
+                          className={cn(
+                            "text-xs px-2 py-1 rounded-md border transition-colors",
+                            isSelected
+                              ? "bg-primary text-primary-foreground border-primary"
+                              : "bg-background hover:bg-muted border-border"
+                          )}
+                        >
+                          {groupLabel}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {t("autoArrange.assignGroupsHint")}
+                  </p>
+                </div>
+              )}
             </div>
           ))}
         </div>
@@ -657,23 +763,64 @@ export function AutoArrangeStepper({
           <p className="text-sm text-muted-foreground">{t("autoArrange.step4Description")}</p>
         </div>
 
-        {/* Warning Alert */}
-        <Alert variant="destructive">
-          <Icons.alertTriangle className="h-4 w-4" />
-          <AlertTitle>{t("autoArrange.warningTitle")}</AlertTitle>
-          <AlertDescription>
-            {t("autoArrange.warningDescription")}
-          </AlertDescription>
-        </Alert>
+        {/* Arrange Mode Selection */}
+        <div className="rounded-lg border p-3 space-y-3">
+          <p className="text-sm font-medium">{t("autoArrange.arrangeModeTitle")}</p>
+          <div className="space-y-2">
+            <label className="flex items-start gap-3 cursor-pointer p-2 rounded-md hover:bg-muted transition-colors">
+              <input
+                type="radio"
+                name="arrangeMode"
+                checked={arrangeMode === "add"}
+                onChange={() => setArrangeMode("add")}
+                className="mt-0.5 h-4 w-4"
+              />
+              <div>
+                <span className="text-sm font-medium">{t("autoArrange.modeAdd")}</span>
+                <p className="text-xs text-muted-foreground">{t("autoArrange.modeAddDesc")}</p>
+              </div>
+            </label>
+            <label className="flex items-start gap-3 cursor-pointer p-2 rounded-md hover:bg-muted transition-colors">
+              <input
+                type="radio"
+                name="arrangeMode"
+                checked={arrangeMode === "replace"}
+                onChange={() => setArrangeMode("replace")}
+                className="mt-0.5 h-4 w-4"
+              />
+              <div>
+                <span className="text-sm font-medium">{t("autoArrange.modeReplace")}</span>
+                <p className="text-xs text-muted-foreground">{t("autoArrange.modeReplaceDesc")}</p>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        {/* Warning only for replace mode */}
+        {arrangeMode === "replace" && (
+          <Alert variant="destructive">
+            <Icons.alertTriangle className="h-4 w-4" />
+            <AlertTitle>{t("autoArrange.warningTitle")}</AlertTitle>
+            <AlertDescription>
+              {t("autoArrange.warningDescription")}
+            </AlertDescription>
+          </Alert>
+        )}
 
         {/* Summary */}
         <div className="rounded-lg bg-muted p-4 space-y-3">
           <h4 className="font-medium">{t("autoArrange.summary")}</h4>
 
           <div className="space-y-2 text-sm">
+            {arrangeMode === "add" && previewStats.alreadySeated > 0 && (
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">{t("autoArrange.alreadySeated")}:</span>
+                <span className="font-medium">{previewStats.alreadySeated}</span>
+              </div>
+            )}
             <div className="flex justify-between">
-              <span className="text-muted-foreground">{t("autoArrange.guestsToSeat")}:</span>
-              <span className="font-medium">{previewStats.totalGuests} ({previewStats.totalSeats} {t("autoArrange.seats")})</span>
+              <span className="text-muted-foreground">{t("autoArrange.toBeSeated")}:</span>
+              <span className="font-medium">{previewStats.toBeSeated} ({previewStats.seatsNeededForMode} {t("autoArrange.seats")})</span>
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">{t("autoArrange.tablesToCreate")}:</span>
@@ -694,17 +841,59 @@ export function AutoArrangeStepper({
           <div className="border-t pt-2 mt-2">
             <p className="text-xs text-muted-foreground mb-2">{t("autoArrange.tableBreakdown")}:</p>
             <div className="space-y-1">
-              {tableConfigs.map((config, idx) => (
+              {tableConfigs.map((config) => (
                 <div key={config.id} className="flex items-center gap-2 text-xs">
                   <span className="w-4 h-4 rounded bg-primary/10 flex items-center justify-center text-primary">
                     {config.count}
                   </span>
-                  <span>x {t(`shapes.${config.shape}`)} ({config.capacity} {t("autoArrange.seats")})</span>
+                  <span>
+                    x {t(`shapes.${config.shape}`)} ({config.capacity} {t("autoArrange.seats")})
+                    {config.groupAssignments.length > 0 && (
+                      <span className="text-muted-foreground ms-1">
+                        [{config.groupAssignments.map((g) =>
+                          PREDEFINED_GROUPS.includes(g.toLowerCase())
+                            ? tGuests(`groups.${g.toLowerCase()}` as "groups.family" | "groups.friends" | "groups.work" | "groups.other")
+                            : g
+                        ).join(", ")}]
+                      </span>
+                    )}
+                  </span>
                 </div>
               ))}
             </div>
           </div>
         </div>
+
+        {/* Remaining guests option */}
+        {previewStats.remainingGuests > 0 && (
+          <div className="rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20 p-3 space-y-2">
+            <p className="text-sm font-medium text-amber-800 dark:text-amber-200">
+              {t("autoArrange.remainingGuests", { count: previewStats.remainingGuests })}
+            </p>
+            <div className="space-y-1.5">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="radio"
+                  name="mixRemaining"
+                  checked={mixRemaining}
+                  onChange={() => setMixRemaining(true)}
+                  className="h-4 w-4"
+                />
+                <span className="text-sm">{t("autoArrange.mixRemaining")}</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="radio"
+                  name="mixRemaining"
+                  checked={!mixRemaining}
+                  onChange={() => setMixRemaining(false)}
+                  className="h-4 w-4"
+                />
+                <span className="text-sm">{t("autoArrange.leaveUnassigned")}</span>
+              </label>
+            </div>
+          </div>
+        )}
       </div>
     );
   }
@@ -780,8 +969,8 @@ export function AutoArrangeStepper({
               ) : (
                 <Button
                   onClick={handleSubmit}
-                  disabled={isProcessing || !previewStats.hasEnoughSeats}
-                  variant="destructive"
+                  disabled={isProcessing || (previewStats.toBeSeated > 0 && !previewStats.hasEnoughSeats && !mixRemaining)}
+                  variant={arrangeMode === "replace" ? "destructive" : "default"}
                 >
                   {isProcessing && <Icons.spinner className="me-2 h-4 w-4 animate-spin" />}
                   {t("autoArrange.create")}

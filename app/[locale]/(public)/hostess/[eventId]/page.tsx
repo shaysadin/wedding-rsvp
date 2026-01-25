@@ -44,7 +44,10 @@ export default async function HostessPage({ params, searchParams }: HostessPageP
       initialEvent={event}
       initialGuests={guests}
       initialTables={tables}
+      initialVenueBlocks={result.venueBlocks || []}
       initialStats={stats}
+      canvasWidth={event.seatingCanvasWidth || 1200}
+      canvasHeight={event.seatingCanvasHeight || 800}
       locale={displayLocale}
     />
   );

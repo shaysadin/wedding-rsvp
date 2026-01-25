@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, Check, UserCheck, ArrowRight, ArrowLeft, Users, ChevronDown } from "lucide-react";
+import { Search, Check, UserCheck, Users } from "lucide-react";
 import { toast } from "sonner";
 
 import { markGuestArrived, unmarkGuestArrived, updateGuestTableForHostess } from "@/actions/seating";
@@ -303,7 +303,7 @@ export function HostessGuestList({ guests, tables, locale }: HostessGuestListPro
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="space-y-2">
           <AnimatePresence mode="popLayout">
             {filteredGuests.map((guest) => {
               const isLoading = loadingGuests.has(guest.id);
@@ -312,109 +312,83 @@ export function HostessGuestList({ guests, tables, locale }: HostessGuestListPro
                 <motion.div
                   key={guest.id}
                   layout
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.95 }}
-                  transition={{ duration: 0.2 }}
+                  initial={{ opacity: 0, y: -4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -4 }}
+                  transition={{ duration: 0.15 }}
                 >
-                  <Card
+                  <div
                     className={cn(
-                      "overflow-hidden transition-all duration-300",
+                      "flex items-center gap-4 p-4 rounded-xl border transition-colors",
                       guest.isArrived
-                        ? "border-green-500 bg-gradient-to-br from-green-50 to-emerald-50/50 dark:from-green-950/30 dark:to-emerald-950/20"
-                        : "border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700"
+                        ? "border-green-500 bg-green-50/80 dark:bg-green-950/30"
+                        : "border-zinc-200 dark:border-zinc-800 bg-card"
                     )}
                   >
-                    <CardContent className="p-4">
-                      {/* Header Row */}
-                      <div className="flex items-start justify-between gap-3 mb-3">
-                        <div className="flex-1 min-w-0">
-                          <h3 className="font-semibold text-base truncate">{guest.name}</h3>
-                          <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-                            {/* Guest Count */}
-                            <Badge variant="outline" className="text-xs gap-1">
-                              <Users className="h-3 w-3" />
-                              {guest.guestCount}
-                            </Badge>
-                            {/* Side */}
-                            {guest.side && (
-                              <Badge variant="secondary" className="text-xs">
-                                {getSideLabel(guest.side)}
-                              </Badge>
-                            )}
-                            {/* Group */}
-                            {guest.groupName && (
-                              <Badge variant="secondary" className="text-xs">
-                                {getGroupLabel(guest.groupName)}
-                              </Badge>
-                            )}
-                          </div>
-                        </div>
-                        {guest.isArrived && (
-                          <div className="shrink-0 p-1.5 rounded-full bg-green-600">
-                            <Check className="h-4 w-4 text-white" />
-                          </div>
-                        )}
-                      </div>
+                    {/* Guest info - single row */}
+                    <div className="flex-1 min-w-0 flex items-center gap-3 flex-wrap">
+                      <span className="font-semibold text-base truncate">{guest.name}</span>
+                      <Badge variant="outline" className="text-xs shrink-0 gap-1 px-2 py-0.5">
+                        <Users className="h-3 w-3" />
+                        {guest.guestCount} {t.people}
+                      </Badge>
+                      {guest.side && (
+                        <Badge variant="secondary" className="text-xs px-2 py-0.5">
+                          {getSideLabel(guest.side)}
+                        </Badge>
+                      )}
+                      {guest.groupName && (
+                        <Badge variant="secondary" className="text-xs px-2 py-0.5">
+                          {getGroupLabel(guest.groupName)}
+                        </Badge>
+                      )}
+                    </div>
 
-                      {/* Table Info */}
-                      <div className="mb-4">
-                        {guest.tableName ? (
-                          <Badge className="bg-zinc-800 hover:bg-zinc-800 text-white">
-                            {guest.tableName}
-                          </Badge>
-                        ) : (
-                          <Badge variant="outline" className="text-muted-foreground">
-                            {t.noTable}
-                          </Badge>
-                        )}
-                      </div>
+                    {/* Actions */}
+                    <div className="flex items-center gap-3 shrink-0">
+                      <Select
+                        dir={isRTL ? "rtl" : "ltr"}
+                        value={guest.tableId || undefined}
+                        onValueChange={(value) => handleChangeTable(guest.id, value)}
+                        disabled={isLoading}
+                      >
+                        <SelectTrigger className="w-[130px] min-h-[48px] rounded-xl text-sm">
+                          <SelectValue placeholder={t.noTable} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {tables.map((table) => (
+                            <SelectItem key={table.id} value={table.id}>
+                              {table.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
 
-                      {/* Actions */}
-                      <div className="flex items-center gap-2">
-                        {guest.isArrived ? (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleUnmarkArrived(guest.id)}
-                            disabled={isLoading}
-                            className="flex-1 min-h-[44px] border-green-600 text-green-600 hover:bg-green-50 rounded-xl"
-                          >
-                            <Check className="h-4 w-4 me-2" />
-                            {t.arrived}
-                          </Button>
-                        ) : (
-                          <Button
-                            variant="default"
-                            size="sm"
-                            onClick={() => handleMarkArrived(guest.id)}
-                            disabled={isLoading}
-                            className="flex-1 min-h-[44px] bg-green-600 hover:bg-green-700 rounded-xl"
-                          >
-                            <UserCheck className="h-4 w-4 me-2" />
-                            {t.markArrived}
-                          </Button>
-                        )}
-
-                        <Select
-                          dir={isRTL ? "rtl" : "ltr"}
-                          onValueChange={(value) => handleChangeTable(guest.id, value)}
+                      {guest.isArrived ? (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleUnmarkArrived(guest.id)}
                           disabled={isLoading}
+                          className="min-h-[48px] min-w-[100px] border-green-600 text-green-600 hover:bg-green-50 rounded-xl text-sm font-medium"
                         >
-                          <SelectTrigger className="w-[100px] min-h-[44px] rounded-xl">
-                            {isRTL ? <ArrowLeft className="h-4 w-4" /> : <ArrowRight className="h-4 w-4" />}
-                          </SelectTrigger>
-                          <SelectContent>
-                            {tables.map((table) => (
-                              <SelectItem key={table.id} value={table.id}>
-                                {table.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </CardContent>
-                  </Card>
+                          <Check className="h-4 w-4 me-1.5" />
+                          {t.arrived}
+                        </Button>
+                      ) : (
+                        <Button
+                          variant="default"
+                          size="sm"
+                          onClick={() => handleMarkArrived(guest.id)}
+                          disabled={isLoading}
+                          className="min-h-[48px] min-w-[100px] bg-green-600 hover:bg-green-700 rounded-xl text-sm font-medium"
+                        >
+                          <UserCheck className="h-4 w-4 me-1.5" />
+                          {t.markArrived}
+                        </Button>
+                      )}
+                    </div>
+                  </div>
                 </motion.div>
               );
             })}

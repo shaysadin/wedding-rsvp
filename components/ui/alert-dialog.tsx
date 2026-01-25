@@ -133,7 +133,7 @@ const AlertDialogContent = React.forwardRef<
 
   return (
     <AlertDialogPortal>
-      <AlertDialogOverlay />
+      <AlertDialogOverlay onClick={handleDismiss} />
       <AlertDialogPrimitive.Content
         ref={ref}
         dir={dir || autoDir}

@@ -31,14 +31,14 @@ interface GiftPaymentFormProps {
 
 export function GiftPaymentForm({
   guestSlug,
-  guestName,
+  guestName: initialGuestName,
   eventTitle,
-  coupleName,
   settings,
   locale,
 }: GiftPaymentFormProps) {
   const isRTL = locale === "he";
 
+  const [fullName, setFullName] = useState(initialGuestName || "");
   const [amount, setAmount] = useState<number | null>(null);
   const [customAmount, setCustomAmount] = useState("");
   const [message, setMessage] = useState("");
@@ -68,6 +68,15 @@ export function GiftPaymentForm({
   };
 
   const handleSubmit = async () => {
+    if (!fullName.trim()) {
+      toast.error(
+        isRTL
+          ? "נא להזין שם מלא"
+          : "Please enter your full name"
+      );
+      return;
+    }
+
     if (selectedAmount < settings.minAmount) {
       toast.error(
         isRTL
@@ -94,6 +103,7 @@ export function GiftPaymentForm({
         amount: selectedAmount,
         currency: settings.currency,
         message: message || undefined,
+        senderName: fullName.trim(),
       });
 
       if (result.error) {
@@ -118,22 +128,39 @@ export function GiftPaymentForm({
 
   const isValidAmount =
     selectedAmount >= settings.minAmount && selectedAmount <= settings.maxAmount;
+  const isFormValid = isValidAmount && fullName.trim().length > 0;
 
   return (
     <Card className="w-full max-w-md mx-auto">
       <CardHeader className="text-center">
         <Icons.gift className="h-12 w-12 mx-auto text-primary mb-2" />
         <CardTitle className="text-2xl">
-          {isRTL ? `מתנה ל${coupleName}` : `Gift for ${coupleName}`}
+          {isRTL ? `מתנה לאירוע ${eventTitle}` : `Gift for ${eventTitle}`}
         </CardTitle>
         <CardDescription>
           {isRTL
-            ? `שלום ${guestName}, שלחו מתנה לרגל ${eventTitle}`
-            : `Hello ${guestName}, send a gift for ${eventTitle}`}
+            ? "שלחו מתנה כספית לזוג המאושר"
+            : "Send a monetary gift to the happy couple"}
         </CardDescription>
       </CardHeader>
 
       <CardContent className="space-y-6">
+        {/* Full Name Input */}
+        <div className="space-y-2">
+          <Label htmlFor="fullName">
+            {isRTL ? "שם מלא" : "Full Name"} <span className="text-destructive">*</span>
+          </Label>
+          <Input
+            id="fullName"
+            type="text"
+            value={fullName}
+            onChange={(e) => setFullName(e.target.value)}
+            placeholder={isRTL ? "הזינו את שמכם המלא" : "Enter your full name"}
+            dir={isRTL ? "rtl" : "ltr"}
+            required
+          />
+        </div>
+
         {/* Suggested Amounts */}
         <div className="space-y-3">
           <Label>{isRTL ? "בחרו סכום" : "Select Amount"}</Label>
@@ -202,7 +229,7 @@ export function GiftPaymentForm({
               <span>{formatCurrency(selectedAmount)}</span>
             </div>
             <div className="flex justify-between text-sm text-muted-foreground">
-              <span>{isRTL ? "עמלת שירות (8%)" : "Service Fee (8%)"}</span>
+              <span>{isRTL ? "עמלת שירות (5%)" : "Service Fee (5%)"}</span>
               <span>{formatCurrency(serviceFee)}</span>
             </div>
             <div className="border-t pt-2 flex justify-between font-semibold">
@@ -218,7 +245,7 @@ export function GiftPaymentForm({
           className="w-full"
           size="lg"
           onClick={handleSubmit}
-          disabled={!isValidAmount || isSubmitting}
+          disabled={!isFormValid || isSubmitting}
         >
           {isSubmitting ? (
             <>

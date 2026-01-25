@@ -2,8 +2,8 @@
  * Payment Types for Gift Payment System
  */
 
-// Service fee percentage (8%)
-export const SERVICE_FEE_PERCENTAGE = 0.08;
+// Service fee percentage (5%)
+export const SERVICE_FEE_PERCENTAGE = 0.05;
 
 export interface PaymentInitOptions {
   amount: number;

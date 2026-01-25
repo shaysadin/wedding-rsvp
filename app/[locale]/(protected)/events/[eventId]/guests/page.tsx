@@ -9,6 +9,7 @@ import { GuestsTableSkeleton } from "@/components/skeletons";
 import { AddGuestDialog } from "@/components/guests/add-guest-dialog";
 import { BulkAddGuestsDialog } from "@/components/guests/bulk-add-guests-dialog";
 import { ImportGuestsDialog } from "@/components/guests/import-guests-dialog";
+import { ExportGuestsDialog } from "@/components/guests/export-guests-dialog";
 import { EventStatsCards } from "@/components/events/event-stats-cards";
 import { InvitationImageUpload } from "@/components/events/invitation-image-upload";
 import { DuplicatePhoneWarning } from "@/components/guests/duplicate-phone-warning";
@@ -84,9 +85,10 @@ export default async function GuestsPage({ params, searchParams }: GuestsPagePro
             </div>
           </div>
           {/* Action buttons */}
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-4 gap-2">
             <BulkAddGuestsDialog eventId={event.id} />
             <ImportGuestsDialog eventId={event.id} />
+            <ExportGuestsDialog eventId={event.id} guests={event.guests} />
             <AddGuestDialog eventId={event.id} />
           </div>
         </div>
@@ -101,6 +103,7 @@ export default async function GuestsPage({ params, searchParams }: GuestsPagePro
             <div className="flex gap-2">
               <BulkAddGuestsDialog eventId={event.id} />
               <ImportGuestsDialog eventId={event.id} />
+              <ExportGuestsDialog eventId={event.id} guests={event.guests} />
               <AddGuestDialog eventId={event.id} />
             </div>
           </div>

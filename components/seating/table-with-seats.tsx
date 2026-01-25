@@ -13,11 +13,12 @@ import { calculateSeatPositions, seatRelativeToAbsolute, type TableShape, type S
 export type TableColorTheme = "default" | "blue" | "green" | "purple" | "pink" | "amber" | "rose";
 
 // Guest assigned to a table
-interface TableGuest {
+export interface TableGuest {
   id: string;
   name: string;
   rsvpStatus?: "ACCEPTED" | "PENDING" | "DECLINED" | "MAYBE";
   guestCount: number; // Number of seats this guest occupies (party size)
+  isArrived?: boolean;
 }
 
 interface TableWithSeatsProps {
@@ -36,6 +37,7 @@ interface TableWithSeatsProps {
   assignments: TableGuest[];
   positionX: number;
   positionY: number;
+  colorMode?: "rsvp" | "arrival"; // defaults to "rsvp"
   onChairClick?: (chairIndex: number, guest: TableGuest | null) => void;
   onTableClick?: () => void;
   isSelected?: boolean;
@@ -116,7 +118,7 @@ const COLOR_THEMES: Record<TableColorTheme, {
   },
 };
 
-const CHAIR_SIZE = 20; // Chair size in pixels
+const CHAIR_SIZE = 26; // Chair size in pixels
 
 // Chair SVG Component
 function ChairIcon({ color, className }: { color: string; className?: string }) {
@@ -143,6 +145,7 @@ export function TableWithSeats({
   assignments,
   positionX,
   positionY,
+  colorMode = "rsvp",
   onChairClick,
   onTableClick,
   isSelected,
@@ -190,6 +193,9 @@ export function TableWithSeats({
   // Get chair color based on guest status
   const getChairColor = (guest: TableGuest | null): string => {
     if (!guest) return theme.chairEmpty;
+    if (colorMode === "arrival") {
+      return guest.isArrived ? theme.chairApproved : theme.chairEmpty;
+    }
     switch (guest.rsvpStatus) {
       case "ACCEPTED": return theme.chairApproved;
       case "PENDING": return theme.chairPending;
@@ -260,17 +266,17 @@ export function TableWithSeats({
                 <ChairIcon color={chairColor} className="w-full h-full" />
                 {/* Chair Number Badge (only show if empty) */}
                 {!guest && (
-                  <div className="absolute -top-1 -right-1 bg-white dark:bg-gray-800 rounded-full w-3 h-3 flex items-center justify-center border border-gray-300 dark:border-gray-600">
-                    <span className="text-[6px] font-bold">{index + 1}</span>
+                  <div className="absolute -top-1 -right-1 bg-white dark:bg-gray-800 rounded-full w-4 h-4 flex items-center justify-center border border-gray-300 dark:border-gray-600">
+                    <span className="text-[7px] font-bold">{index + 1}</span>
                   </div>
                 )}
                 {/* Guest Initial Badge (if occupied) */}
                 {guest && (
                   <div
-                    className="absolute -top-1 -right-1 bg-white dark:bg-gray-800 rounded-full w-4 h-4 flex items-center justify-center border-2 shadow-sm"
+                    className="absolute -top-1 -right-1 bg-white dark:bg-gray-800 rounded-full w-5 h-5 flex items-center justify-center border-2 shadow-sm"
                     style={{ borderColor: chairColor }}
                   >
-                    <span className="text-[8px] font-bold">
+                    <span className="text-[10px] font-bold">
                       {guest.name.charAt(0)}
                     </span>
                   </div>
@@ -323,8 +329,8 @@ export function TableWithSeats({
       >
         {/* Table Label */}
         <div className="text-center pointer-events-none">
-          <div className="font-semibold text-sm">{table.name}</div>
-          <div className="text-xs text-muted-foreground">
+          <div className="font-semibold text-base">{table.name}</div>
+          <div className="text-sm text-muted-foreground">
             {totalSeatsUsed}/{table.capacity}
           </div>
         </div>

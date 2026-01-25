@@ -523,16 +523,24 @@ async function sendCustomWhatsApp(
     // Replace variables in the message
     const messageBody = replaceMessageVariables(customMessage, context);
 
-    // Send via Twilio
-    const accountSid = providerSettings.smsApiKey;
-    const authToken = providerSettings.smsApiSecret;
+    // Send via Twilio WhatsApp
+    const accountSid = providerSettings.whatsappApiKey;
+    const authToken = providerSettings.whatsappApiSecret;
     const fromNumber = providerSettings.whatsappPhoneNumber;
 
     if (!accountSid || !authToken || !fromNumber) {
       return {
         success: false,
-        message: "Twilio credentials not configured",
+        message: "WhatsApp credentials not configured. Please configure them in Admin > Messaging Settings.",
         errorCode: "NO_CREDENTIALS",
+      };
+    }
+
+    if (!accountSid.startsWith("AC")) {
+      return {
+        success: false,
+        message: "Invalid Twilio Account SID for WhatsApp. It must start with 'AC'. Please check Admin > Messaging Settings.",
+        errorCode: "INVALID_CREDENTIALS",
       };
     }
 
@@ -639,8 +647,16 @@ async function sendCustomSms(
     if (!accountSid || !authToken || (!fromNumber && !messagingServiceSid)) {
       return {
         success: false,
-        message: "SMS credentials not configured",
+        message: "SMS credentials not configured. Please configure them in Admin > Messaging Settings.",
         errorCode: "NO_CREDENTIALS",
+      };
+    }
+
+    if (!accountSid.startsWith("AC")) {
+      return {
+        success: false,
+        message: "Invalid Twilio Account SID. It must start with 'AC'. Please check Admin > Messaging Settings.",
+        errorCode: "INVALID_CREDENTIALS",
       };
     }
 
@@ -771,8 +787,16 @@ async function sendSmsReminder(
     if (!accountSid || !authToken || !messagingServiceSid) {
       return {
         success: false,
-        message: "SMS credentials not configured",
+        message: "SMS credentials not configured. Please configure them in Admin > Messaging Settings.",
         errorCode: "NO_CREDENTIALS",
+      };
+    }
+
+    if (!accountSid.startsWith("AC")) {
+      return {
+        success: false,
+        message: "Invalid Twilio Account SID. It must start with 'AC'. Please check Admin > Messaging Settings.",
+        errorCode: "INVALID_CREDENTIALS",
       };
     }
 
@@ -880,15 +904,23 @@ async function sendTableAssignment(
     }
 
     // Send via Twilio WhatsApp
-    const accountSid = providerSettings.smsApiKey;
-    const authToken = providerSettings.smsApiSecret;
+    const accountSid = providerSettings.whatsappApiKey;
+    const authToken = providerSettings.whatsappApiSecret;
     const fromNumber = providerSettings.whatsappPhoneNumber;
 
     if (!accountSid || !authToken || !fromNumber) {
       return {
         success: false,
-        message: "Twilio credentials not configured",
+        message: "WhatsApp credentials not configured. Please configure them in Admin > Messaging Settings.",
         errorCode: "NO_CREDENTIALS",
+      };
+    }
+
+    if (!accountSid.startsWith("AC")) {
+      return {
+        success: false,
+        message: "Invalid Twilio Account SID for WhatsApp. It must start with 'AC'. Please check Admin > Messaging Settings.",
+        errorCode: "INVALID_CREDENTIALS",
       };
     }
 
@@ -1080,24 +1112,39 @@ async function sendEventDayReminder(
       guestSlug = "test-preview";
     }
 
-    // Build navigation URL (prefer Google Maps, fallback to Waze)
+    // Build navigation URL - always use Waze with address
     let navigationUrl = "";
-    if (event.rsvpPageSettings?.googleMapsUrl) {
-      navigationUrl = event.rsvpPageSettings.googleMapsUrl;
-    } else if (event.rsvpPageSettings?.wazeUrl) {
-      navigationUrl = event.rsvpPageSettings.wazeUrl;
+    const addressForNav = event.location || event.venue || eventLocation || eventVenue;
+    if (addressForNav) {
+      // Encode the address for Waze URL
+      const encodedAddress = encodeURIComponent(addressForNav);
+      navigationUrl = `https://waze.com/ul?q=${encodedAddress}&navigate=yes`;
     }
 
-    // Build per-guest gift link (each guest has their own gift link using their slug)
+    // Build gift link - check for external provider first
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://rsvp.app";
     let giftLink = "";
-    if (guestSlug) {
-      // Check if gift payments are enabled for this event
-      const giftSettings = await prisma.giftPaymentSettings.findUnique({
-        where: { weddingEventId: weddingEventId },
-      });
-      if (giftSettings?.isEnabled) {
+
+    // Check gift settings
+    const giftSettings = await prisma.giftPaymentSettings.findUnique({
+      where: { weddingEventId: weddingEventId },
+    });
+
+    console.log("[Event Day Reminder] Gift settings:", {
+      isEnabled: giftSettings?.isEnabled,
+      useExternalProvider: giftSettings?.useExternalProvider,
+      externalProviderUrl: giftSettings?.externalProviderUrl,
+    });
+
+    if (giftSettings?.isEnabled) {
+      // If external provider is configured and enabled, use that URL
+      if (giftSettings.useExternalProvider && giftSettings.externalProviderUrl) {
+        giftLink = giftSettings.externalProviderUrl;
+        console.log("[Event Day Reminder] Using external gift link:", giftLink);
+      } else if (guestSlug) {
+        // Otherwise use our internal gift system with per-guest link
         giftLink = `${baseUrl}/gift/${guestSlug}`;
+        console.log("[Event Day Reminder] Using internal gift link:", giftLink);
       }
     }
 
@@ -1105,16 +1152,24 @@ async function sendEventDayReminder(
     const venueDisplay = eventVenue || event.venue || eventLocation || "המקום";
     const addressDisplay = eventLocation || "";
 
-    // Send via Twilio with template
-    const accountSid = providerSettings.smsApiKey;
-    const authToken = providerSettings.smsApiSecret;
+    // Send via Twilio WhatsApp with template
+    const accountSid = providerSettings.whatsappApiKey;
+    const authToken = providerSettings.whatsappApiSecret;
     const fromNumber = providerSettings.whatsappPhoneNumber;
 
     if (!accountSid || !authToken || !fromNumber) {
       return {
         success: false,
-        message: "Twilio credentials not configured",
+        message: "WhatsApp credentials not configured. Please configure them in Admin > Messaging Settings.",
         errorCode: "NO_CREDENTIALS",
+      };
+    }
+
+    if (!accountSid.startsWith("AC")) {
+      return {
+        success: false,
+        message: "Invalid Twilio Account SID for WhatsApp. It must start with 'AC'. Please check Admin > Messaging Settings.",
+        errorCode: "INVALID_CREDENTIALS",
       };
     }
 
@@ -1241,16 +1296,24 @@ async function sendThankYouMessage(
     // Build couple name display
     const coupleName = context.coupleName || event.title || "החתן והכלה";
 
-    // Send via Twilio with template
-    const accountSid = providerSettings.smsApiKey;
-    const authToken = providerSettings.smsApiSecret;
+    // Send via Twilio WhatsApp with template
+    const accountSid = providerSettings.whatsappApiKey;
+    const authToken = providerSettings.whatsappApiSecret;
     const fromNumber = providerSettings.whatsappPhoneNumber;
 
     if (!accountSid || !authToken || !fromNumber) {
       return {
         success: false,
-        message: "Twilio credentials not configured",
+        message: "WhatsApp credentials not configured. Please configure them in Admin > Messaging Settings.",
         errorCode: "NO_CREDENTIALS",
+      };
+    }
+
+    if (!accountSid.startsWith("AC")) {
+      return {
+        success: false,
+        message: "Invalid Twilio Account SID for WhatsApp. It must start with 'AC'. Please check Admin > Messaging Settings.",
+        errorCode: "INVALID_CREDENTIALS",
       };
     }
 

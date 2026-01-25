@@ -515,7 +515,7 @@
 
 /* Dialog content base styles - 50vh minimum on ALL screen sizes */
 .dialog-content {
-  min-height: 80vh !important;
+  min-height: 80vh;
 }
 
 /* Dialog content animations - responsive */
@@ -607,7 +607,7 @@
 
 /* Sheet content base styles - 50vh minimum */
 .sheet-content-bottom {
-  min-height: 50vh !important;
+  min-height: 50vh;
 }
 
 /* Sheet content animations */

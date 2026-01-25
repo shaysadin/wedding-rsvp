@@ -14,10 +14,12 @@ import {
   Trash2,
   ArrowRight,
   ArrowLeft,
+  Search,
 } from "lucide-react";
 
-import { deleteTable, removeGuestFromTable, moveGuestToTable } from "@/actions/seating";
+import { deleteTable, removeGuestFromTable, moveGuestToTable, assignGuestsToTable, getGuestsForAssignment } from "@/actions/seating";
 import { cn } from "@/lib/utils";
+import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -197,6 +199,19 @@ export function TableCard({
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [loadingGuestId, setLoadingGuestId] = useState<string | null>(null);
+  const [showAddPanel, setShowAddPanel] = useState(false);
+  const [addSearch, setAddSearch] = useState("");
+  const [availableGuests, setAvailableGuests] = useState<{
+    id: string;
+    name: string;
+    side?: string | null;
+    groupName?: string | null;
+    expectedGuests: number;
+    rsvp?: { status: string; guestCount: number } | null;
+    tableAssignment?: { table: { id: string; name: string } } | null;
+    seatsNeeded: number;
+  }[]>([]);
+  const [isLoadingGuests, setIsLoadingGuests] = useState(false);
 
   const capacityPercentage = table.capacity > 0
     ? Math.min((table.seatsUsed / table.capacity) * 100, 100)
@@ -232,6 +247,10 @@ export function TableCard({
         toast.error(result.error);
       } else {
         toast.success(t("guestRemoved"));
+        // Update local available guests state to reflect removal
+        setAvailableGuests((prev) =>
+          prev.map((g) => g.id === guestId ? { ...g, tableAssignment: null } : g)
+        );
         window.dispatchEvent(new CustomEvent("seating-data-changed"));
       }
     } catch {
@@ -257,6 +276,64 @@ export function TableCard({
       setLoadingGuestId(null);
     }
   }
+
+  async function handleOpenAddPanel() {
+    setShowAddPanel(true);
+    setIsLoadingGuests(true);
+    try {
+      const result = await getGuestsForAssignment(eventId);
+      if (result.success && result.guests) {
+        // Sort: assigned to this table first, then unassigned, then at other tables
+        const sorted = [...result.guests].sort((a, b) => {
+          const aAtThisTable = a.tableAssignment?.table?.id === table.id;
+          const bAtThisTable = b.tableAssignment?.table?.id === table.id;
+          const aUnseated = !a.tableAssignment;
+          const bUnseated = !b.tableAssignment;
+
+          if (aAtThisTable && !bAtThisTable) return -1;
+          if (!aAtThisTable && bAtThisTable) return 1;
+          if (aUnseated && !bUnseated && !bAtThisTable) return -1;
+          if (!aUnseated && bUnseated && !aAtThisTable) return 1;
+          return a.name.localeCompare(b.name);
+        });
+        setAvailableGuests(sorted);
+      }
+    } catch {
+      toast.error(tc("error"));
+    } finally {
+      setIsLoadingGuests(false);
+    }
+  }
+
+  async function handleAssignGuest(guestId: string) {
+    setLoadingGuestId(guestId);
+    try {
+      const result = await assignGuestsToTable({ tableId: table.id, guestIds: [guestId] });
+      if (result.error) {
+        toast.error(result.error);
+      } else {
+        toast.success(t("guestAssigned"));
+        // Update local state to mark guest as assigned to this table
+        setAvailableGuests((prev) =>
+          prev.map((g) => g.id === guestId
+            ? { ...g, tableAssignment: { table: { id: table.id, name: table.name } } }
+            : g
+          )
+        );
+        window.dispatchEvent(new CustomEvent("seating-data-changed"));
+      }
+    } catch {
+      toast.error(tc("error"));
+    } finally {
+      setLoadingGuestId(null);
+    }
+  }
+
+  const filteredAvailableGuests = addSearch
+    ? availableGuests.filter((g) =>
+        g.name.toLowerCase().includes(addSearch.toLowerCase())
+      )
+    : availableGuests;
 
   return (
     <>
@@ -476,15 +553,6 @@ export function TableCard({
                       {/* Quick Actions */}
                       <div className="flex flex-col gap-2 mt-6 w-full max-w-[200px]">
                         <Button
-                          variant="default"
-                          size="sm"
-                          className="w-full"
-                          onClick={() => onAssignGuests(table.id)}
-                        >
-                          <UserPlus className="me-2 h-4 w-4" />
-                          {t("assignGuests")}
-                        </Button>
-                        <Button
                           variant="outline"
                           size="sm"
                           className="w-full text-destructive hover:text-destructive"
@@ -507,22 +575,13 @@ export function TableCard({
                         )}
                       </h3>
 
-                      {table.assignments.length === 0 ? (
+                      {table.assignments.length === 0 && !showAddPanel ? (
                         <div className="flex-1 flex items-center justify-center">
                           <div className="text-center">
                             <Users className="h-12 w-12 text-muted-foreground/40 mx-auto mb-3" />
                             <p className="text-sm text-muted-foreground">
                               {t("modal.noGuests")}
                             </p>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="mt-4"
-                              onClick={() => onAssignGuests(table.id)}
-                            >
-                              <UserPlus className="me-2 h-4 w-4" />
-                              {t("assignGuests")}
-                            </Button>
                           </div>
                         </div>
                       ) : (
@@ -621,6 +680,129 @@ export function TableCard({
                           </div>
                         </ScrollArea>
                       )}
+
+                      {/* Inline Add Guest Panel */}
+                      <div className="mt-4 shrink-0">
+                        <Button
+                          variant={showAddPanel ? "secondary" : "outline"}
+                          size="sm"
+                          onClick={() => {
+                            if (showAddPanel) {
+                              setShowAddPanel(false);
+                              setAddSearch("");
+                            } else {
+                              handleOpenAddPanel();
+                            }
+                          }}
+                          className="w-full"
+                        >
+                          <UserPlus className="h-4 w-4 me-2" />
+                          {t("assignGuests")}
+                          {table.seatsAvailable > 0 && (
+                            <span className="ms-1 text-muted-foreground">
+                              ({table.seatsAvailable} {t("modal.free")})
+                            </span>
+                          )}
+                        </Button>
+
+                        {showAddPanel && (
+                          <div className="mt-3 border rounded-lg p-3 bg-muted/20">
+                            <div className="relative mb-3">
+                              <Search className="absolute start-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                              <Input
+                                placeholder={t("modal.searchGuests")}
+                                value={addSearch}
+                                onChange={(e) => setAddSearch(e.target.value)}
+                                className="ps-9 h-9 text-sm"
+                                dir={dir}
+                              />
+                            </div>
+                            {isLoadingGuests ? (
+                              <div className="flex items-center justify-center py-6">
+                                <Icons.spinner className="h-5 w-5 animate-spin text-muted-foreground" />
+                              </div>
+                            ) : (
+                              <ScrollArea className="max-h-[200px]" dir={dir}>
+                                <div className="space-y-1.5 pe-2">
+                                  {filteredAvailableGuests.length === 0 ? (
+                                    <p className="text-xs text-muted-foreground text-center py-4">
+                                      {t("modal.noAvailableGuests")}
+                                    </p>
+                                  ) : (
+                                    filteredAvailableGuests.map((guest) => {
+                                      const isLoading = loadingGuestId === guest.id;
+                                      const status = guest.rsvp?.status;
+                                      const isAtThisTable = guest.tableAssignment?.table?.id === table.id;
+                                      const isAtOtherTable = !!guest.tableAssignment && !isAtThisTable;
+                                      return (
+                                        <div
+                                          key={guest.id}
+                                          className={cn(
+                                            "flex items-center justify-between gap-2 p-2 rounded-md border text-sm",
+                                            isAtThisTable ? "bg-primary/5 border-primary/20" : "bg-card"
+                                          )}
+                                        >
+                                          <div className="flex items-center gap-2 min-w-0 flex-1">
+                                            <div
+                                              className={cn(
+                                                "w-2 h-2 rounded-full shrink-0",
+                                                getStatusColor(status)
+                                              )}
+                                            />
+                                            <span className="truncate font-medium text-start">{guest.name}</span>
+                                            <Badge variant="outline" className="text-[10px] shrink-0">
+                                              {guest.seatsNeeded}
+                                            </Badge>
+                                            {isAtThisTable && (
+                                              <Badge variant="secondary" className="text-[10px] shrink-0 bg-primary/10 text-primary">
+                                                {t("modal.atThisTable")}
+                                              </Badge>
+                                            )}
+                                            {isAtOtherTable && (
+                                              <Badge variant="secondary" className="text-[10px] shrink-0">
+                                                {guest.tableAssignment!.table.name}
+                                              </Badge>
+                                            )}
+                                          </div>
+                                          {isAtThisTable ? (
+                                            <Button
+                                              variant="ghost"
+                                              size="sm"
+                                              className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive shrink-0"
+                                              disabled={isLoading}
+                                              onClick={() => handleRemoveGuest(guest.id)}
+                                            >
+                                              {isLoading ? (
+                                                <Icons.spinner className="h-3 w-3 animate-spin" />
+                                              ) : (
+                                                <X className="h-3 w-3" />
+                                              )}
+                                            </Button>
+                                          ) : (
+                                            <Button
+                                              variant="default"
+                                              size="sm"
+                                              className="h-7 px-3 text-xs shrink-0"
+                                              disabled={isLoading}
+                                              onClick={() => handleAssignGuest(guest.id)}
+                                            >
+                                              {isLoading ? (
+                                                <Icons.spinner className="h-3 w-3 animate-spin" />
+                                              ) : (
+                                                <UserPlus className="h-3 w-3" />
+                                              )}
+                                            </Button>
+                                          )}
+                                        </div>
+                                      );
+                                    })
+                                  )}
+                                </div>
+                              </ScrollArea>
+                            )}
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </CardContent>

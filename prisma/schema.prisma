@@ -1522,6 +1522,9 @@ model GiftPaymentSettings {
   allowCustomAmount Boolean  @default(true) @map("allow_custom_amount")
   thankYouMessage   String?  @map("thank_you_message")
   thankYouMessageHe String?  @map("thank_you_message_he")
+  // External gift provider settings
+  useExternalProvider    Boolean  @default(false) @map("use_external_provider")
+  externalProviderUrl    String?  @map("external_provider_url")
   createdAt         DateTime @default(now()) @map("created_at")
   updatedAt         DateTime @default(now()) @updatedAt @map("updated_at")
 

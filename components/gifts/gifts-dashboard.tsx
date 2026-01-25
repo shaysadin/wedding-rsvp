@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocale } from "next-intl";
 import { toast } from "sonner";
 import { GiftPaymentStatus } from "@prisma/client";
@@ -41,6 +41,8 @@ interface GiftSettings {
   maxAmount: number;
   suggestedAmounts: number[];
   currency: string;
+  useExternalProvider?: boolean;
+  externalProviderUrl?: string | null;
 }
 
 interface GiftsDashboardProps {
@@ -78,9 +80,26 @@ export function GiftsDashboard({
     isEnabled: settings?.isEnabled ?? false,
     minAmount: settings?.minAmount ?? 50,
     maxAmount: settings?.maxAmount ?? 5000,
-    suggestedAmounts: settings?.suggestedAmounts?.join(", ") ?? "100, 250, 500, 1000",
+    suggestedAmounts: settings?.suggestedAmounts?.join(", ") ?? "400, 500, 800, 1000",
     currency: settings?.currency ?? "ILS",
+    useExternalProvider: settings?.useExternalProvider ?? false,
+    externalProviderUrl: settings?.externalProviderUrl ?? "",
   });
+
+  // Sync form state when settings prop changes (e.g., after refresh)
+  useEffect(() => {
+    if (settings) {
+      setSettingsForm({
+        isEnabled: settings.isEnabled ?? false,
+        minAmount: settings.minAmount ?? 50,
+        maxAmount: settings.maxAmount ?? 5000,
+        suggestedAmounts: settings.suggestedAmounts?.join(", ") ?? "100, 250, 500, 1000",
+        currency: settings.currency ?? "ILS",
+        useExternalProvider: settings.useExternalProvider ?? false,
+        externalProviderUrl: settings.externalProviderUrl ?? "",
+      });
+    }
+  }, [settings]);
 
   const formatCurrency = (amount: number, currency: string) => {
     return new Intl.NumberFormat(locale === "he" ? "he-IL" : "en-US", {
@@ -166,6 +185,8 @@ export function GiftsDashboard({
         maxAmount: settingsForm.maxAmount,
         suggestedAmounts,
         currency: settingsForm.currency,
+        useExternalProvider: settingsForm.useExternalProvider,
+        externalProviderUrl: settingsForm.externalProviderUrl || undefined,
       });
 
       if (result.error) {
@@ -344,11 +365,42 @@ export function GiftsDashboard({
                 <Input
                   value={settingsForm.suggestedAmounts}
                   onChange={(e) => setSettingsForm({ ...settingsForm, suggestedAmounts: e.target.value })}
-                  placeholder="100, 250, 500, 1000"
+                  placeholder="400, 500, 800, 1000"
                 />
                 <p className="text-xs text-muted-foreground">
                   {isRTL ? "הפרידו בפסיקים" : "Separate with commas"}
                 </p>
+              </div>
+
+              {/* External Provider Section */}
+              <div className="border-t pt-4 mt-4 space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label>{isRTL ? "השתמש בספק מתנות חיצוני" : "Use External Gift Provider"}</Label>
+                    <p className="text-xs text-muted-foreground">
+                      {isRTL ? "הפנה אורחים לקישור חיצוני במקום למערכת שלנו" : "Redirect guests to an external link instead of our system"}
+                    </p>
+                  </div>
+                  <Switch
+                    checked={settingsForm.useExternalProvider}
+                    onCheckedChange={(checked) => setSettingsForm({ ...settingsForm, useExternalProvider: checked })}
+                  />
+                </div>
+                {settingsForm.useExternalProvider && (
+                  <div className="space-y-2">
+                    <Label>{isRTL ? "קישור לספק חיצוני" : "External Provider URL"}</Label>
+                    <Input
+                      type="url"
+                      value={settingsForm.externalProviderUrl}
+                      onChange={(e) => setSettingsForm({ ...settingsForm, externalProviderUrl: e.target.value })}
+                      placeholder="https://example.com/gifts"
+                      dir="ltr"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      {isRTL ? "הקישור שיישלח לאורחים בהודעת יום האירוע" : "The link that will be sent to guests in the event day message"}
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
             <DialogFooter>
