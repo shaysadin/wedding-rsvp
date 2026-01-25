@@ -76,41 +76,80 @@ function calculateEvenDistribution(capacity: number, shape: TableShape): SeatPos
       });
     }
   } else if (shape === "square") {
-    // Seats only on 2 sides (top and bottom), same as rectangle
-    const halfCapacity = Math.ceil(capacity / 2);
-    const otherHalf = capacity - halfCapacity;
-    let seatNum = 1;
+    // Seats equally divided on all 4 sides, tightly packed next to each other
+    const seatsPerSide = Math.floor(capacity / 4);
+    const remainder = capacity % 4;
 
-    // Top side (chairs facing inward toward table)
-    for (let i = 0; i < halfCapacity; i++) {
-      const spacing = halfCapacity > 1 ? (i / (halfCapacity - 1)) : 0.5;
+    // Distribute remainder seats to sides (top, right, bottom, left)
+    const topSeats = seatsPerSide + (remainder > 0 ? 1 : 0);
+    const rightSeats = seatsPerSide + (remainder > 1 ? 1 : 0);
+    const bottomSeats = seatsPerSide + (remainder > 2 ? 1 : 0);
+    const leftSeats = seatsPerSide + (remainder > 3 ? 1 : 0);
+
+    let seatNum = 1;
+    const chairSpacing = 0.18; // Tight spacing between chairs
+
+    // Top side (chairs facing down toward table) - centered and tight
+    const topWidth = (topSeats - 1) * chairSpacing;
+    const topStartX = -topWidth / 2;
+    for (let i = 0; i < topSeats; i++) {
       seats.push({
         seatNumber: seatNum++,
-        relativeX: -0.4 + spacing * 0.8,
+        relativeX: topSeats === 1 ? 0 : topStartX + i * chairSpacing,
         relativeY: -0.5,
         angle: 0,
       });
     }
 
-    // Bottom side (chairs facing inward toward table)
-    for (let i = 0; i < otherHalf; i++) {
-      const spacing = otherHalf > 1 ? (i / (otherHalf - 1)) : 0.5;
+    // Right side (chairs facing left toward table) - centered and tight
+    const rightHeight = (rightSeats - 1) * chairSpacing;
+    const rightStartY = -rightHeight / 2;
+    for (let i = 0; i < rightSeats; i++) {
       seats.push({
         seatNumber: seatNum++,
-        relativeX: 0.4 - spacing * 0.8,
+        relativeX: 0.5,
+        relativeY: rightSeats === 1 ? 0 : rightStartY + i * chairSpacing,
+        angle: 90,
+      });
+    }
+
+    // Bottom side (chairs facing up toward table) - centered and tight
+    const bottomWidth = (bottomSeats - 1) * chairSpacing;
+    const bottomStartX = bottomWidth / 2;
+    for (let i = 0; i < bottomSeats; i++) {
+      seats.push({
+        seatNumber: seatNum++,
+        relativeX: bottomSeats === 1 ? 0 : bottomStartX - i * chairSpacing,
         relativeY: 0.5,
         angle: 180,
+      });
+    }
+
+    // Left side (chairs facing right toward table) - centered and tight
+    const leftHeight = (leftSeats - 1) * chairSpacing;
+    const leftStartY = leftHeight / 2;
+    for (let i = 0; i < leftSeats; i++) {
+      seats.push({
+        seatNumber: seatNum++,
+        relativeX: -0.5,
+        relativeY: leftSeats === 1 ? 0 : leftStartY - i * chairSpacing,
+        angle: 270,
       });
     }
   } else if (shape === "rectangle") {
-    // For rectangle: seats ONLY on the two long sides (top and bottom)
-    const halfCapacity = Math.ceil(capacity / 2);
-    const otherHalf = capacity - halfCapacity;
-    let seatNum = 1;
+    // For rectangle (stadium shape): 2 chairs on each short side, rest on long sides
+    // Short sides are left and right, long sides are top and bottom
+    const shortSideSeats = Math.min(2, Math.floor(capacity / 4)); // Max 2 per short side
+    const remainingSeats = capacity - (shortSideSeats * 2); // Seats for long sides
+    const topSeats = Math.ceil(remainingSeats / 2);
+    const bottomSeats = remainingSeats - topSeats;
 
-    // Top side (chairs facing inward toward table)
-    for (let i = 0; i < halfCapacity; i++) {
-      const spacing = halfCapacity > 1 ? (i / (halfCapacity - 1)) : 0.5;
+    let seatNum = 1;
+    const chairSpacing = 0.18; // Same spacing as square for consistency
+
+    // Top side (long side - chairs facing down toward table)
+    for (let i = 0; i < topSeats; i++) {
+      const spacing = topSeats > 1 ? (i / (topSeats - 1)) : 0.5;
       seats.push({
         seatNumber: seatNum++,
         relativeX: -0.4 + spacing * 0.8,
@@ -119,14 +158,39 @@ function calculateEvenDistribution(capacity: number, shape: TableShape): SeatPos
       });
     }
 
-    // Bottom side (chairs facing inward toward table)
-    for (let i = 0; i < otherHalf; i++) {
-      const spacing = otherHalf > 1 ? (i / (otherHalf - 1)) : 0.5;
+    // Right side (short side - more gap, slightly closer to table)
+    const shortSideSpacing = 0.25; // More gap between chairs
+    const rightHeight = (shortSideSeats - 1) * shortSideSpacing;
+    const rightStartY = -rightHeight / 2;
+    for (let i = 0; i < shortSideSeats; i++) {
+      seats.push({
+        seatNumber: seatNum++,
+        relativeX: 0.46, // Slightly closer to table
+        relativeY: shortSideSeats === 1 ? 0 : rightStartY + i * shortSideSpacing,
+        angle: 90,
+      });
+    }
+
+    // Bottom side (long side - chairs facing up toward table)
+    for (let i = 0; i < bottomSeats; i++) {
+      const spacing = bottomSeats > 1 ? (i / (bottomSeats - 1)) : 0.5;
       seats.push({
         seatNumber: seatNum++,
         relativeX: 0.4 - spacing * 0.8,
         relativeY: 0.5,
         angle: 180,
+      });
+    }
+
+    // Left side (short side - more gap, slightly closer to table)
+    const leftHeight = (shortSideSeats - 1) * shortSideSpacing;
+    const leftStartY = leftHeight / 2;
+    for (let i = 0; i < shortSideSeats; i++) {
+      seats.push({
+        seatNumber: seatNum++,
+        relativeX: -0.46, // Slightly closer to table
+        relativeY: shortSideSeats === 1 ? 0 : leftStartY - i * shortSideSpacing,
+        angle: 270,
       });
     }
   } else if (shape === "oval") {

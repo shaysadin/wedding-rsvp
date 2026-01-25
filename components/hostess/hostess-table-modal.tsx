@@ -75,16 +75,37 @@ interface HostessTableModalProps {
   onClose: () => void;
 }
 
+// Chair SVG Component for hostess view - bigger and simpler
+function ChairIcon({ color, className }: { color: string; className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className={className}
+    >
+      {/* Chair seat */}
+      <rect x="5" y="9" width="14" height="4" rx="1.5" fill={color} />
+      {/* Chair back */}
+      <rect x="6" y="3" width="12" height="6" rx="1.5" fill={color} />
+      {/* Chair legs */}
+      <rect x="6" y="13" width="3" height="8" rx="1" fill={color} />
+      <rect x="15" y="13" width="3" height="8" rx="1" fill={color} />
+    </svg>
+  );
+}
+
 // Table shape visualization component
 function TableShape({ capacity, arrivedCount, totalGuests }: { capacity: number; arrivedCount: number; totalGuests: number }) {
   const generateSeatPositions = (count: number) => {
-    const positions: { x: number; y: number }[] = [];
+    const positions: { x: number; y: number; angle: number }[] = [];
     for (let i = 0; i < count; i++) {
       const angle = (i * (360 / Math.max(count, 1))) - 90;
       const rad = (angle * Math.PI) / 180;
       positions.push({
-        x: 50 + 40 * Math.cos(rad),
-        y: 50 + 40 * Math.sin(rad),
+        x: 50 + 38 * Math.cos(rad),
+        y: 50 + 38 * Math.sin(rad),
+        angle: angle + 90, // Rotate chair to face table
       });
     }
     return positions;
@@ -92,27 +113,33 @@ function TableShape({ capacity, arrivedCount, totalGuests }: { capacity: number;
 
   const seatPositions = generateSeatPositions(Math.min(capacity, 12));
 
+  // Chair colors
+  const getChairColor = (index: number) => {
+    const isArrived = index < arrivedCount;
+    const isExpected = index < totalGuests;
+    if (isArrived) return "#22c55e"; // green-500
+    if (isExpected) return "#71717a"; // zinc-500
+    return "#d4d4d8"; // zinc-300
+  };
+
   return (
-    <div className="relative w-36 h-36 mx-auto">
-      <div className="absolute inset-[25%] rounded-full bg-gradient-to-b from-zinc-100 to-zinc-200 dark:from-zinc-800 dark:to-zinc-700 border-2 border-zinc-300 dark:border-zinc-600 shadow-inner" />
-      {seatPositions.map((pos, i) => {
-        const isArrived = i < arrivedCount;
-        const isExpected = i < totalGuests;
-        return (
-          <div
-            key={i}
-            className={cn(
-              "absolute w-4 h-4 rounded-full border-2 transition-colors -translate-x-1/2 -translate-y-1/2",
-              isArrived
-                ? "bg-green-500 border-green-600"
-                : isExpected
-                  ? "bg-zinc-400 dark:bg-zinc-500 border-zinc-500 dark:border-zinc-400"
-                  : "bg-zinc-200 dark:bg-zinc-700 border-zinc-300 dark:border-zinc-600"
-            )}
-            style={{ left: `${pos.x}%`, top: `${pos.y}%` }}
-          />
-        );
-      })}
+    <div className="relative w-40 h-40 mx-auto">
+      {/* Table */}
+      <div className="absolute inset-[28%] rounded-full bg-gradient-to-b from-zinc-100 to-zinc-200 dark:from-zinc-800 dark:to-zinc-700 border-2 border-zinc-300 dark:border-zinc-600 shadow-inner" />
+      {/* Chairs - bigger and using chair icon */}
+      {seatPositions.map((pos, i) => (
+        <div
+          key={i}
+          className="absolute w-7 h-7 -translate-x-1/2 -translate-y-1/2 transition-colors"
+          style={{
+            left: `${pos.x}%`,
+            top: `${pos.y}%`,
+            transform: `translate(-50%, -50%) rotate(${pos.angle}deg)`,
+          }}
+        >
+          <ChairIcon color={getChairColor(i)} className="w-full h-full" />
+        </div>
+      ))}
     </div>
   );
 }

@@ -1,10 +1,12 @@
 "use client";
 
-import { Fragment, useEffect, useState } from "react";
+import { Fragment, useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { Menu, PanelLeftClose, PanelRightClose, ArrowLeft, ArrowRight } from "lucide-react";
+
+const SIDEBAR_STORAGE_KEY = "event-sidebar-collapsed";
 
 import { cn } from "@/lib/utils";
 import { useMediaQuery } from "@/hooks/use-media-query";
@@ -78,15 +80,46 @@ export function EventSidebar({ currentEvent, events, locale }: EventSidebarProps
   const isRTL = locale === "he";
 
   const { isTablet } = useMediaQuery();
-  const [isSidebarExpanded, setIsSidebarExpanded] = useState(!isTablet);
 
-  const toggleSidebar = () => {
-    setIsSidebarExpanded(!isSidebarExpanded);
-  };
+  // Initialize state from localStorage or default based on screen size
+  const [isSidebarExpanded, setIsSidebarExpanded] = useState(() => {
+    // Default to expanded on larger screens, collapsed on tablet
+    return !isTablet;
+  });
+  const [hasInitialized, setHasInitialized] = useState(false);
 
+  // Load saved preference from localStorage on mount
   useEffect(() => {
-    setIsSidebarExpanded(!isTablet);
-  }, [isTablet]);
+    const saved = localStorage.getItem(SIDEBAR_STORAGE_KEY);
+    if (saved !== null) {
+      // If user has a saved preference, use it
+      setIsSidebarExpanded(saved !== "true"); // stored as "collapsed" = true
+    } else {
+      // No saved preference, use screen size default
+      setIsSidebarExpanded(!isTablet);
+    }
+    setHasInitialized(true);
+  }, []);
+
+  // Only apply screen size default on initial load if no saved preference
+  useEffect(() => {
+    if (!hasInitialized) return;
+
+    const saved = localStorage.getItem(SIDEBAR_STORAGE_KEY);
+    // Only auto-adjust if user hasn't set a preference
+    if (saved === null) {
+      setIsSidebarExpanded(!isTablet);
+    }
+  }, [isTablet, hasInitialized]);
+
+  const toggleSidebar = useCallback(() => {
+    setIsSidebarExpanded(prev => {
+      const newValue = !prev;
+      // Save preference to localStorage (storing collapsed state)
+      localStorage.setItem(SIDEBAR_STORAGE_KEY, (!newValue).toString());
+      return newValue;
+    });
+  }, []);
 
   // Helper function for translations
   const getTitle = (titleKey?: string, fallback?: string) => {

@@ -118,7 +118,7 @@ const COLOR_THEMES: Record<TableColorTheme, {
   },
 };
 
-const CHAIR_SIZE = 26; // Chair size in pixels
+const CHAIR_SIZE = 32; // Chair size in pixels (slightly bigger)
 
 // Chair SVG Component
 function ChairIcon({ color, className }: { color: string; className?: string }) {
@@ -264,13 +264,14 @@ export function TableWithSeats({
                 onMouseLeave={() => setHoveredChair(null)}
               >
                 <ChairIcon color={chairColor} className="w-full h-full" />
-                {/* Chair Number Badge (only show if empty) */}
+                {/* Chair Number Badge (only show if empty) - COMMENTED OUT
                 {!guest && (
                   <div className="absolute -top-1 -right-1 bg-white dark:bg-gray-800 rounded-full w-4 h-4 flex items-center justify-center border border-gray-300 dark:border-gray-600">
                     <span className="text-[7px] font-bold">{index + 1}</span>
                   </div>
                 )}
-                {/* Guest Initial Badge (if occupied) */}
+                */}
+                {/* Guest Initial Badge (if occupied) - COMMENTED OUT
                 {guest && (
                   <div
                     className="absolute -top-1 -right-1 bg-white dark:bg-gray-800 rounded-full w-5 h-5 flex items-center justify-center border-2 shadow-sm"
@@ -281,6 +282,7 @@ export function TableWithSeats({
                     </span>
                   </div>
                 )}
+                */}
               </div>
             </PopoverTrigger>
             <PopoverContent side="top" className="w-48 p-2 z-[1001]">
