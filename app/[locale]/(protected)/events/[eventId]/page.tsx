@@ -23,8 +23,23 @@ export default async function EventDashboardPage({ params }: EventDashboardPageP
   }
 
   // Fetch event with all related data for dashboard summaries
+  // Allow both owner and collaborator access
   const event = await prisma.weddingEvent.findFirst({
-    where: { id: eventId, ownerId: user.id },
+    where: {
+      id: eventId,
+      isArchived: false,
+      OR: [
+        { ownerId: user.id },
+        {
+          collaborators: {
+            some: {
+              userId: user.id,
+              acceptedAt: { not: null },
+            },
+          },
+        },
+      ],
+    },
     include: {
       guests: {
         include: {
@@ -153,6 +168,8 @@ export default async function EventDashboardPage({ params }: EventDashboardPageP
     invitationImagePublicId: event.invitationImagePublicId,
     smsSenderId: event.smsSenderId,
     isActive: event.isActive,
+    isArchived: event.isArchived,
+    archivedAt: event.archivedAt,
     createdAt: event.createdAt,
     updatedAt: event.updatedAt,
     rsvpConfirmedMessage: event.rsvpConfirmedMessage,

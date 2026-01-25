@@ -45,18 +45,24 @@ export default async function GiftPage({ params, searchParams }: GiftPageProps) 
     currency: settings.currency,
   };
 
+  const locale = resolvedSearchParams.lang || "he";
+  const isRTL = locale === "he";
+
   // Check if gifts are enabled
   if (!parsedSettings.isEnabled) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-pink-50 to-purple-50 dark:from-gray-900 dark:to-gray-800 p-4">
+      <div
+        className="min-h-screen flex items-center justify-center bg-gradient-to-br from-pink-50 to-purple-50 dark:from-gray-900 dark:to-gray-800 p-4"
+        dir={isRTL ? "rtl" : "ltr"}
+      >
         <div className="text-center max-w-md">
           <h1 className="text-2xl font-bold mb-4">
-            {resolvedSearchParams.lang === "en"
+            {locale === "en"
               ? "Gift Payments Not Available"
               : "תשלומי מתנות אינם זמינים"}
           </h1>
           <p className="text-muted-foreground">
-            {resolvedSearchParams.lang === "en"
+            {locale === "en"
               ? "The couple has not enabled gift payments for this event."
               : "בעלי האירוע לא הפעילו אפשרות לשלוח מתנות כספיות."}
           </p>
@@ -65,10 +71,11 @@ export default async function GiftPage({ params, searchParams }: GiftPageProps) 
     );
   }
 
-  const locale = resolvedSearchParams.lang || "he";
-
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-pink-50 to-purple-50 dark:from-gray-900 dark:to-gray-800 p-4">
+    <div
+      className="min-h-screen flex items-center justify-center bg-gradient-to-br from-pink-50 to-purple-50 dark:from-gray-900 dark:to-gray-800 p-4"
+      dir={isRTL ? "rtl" : "ltr"}
+    >
       <GiftPaymentForm
         guestSlug={guestSlug}
         guestName={guestName || "Guest"}

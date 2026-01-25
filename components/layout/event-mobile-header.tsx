@@ -28,14 +28,17 @@ import { Icons } from "@/components/shared/icons";
 import { EventOption } from "@/contexts/event-context";
 import { EventSwitcherInline } from "./event-switcher-inline";
 import { UserAccountNav } from "./user-account-nav";
+import { InviteCollaboratorDialog } from "@/components/events/invite-collaborator-dialog";
 
 interface EventMobileHeaderProps {
   currentEvent: EventOption;
   events: EventOption[];
   locale: string;
+  isOwner?: boolean;
+  currentUserId?: string;
 }
 
-export function EventMobileHeader({ currentEvent, events, locale }: EventMobileHeaderProps) {
+export function EventMobileHeader({ currentEvent, events, locale, isOwner = true, currentUserId }: EventMobileHeaderProps) {
   const router = useRouter();
   const t = useTranslations();
   const [drawerOpen, setDrawerOpen] = React.useState(false);
@@ -123,8 +126,11 @@ export function EventMobileHeader({ currentEvent, events, locale }: EventMobileH
           </DrawerContent>
         </Drawer>
 
-        {/* Right - User Avatar */}
-        <div className="flex justify-end">
+        {/* Right - Invite & User Avatar */}
+        <div className="flex items-center gap-1 justify-end">
+          {isOwner && (
+            <InviteCollaboratorDialog eventId={currentEvent.id} currentUserId={currentUserId} />
+          )}
           <UserAccountNav />
         </div>
       </header>

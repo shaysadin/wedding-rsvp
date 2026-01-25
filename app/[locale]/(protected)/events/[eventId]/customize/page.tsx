@@ -37,9 +37,23 @@ export default async function CustomizePage({ params }: CustomizePageProps) {
     redirect(`/${locale}/dashboard`);
   }
 
-  // Verify event exists and belongs to user
+  // Verify event exists and user has access (owner or collaborator)
   const eventCheck = await prisma.weddingEvent.findFirst({
-    where: { id: eventId, ownerId: user.id },
+    where: {
+      id: eventId,
+      isArchived: false,
+      OR: [
+        { ownerId: user.id },
+        {
+          collaborators: {
+            some: {
+              userId: user.id,
+              acceptedAt: { not: null },
+            },
+          },
+        },
+      ],
+    },
     select: { id: true },
   });
 

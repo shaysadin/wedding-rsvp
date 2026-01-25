@@ -93,7 +93,7 @@ export function GiftsDashboard({
         isEnabled: settings.isEnabled ?? false,
         minAmount: settings.minAmount ?? 50,
         maxAmount: settings.maxAmount ?? 5000,
-        suggestedAmounts: settings.suggestedAmounts?.join(", ") ?? "100, 250, 500, 1000",
+        suggestedAmounts: settings.suggestedAmounts?.join(", ") ?? "400, 500, 800, 1000",
         currency: settings.currency ?? "ILS",
         useExternalProvider: settings.useExternalProvider ?? false,
         externalProviderUrl: settings.externalProviderUrl ?? "",

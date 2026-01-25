@@ -229,8 +229,23 @@ export async function getEventById(eventId: string) {
       return { error: "Unauthorized" };
     }
 
+    // Allow both owner and collaborator access
     const event = await prisma.weddingEvent.findFirst({
-      where: { id: eventId, ownerId: user.id },
+      where: {
+        id: eventId,
+        isArchived: false,
+        OR: [
+          { ownerId: user.id },
+          {
+            collaborators: {
+              some: {
+                userId: user.id,
+                acceptedAt: { not: null },
+              },
+            },
+          },
+        ],
+      },
       include: {
         rsvpPageSettings: true,
         guests: {
@@ -276,6 +291,84 @@ export async function getEventById(eventId: string) {
   }
 }
 
+/**
+ * Soft archive an event (without deleting)
+ * Sets isArchived = true and archivedAt timestamp
+ */
+export async function softArchiveEvent(eventId: string) {
+  try {
+    const user = await getCurrentUser();
+
+    const hasWeddingOwnerRole = user?.roles?.includes(UserRole.ROLE_WEDDING_OWNER);
+    if (!user || !hasWeddingOwnerRole) {
+      return { error: "Unauthorized" };
+    }
+
+    // Only owner can archive
+    const existingEvent = await prisma.weddingEvent.findFirst({
+      where: { id: eventId, ownerId: user.id },
+    });
+
+    if (!existingEvent) {
+      return { error: "Event not found" };
+    }
+
+    await prisma.weddingEvent.update({
+      where: { id: eventId },
+      data: {
+        isArchived: true,
+        archivedAt: new Date(),
+      },
+    });
+
+    revalidatePath("/dashboard/events");
+    revalidatePath("/dashboard/archives");
+
+    return { success: true };
+  } catch (error) {
+    console.error("Error archiving event:", error);
+    return { error: "Failed to archive event" };
+  }
+}
+
+/**
+ * Unarchive an event
+ */
+export async function unarchiveEvent(eventId: string) {
+  try {
+    const user = await getCurrentUser();
+
+    const hasWeddingOwnerRole = user?.roles?.includes(UserRole.ROLE_WEDDING_OWNER);
+    if (!user || !hasWeddingOwnerRole) {
+      return { error: "Unauthorized" };
+    }
+
+    const existingEvent = await prisma.weddingEvent.findFirst({
+      where: { id: eventId, ownerId: user.id },
+    });
+
+    if (!existingEvent) {
+      return { error: "Event not found" };
+    }
+
+    await prisma.weddingEvent.update({
+      where: { id: eventId },
+      data: {
+        isArchived: false,
+        archivedAt: null,
+      },
+    });
+
+    revalidatePath("/dashboard/events");
+    revalidatePath("/dashboard/archives");
+
+    return { success: true };
+  } catch (error) {
+    console.error("Error unarchiving event:", error);
+    return { error: "Failed to unarchive event" };
+  }
+}
+
 export async function getUserEvents(workspaceId?: string) {
   try {
     const user = await getCurrentUser();
@@ -309,17 +402,20 @@ export async function getUserEvents(workspaceId?: string) {
       currentWorkspaceId = defaultWorkspace?.id;
     }
 
-    const whereClause: { ownerId: string; workspaceId?: string } = {
+    // Build where clause for owned events
+    const ownedWhereClause: { ownerId: string; workspaceId?: string; isArchived: boolean } = {
       ownerId: user.id,
+      isArchived: false,
     };
 
     // Only filter by workspace for BUSINESS users
     if (userPlan === "BUSINESS" && currentWorkspaceId) {
-      whereClause.workspaceId = currentWorkspaceId;
+      ownedWhereClause.workspaceId = currentWorkspaceId;
     }
 
-    const events = await prisma.weddingEvent.findMany({
-      where: whereClause,
+    // Fetch owned events
+    const ownedEvents = await prisma.weddingEvent.findMany({
+      where: ownedWhereClause,
       include: {
         _count: {
           select: { guests: true },
@@ -329,12 +425,61 @@ export async function getUserEvents(workspaceId?: string) {
             rsvp: true,
           },
         },
+        owner: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            image: true,
+          },
+        },
       },
       orderBy: { dateTime: "asc" },
     });
 
-    // Calculate RSVP stats for each event
-    const eventsWithStats = events.map((event) => {
+    // Fetch collaborated events (events where user is a collaborator)
+    const collaboratedEvents = await prisma.weddingEvent.findMany({
+      where: {
+        isArchived: false,
+        collaborators: {
+          some: {
+            userId: user.id,
+            acceptedAt: { not: null },
+          },
+        },
+      },
+      include: {
+        _count: {
+          select: { guests: true },
+        },
+        guests: {
+          include: {
+            rsvp: true,
+          },
+        },
+        owner: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            image: true,
+          },
+        },
+        collaborators: {
+          where: {
+            userId: user.id,
+            acceptedAt: { not: null },
+          },
+          select: {
+            role: true,
+          },
+        },
+      },
+      orderBy: { dateTime: "asc" },
+    });
+
+    // Helper function to calculate stats
+    const calculateStats = (event: typeof ownedEvents[0]) => {
       const stats = {
         total: event.guests.length,
         pending: 0,
@@ -354,15 +499,32 @@ export async function getUserEvents(workspaceId?: string) {
         }
       });
 
-      return {
-        ...event,
-        // Convert Decimal to number for client component serialization
-        totalBudget: event.totalBudget ? Number(event.totalBudget) : null,
-        stats,
-      };
-    });
+      return stats;
+    };
 
-    return { success: true, events: eventsWithStats };
+    // Process owned events
+    const ownedEventsWithStats = ownedEvents.map((event) => ({
+      ...event,
+      totalBudget: event.totalBudget ? Number(event.totalBudget) : null,
+      stats: calculateStats(event),
+      isOwner: true,
+      collaboratorRole: null as null,
+    }));
+
+    // Process collaborated events
+    const collaboratedEventsWithStats = collaboratedEvents.map((event) => ({
+      ...event,
+      totalBudget: event.totalBudget ? Number(event.totalBudget) : null,
+      stats: calculateStats(event),
+      isOwner: false,
+      collaboratorRole: event.collaborators[0]?.role || null,
+    }));
+
+    return {
+      success: true,
+      events: ownedEventsWithStats,
+      collaboratedEvents: collaboratedEventsWithStats,
+    };
   } catch (error) {
     console.error("Error fetching events:", error);
     return { error: "Failed to fetch events" };

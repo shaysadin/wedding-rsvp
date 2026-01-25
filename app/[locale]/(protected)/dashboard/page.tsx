@@ -51,18 +51,20 @@ export default async function DashboardPage() {
     getCurrentUserUsage(),
   ]);
 
-  const events = eventsResult.success ? eventsResult.events : [];
+  const ownedEvents = eventsResult.success ? eventsResult.events : [];
+  const collaboratedEvents = eventsResult.success ? eventsResult.collaboratedEvents : [];
+  const allEvents = [...(ownedEvents || []), ...(collaboratedEvents || [])];
   const usageData = usageResult.success ? usageResult : null;
 
-  // Calculate overall stats
-  const totalGuests = events?.reduce((sum, e) => sum + e.stats.total, 0) || 0;
-  const totalPending = events?.reduce((sum, e) => sum + e.stats.pending, 0) || 0;
-  const totalAccepted = events?.reduce((sum, e) => sum + e.stats.accepted, 0) || 0;
-  const totalDeclined = events?.reduce((sum, e) => sum + e.stats.declined, 0) || 0;
-  const totalAttending = events?.reduce((sum, e) => sum + e.stats.totalGuestCount, 0) || 0;
+  // Calculate overall stats (from all events user has access to)
+  const totalGuests = allEvents?.reduce((sum, e) => sum + e.stats.total, 0) || 0;
+  const totalPending = allEvents?.reduce((sum, e) => sum + e.stats.pending, 0) || 0;
+  const totalAccepted = allEvents?.reduce((sum, e) => sum + e.stats.accepted, 0) || 0;
+  const totalDeclined = allEvents?.reduce((sum, e) => sum + e.stats.declined, 0) || 0;
+  const totalAttending = allEvents?.reduce((sum, e) => sum + e.stats.totalGuestCount, 0) || 0;
 
   const stats = {
-    totalEvents: events?.length || 0,
+    totalEvents: allEvents?.length || 0,
     totalGuests,
     totalPending,
     totalAccepted,
@@ -73,7 +75,8 @@ export default async function DashboardPage() {
   return (
     <DashboardContent
       userName={user?.name || ""}
-      events={events || []}
+      events={ownedEvents || []}
+      collaboratedEvents={collaboratedEvents || []}
       stats={stats}
       locale={locale}
       usageData={usageData ? {

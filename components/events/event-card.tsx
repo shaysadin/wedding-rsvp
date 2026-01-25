@@ -3,10 +3,11 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { WeddingEvent, Guest, GuestRsvp } from "@prisma/client";
+import { WeddingEvent, Guest, GuestRsvp, CollaboratorRole } from "@prisma/client";
 import { useTranslations } from "next-intl";
 import { motion } from "framer-motion";
-import { MapPin, MoreVertical, Pencil, Trash2, ExternalLink, Users, UserCheck, Clock, ArrowUpRight } from "lucide-react";
+import { MapPin, MoreVertical, Pencil, Trash2, ExternalLink, Users, UserCheck, Clock, ArrowUpRight, Archive, Share2 } from "lucide-react";
+import { toast } from "sonner";
 
 import { cn } from "@/lib/utils";
 import { Card, CardContent } from "@/components/ui/card";
@@ -18,6 +19,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { DeleteEventModal } from "@/components/events/delete-event-modal";
+import { softArchiveEvent } from "@/actions/events";
 
 // Serialized event type for client components (Decimal converted to number)
 type SerializedWeddingEvent = Omit<WeddingEvent, 'totalBudget'> & {
@@ -34,6 +36,14 @@ type EventWithStats = SerializedWeddingEvent & {
     declined: number;
     totalGuestCount: number;
   };
+  owner?: {
+    id: string;
+    name: string | null;
+    email: string;
+    image: string | null;
+  };
+  isOwner?: boolean;
+  collaboratorRole?: CollaboratorRole | null;
 };
 
 interface EventCardProps {
@@ -43,13 +53,36 @@ interface EventCardProps {
 
 export function EventCard({ event, locale }: EventCardProps) {
   const t = useTranslations("events");
+  const tCollab = useTranslations("collaboration");
   const router = useRouter();
   const isRTL = locale === "he";
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isArchiving, setIsArchiving] = useState(false);
+
+  // Check if user is owner (default to true for backwards compatibility)
+  const isOwner = event.isOwner !== false;
+  const isShared = event.isOwner === false;
 
   const eventDate = new Date(event.dateTime);
   const isUpcoming = eventDate > new Date();
   const daysUntil = Math.ceil((eventDate.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
+
+  const handleArchive = async () => {
+    setIsArchiving(true);
+    try {
+      const result = await softArchiveEvent(event.id);
+      if (result.error) {
+        toast.error(result.error);
+      } else {
+        toast.success(isRTL ? "האירוע הועבר לארכיון בהצלחה" : "Event archived successfully");
+        router.refresh();
+      }
+    } catch {
+      toast.error(isRTL ? "שגיאה בהעברה לארכיון" : "Failed to archive event");
+    } finally {
+      setIsArchiving(false);
+    }
+  };
 
   const formattedDate = eventDate.toLocaleDateString(isRTL ? "he-IL" : "en-US", {
     weekday: "short",
@@ -83,6 +116,12 @@ export function EventCard({ event, locale }: EventCardProps) {
           )}>
             {/* Click indicator arrow - always visible */}
             <div className="absolute top-4 end-4 flex items-center gap-1.5 text-xs text-muted-foreground group-hover:text-primary transition-colors z-10">
+              {isShared && (
+                <span className="flex items-center gap-1 rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-medium text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 me-1">
+                  <Share2 className="h-3 w-3" />
+                  {tCollab("sharedWithYou")}
+                </span>
+              )}
               <span className="hidden sm:inline">{isRTL ? "לחץ לניהול" : "Click to manage"}</span>
               <ArrowUpRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
             </div>
@@ -130,17 +169,32 @@ export function EventCard({ event, locale }: EventCardProps) {
                         <Pencil className="me-2 h-4 w-4" />
                         {isRTL ? "ערוך אירוע" : "Edit Event"}
                       </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem
-                        onClick={(e) => {
-                          e.preventDefault();
-                          setIsDeleteModalOpen(true);
-                        }}
-                        className="text-red-600 focus:text-red-600 dark:text-red-400 dark:focus:text-red-400"
-                      >
-                        <Trash2 className="me-2 h-4 w-4" />
-                        {isRTL ? "מחק אירוע" : "Delete Event"}
-                      </DropdownMenuItem>
+                      {isOwner && (
+                        <>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            onClick={(e) => {
+                              e.preventDefault();
+                              handleArchive();
+                            }}
+                            disabled={isArchiving}
+                            className="text-amber-600 focus:text-amber-600 dark:text-amber-400 dark:focus:text-amber-400"
+                          >
+                            <Archive className="me-2 h-4 w-4" />
+                            {isRTL ? "העבר לארכיון" : "Archive Event"}
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={(e) => {
+                              e.preventDefault();
+                              setIsDeleteModalOpen(true);
+                            }}
+                            className="text-red-600 focus:text-red-600 dark:text-red-400 dark:focus:text-red-400"
+                          >
+                            <Trash2 className="me-2 h-4 w-4" />
+                            {isRTL ? "מחק אירוע" : "Delete Event"}
+                          </DropdownMenuItem>
+                        </>
+                      )}
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </div>

@@ -136,7 +136,7 @@ export function HostessPageContent({
     tableView: isRTL ? "תצוגת שולחנות" : "Table View",
     refresh: isRTL ? "רענן" : "Refresh",
     lastUpdated: isRTL ? "עודכן לאחרונה:" : "Last updated:",
-    totalGuests: isRTL ? 'סה"כ אורחים' : "Total Guests",
+    notArrivedYet: isRTL ? "טרם הגיעו" : "Not Arrived",
     arrived: isRTL ? "הגיעו" : "Arrived",
     tables: isRTL ? "שולחנות" : "Tables",
     expected: isRTL ? "צפויים" : "Expected",
@@ -299,21 +299,23 @@ export function HostessPageContent({
             </CardContent>
           </Card>
 
-          {/* Total Guests */}
-          <Card className="bg-white dark:bg-zinc-900 shadow-md border-zinc-200 dark:border-zinc-800">
+          {/* Not Arrived Yet */}
+          <Card className="bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-950/50 dark:to-amber-950/30 border-orange-200 dark:border-orange-800 shadow-md">
             <CardContent className="p-3 sm:p-3">
               <div className="flex items-start justify-between">
                 <div>
-                  <p className="text-xs font-medium text-muted-foreground">{t.totalGuests}</p>
-                  <p className="text-xl sm:text-2xl font-bold">{stats.totalGuests}</p>
+                  <p className="text-xs font-medium text-orange-700 dark:text-orange-400">{t.notArrivedYet}</p>
+                  <p className="text-xl sm:text-2xl font-bold text-orange-600 dark:text-orange-500">
+                    {stats.totalExpected - stats.arrivedGuests}
+                  </p>
                 </div>
-                <div className="p-1.5 bg-violet-100 dark:bg-violet-900/50 rounded-lg">
-                  <Users className="h-4 w-4 text-violet-600 dark:text-violet-400" />
+                <div className="p-1.5 bg-orange-100 dark:bg-orange-900/50 rounded-lg">
+                  <Users className="h-4 w-4 text-orange-600 dark:text-orange-400" />
                 </div>
               </div>
               <div className="mt-1.5">
-                <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
-                  {isRTL ? "רשימות" : "Invitations"}
+                <Badge variant="secondary" className="text-[10px] px-1.5 py-0 bg-orange-100 dark:bg-orange-900/50 text-orange-700 dark:text-orange-400">
+                  {isRTL ? "ממתינים" : "Waiting"}
                 </Badge>
               </div>
             </CardContent>

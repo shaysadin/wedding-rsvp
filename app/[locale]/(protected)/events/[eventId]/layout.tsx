@@ -15,6 +15,7 @@ import { UserAccountNav } from "@/components/layout/user-account-nav";
 import { Button } from "@/components/ui/button";
 import MaxWidthWrapper from "@/components/shared/max-width-wrapper";
 import { sidebarLinks } from "@/config/dashboard";
+import { InviteCollaboratorDialog } from "@/components/events/invite-collaborator-dialog";
 
 interface EventsLayoutProps {
   children: React.ReactNode;
@@ -32,21 +33,38 @@ export default async function EventsLayout({ children, params }: EventsLayoutPro
     redirect(`/${locale}/dashboard`);
   }
 
-  // Fetch current event
+  // Fetch current event - check owner or collaborator access
   const event = await prisma.weddingEvent.findFirst({
-    where: { id: eventId, ownerId: user.id },
+    where: {
+      id: eventId,
+      isArchived: false,
+      OR: [
+        { ownerId: user.id },
+        {
+          collaborators: {
+            some: {
+              userId: user.id,
+              acceptedAt: { not: null },
+            },
+          },
+        },
+      ],
+    },
     select: {
       id: true,
       title: true,
       dateTime: true,
       location: true,
       venue: true,
+      ownerId: true,
     },
   });
 
   if (!event) {
     notFound();
   }
+
+  const isOwner = event.ownerId === user.id;
 
   // Fetch all user events for the event switcher
   const userEvents = await prisma.weddingEvent.findMany({
@@ -102,7 +120,8 @@ export default async function EventsLayout({ children, params }: EventsLayoutPro
               <SearchCommand links={sidebarLinks} fullWidth />
             </div>
             <div className="flex-1" />
-            <div className="shrink-0">
+            <div className="flex items-center gap-2 shrink-0">
+              {isOwner && <InviteCollaboratorDialog eventId={eventId} currentUserId={user.id} />}
               <UserAccountNav />
             </div>
           </header>
@@ -112,6 +131,8 @@ export default async function EventsLayout({ children, params }: EventsLayoutPro
             currentEvent={currentEvent}
             events={events}
             locale={locale}
+            isOwner={isOwner}
+            currentUserId={user.id}
           />
 
           <main className="app-shell-content flex min-h-0 flex-1 flex-col md:overflow-hidden">

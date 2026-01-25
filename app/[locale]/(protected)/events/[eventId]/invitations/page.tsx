@@ -21,8 +21,23 @@ export default async function InvitationsPage({ params }: InvitationsPageProps) 
     redirect(`/${locale}/dashboard`);
   }
 
+  // Allow both owner and collaborator access
   const event = await prisma.weddingEvent.findFirst({
-    where: { id: eventId, ownerId: user.id },
+    where: {
+      id: eventId,
+      isArchived: false,
+      OR: [
+        { ownerId: user.id },
+        {
+          collaborators: {
+            some: {
+              userId: user.id,
+              acceptedAt: { not: null },
+            },
+          },
+        },
+      ],
+    },
     select: { id: true, title: true, dateTime: true, location: true },
   });
 

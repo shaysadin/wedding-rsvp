@@ -3,9 +3,11 @@
 import * as React from "react";
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { useTranslations } from "next-intl";
-import { PlanTier } from "@prisma/client";
+import { PlanTier, CollaboratorRole } from "@prisma/client";
+import { toast } from "sonner";
 import {
   Calendar,
   Users,
@@ -23,7 +25,20 @@ import {
   LayoutGrid,
   List,
   UserCheck,
+  MoreVertical,
+  Archive,
+  Trash2,
+  Share2,
 } from "lucide-react";
+
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { softArchiveEvent } from "@/actions/events";
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -45,6 +60,14 @@ interface EventData {
     accepted: number;
     declined: number;
     totalGuestCount: number;
+  };
+  isOwner?: boolean;
+  collaboratorRole?: CollaboratorRole | null;
+  owner?: {
+    id: string;
+    name: string | null;
+    email: string;
+    image: string | null;
   };
 }
 
@@ -75,6 +98,7 @@ interface UsageData {
 interface DashboardContentProps {
   userName: string;
   events: EventData[];
+  collaboratedEvents?: EventData[];
   stats: {
     totalEvents: number;
     totalGuests: number;
@@ -118,10 +142,12 @@ const floatingAnimation = {
   },
 };
 
-export function DashboardContent({ userName, events, stats, locale, usageData }: DashboardContentProps) {
+export function DashboardContent({ userName, events, collaboratedEvents = [], stats, locale, usageData }: DashboardContentProps) {
   const t = useTranslations("dashboard");
+  const tCollab = useTranslations("collaboration");
   const tPlans = useTranslations("plans");
   const isRTL = locale === "he";
+  const router = useRouter();
   const [showAddEventModal, setShowAddEventModal] = useState(false);
   const [viewMode, setViewMode] = useState<"grid" | "list">(() => {
     if (typeof window !== "undefined") {
@@ -129,6 +155,12 @@ export function DashboardContent({ userName, events, stats, locale, usageData }:
     }
     return "grid";
   });
+
+  // Combine owned events (marked as isOwner) and collaborated events
+  const allEvents = [
+    ...events.map(e => ({ ...e, isOwner: true })),
+    ...collaboratedEvents.map(e => ({ ...e, isOwner: false })),
+  ];
 
   // Save view mode to localStorage
   const handleViewModeChange = (mode: "grid" | "list") => {
@@ -347,7 +379,7 @@ export function DashboardContent({ userName, events, stats, locale, usageData }:
           )}
         </div>
 
-        {!events || events.length === 0 ? (
+        {allEvents.length === 0 ? (
           <EmptyPlaceholder>
             <EmptyPlaceholder.Icon name="calendar" />
             <EmptyPlaceholder.Title>{t("noEventsYet")}</EmptyPlaceholder.Title>
@@ -361,26 +393,29 @@ export function DashboardContent({ userName, events, stats, locale, usageData }:
           </EmptyPlaceholder>
         ) : viewMode === "grid" ? (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {events.slice(0, 6).map((event, index) => (
+            {allEvents.slice(0, 6).map((event, index) => (
               <EventCard
                 key={event.id}
                 event={event}
                 locale={locale}
                 index={index}
                 isRTL={isRTL}
+                onRefresh={() => router.refresh()}
+                sharedLabel={tCollab("sharedWithYou")}
               />
             ))}
           </div>
         ) : (
           <div className="rounded-lg border">
-            {events.slice(0, 10).map((event, index) => (
+            {allEvents.slice(0, 10).map((event, index) => (
               <EventListItem
                 key={event.id}
                 event={event}
                 locale={locale}
                 index={index}
                 isRTL={isRTL}
-                isLast={index === Math.min(events.length - 1, 9)}
+                isLast={index === Math.min(allEvents.length - 1, 9)}
+                sharedLabel={tCollab("sharedWithYou")}
               />
             ))}
           </div>
@@ -544,16 +579,23 @@ const EventCard = React.memo(function EventCard({
   event,
   locale,
   index,
-  isRTL
+  isRTL,
+  onRefresh,
+  sharedLabel,
 }: {
   event: EventData;
   locale: string;
   index: number;
   isRTL: boolean;
+  onRefresh?: () => void;
+  sharedLabel?: string;
 }) {
+  const [isArchiving, setIsArchiving] = React.useState(false);
   const eventDate = new Date(event.dateTime);
   const isUpcoming = eventDate > new Date();
   const daysUntil = Math.ceil((eventDate.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
+  const isOwner = event.isOwner !== false;
+  const isShared = event.isOwner === false;
 
   const formattedDate = eventDate.toLocaleDateString(locale === "he" ? "he-IL" : "en-US", {
     weekday: "short",
@@ -570,6 +612,25 @@ const EventCard = React.memo(function EventCard({
     ? Math.round((event.stats.accepted / event.stats.total) * 100)
     : 0;
 
+  const handleArchive = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsArchiving(true);
+    try {
+      const result = await softArchiveEvent(event.id);
+      if (result.error) {
+        toast.error(result.error);
+      } else {
+        toast.success(isRTL ? "האירוע הועבר לארכיון בהצלחה" : "Event archived successfully");
+        onRefresh?.();
+      }
+    } catch {
+      toast.error(isRTL ? "שגיאה בהעברה לארכיון" : "Failed to archive event");
+    } finally {
+      setIsArchiving(false);
+    }
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 16 }}
@@ -584,10 +645,40 @@ const EventCard = React.memo(function EventCard({
           "shadow-sm hover:shadow-lg hover:shadow-primary/10 dark:hover:shadow-primary/5",
           "hover:-translate-y-1"
         )}>
-          {/* Click indicator arrow - always visible */}
-          <div className="absolute top-4 end-4 flex items-center gap-1.5 text-xs text-muted-foreground group-hover:text-primary transition-colors">
+          {/* Top bar with shared badge, manage text, and actions dropdown */}
+          <div className="absolute top-4 end-4 flex items-center gap-1.5 text-xs text-muted-foreground group-hover:text-primary transition-colors z-10">
+            {isShared && sharedLabel && (
+              <span className="flex items-center gap-1 rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-medium text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 me-1">
+                <Share2 className="h-3 w-3" />
+                {sharedLabel}
+              </span>
+            )}
             <span className="hidden sm:inline">{isRTL ? "לחץ לניהול" : "Click to manage"}</span>
             <ArrowUpRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+
+            {/* Actions dropdown for owners - always visible, at the end */}
+            {isOwner && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    onClick={(e) => e.preventDefault()}
+                    className="rounded-full p-1.5 ms-1 transition-all hover:bg-muted/80 hover:scale-110"
+                  >
+                    <MoreVertical className="h-4 w-4 text-muted-foreground" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align={isRTL ? "start" : "end"} className="w-48 backdrop-blur-xl bg-background/95">
+                  <DropdownMenuItem
+                    onClick={handleArchive}
+                    disabled={isArchiving}
+                    className="text-amber-600 focus:text-amber-600 dark:text-amber-400 dark:focus:text-amber-400"
+                  >
+                    <Archive className="me-2 h-4 w-4" />
+                    {isRTL ? "העבר לארכיון" : "Archive Event"}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
           </div>
 
           <CardContent className="p-5 relative">
@@ -702,17 +793,20 @@ const EventListItem = React.memo(function EventListItem({
   locale,
   index,
   isRTL,
-  isLast
+  isLast,
+  sharedLabel,
 }: {
   event: EventData;
   locale: string;
   index: number;
   isRTL: boolean;
   isLast: boolean;
+  sharedLabel?: string;
 }) {
   const eventDate = new Date(event.dateTime);
   const isUpcoming = eventDate > new Date();
   const daysUntil = Math.ceil((eventDate.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
+  const isShared = event.isOwner === false;
 
   const formattedDate = eventDate.toLocaleDateString(locale === "he" ? "he-IL" : "en-US", {
     weekday: "short",
@@ -745,6 +839,12 @@ const EventListItem = React.memo(function EventListItem({
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
               <h3 className="font-semibold truncate">{event.title}</h3>
+              {isShared && sharedLabel && (
+                <span className="flex items-center gap-1 rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-medium text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 shrink-0">
+                  <Share2 className="h-3 w-3" />
+                  {sharedLabel}
+                </span>
+              )}
               {isUpcoming && daysUntil <= 7 && (
                 <span className={cn(
                   "rounded-full px-2 py-0.5 text-[10px] font-medium shrink-0",

@@ -1882,12 +1882,12 @@
       "minAmount": "סכום מינימום",
       "maxAmount": "סכום מקסימום",
       "suggestedAmounts": "סכומים מוצעים",
-      "suggestedAmountsHint": "ערכים מופרדים בפסיקים (לדוגמה: 100, 250, 500, 1000)",
+      "suggestedAmountsHint": "ערכים מופרדים בפסיקים (לדוגמה: 400, 500, 800, 1000)",
       "currency": "מטבע",
       "saved": "ההגדרות נשמרו בהצלחה"
     },
     "serviceFee": "עמלת שירות",
-    "serviceFeeNote": "עמלת שירות של 8% תתווסף לסכום המתנה",
+    "serviceFeeNote": "עמלת שירות של 5% תתווסף לסכום המתנה",
     "totalCharged": "סה״כ לחיוב",
     "giftAdded": "המתנה נוספה בהצלחה",
     "giftDeleted": "המתנה נמחקה בהצלחה",
@@ -2452,5 +2452,37 @@
         "guests4": "4 אורחים"
       }
     }
+  },
+  "collaboration": {
+    "invite": "הזמן",
+    "inviteTitle": "הזמנת משתף",
+    "inviteDescription": "שתפו את האירוע עם מישהו אחר",
+    "copyLink": "העתק קישור",
+    "linkCopied": "הקישור הועתק!",
+    "sendEmail": "שלח הזמנה",
+    "emailPlaceholder": "הזינו כתובת אימייל",
+    "collaborators": "משתפים",
+    "noCollaborators": "אין משתפים עדיין",
+    "removeCollaborator": "הסר",
+    "sharedWithYou": "משותף",
+    "owner": "בעלים",
+    "roles": {
+      "viewer": "צופה",
+      "editor": "עורך"
+    },
+    "acceptInvite": {
+      "title": "הוזמנת!",
+      "description": "{inviter} הזמין אותך לשתף פעולה באירוע {event}",
+      "accept": "קבל הזמנה",
+      "createAccount": "צור חשבון וקבל",
+      "login": "התחבר כדי לקבל"
+    }
+  },
+  "archive": {
+    "button": "ארכיון",
+    "title": "העברה לארכיון",
+    "description": "האירוע יועבר לארכיון. תוכלו לצפות בו בארכיון.",
+    "confirm": "העבר לארכיון",
+    "success": "האירוע הועבר לארכיון בהצלחה"
   }
 }

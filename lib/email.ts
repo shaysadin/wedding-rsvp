@@ -7,6 +7,7 @@ import { siteConfig } from "@/config/site";
 import { MagicLinkEmail } from "@/emails/magic-link-email";
 import { VerificationEmail } from "@/emails/verification-email";
 import { PasswordResetEmail } from "@/emails/password-reset-email";
+import { EventInvitationEmail } from "@/emails/event-invitation-email";
 import { getUserByEmail } from "./user";
 
 // Initialize SMTP transporter
@@ -223,3 +224,53 @@ export const sendVerificationRequest: EmailConfig["sendVerificationRequest"] =
       console.log("⚠️ Email failed to send - use the console link above");
     }
   };
+
+// Send event collaboration invitation email
+export async function sendEventInvitationEmail({
+  to,
+  inviterName,
+  eventTitle,
+  inviteLink,
+  locale = "he",
+}: {
+  to: string;
+  inviterName: string;
+  eventTitle: string;
+  inviteLink: string;
+  locale?: string;
+}) {
+  const isHebrew = locale === "he";
+
+  console.log("");
+  console.log("=".repeat(60));
+  console.log("📧 EVENT INVITATION EMAIL");
+  console.log("=".repeat(60));
+  console.log(`To: ${to}`);
+  console.log(`Inviter: ${inviterName}`);
+  console.log(`Event: ${eventTitle}`);
+  console.log("");
+  console.log(`🔗 Accept invitation:`);
+  console.log(inviteLink);
+  console.log("=".repeat(60));
+  console.log("");
+
+  const html = await render(
+    EventInvitationEmail({
+      inviterName,
+      eventTitle,
+      inviteLink,
+      siteName: siteConfig.name,
+      locale,
+    })
+  );
+
+  const subject = isHebrew
+    ? `הוזמנת לשתף פעולה באירוע - ${siteConfig.name}`
+    : `You've been invited to collaborate - ${siteConfig.name}`;
+
+  return sendEmail({
+    to,
+    subject,
+    html,
+  });
+}

@@ -105,6 +105,8 @@ interface SerializedEvent {
   invitationImagePublicId: string | null;
   smsSenderId: string | null;
   isActive: boolean;
+  isArchived: boolean;
+  archivedAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
   rsvpConfirmedMessage: string | null;

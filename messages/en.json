@@ -1877,12 +1877,12 @@
       "minAmount": "Minimum Amount",
       "maxAmount": "Maximum Amount",
       "suggestedAmounts": "Suggested Amounts",
-      "suggestedAmountsHint": "Comma-separated values (e.g., 100, 250, 500, 1000)",
+      "suggestedAmountsHint": "Comma-separated values (e.g., 400, 500, 800, 1000)",
       "currency": "Currency",
       "saved": "Settings saved successfully"
     },
     "serviceFee": "Service Fee",
-    "serviceFeeNote": "An 8% service fee will be added to the gift amount",
+    "serviceFeeNote": "A 5% service fee will be added to the gift amount",
     "totalCharged": "Total Charged",
     "giftAdded": "Gift added successfully",
     "giftDeleted": "Gift deleted successfully",
@@ -2447,5 +2447,37 @@
         "guests4": "4 guests"
       }
     }
+  },
+  "collaboration": {
+    "invite": "Invite",
+    "inviteTitle": "Invite Collaborator",
+    "inviteDescription": "Share this event with someone else",
+    "copyLink": "Copy Link",
+    "linkCopied": "Link copied!",
+    "sendEmail": "Send Invitation",
+    "emailPlaceholder": "Enter email address",
+    "collaborators": "Collaborators",
+    "noCollaborators": "No collaborators yet",
+    "removeCollaborator": "Remove",
+    "sharedWithYou": "Shared",
+    "owner": "Owner",
+    "roles": {
+      "viewer": "Viewer",
+      "editor": "Editor"
+    },
+    "acceptInvite": {
+      "title": "You've been invited!",
+      "description": "{inviter} invited you to collaborate on {event}",
+      "accept": "Accept Invitation",
+      "createAccount": "Create Account & Accept",
+      "login": "Login to Accept"
+    }
+  },
+  "archive": {
+    "button": "Archive",
+    "title": "Archive Event",
+    "description": "This will archive the event. You can view it in Archives.",
+    "confirm": "Archive",
+    "success": "Event archived successfully"
   }
 }

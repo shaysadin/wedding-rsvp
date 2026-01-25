@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useTranslations } from "next-intl";
+import { CollaboratorRole } from "@prisma/client";
 
 import { Button } from "@/components/ui/button";
 import { Icons } from "@/components/shared/icons";
@@ -21,6 +22,8 @@ interface EventWithStats {
   imageUrl: string | null;
   smsSenderId: string | null;
   isActive: boolean;
+  isArchived: boolean;
+  archivedAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
   ownerId: string;
@@ -41,6 +44,14 @@ interface EventWithStats {
     declined: number;
     totalGuestCount: number;
   };
+  owner?: {
+    id: string;
+    name: string | null;
+    email: string;
+    image: string | null;
+  };
+  isOwner?: boolean;
+  collaboratorRole?: CollaboratorRole | null;
 }
 
 interface EventsPageClientProps {

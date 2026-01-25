@@ -23,11 +23,22 @@ export default async function RsvpPage({ params, searchParams }: RsvpPageProps) 
     redirect(`/${locale}/dashboard`);
   }
 
-  // Get event with guests
+  // Get event with guests - allow owner and collaborator access
   const event = await prisma.weddingEvent.findFirst({
     where: {
       id: eventId,
-      ownerId: user.id
+      isArchived: false,
+      OR: [
+        { ownerId: user.id },
+        {
+          collaborators: {
+            some: {
+              userId: user.id,
+              acceptedAt: { not: null },
+            },
+          },
+        },
+      ],
     },
     select: {
       id: true,

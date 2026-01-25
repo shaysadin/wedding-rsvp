@@ -111,6 +111,10 @@ model User {
   whatsappPhoneNumber     WhatsAppPhoneNumber?     @relation(fields: [whatsappPhoneNumberId], references: [id], onDelete: SetNull)
   weddingEvents           WeddingEvent[]
   workspaces              Workspace[]
+  // Collaboration relations
+  collaborations          EventCollaborator[]      @relation("CollaboratorUser")
+  sentCollaboratorInvites EventCollaborator[]      @relation("InviterUser")
+  eventInvitations        EventInvitation[]
 
   @@index([vapiPhoneNumberId])
   @@index([whatsappPhoneNumberId])
@@ -208,6 +212,8 @@ model WeddingEvent {
   notes                   String?
   imageUrl                String?               @map("image_url")
   isActive                Boolean               @default(true) @map("is_active")
+  isArchived              Boolean               @default(false) @map("is_archived")
+  archivedAt              DateTime?             @map("archived_at")
   createdAt               DateTime              @default(now()) @map("created_at")
   updatedAt               DateTime              @default(now()) @updatedAt @map("updated_at")
   smsSenderId             String?               @map("sms_sender_id")
@@ -239,10 +245,52 @@ model WeddingEvent {
   generatedInvitations    GeneratedInvitation[]
   giftPaymentSettings     GiftPaymentSettings?
   giftPayments            GiftPayment[]
+  // Collaboration relations
+  collaborators           EventCollaborator[]
+  invitations             EventInvitation[]
 
   @@index([ownerId])
   @@index([workspaceId])
+  @@index([isArchived])
   @@map("wedding_events")
+}
+
+model EventCollaborator {
+  id         String           @id @default(cuid())
+  eventId    String           @map("event_id")
+  userId     String           @map("user_id")
+  role       CollaboratorRole @default(EDITOR)
+  invitedBy  String           @map("invited_by")
+  acceptedAt DateTime?        @map("accepted_at")
+  createdAt  DateTime         @default(now()) @map("created_at")
+
+  event   WeddingEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user    User         @relation("CollaboratorUser", fields: [userId], references: [id], onDelete: Cascade)
+  inviter User         @relation("InviterUser", fields: [invitedBy], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, userId])
+  @@index([eventId])
+  @@index([userId])
+  @@map("event_collaborators")
+}
+
+model EventInvitation {
+  id         String           @id @default(cuid())
+  eventId    String           @map("event_id")
+  email      String? // Optional - for email invites
+  token      String           @unique
+  role       CollaboratorRole @default(EDITOR)
+  invitedBy  String           @map("invited_by")
+  expiresAt  DateTime         @map("expires_at")
+  acceptedAt DateTime?        @map("accepted_at")
+  createdAt  DateTime         @default(now()) @map("created_at")
+
+  event   WeddingEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  inviter User         @relation(fields: [invitedBy], references: [id], onDelete: Cascade)
+
+  @@index([eventId])
+  @@index([token])
+  @@map("event_invitations")
 }
 
 model Guest {
@@ -1189,6 +1237,11 @@ enum PaymentMethod {
   BANK_TRANSFER
   CHECK
   OTHER
+}
+
+enum CollaboratorRole {
+  VIEWER // Read-only access
+  EDITOR // Can modify event data (default)
 }
 
 enum TaskStatus {
