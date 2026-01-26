@@ -470,11 +470,15 @@ export async function sendEventDayReminder(guestId: string, channel: ChannelType
       return { error: "Unauthorized" };
     }
 
-    // Get guest with event and table assignment
+    // Get guest with event, table assignment, and RSVP settings
     const guest = await prisma.guest.findFirst({
       where: { id: guestId },
       include: {
-        weddingEvent: true,
+        weddingEvent: {
+          include: {
+            rsvpPageSettings: true,
+          },
+        },
         rsvp: true,
         tableAssignment: {
           include: { table: true },
@@ -501,10 +505,42 @@ export async function sendEventDayReminder(guestId: string, channel: ChannelType
       return { error: "SMS message limit reached", limitReached: true };
     }
 
-    // Build event day message
     const event = guest.weddingEvent;
-    const tableName = guest.tableAssignment?.table?.name || "";
-    const venue = event.venue ? `${event.venue}, ${event.location}` : event.location;
+
+    // Get table name with fallback
+    const isHebrew = !event.notes?.includes("locale:en");
+    const tableName = guest.tableAssignment?.table?.name || (isHebrew ? "טרם שובץ" : "Not yet assigned");
+
+    // Build venue/address display
+    const venueDisplay = event.venue || event.location || (isHebrew ? "המקום" : "The venue");
+    const addressDisplay = event.location || "";
+    const venue = event.venue && event.location
+      ? `${event.venue}, ${event.location}`
+      : (event.venue || event.location || "");
+
+    // Build navigation URL - always use Waze with address
+    let navigationUrl = "";
+    const addressForNav = event.location || event.venue;
+    if (addressForNav) {
+      const encodedAddress = encodeURIComponent(addressForNav);
+      navigationUrl = `https://waze.com/ul?q=${encodedAddress}&navigate=yes`;
+    }
+
+    // Build gift link - check for external provider first
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://rsvp.app";
+    let giftLink = "";
+
+    const giftSettings = await prisma.giftPaymentSettings.findUnique({
+      where: { weddingEventId: event.id },
+    });
+
+    if (giftSettings?.isEnabled) {
+      if (giftSettings.useExternalProvider && giftSettings.externalProviderUrl) {
+        giftLink = giftSettings.externalProviderUrl;
+      } else if (guest.slug) {
+        giftLink = `${baseUrl}/gift/${guest.slug}`;
+      }
+    }
 
     let message: string;
     if (customTemplate) {
@@ -512,13 +548,15 @@ export async function sendEventDayReminder(guestId: string, channel: ChannelType
       message = customTemplate
         .replace(/\{\{guestName\}\}/g, guest.name)
         .replace(/\{\{eventTitle\}\}/g, event.title)
-        .replace(/\{\{eventVenue\}\}/g, venue);
+        .replace(/\{\{eventVenue\}\}/g, venue)
+        .replace(/\{\{tableName\}\}/g, tableName)
+        .replace(/\{\{navigationUrl\}\}/g, navigationUrl)
+        .replace(/\{\{giftLink\}\}/g, giftLink);
     } else {
       // Default message
-      const isHebrew = !event.notes?.includes("locale:en");
       message = isHebrew
-        ? `שלום ${guest.name}!\n${event.title} מתקיים היום!\nמקום: ${venue}${tableName ? `\nשולחן: ${tableName}` : ""}\nנתראה בשמחה!`
-        : `Dear ${guest.name},\n${event.title} is today!\nVenue: ${venue}${tableName ? `\nTable: ${tableName}` : ""}\nSee you at the celebration!`;
+        ? `שלום ${guest.name}!\n${event.title} מתקיים היום!\nמקום: ${venue}\nשולחן: ${tableName}\nנתראה בשמחה!`
+        : `Dear ${guest.name},\n${event.title} is today!\nVenue: ${venue}\nTable: ${tableName}\nSee you at the celebration!`;
     }
 
     // Prepare WhatsApp options if using WhatsApp
@@ -529,8 +567,10 @@ export async function sendEventDayReminder(guestId: string, channel: ChannelType
         contentVariables: {
           "1": guest.name,
           "2": event.title,
-          "3": tableName ? (event.notes?.includes("locale:en") ? `Table: ${tableName}` : `שולחן: ${tableName}`) : "",
-          "4": venue,
+          "3": tableName,
+          "4": `${venueDisplay}${addressDisplay ? ` - ${addressDisplay}` : ""}`,
+          "5": navigationUrl || (isHebrew ? "לא זמין" : "Not available"),
+          "6": giftLink || (isHebrew ? "לא זמין" : "Not available"),
         },
       };
     }

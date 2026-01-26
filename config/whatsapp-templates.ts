@@ -413,7 +413,7 @@ Thanks for letting us know 💕`,
 
 /**
  * Event Day Templates (morning of event reminder)
- * Placeholders: {{1}} = guestName, {{2}} = eventTitle, {{3}} = tableName, {{4}} = venue, {{5}} = giftLink
+ * Placeholders: {{1}} = guestName, {{2}} = eventTitle, {{3}} = tableName, {{4}} = venue/address, {{5}} = navigationUrl, {{6}} = giftLink
  */
 export const WHATSAPP_EVENT_DAY_TEMPLATES: WhatsAppTemplateDefinition[] = [
   {
@@ -423,22 +423,36 @@ export const WHATSAPP_EVENT_DAY_TEMPLATES: WhatsAppTemplateDefinition[] = [
     nameEn: "Formal",
     twilioTemplateName: "wedinex_event_day_formal",
     existingContentSid: "HX80e0ff2024fb29d65878e002df31afd3",
-    templateTextHe: `שלום {{1}},
+    templateTextHe: `שלום {{1}} 👋
 
-מזכירים לכם ש{{2}} מתקיים היום!
+מזכירים לכם שהיום החתונה של {{2}}! 🎉
 
-מקום: {{4}}
-{{3}}
+🪑 השולחן שלכם: {{3}}
 
-נתראה בשמחה!`,
-    templateTextEn: `Dear {{1}},
+📍 מיקום האירוע:
+{{4}}
 
-This is a reminder that {{2}} is today!
+🗺️ לניווט: {{5}}
 
-Venue: {{4}}
-{{3}}
+💳 רוצים להעניק לזוג מתנה בכרטיס אשראי?
+{{6}}
 
-See you at the celebration!`,
+מחכים לראות אתכם! ❤️`,
+    templateTextEn: `Hello {{1}} 👋
+
+Reminder that {{2}} is today! 🎉
+
+🪑 Your table: {{3}}
+
+📍 Event location:
+{{4}}
+
+🗺️ Navigation: {{5}}
+
+💳 Want to give a gift by credit card?
+{{6}}
+
+Looking forward to seeing you! ❤️`,
   },
   {
     type: "EVENT_DAY",
@@ -450,16 +464,20 @@ See you at the celebration!`,
 
 היום זה היום! {{2}} מתחיל!
 
-📍 {{4}}
-{{3}}
+🪑 שולחן: {{3}}
+📍 מיקום: {{4}}
+🗺️ ניווט: {{5}}
+💳 מתנה: {{6}}
 
 נתראה בקרוב! 💃🕺`,
     templateTextEn: `Hey {{1}}! 🎉
 
 Today's the day! {{2}} is happening!
 
-📍 {{4}}
-{{3}}
+🪑 Table: {{3}}
+📍 Venue: {{4}}
+🗺️ Navigation: {{5}}
+💳 Gift: {{6}}
 
 See you soon! 💃🕺`,
   },
@@ -469,8 +487,8 @@ See you soon! 💃🕺`,
     nameHe: "קצר",
     nameEn: "Short",
     twilioTemplateName: "wedinex_event_day_short",
-    templateTextHe: `{{1}}, מתראים היום! 📍{{4}} {{3}}`,
-    templateTextEn: `{{1}}, see you today! 📍{{4}} {{3}}`,
+    templateTextHe: `{{1}}, מתראים היום! 🪑{{3}} 📍{{4}} 🗺️{{5}} 💳{{6}}`,
+    templateTextEn: `{{1}}, see you today! 🪑{{3}} 📍{{4}} 🗺️{{5}} 💳{{6}}`,
   },
 ];
 

@@ -112,8 +112,8 @@ export function SendMessageDialog({
   const [messageFormat, setMessageFormat] = useState<MessageFormat>("STANDARD");
   const [includeImage, setIncludeImage] = useState(!!invitationImageUrl);
 
-  // WhatsApp template state
-  const [whatsappTemplates, setWhatsappTemplates] = useState<ActiveTemplate[]>([]);
+  // WhatsApp template state - use a Map to cache templates by type
+  const [whatsappTemplatesCache, setWhatsappTemplatesCache] = useState<Map<WhatsAppTemplateType, ActiveTemplate[]>>(new Map());
   const [selectedWhatsappStyle, setSelectedWhatsappStyle] = useState<string>("formal");
   const [whatsappContentSid, setWhatsappContentSid] = useState<string | null>(null);
   const [loadingWhatsappTemplates, setLoadingWhatsappTemplates] = useState(false);
@@ -151,12 +151,18 @@ export function SendMessageDialog({
     return messageType === "INVITE" ? "INVITE" : "REMINDER";
   }, [messageType, messageFormat]);
 
+  // Get current templates from cache (must be after whatsappTemplateType is defined)
+  const whatsappTemplates = whatsappTemplatesCache.get(whatsappTemplateType) || [];
+
   // Preview context
   const previewContext = {
     guestName: mode === "single" && guestNames?.[0] ? guestNames[0] : (isRTL ? "שם האורח" : "Guest Name"),
     eventTitle: isRTL ? "שם האירוע" : "Event Name",
     rsvpLink: "https://...",
     eventVenue: isRTL ? "מיקום האירוע" : "Event Venue",
+    tableName: isRTL ? "שולחן 5" : "Table 5",
+    navigationUrl: "https://waze.com/ul?q=...",
+    giftLink: "https://...",
   };
 
   // Get template definitions for WhatsApp
@@ -173,7 +179,8 @@ export function SendMessageDialog({
       setSending(false);
       setLoadingChannels(true);
       setShowConfirmation(false);
-      setMessageFormat("STANDARD");
+      // Default to INTERACTIVE for INVITE and REMINDER, STANDARD for EVENT_DAY
+      setMessageFormat(messageType === "EVENT_DAY" ? "STANDARD" : "INTERACTIVE");
       setIncludeImage(hasInvitationImage);
       setIsCustomSms(false);
       setCustomSmsMessage("");
@@ -224,19 +231,30 @@ export function SendMessageDialog({
     }
   }, [open, hasInvitationImage, messageType, isRTL]);
 
-  // Fetch WhatsApp templates when type changes
+  // Fetch WhatsApp templates - only fetch once per template type (cached)
   useEffect(() => {
     if (!open || channel !== "WHATSAPP") return;
 
+    // Check if we already have templates for this type in cache
+    if (whatsappTemplatesCache.has(whatsappTemplateType)) {
+      // Already loaded, just select first template if needed (NO LOADING STATE)
+      const cachedTemplates = whatsappTemplatesCache.get(whatsappTemplateType)!;
+      if (cachedTemplates.length > 0) {
+        const firstTemplate = cachedTemplates[0];
+        setSelectedWhatsappStyle(firstTemplate.style);
+        setWhatsappContentSid(firstTemplate.contentSid);
+      }
+      return;
+    }
+
+    // Only show loading when actually fetching from API
     setLoadingWhatsappTemplates(true);
 
     getActiveWhatsAppTemplates(whatsappTemplateType).then((result) => {
+      let templatesToCache: ActiveTemplate[] = [];
+
       if (result.success && result.templates && result.templates.length > 0) {
-        setWhatsappTemplates(result.templates);
-        // Auto-select first template
-        const firstTemplate = result.templates[0];
-        setSelectedWhatsappStyle(firstTemplate.style);
-        setWhatsappContentSid(firstTemplate.contentSid);
+        templatesToCache = result.templates;
       } else {
         // Fallback to config templates
         const fallbackTemplates: ActiveTemplate[] = whatsappTemplateDefinitions
@@ -252,20 +270,33 @@ export function SendMessageDialog({
             previewTextHe: def.templateTextHe,
           }));
 
-        if (fallbackTemplates.length > 0) {
-          setWhatsappTemplates(fallbackTemplates);
-          setSelectedWhatsappStyle(fallbackTemplates[0].style);
-          setWhatsappContentSid(fallbackTemplates[0].contentSid);
-        } else {
-          setWhatsappTemplates([]);
-          setWhatsappContentSid(null);
-        }
+        templatesToCache = fallbackTemplates;
       }
+
+      // Store in cache
+      setWhatsappTemplatesCache(prev => new Map(prev).set(whatsappTemplateType, templatesToCache));
+
+      // Auto-select first template
+      if (templatesToCache.length > 0) {
+        const firstTemplate = templatesToCache[0];
+        setSelectedWhatsappStyle(firstTemplate.style);
+        setWhatsappContentSid(firstTemplate.contentSid);
+      } else {
+        setWhatsappContentSid(null);
+      }
+
       setLoadingWhatsappTemplates(false);
     }).catch(() => {
       setLoadingWhatsappTemplates(false);
     });
-  }, [open, channel, whatsappTemplateType, whatsappTemplateDefinitions, isRTL]);
+  }, [open, channel, whatsappTemplateType, whatsappTemplateDefinitions, isRTL, whatsappTemplatesCache]);
+
+  // Reset cache when dialog closes
+  useEffect(() => {
+    if (!open) {
+      setWhatsappTemplatesCache(new Map());
+    }
+  }, [open]);
 
   // Update SMS templates when message type changes
   useEffect(() => {
@@ -279,6 +310,20 @@ export function SendMessageDialog({
     }
   }, [channel, messageType, isRTL, isCustomSms]);
 
+  // Auto-switch format when message type changes
+  useEffect(() => {
+    if (open && channel === "WHATSAPP") {
+      // EVENT_DAY doesn't have interactive mode, use STANDARD
+      // INVITE and REMINDER default to INTERACTIVE
+      if (messageType === "EVENT_DAY") {
+        setMessageFormat("STANDARD");
+      } else if (messageFormat === "STANDARD" && (messageType === "INVITE" || messageType === "REMINDER")) {
+        // If switching from EVENT_DAY back to INVITE/REMINDER, switch to INTERACTIVE
+        setMessageFormat("INTERACTIVE");
+      }
+    }
+  }, [messageType, open, channel]);
+
   // Get preview message content
   const getPreviewMessage = (): string => {
     if (channel === "WHATSAPP") {
@@ -287,11 +332,24 @@ export function SendMessageDialog({
       if (activeTemplate) {
         const dbPreviewText = isRTL ? activeTemplate.previewTextHe : activeTemplate.previewText;
         if (dbPreviewText) {
-          return dbPreviewText
-            .replace(/\{\{1\}\}/g, previewContext.guestName)
-            .replace(/\{\{2\}\}/g, previewContext.eventTitle)
-            .replace(/\{\{3\}\}/g, messageType === "EVENT_DAY" ? "" : previewContext.rsvpLink)
-            .replace(/\{\{4\}\}/g, previewContext.eventVenue);
+          // Handle different variable mappings based on message type
+          if (messageType === "EVENT_DAY") {
+            // EVENT_DAY has 6 variables: name, title, table, venue, navigation, gift
+            return dbPreviewText
+              .replace(/\{\{1\}\}/g, previewContext.guestName)
+              .replace(/\{\{2\}\}/g, previewContext.eventTitle)
+              .replace(/\{\{3\}\}/g, previewContext.tableName)
+              .replace(/\{\{4\}\}/g, previewContext.eventVenue)
+              .replace(/\{\{5\}\}/g, previewContext.navigationUrl)
+              .replace(/\{\{6\}\}/g, previewContext.giftLink);
+          } else {
+            // Standard templates: name, title, rsvp link
+            return dbPreviewText
+              .replace(/\{\{1\}\}/g, previewContext.guestName)
+              .replace(/\{\{2\}\}/g, previewContext.eventTitle)
+              .replace(/\{\{3\}\}/g, previewContext.rsvpLink)
+              .replace(/\{\{4\}\}/g, previewContext.eventVenue);
+          }
         }
       }
 
@@ -299,11 +357,24 @@ export function SendMessageDialog({
       const definition = whatsappTemplateDefinitions.find((d) => d.style === selectedWhatsappStyle);
       if (definition) {
         const text = isRTL ? definition.templateTextHe : definition.templateTextEn;
-        return text
-          .replace(/\{\{1\}\}/g, previewContext.guestName)
-          .replace(/\{\{2\}\}/g, previewContext.eventTitle)
-          .replace(/\{\{3\}\}/g, messageType === "EVENT_DAY" ? "" : previewContext.rsvpLink)
-          .replace(/\{\{4\}\}/g, previewContext.eventVenue);
+        // Handle different variable mappings based on message type
+        if (messageType === "EVENT_DAY") {
+          // EVENT_DAY has 6 variables: name, title, table, venue, navigation, gift
+          return text
+            .replace(/\{\{1\}\}/g, previewContext.guestName)
+            .replace(/\{\{2\}\}/g, previewContext.eventTitle)
+            .replace(/\{\{3\}\}/g, previewContext.tableName)
+            .replace(/\{\{4\}\}/g, previewContext.eventVenue)
+            .replace(/\{\{5\}\}/g, previewContext.navigationUrl)
+            .replace(/\{\{6\}\}/g, previewContext.giftLink);
+        } else {
+          // Standard templates: name, title, rsvp link
+          return text
+            .replace(/\{\{1\}\}/g, previewContext.guestName)
+            .replace(/\{\{2\}\}/g, previewContext.eventTitle)
+            .replace(/\{\{3\}\}/g, previewContext.rsvpLink)
+            .replace(/\{\{4\}\}/g, previewContext.eventVenue);
+        }
       }
       return isRTL ? "תצוגה מקדימה לא זמינה" : "Preview not available";
     } else {
@@ -485,7 +556,7 @@ export function SendMessageDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent size="xl" className="overflow-hidden p-0">
+      <DialogContent size="xl" className="overflow-hidden p-0 max-h-[90vh]">
         {loadingChannels ? (
           <div className="flex items-center justify-center py-16">
             <Icons.spinner className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -533,24 +604,26 @@ export function SendMessageDialog({
             </div>
           </div>
         ) : !results ? (
-          <div className="flex flex-col md:flex-row flex-1 min-h-0 overflow-hidden">
+          <div className="flex flex-col md:flex-row flex-1 min-h-0 overflow-hidden max-h-[90vh]">
             {/* Left Side - Preview (hidden on small screens, shown on md+) */}
-            <div className="hidden md:flex md:w-[280px] lg:w-[320px] shrink-0 bg-muted/30 p-4 lg:p-6 flex-col items-center justify-center border-e">
-              <div className="text-center mb-4">
+            <div className="hidden md:flex md:w-[280px] lg:w-[320px] shrink-0 bg-muted/30 p-3 lg:p-4 flex-col border-e overflow-y-auto">
+              <div className="text-center mb-3 shrink-0">
                 <h4 className="text-sm font-medium text-muted-foreground">
                   {isRTL ? "תצוגה מקדימה" : "Preview"}
                 </h4>
               </div>
-              <MessagePreview
-                channel={channel === "AUTO" ? "WHATSAPP" : channel}
-                message={previewMessage}
-                isRTL={isRTL}
-                hasButtons={messageFormat === "INTERACTIVE" && channel === "WHATSAPP"}
-                buttons={INTERACTIVE_BUTTONS[isRTL ? "he" : "en"]}
-                imageUrl={includeImage ? invitationImageUrl || undefined : undefined}
-              />
+              <div className="flex items-center justify-center flex-1 min-h-0">
+                <MessagePreview
+                  channel={channel === "AUTO" ? "WHATSAPP" : channel}
+                  message={previewMessage}
+                  isRTL={isRTL}
+                  hasButtons={messageFormat === "INTERACTIVE" && channel === "WHATSAPP"}
+                  buttons={INTERACTIVE_BUTTONS[isRTL ? "he" : "en"]}
+                  imageUrl={includeImage ? invitationImageUrl || undefined : undefined}
+                />
+              </div>
               {channel === "SMS" && (
-                <div className="mt-3 text-center">
+                <div className="mt-3 text-center shrink-0">
                   <Badge variant="outline" className="text-xs">
                     {charCount} / {SMS_MAX_LENGTH} {isRTL ? "תווים" : "chars"}
                   </Badge>
@@ -635,17 +708,22 @@ export function SendMessageDialog({
                       className={cn(
                         "p-3 rounded-lg border-2 text-start transition-all",
                         messageType === "INVITE"
-                          ? "border-primary bg-primary/5"
-                          : "border-border hover:border-primary/50"
+                          ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20"
+                          : "border-border hover:border-blue-500/50"
                       )}
                     >
                       <div className="flex items-center gap-2">
-                        <Icons.mail className="h-4 w-4" />
-                        <span className="font-medium text-sm">
-                          {t("invitation")}
-                        </span>
+                        <Icons.mail className="h-4 w-4 text-blue-600" />
+                        <div className="flex-1">
+                          <span className="font-medium text-sm">
+                            {t("invitation")}
+                          </span>
+                          <p className="text-xs text-muted-foreground">
+                            {isRTL ? "הזמנה ראשונית לאירוע" : "Initial event invitation"}
+                          </p>
+                        </div>
                         {messageType === "INVITE" && (
-                          <Icons.check className="h-4 w-4 text-primary ms-auto" />
+                          <Icons.check className="h-4 w-4 text-blue-600" />
                         )}
                       </div>
                     </button>
@@ -655,17 +733,22 @@ export function SendMessageDialog({
                       className={cn(
                         "p-3 rounded-lg border-2 text-start transition-all",
                         messageType === "REMINDER"
-                          ? "border-primary bg-primary/5"
-                          : "border-border hover:border-primary/50"
+                          ? "border-purple-500 bg-purple-50 dark:bg-purple-900/20"
+                          : "border-border hover:border-purple-500/50"
                       )}
                     >
                       <div className="flex items-center gap-2">
-                        <Icons.bell className="h-4 w-4" />
-                        <span className="font-medium text-sm">
-                          {t("reminder")}
-                        </span>
+                        <Icons.bell className="h-4 w-4 text-purple-600" />
+                        <div className="flex-1">
+                          <span className="font-medium text-sm">
+                            {t("reminder")}
+                          </span>
+                          <p className="text-xs text-muted-foreground">
+                            {isRTL ? "תזכורת לאישור הגעה" : "Reminder to RSVP"}
+                          </p>
+                        </div>
                         {messageType === "REMINDER" && (
-                          <Icons.check className="h-4 w-4 text-primary ms-auto" />
+                          <Icons.check className="h-4 w-4 text-purple-600" />
                         )}
                       </div>
                     </button>

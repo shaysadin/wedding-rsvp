@@ -23,16 +23,16 @@ export function MessagePreview({
   const isWhatsApp = channel === "WHATSAPP";
 
   return (
-    <div className="w-full max-w-[280px] mx-auto">
+    <div className="w-full max-w-[280px] mx-auto flex-shrink-0">
       {/* Phone Frame */}
-      <div className="relative rounded-[2.5rem] bg-gray-900 p-2 shadow-2xl">
+      <div className="relative rounded-[2.5rem] bg-gray-900 p-2 shadow-2xl max-h-[65vh] flex flex-col">
         {/* Notch */}
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-24 h-6 bg-gray-900 rounded-b-xl z-10" />
 
         {/* Screen */}
-        <div className="rounded-[2rem] overflow-hidden bg-white dark:bg-gray-800">
+        <div className="rounded-[2rem] overflow-hidden bg-white dark:bg-gray-800 flex flex-col flex-1 min-h-0">
           {/* Status Bar */}
-          <div className="h-8 bg-gray-100 dark:bg-gray-700 flex items-center justify-center px-4">
+          <div className="h-8 bg-gray-100 dark:bg-gray-700 flex items-center justify-center px-4 shrink-0">
             <span className="text-[10px] text-gray-500 dark:text-gray-400">
               {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
             </span>
@@ -40,7 +40,7 @@ export function MessagePreview({
 
           {/* App Header */}
           <div className={cn(
-            "h-12 flex items-center gap-2 px-3",
+            "h-12 flex items-center gap-2 px-3 shrink-0",
             isWhatsApp
               ? "bg-[#075E54] text-white"
               : "bg-blue-500 text-white"
@@ -65,9 +65,9 @@ export function MessagePreview({
             </div>
           </div>
 
-          {/* Chat Area */}
+          {/* Chat Area - Flexible height with internal scrolling */}
           <div className={cn(
-            "min-h-[300px] p-3",
+            "flex-1 min-h-0 overflow-y-auto p-3",
             isWhatsApp
               ? "bg-[#ECE5DD] dark:bg-[#0b141a]"
               : "bg-gray-50 dark:bg-gray-900"
@@ -162,7 +162,7 @@ export function MessagePreview({
 
           {/* Input Area */}
           <div className={cn(
-            "h-12 flex items-center gap-2 px-3",
+            "h-12 flex items-center gap-2 px-3 shrink-0",
             isWhatsApp
               ? "bg-[#F0F0F0] dark:bg-[#1f2c34]"
               : "bg-gray-100 dark:bg-gray-800"
