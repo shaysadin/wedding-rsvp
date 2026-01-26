@@ -223,7 +223,7 @@ export class TwilioNotificationService implements NotificationService {
     return this.sendMessage(guest, message, channel, event.smsSenderId, whatsappOptions);
   }
 
-  async sendReminder(guest: Guest, event: WeddingEvent, preferredChannel?: NotificationChannel, customTemplate?: string, options?: { whatsappContentSid?: string }): Promise<NotificationResult> {
+  async sendReminder(guest: Guest, event: WeddingEvent, preferredChannel?: NotificationChannel, customTemplate?: string, options?: { whatsappContentSid?: string; contentVariables?: Record<string, string> }): Promise<NotificationResult> {
     const channel = preferredChannel || this.getChannel(guest);
     const settings = await this.getSettings();
 
@@ -247,15 +247,18 @@ export class TwilioNotificationService implements NotificationService {
 
     if (contentSid && channel === NotificationChannel.WHATSAPP) {
       // Use Content Template for WhatsApp Business API
+      // If custom contentVariables are provided (e.g., for EVENT_DAY), use them
+      // Otherwise use default REMINDER variables
       whatsappOptions = {
         contentSid,
-        contentVariables: {
+        contentVariables: options?.contentVariables || {
           "1": guest.name, // {{1}} = guest name
           "2": event.title, // {{2}} = event title
           "3": this.getRsvpLink(guest.slug), // {{3}} = RSVP link
         },
       };
       console.log(`Using WhatsApp Content Template for REMINDER: ${contentSid}`);
+      console.log(`Content Variables:`, whatsappOptions.contentVariables);
     }
 
     // Pass event's SMS sender ID for SMS channel

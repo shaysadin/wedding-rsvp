@@ -25,7 +25,13 @@ import { NotificationResult } from "@/lib/notifications/types";
 import { formatToE164 } from "@/lib/notifications/phone-formatter";
 
 // Get the status callback URL for Twilio message status updates
+// DISABLED IN DEVELOPMENT for easier testing
 function getStatusCallbackUrl(): string | undefined {
+  // Skip status callback in development
+  if (process.env.NODE_ENV === "development") {
+    return undefined;
+  }
+
   const appUrl = process.env.NEXT_PUBLIC_APP_URL;
   if (!appUrl) return undefined;
   return `${appUrl}/api/twilio/status`;

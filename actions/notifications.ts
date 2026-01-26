@@ -579,8 +579,17 @@ export async function sendEventDayReminder(guestId: string, channel: ChannelType
       };
     }
 
-    // Send using the base sendMessage method via sendReminder (pass the constructed message)
-    const result = await notificationService.sendReminder(guest, event, preferredChannel, message, whatsappOptions ? { whatsappContentSid } : undefined);
+    // Send using the base sendMessage method via sendReminder (pass the constructed message and whatsapp variables)
+    const result = await notificationService.sendReminder(
+      guest,
+      event,
+      preferredChannel,
+      message,
+      whatsappOptions ? {
+        whatsappContentSid,
+        contentVariables: whatsappOptions.contentVariables
+      } : undefined
+    );
 
     // Log to database
     await prisma.notificationLog.create({
