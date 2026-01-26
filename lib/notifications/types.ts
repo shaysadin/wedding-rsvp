@@ -20,6 +20,8 @@ export interface SendMessageOptions {
   customSmsTemplate?: string;
   // WhatsApp Content SID for using a specific approved template
   whatsappContentSid?: string;
+  // WhatsApp Content Template variables (e.g., for EVENT_DAY with 6 variables)
+  contentVariables?: Record<string, string>;
 }
 
 export interface NotificationService {
