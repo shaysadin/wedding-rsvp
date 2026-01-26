@@ -118,10 +118,21 @@ const COLOR_THEMES: Record<TableColorTheme, {
   },
 };
 
-const CHAIR_SIZE = 32; // Chair size in pixels (slightly bigger)
+const MIN_CHAIR_SIZE = 13; // Minimum chair size
+const MAX_CHAIR_SIZE = 22; // Maximum chair size
 
-// Chair SVG Component
-function ChairIcon({ color, className }: { color: string; className?: string }) {
+// Chair colors - balanced contrast on gray background
+const CHAIR_COLORS = {
+  empty: "#c7c7cc",      // Light gray - not assigned - whitish but visible
+  assigned: "#52525b",   // Dark gray - assigned but not arrived (zinc-600)
+  arrived: "#16a34a",    // Green - guest arrived
+  pending: "#52525b",    // Dark gray - pending RSVP
+  declined: "#52525b",   // Dark gray - declined
+  maybe: "#52525b",      // Dark gray - maybe
+};
+
+// Option A - Modern Rounded Chair (current)
+function ChairIconModern({ color, className }: { color: string; className?: string }) {
   return (
     <svg
       viewBox="0 0 24 24"
@@ -129,16 +140,64 @@ function ChairIcon({ color, className }: { color: string; className?: string }) 
       xmlns="http://www.w3.org/2000/svg"
       className={className}
     >
+      {/* Chair back - rounded */}
+      <rect x="5" y="3" width="14" height="8" rx="3" fill={color} />
       {/* Chair seat */}
-      <rect x="6" y="10" width="12" height="3" rx="1" fill={color} />
-      {/* Chair back */}
-      <rect x="7" y="5" width="10" height="5" rx="1" fill={color} />
+      <rect x="4" y="11" width="16" height="4" rx="2" fill={color} />
       {/* Chair legs */}
-      <rect x="7" y="13" width="2" height="6" rx="0.5" fill={color} />
-      <rect x="15" y="13" width="2" height="6" rx="0.5" fill={color} />
+      <rect x="6" y="15" width="3" height="6" rx="1" fill={color} />
+      <rect x="15" y="15" width="3" height="6" rx="1" fill={color} />
     </svg>
   );
 }
+
+// Option B - Simple Circle/Dot (minimalist)
+function ChairIconCircle({ color, className }: { color: string; className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className={className}
+    >
+      <circle cx="12" cy="12" r="10" fill={color} />
+    </svg>
+  );
+}
+
+// Option C - Square seat (simple geometric)
+function ChairIconSquare({ color, className }: { color: string; className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className={className}
+    >
+      <rect x="3" y="3" width="18" height="18" rx="3" fill={color} />
+    </svg>
+  );
+}
+
+// Option D - Person/User silhouette
+function ChairIconPerson({ color, className }: { color: string; className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className={className}
+    >
+      {/* Head */}
+      <circle cx="12" cy="7" r="5" fill={color} />
+      {/* Body */}
+      <path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8" fill={color} />
+    </svg>
+  );
+}
+
+// Current active chair icon - change this to switch designs
+const ChairIcon = ChairIconModern;
 
 export function TableWithSeats({
   table,
@@ -161,13 +220,31 @@ export function TableWithSeats({
   };
 
   // Calculate chair positions based on table capacity and shape
+  // Pass table dimensions for pixel-accurate spacing
   const chairPositions = useMemo(() => {
     return calculateSeatPositions(
       table.capacity,
       (table.shape || "circle") as TableShape,
-      (table.seatingArrangement || "even") as SeatingArrangement
+      (table.seatingArrangement || "even") as SeatingArrangement,
+      table.width,
+      table.height
     );
-  }, [table.capacity, table.shape, table.seatingArrangement]);
+  }, [table.capacity, table.shape, table.seatingArrangement, table.width, table.height]);
+
+  // Simple chair size based on table dimensions
+  // Chair size is proportional to the smaller table dimension
+  const chairSize = useMemo(() => {
+    const minDim = Math.min(table.width, table.height);
+
+    // Special case: medium stadium table (140x60) - slightly larger chairs
+    if (table.shape === "rectangle" && table.width === 140 && table.height === 60) {
+      return 19;
+    }
+
+    // Use 24% of the smaller dimension, clamped to reasonable range
+    const size = Math.round(minDim * 0.24);
+    return Math.max(MIN_CHAIR_SIZE, Math.min(MAX_CHAIR_SIZE, size));
+  }, [table.width, table.height, table.shape]);
 
   // Expand assignments based on guest count (party size)
   // e.g., Guest A with count 2 fills chairs 0,1; Guest B with count 3 fills chairs 2,3,4
@@ -191,18 +268,15 @@ export function TableWithSeats({
   const totalSeatsUsed = expandedChairMap.length;
 
   // Get chair color based on guest status
+  // Empty = light gray, Assigned = dark gray, Arrived = green
   const getChairColor = (guest: TableGuest | null): string => {
-    if (!guest) return theme.chairEmpty;
+    if (!guest) return CHAIR_COLORS.empty; // Light gray - not assigned
     if (colorMode === "arrival") {
-      return guest.isArrived ? theme.chairApproved : theme.chairEmpty;
+      return guest.isArrived ? CHAIR_COLORS.arrived : CHAIR_COLORS.assigned;
     }
-    switch (guest.rsvpStatus) {
-      case "ACCEPTED": return theme.chairApproved;
-      case "PENDING": return theme.chairPending;
-      case "DECLINED": return theme.chairDeclined;
-      case "MAYBE": return theme.chairMaybe;
-      default: return theme.chairPending;
-    }
+    // For RSVP mode: assigned guests get dark gray, regardless of RSVP status
+    // Only "arrived" status (in arrival mode) gets green
+    return CHAIR_COLORS.assigned;
   };
 
   return (
@@ -222,7 +296,7 @@ export function TableWithSeats({
         const chairColor = getChairColor(guest);
 
         // Position chairs slightly outside the table edge
-        const distance = 1.15;
+        const distance = 1.10;
         const adjustedX = position.relativeX * distance;
         const adjustedY = position.relativeY * distance;
 
@@ -236,8 +310,8 @@ export function TableWithSeats({
           0 // Don't rotate chairs with table rotation
         );
 
-        const chairX = absolutePos.x - CHAIR_SIZE / 2;
-        const chairY = absolutePos.y - CHAIR_SIZE / 2;
+        const chairX = absolutePos.x - chairSize / 2;
+        const chairY = absolutePos.y - chairSize / 2;
 
         return (
           <Popover key={index}>
@@ -251,8 +325,8 @@ export function TableWithSeats({
                 style={{
                   left: chairX,
                   top: chairY,
-                  width: CHAIR_SIZE,
-                  height: CHAIR_SIZE,
+                  width: chairSize,
+                  height: chairSize,
                   zIndex: hoveredChair === index ? 10 : 0,
                   transform: `rotate(${position.angle}deg)`,
                 }}

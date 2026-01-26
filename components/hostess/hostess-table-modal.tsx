@@ -75,7 +75,14 @@ interface HostessTableModalProps {
   onClose: () => void;
 }
 
-// Chair SVG Component for hostess view - bigger and simpler
+// Chair colors for hostess view - balanced contrast on gray background
+const CHAIR_COLORS = {
+  empty: "#c7c7cc",      // Light gray - not assigned - whitish but visible
+  assigned: "#52525b",   // Dark gray - assigned but not arrived (zinc-600)
+  arrived: "#16a34a",    // Green - guest arrived
+};
+
+// Modern Rounded Chair for hostess view
 function ChairIcon({ color, className }: { color: string; className?: string }) {
   return (
     <svg
@@ -84,13 +91,13 @@ function ChairIcon({ color, className }: { color: string; className?: string }) 
       xmlns="http://www.w3.org/2000/svg"
       className={className}
     >
+      {/* Chair back - rounded */}
+      <rect x="5" y="3" width="14" height="8" rx="3" fill={color} />
       {/* Chair seat */}
-      <rect x="5" y="9" width="14" height="4" rx="1.5" fill={color} />
-      {/* Chair back */}
-      <rect x="6" y="3" width="12" height="6" rx="1.5" fill={color} />
+      <rect x="4" y="11" width="16" height="4" rx="2" fill={color} />
       {/* Chair legs */}
-      <rect x="6" y="13" width="3" height="8" rx="1" fill={color} />
-      <rect x="15" y="13" width="3" height="8" rx="1" fill={color} />
+      <rect x="6" y="15" width="3" height="6" rx="1" fill={color} />
+      <rect x="15" y="15" width="3" height="6" rx="1" fill={color} />
     </svg>
   );
 }
@@ -113,19 +120,19 @@ function TableShape({ capacity, arrivedCount, totalGuests }: { capacity: number;
 
   const seatPositions = generateSeatPositions(Math.min(capacity, 12));
 
-  // Chair colors
+  // Chair colors: empty = light gray, assigned = dark gray, arrived = green
   const getChairColor = (index: number) => {
     const isArrived = index < arrivedCount;
     const isExpected = index < totalGuests;
-    if (isArrived) return "#22c55e"; // green-500
-    if (isExpected) return "#71717a"; // zinc-500
-    return "#d4d4d8"; // zinc-300
+    if (isArrived) return CHAIR_COLORS.arrived;  // Green
+    if (isExpected) return CHAIR_COLORS.assigned; // Dark gray
+    return CHAIR_COLORS.empty; // Light gray
   };
 
   return (
-    <div className="relative w-40 h-40 mx-auto">
+    <div className="relative w-40 h-40 mx-auto bg-zinc-100 dark:bg-zinc-900 rounded-lg p-2">
       {/* Table */}
-      <div className="absolute inset-[28%] rounded-full bg-gradient-to-b from-zinc-100 to-zinc-200 dark:from-zinc-800 dark:to-zinc-700 border-2 border-zinc-300 dark:border-zinc-600 shadow-inner" />
+      <div className="absolute inset-[28%] rounded-full bg-gradient-to-b from-white to-zinc-100 dark:from-zinc-700 dark:to-zinc-800 border-2 border-zinc-300 dark:border-zinc-600 shadow-inner" />
       {/* Chairs - bigger and using chair icon */}
       {seatPositions.map((pos, i) => (
         <div

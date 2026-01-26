@@ -1,11 +1,10 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useTranslations, useLocale } from "next-intl";
 import { toast } from "sonner";
 
 import { autoArrangeTables, getGuestsForAssignment } from "@/actions/seating";
-import { getAvailableArrangements } from "@/lib/seating/seat-calculator";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -69,23 +68,10 @@ export function AutoArrangeDialog({
   const [isProcessing, setIsProcessing] = useState(false);
   const [tableSize, setTableSize] = useState(10);
   const [tableShape, setTableShape] = useState<"square" | "circle" | "rectangle" | "oval">("circle");
-  const [seatingArrangement, setSeatingArrangement] = useState<"even" | "bride-side" | "sides-only">("even");
   const [groupingStrategy, setGroupingStrategy] = useState<"side-then-group" | "group-only">("side-then-group");
   const [sideFilter, setSideFilter] = useState<string>("all");
   const [groupFilter, setGroupFilter] = useState<string>("all");
   const [rsvpFilter, setRsvpFilter] = useState<("ACCEPTED" | "PENDING")[]>(["ACCEPTED", "PENDING"]);
-
-  // Get available seating arrangements based on selected shape
-  const availableArrangements = useMemo(() => {
-    return getAvailableArrangements(tableShape);
-  }, [tableShape]);
-
-  // Reset seating arrangement when shape changes if current selection is not available
-  useEffect(() => {
-    if (!availableArrangements.includes(seatingArrangement)) {
-      setSeatingArrangement("even");
-    }
-  }, [availableArrangements, seatingArrangement]);
 
   // Load guests when dialog opens
   useEffect(() => {
@@ -162,7 +148,7 @@ export function AutoArrangeDialog({
         eventId,
         tableSize,
         tableShape,
-        seatingArrangement,
+        seatingArrangement: "even", // Hardcoded - arrangement is determined by shape
         groupingStrategy,
         sideFilter: sideFilter === "all" ? undefined : sideFilter,
         groupFilter: groupFilter === "all" ? undefined : groupFilter,
@@ -252,27 +238,6 @@ export function AutoArrangeDialog({
                 </SelectContent>
               </Select>
             </div>
-          </div>
-
-          {/* Seating Arrangement */}
-          <div className="space-y-2">
-            <Label>{t("seatingArrangement")}</Label>
-            <Select
-              dir={isRTL ? "rtl" : undefined}
-              value={seatingArrangement}
-              onValueChange={(v) => setSeatingArrangement(v as typeof seatingArrangement)}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {availableArrangements.map((arrangement) => (
-                  <SelectItem key={arrangement} value={arrangement}>
-                    {t(`arrangements.${arrangement}`)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
           </div>
 
           {/* Grouping Strategy */}

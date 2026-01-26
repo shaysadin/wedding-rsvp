@@ -229,7 +229,10 @@ export function TableCard({
         toast.error(result.error);
       } else {
         toast.success(t("tableDeleted"));
-        window.dispatchEvent(new CustomEvent("seating-data-changed"));
+        // Optimistic update - remove table immediately
+        window.dispatchEvent(new CustomEvent("seating-data-changed", {
+          detail: { type: "table-deleted", tableId: table.id },
+        }));
       }
     } catch {
       toast.error(tc("error"));

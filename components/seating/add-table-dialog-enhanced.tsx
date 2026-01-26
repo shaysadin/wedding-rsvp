@@ -1,25 +1,23 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useTranslations } from "next-intl";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
+import { z } from "zod";
 
-import { createTable } from "@/actions/seating";
+import { createTable, getGuestsForAssignment, assignGuestsToTable } from "@/actions/seating";
 import {
-  createTableSchema,
-  type CreateTableInput,
   type Shape,
-  type SeatingArrangement,
-  type ColorTheme,
   type SizePreset,
   SIZE_PRESETS,
 } from "@/lib/validations/seating";
-import { calculateSeatPositions, getAvailableArrangements } from "@/lib/seating/seat-calculator";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -34,7 +32,13 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Icons } from "@/components/shared/icons";
 import { cn } from "@/lib/utils";
 
@@ -44,55 +48,42 @@ interface AddTableDialogEnhancedProps {
   onOpenChange?: (open: boolean) => void;
 }
 
-const SHAPES: Shape[] = [
-  "square",
-  "circle",
-  "rectangle",
-  "oval",
-];
-
-const SEATING_ARRANGEMENTS: SeatingArrangement[] = [
-  "even",
-  "bride-side",
-  "sides-only",
-];
-
-const COLOR_THEMES: ColorTheme[] = [
-  "default",
-  "blue",
-  "green",
-  "purple",
-  "pink",
-  "amber",
-  "rose",
-];
+const SHAPES: Shape[] = ["square", "circle", "rectangle", "oval"];
 
 // Shape visual previews
-const SHAPE_PREVIEWS: Record<Shape, { icon: string; description: string }> = {
-  square: { icon: "▢", description: "Square table, seats on all sides" },
-  circle: { icon: "⭕", description: "Round table" },
-  rectangle: { icon: "▭", description: "Long table, seats on long sides" },
-  oval: { icon: "⬭", description: "Ellipse table" },
+const SHAPE_PREVIEWS: Record<Shape, { icon: string }> = {
+  square: { icon: "▢" },
+  circle: { icon: "⭕" },
+  rectangle: { icon: "▭" },
+  oval: { icon: "⬭" },
 };
 
-// Seating arrangement descriptions
-const ARRANGEMENT_INFO: Record<SeatingArrangement, { description: string }> = {
-  even: { description: "Seats evenly distributed around the table" },
-  "bride-side": { description: "Seats divided between bride and groom sides" },
-  "sides-only": { description: "Seats only on left and right sides (no head/foot)" },
-  custom: { description: "Custom seat positioning (manual arrangement)" },
-};
+// Predefined groups that have translations
+const PREDEFINED_GROUPS = ["family", "friends", "work", "other"];
 
-// Color theme swatches
-const THEME_COLORS: Record<ColorTheme, { bg: string; border: string }> = {
-  default: { bg: "bg-card", border: "border-primary/50" },
-  blue: { bg: "bg-blue-100 dark:bg-blue-900", border: "border-blue-400" },
-  green: { bg: "bg-green-100 dark:bg-green-900", border: "border-green-400" },
-  purple: { bg: "bg-purple-100 dark:bg-purple-900", border: "border-purple-400" },
-  pink: { bg: "bg-pink-100 dark:bg-pink-900", border: "border-pink-400" },
-  amber: { bg: "bg-amber-100 dark:bg-amber-900", border: "border-amber-400" },
-  rose: { bg: "bg-rose-100 dark:bg-rose-900", border: "border-rose-400" },
-};
+interface GuestForAssignment {
+  id: string;
+  name: string;
+  side?: string | null;
+  groupName?: string | null;
+  seatsNeeded: number;
+  rsvp?: {
+    status: string;
+    guestCount: number;
+  } | null;
+}
+
+// Simplified schema
+const addTableSchema = z.object({
+  weddingEventId: z.string().min(1),
+  name: z.string().min(1, "Table name is required").max(100),
+  capacity: z.number().int().min(1).max(32),
+  shape: z.enum(["square", "circle", "rectangle", "oval"]),
+  width: z.number().int().min(40).max(400).optional(),
+  height: z.number().int().min(40).max(400).optional(),
+});
+
+type AddTableInput = z.infer<typeof addTableSchema>;
 
 export function AddTableDialogEnhanced({
   eventId,
@@ -100,31 +91,91 @@ export function AddTableDialogEnhanced({
   onOpenChange,
 }: AddTableDialogEnhancedProps) {
   const t = useTranslations("seating");
+  const tGuests = useTranslations("guests");
   const tc = useTranslations("common");
   const [isLoading, setIsLoading] = useState(false);
-  const [currentTab, setCurrentTab] = useState("basic");
   const [sizePreset, setSizePreset] = useState<SizePreset>("medium");
 
-  const form = useForm<CreateTableInput>({
-    resolver: zodResolver(createTableSchema),
+  // Guest assignment state
+  const [guests, setGuests] = useState<GuestForAssignment[]>([]);
+  const [isLoadingGuests, setIsLoadingGuests] = useState(false);
+  const [selectedSide, setSelectedSide] = useState<string>("all");
+  const [selectedGroup, setSelectedGroup] = useState<string>("all");
+  const [selectedGuestIds, setSelectedGuestIds] = useState<Set<string>>(new Set());
+
+  const form = useForm<AddTableInput>({
+    resolver: zodResolver(addTableSchema),
     defaultValues: {
       weddingEventId: eventId,
       name: "",
       capacity: 10,
       shape: "circle" as const,
-      seatingArrangement: "even" as const,
-      colorTheme: "default" as const,
       width: SIZE_PRESETS.circle.medium.width,
       height: SIZE_PRESETS.circle.medium.height,
     },
   });
 
-  const watchedCapacity = form.watch("capacity");
   const watchedShape = form.watch("shape");
-  const watchedArrangement = form.watch("seatingArrangement");
+  const watchedCapacity = form.watch("capacity");
 
-  // Get available arrangements for the current shape
-  const availableArrangements = getAvailableArrangements(watchedShape);
+  // Load guests when dialog opens
+  useEffect(() => {
+    if (open) {
+      loadGuests();
+    } else {
+      // Reset state when dialog closes
+      setSelectedGuestIds(new Set());
+      setSelectedSide("all");
+      setSelectedGroup("all");
+    }
+  }, [open, eventId]);
+
+  async function loadGuests() {
+    setIsLoadingGuests(true);
+    try {
+      const result = await getGuestsForAssignment(eventId);
+      if (result.success && result.guests) {
+        // Filter out already seated guests
+        const unseatedGuests = result.guests.filter(g => !g.tableAssignment);
+        setGuests(unseatedGuests);
+      }
+    } catch {
+      console.error("Failed to load guests");
+    } finally {
+      setIsLoadingGuests(false);
+    }
+  }
+
+  // Get unique sides and groups
+  const { sides, groups } = useMemo(() => {
+    const sideSet = new Set<string>();
+    const groupSet = new Set<string>();
+    guests.forEach((g) => {
+      if (g.side) sideSet.add(g.side);
+      if (g.groupName) groupSet.add(g.groupName);
+    });
+    return {
+      sides: Array.from(sideSet).sort(),
+      groups: Array.from(groupSet).sort(),
+    };
+  }, [guests]);
+
+  // Filter guests based on selected side and group
+  const filteredGuests = useMemo(() => {
+    return guests.filter((g) => {
+      if (selectedSide !== "all" && g.side !== selectedSide) return false;
+      if (selectedGroup !== "all" && g.groupName !== selectedGroup) return false;
+      return true;
+    });
+  }, [guests, selectedSide, selectedGroup]);
+
+  // Calculate total seats for selected guests
+  const selectedSeatsCount = useMemo(() => {
+    return Array.from(selectedGuestIds).reduce((sum, id) => {
+      const guest = guests.find(g => g.id === id);
+      return sum + (guest?.seatsNeeded || 0);
+    }, 0);
+  }, [selectedGuestIds, guests]);
 
   // Handle size preset change
   function handleSizePresetChange(preset: SizePreset) {
@@ -142,23 +193,96 @@ export function AddTableDialogEnhanced({
     form.setValue("height", newSize.height);
   }
 
-  async function onSubmit(data: CreateTableInput) {
+  // Toggle guest selection
+  function toggleGuestSelection(guestId: string) {
+    setSelectedGuestIds(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(guestId)) {
+        newSet.delete(guestId);
+      } else {
+        newSet.add(guestId);
+      }
+      return newSet;
+    });
+  }
+
+  // Select all filtered guests (up to capacity)
+  function selectAllFiltered() {
+    let remainingCapacity = watchedCapacity - selectedSeatsCount;
+    const newSelected = new Set(selectedGuestIds);
+
+    for (const guest of filteredGuests) {
+      if (newSelected.has(guest.id)) continue;
+      if (guest.seatsNeeded <= remainingCapacity) {
+        newSelected.add(guest.id);
+        remainingCapacity -= guest.seatsNeeded;
+      }
+    }
+    setSelectedGuestIds(newSelected);
+  }
+
+  // Clear selection
+  function clearSelection() {
+    setSelectedGuestIds(new Set());
+  }
+
+  async function onSubmit(data: AddTableInput) {
     setIsLoading(true);
     try {
-      const result = await createTable(data);
+      // Create table with hardcoded values
+      const result = await createTable({
+        ...data,
+        seatingArrangement: "even",
+        colorTheme: "default",
+      });
 
       if (result.error) {
         toast.error(result.error);
         return;
       }
 
+      // If guests are selected, assign them to the new table
+      if (selectedGuestIds.size > 0 && result.table) {
+        const assignResult = await assignGuestsToTable({
+          tableId: result.table.id,
+          guestIds: Array.from(selectedGuestIds),
+        });
+
+        if (assignResult.error) {
+          toast.error(assignResult.error);
+        }
+      }
+
       toast.success(t("tableCreated"));
       onOpenChange?.(false);
-      form.reset();
-      setCurrentTab("basic");
+      form.reset({
+        weddingEventId: eventId,
+        name: "",
+        capacity: 10,
+        shape: "circle",
+        width: SIZE_PRESETS.circle.medium.width,
+        height: SIZE_PRESETS.circle.medium.height,
+      });
+      setSizePreset("medium");
+      setSelectedGuestIds(new Set());
 
-      // Dispatch event to refresh data
-      window.dispatchEvent(new CustomEvent("seating-data-changed"));
+      // Dispatch event with new table data for optimistic update
+      if (result.table) {
+        window.dispatchEvent(new CustomEvent("seating-data-changed", {
+          detail: {
+            type: "table-added",
+            table: {
+              ...result.table,
+              assignments: [],
+              seatsUsed: 0,
+              seatsAvailable: result.table.capacity,
+            },
+          },
+        }));
+      } else {
+        // Fallback to full refresh
+        window.dispatchEvent(new CustomEvent("seating-data-changed"));
+      }
     } catch {
       toast.error("Failed to create table");
     } finally {
@@ -166,322 +290,240 @@ export function AddTableDialogEnhanced({
     }
   }
 
-  // Generate preview seats for the current configuration
-  const previewSeats = calculateSeatPositions(
-    watchedCapacity || 10,
-    watchedShape || "circle",
-    watchedArrangement || "even"
-  );
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{t("addTable")}</DialogTitle>
         </DialogHeader>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <Tabs value={currentTab} onValueChange={setCurrentTab}>
-              <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="basic">
-                  <Icons.layoutGrid className="me-2 h-4 w-4" />
-                  {t("tabs.basic")}
-                </TabsTrigger>
-                <TabsTrigger value="seating">
-                  <Icons.users className="me-2 h-4 w-4" />
-                  {t("tabs.seating")}
-                </TabsTrigger>
-                <TabsTrigger value="appearance">
-                  <Icons.palette className="me-2 h-4 w-4" />
-                  {t("tabs.appearance")}
-                </TabsTrigger>
-              </TabsList>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            {/* Table Name */}
+            <FormField
+              control={form.control}
+              name="name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t("tableName")}</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder={t("tableNamePlaceholder")}
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-              {/* Tab 1: Basic Information */}
-              <TabsContent value="basic" className="space-y-4 mt-4">
-                <FormField
-                  control={form.control}
-                  name="name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t("tableName")}</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder={t("tableNamePlaceholder")}
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="capacity"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>{t("capacity")}</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="number"
-                            min={1}
-                            max={32}
-                            placeholder={t("capacityPlaceholder")}
-                            {...field}
-                            onChange={(e) =>
-                              field.onChange(Math.max(1, Math.min(32, parseInt(e.target.value) || 1)))
-                            }
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  {/* Size Preset */}
+            {/* Capacity and Size */}
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="capacity"
+                render={({ field }) => (
                   <FormItem>
-                    <FormLabel>{t("sizePreset.label")}</FormLabel>
-                    <div className="flex gap-2">
-                      {(["small", "medium", "large"] as SizePreset[]).map((preset) => (
-                        <button
-                          key={preset}
-                          type="button"
-                          onClick={() => handleSizePresetChange(preset)}
-                          className={cn(
-                            "flex-1 px-3 py-2 text-sm border-2 rounded-lg transition-all hover:bg-accent",
-                            sizePreset === preset
-                              ? "border-primary bg-accent"
-                              : "border-muted"
-                          )}
-                        >
-                          {t(`sizePreset.${preset}`)}
-                        </button>
-                      ))}
-                    </div>
-                  </FormItem>
-                </div>
-
-                <FormField
-                  control={form.control}
-                  name="shape"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t("shape")}</FormLabel>
-                      <div className="grid grid-cols-2 gap-3">
-                        {SHAPES.map((shape) => (
-                          <button
-                            key={shape}
-                            type="button"
-                            onClick={() => handleShapeChange(shape)}
-                            className={cn(
-                              "flex items-center gap-3 p-3 border-2 rounded-lg transition-all hover:bg-accent",
-                              field.value === shape
-                                ? "border-primary bg-accent"
-                                : "border-muted"
-                            )}
-                          >
-                            <span className="text-2xl">
-                              {SHAPE_PREVIEWS[shape].icon}
-                            </span>
-                            <div className="text-start">
-                              <div className="text-sm font-medium">
-                                {t(`shapes.${shape}`)}
-                              </div>
-                              <div className="text-xs text-muted-foreground">
-                                {SHAPE_PREVIEWS[shape].description}
-                              </div>
-                            </div>
-                          </button>
-                        ))}
-                      </div>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </TabsContent>
-
-              {/* Tab 2: Seating Arrangement */}
-              <TabsContent value="seating" className="space-y-4 mt-4">
-                <FormField
-                  control={form.control}
-                  name="seatingArrangement"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t("seatingArrangement")}</FormLabel>
-                      <div className="space-y-3">
-                        {availableArrangements.map((arrangement) => (
-                          <button
-                            key={arrangement}
-                            type="button"
-                            onClick={() => field.onChange(arrangement)}
-                            className={cn(
-                              "w-full flex items-start gap-3 p-3 border-2 rounded-lg transition-all hover:bg-accent text-start",
-                              field.value === arrangement
-                                ? "border-primary bg-accent"
-                                : "border-muted"
-                            )}
-                          >
-                            <div
-                              className={cn(
-                                "mt-0.5 h-4 w-4 rounded-full border-2 flex items-center justify-center",
-                                field.value === arrangement
-                                  ? "border-primary"
-                                  : "border-muted-foreground"
-                              )}
-                            >
-                              {field.value === arrangement && (
-                                <div className="h-2 w-2 rounded-full bg-primary" />
-                              )}
-                            </div>
-                            <div className="flex-1">
-                              <div className="text-sm font-medium">
-                                {t(`arrangements.${arrangement}`)}
-                              </div>
-                              <div className="text-xs text-muted-foreground">
-                                {ARRANGEMENT_INFO[arrangement].description}
-                              </div>
-                            </div>
-                          </button>
-                        ))}
-                      </div>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                {/* Live Preview of Seating Arrangement */}
-                <div className="border rounded-lg p-4 bg-muted/50">
-                  <div className="text-sm font-medium mb-3">
-                    {t("preview")}
-                  </div>
-                  <div className="flex items-center justify-center h-48 relative">
-                    <div className="relative w-32 h-32">
-                      {/* Table shape preview */}
-                      <div
-                        className={cn(
-                          "absolute inset-0 border-2 border-primary/50 bg-card",
-                          watchedShape === "square" && "rounded-none",
-                          watchedShape === "circle" && "rounded-full",
-                          watchedShape === "rectangle" && "rounded-none",
-                          watchedShape === "oval" && "rounded-[50%]"
-                        )}
+                    <FormLabel>{t("capacity")}</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        min={1}
+                        max={32}
+                        placeholder={t("capacityPlaceholder")}
+                        {...field}
+                        onChange={(e) =>
+                          field.onChange(Math.max(1, Math.min(32, parseInt(e.target.value) || 1)))
+                        }
                       />
-                      {/* Seat preview */}
-                      {previewSeats.slice(0, Math.min(12, watchedCapacity)).map((seat, idx) => {
-                        const x = (seat.relativeX + 1) * 50 + 16; // Scale to preview size
-                        const y = (seat.relativeY + 1) * 50 + 16;
-                        return (
-                          <div
-                            key={idx}
-                            className="absolute w-3 h-3 rounded-full bg-blue-500 border border-blue-600"
-                            style={{
-                              left: x,
-                              top: y,
-                              transform: "translate(-50%, -50%)",
-                            }}
-                          />
-                        );
-                      })}
-                    </div>
-                  </div>
-                  <div className="text-xs text-center text-muted-foreground mt-2">
-                    {watchedCapacity} {t("seats")}
-                  </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* Size Preset */}
+              <FormItem>
+                <FormLabel>{t("sizePreset.label")}</FormLabel>
+                <div className="flex gap-1">
+                  {(["medium", "large"] as SizePreset[]).map((preset) => (
+                    <button
+                      key={preset}
+                      type="button"
+                      onClick={() => handleSizePresetChange(preset)}
+                      className={cn(
+                        "flex-1 px-2 py-2 text-xs border-2 rounded-lg transition-all hover:bg-accent",
+                        sizePreset === preset
+                          ? "border-primary bg-accent"
+                          : "border-muted"
+                      )}
+                    >
+                      {t(`sizePreset.${preset}`)}
+                    </button>
+                  ))}
                 </div>
-              </TabsContent>
+              </FormItem>
+            </div>
 
-              {/* Tab 3: Appearance */}
-              <TabsContent value="appearance" className="space-y-4 mt-4">
-                <FormField
-                  control={form.control}
-                  name="colorTheme"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t("colorTheme")}</FormLabel>
-                      <div className="grid grid-cols-2 gap-3">
-                        {COLOR_THEMES.map((theme) => (
-                          <button
-                            key={theme}
-                            type="button"
-                            onClick={() => field.onChange(theme)}
-                            className={cn(
-                              "flex items-center gap-3 p-3 border-2 rounded-lg transition-all hover:bg-accent",
-                              field.value === theme
-                                ? "border-primary bg-accent"
-                                : "border-muted"
-                            )}
-                          >
-                            <div
-                              className={cn(
-                                "w-8 h-8 rounded-full border-2",
-                                THEME_COLORS[theme].bg,
-                                THEME_COLORS[theme].border
-                              )}
-                            />
-                            <div className="text-start">
-                              <div className="text-sm font-medium capitalize">
-                                {theme}
-                              </div>
-                            </div>
-                          </button>
-                        ))}
-                      </div>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </TabsContent>
-            </Tabs>
+            {/* Shape Selection */}
+            <FormField
+              control={form.control}
+              name="shape"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t("shape")}</FormLabel>
+                  <div className="grid grid-cols-4 gap-2">
+                    {SHAPES.map((shape) => (
+                      <button
+                        key={shape}
+                        type="button"
+                        onClick={() => handleShapeChange(shape)}
+                        className={cn(
+                          "flex flex-col items-center gap-1 p-2 border-2 rounded-lg transition-all hover:bg-accent",
+                          field.value === shape
+                            ? "border-primary bg-accent"
+                            : "border-muted"
+                        )}
+                      >
+                        <span className="text-xl">
+                          {SHAPE_PREVIEWS[shape].icon}
+                        </span>
+                        <span className="text-xs">
+                          {t(`shapes.${shape}`)}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-            {/* Action Buttons */}
-            <div className="flex justify-between items-center pt-4 border-t">
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  if (currentTab === "seating") setCurrentTab("basic");
-                  else if (currentTab === "appearance") setCurrentTab("seating");
-                }}
-                disabled={currentTab === "basic"}
-              >
-                <Icons.chevronLeft className="me-2 h-4 w-4" />
-                {tc("previous")}
-              </Button>
+            {/* Guest Assignment Section */}
+            <div className="border-t pt-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <Label className="text-sm font-medium">{t("assignGuests")}</Label>
+                <span className="text-xs text-muted-foreground">
+                  {selectedSeatsCount}/{watchedCapacity} {t("seats")}
+                </span>
+              </div>
 
+              {/* Filters */}
+              <div className="grid grid-cols-2 gap-2">
+                <Select value={selectedSide} onValueChange={setSelectedSide}>
+                  <SelectTrigger className="h-8 text-xs">
+                    <SelectValue placeholder={t("filters.side")} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">{t("filters.all")}</SelectItem>
+                    {sides.map((side) => (
+                      <SelectItem key={side} value={side}>
+                        {tGuests(`sides.${side.toLowerCase()}`) || side}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                <Select value={selectedGroup} onValueChange={setSelectedGroup}>
+                  <SelectTrigger className="h-8 text-xs">
+                    <SelectValue placeholder={t("filters.group")} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">{t("filters.all")}</SelectItem>
+                    {groups.map((group) => (
+                      <SelectItem key={group} value={group}>
+                        {PREDEFINED_GROUPS.includes(group.toLowerCase())
+                          ? tGuests(`groups.${group.toLowerCase()}` as any)
+                          : group}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Quick Actions */}
               <div className="flex gap-2">
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => onOpenChange?.(false)}
+                  size="sm"
+                  className="text-xs h-7"
+                  onClick={selectAllFiltered}
+                  disabled={filteredGuests.length === 0}
                 >
-                  {tc("cancel")}
+                  {t("selectAll")}
                 </Button>
-
-                {currentTab === "appearance" ? (
-                  <Button type="submit" disabled={isLoading}>
-                    {isLoading && (
-                      <Icons.spinner className="me-2 h-4 w-4 animate-spin" />
-                    )}
-                    {tc("create")}
-                  </Button>
-                ) : (
-                  <Button
-                    type="button"
-                    onClick={() => {
-                      if (currentTab === "basic") setCurrentTab("seating");
-                      else if (currentTab === "seating")
-                        setCurrentTab("appearance");
-                    }}
-                  >
-                    {tc("next")}
-                    <Icons.chevronRight className="ms-2 h-4 w-4" />
-                  </Button>
-                )}
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="text-xs h-7"
+                  onClick={clearSelection}
+                  disabled={selectedGuestIds.size === 0}
+                >
+                  {t("clearSelection")}
+                </Button>
               </div>
+
+              {/* Guest List */}
+              {isLoadingGuests ? (
+                <div className="flex items-center justify-center py-4">
+                  <Icons.spinner className="h-5 w-5 animate-spin text-muted-foreground" />
+                </div>
+              ) : filteredGuests.length === 0 ? (
+                <div className="text-center py-4 text-sm text-muted-foreground">
+                  {t("noGuestsToAssign")}
+                </div>
+              ) : (
+                <div className="max-h-40 overflow-y-auto border rounded-md">
+                  {filteredGuests.map((guest) => {
+                    const isSelected = selectedGuestIds.has(guest.id);
+                    const wouldExceedCapacity = !isSelected &&
+                      (selectedSeatsCount + guest.seatsNeeded) > watchedCapacity;
+
+                    return (
+                      <label
+                        key={guest.id}
+                        className={cn(
+                          "flex items-center gap-2 px-3 py-2 hover:bg-accent cursor-pointer border-b last:border-b-0",
+                          wouldExceedCapacity && "opacity-50 cursor-not-allowed"
+                        )}
+                      >
+                        <Checkbox
+                          checked={isSelected}
+                          onCheckedChange={() => {
+                            if (!wouldExceedCapacity || isSelected) {
+                              toggleGuestSelection(guest.id);
+                            }
+                          }}
+                          disabled={wouldExceedCapacity && !isSelected}
+                        />
+                        <span className="flex-1 text-sm truncate">{guest.name}</span>
+                        <span className="text-xs text-muted-foreground">
+                          {guest.seatsNeeded} {guest.seatsNeeded === 1 ? t("seat") : t("seats")}
+                        </span>
+                      </label>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex justify-end gap-2 pt-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => onOpenChange?.(false)}
+              >
+                {tc("cancel")}
+              </Button>
+              <Button type="submit" disabled={isLoading}>
+                {isLoading && (
+                  <Icons.spinner className="me-2 h-4 w-4 animate-spin" />
+                )}
+                {tc("create")}
+              </Button>
             </div>
           </form>
         </Form>

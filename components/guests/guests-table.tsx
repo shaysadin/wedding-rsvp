@@ -216,7 +216,7 @@ export function GuestsTable({ guests, eventId, initialFilter = "all", invitation
 
   // Bulk edit status state
   const [showBulkEditStatusModal, setShowBulkEditStatusModal] = useState(false);
-  const [bulkEditStatus, setBulkEditStatus] = useState<"PENDING" | "ACCEPTED" | "DECLINED">("PENDING");
+  const [bulkEditStatus, setBulkEditStatus] = useState<"PENDING" | "ACCEPTED" | "DECLINED" | "MAYBE">("PENDING");
   const [isBulkEditingStatus, setIsBulkEditingStatus] = useState(false);
 
   // Check VAPI availability on mount
@@ -714,6 +714,12 @@ export function GuestsTable({ guests, eventId, initialFilter = "all", invitation
                   <RadioGroupItem value="ACCEPTED" id="status-accepted" />
                   <Label htmlFor="status-accepted" className="cursor-pointer font-normal">
                     <Badge variant="default">{tStatus("accepted")}</Badge>
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2 rtl:space-x-reverse">
+                  <RadioGroupItem value="MAYBE" id="status-maybe" />
+                  <Label htmlFor="status-maybe" className="cursor-pointer font-normal">
+                    <Badge className="bg-blue-500/10 text-blue-500">{tStatus("maybe")}</Badge>
                   </Label>
                 </div>
                 <div className="flex items-center space-x-2 rtl:space-x-reverse">

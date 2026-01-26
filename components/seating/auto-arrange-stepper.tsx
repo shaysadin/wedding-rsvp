@@ -586,7 +586,6 @@ export function AutoArrangeStepper({
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="small">{t("sizePreset.small")}</SelectItem>
                       <SelectItem value="medium">{t("sizePreset.medium")}</SelectItem>
                       <SelectItem value="large">{t("sizePreset.large")}</SelectItem>
                     </SelectContent>

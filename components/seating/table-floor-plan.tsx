@@ -226,8 +226,10 @@ function DraggableTable({
         toast.error(result.error);
       } else {
         toast.success(t("tableDeleted"));
-        // Refresh data
-        window.dispatchEvent(new CustomEvent("seating-data-changed"));
+        // Optimistic update - remove table immediately
+        window.dispatchEvent(new CustomEvent("seating-data-changed", {
+          detail: { type: "table-deleted", tableId: table.id },
+        }));
       }
     } catch {
       toast.error(t("deleteTableError"));
@@ -766,9 +768,9 @@ const FloorArea = React.forwardRef<HTMLDivElement, FloorAreaProps>(
           <div
             ref={combinedRef}
             className={cn(
-              "floor-area-bg relative border-2 border-dashed rounded-lg",
-              "bg-muted/30",
-              isOver && "border-primary bg-primary/5",
+              "floor-area-bg relative border-2 border-dashed border-zinc-300 dark:border-zinc-600 rounded-lg",
+              "bg-zinc-100 dark:bg-zinc-800", // Light neutral gray background
+              isOver && "border-primary bg-zinc-200 dark:bg-zinc-700",
               !isFullscreen && "mx-auto"
             )}
             style={{
@@ -1268,57 +1270,73 @@ export function TableFloorPlan({
       const scaleX = isFullscreen ? baseFloorDimensions.current.width / floorWidth : 1;
       const scaleY = isFullscreen ? baseFloorDimensions.current.height / floorHeight : 1;
 
-      // Save all table positions (scaled if in fullscreen)
-      const tablePositionPromises = Array.from(localPositions.entries()).map(([tableId, pos]) =>
-        updateTablePosition({
-          id: tableId,
-          positionX: Math.round(pos.x * scaleX),
-          positionY: Math.round(pos.y * scaleY),
-        })
-      );
+      // Get current table and block IDs to filter out deleted items
+      const existingTableIds = new Set(tables.map((t) => t.id));
+      const existingBlockIds = new Set(venueBlocks.map((b) => b.id));
 
-      // Save all block positions (scaled if in fullscreen)
-      const blockPositionPromises = Array.from(blockPositions.entries()).map(([blockId, pos]) =>
-        updateVenueBlockPosition({
-          id: blockId,
-          positionX: Math.round(pos.x * scaleX),
-          positionY: Math.round(pos.y * scaleY),
-        })
-      );
+      // Save all table positions (scaled if in fullscreen) - filter out deleted tables
+      const tablePositionPromises = Array.from(localPositions.entries())
+        .filter(([tableId]) => existingTableIds.has(tableId))
+        .map(([tableId, pos]) =>
+          updateTablePosition({
+            id: tableId,
+            positionX: Math.round(pos.x * scaleX),
+            positionY: Math.round(pos.y * scaleY),
+          })
+        );
 
-      // Save all table sizes
-      const tableSizePromises = Array.from(tableSizes.entries()).map(([tableId, size]) =>
-        updateTableSize({
-          id: tableId,
-          width: size.width,
-          height: size.height,
-        })
-      );
+      // Save all block positions (scaled if in fullscreen) - filter out deleted blocks
+      const blockPositionPromises = Array.from(blockPositions.entries())
+        .filter(([blockId]) => existingBlockIds.has(blockId))
+        .map(([blockId, pos]) =>
+          updateVenueBlockPosition({
+            id: blockId,
+            positionX: Math.round(pos.x * scaleX),
+            positionY: Math.round(pos.y * scaleY),
+          })
+        );
 
-      // Save all block sizes
-      const blockSizePromises = Array.from(blockSizes.entries()).map(([blockId, size]) =>
-        updateVenueBlockSize({
-          id: blockId,
-          width: size.width,
-          height: size.height,
-        })
-      );
+      // Save all table sizes (rounded to integers) - filter out deleted tables
+      const tableSizePromises = Array.from(tableSizes.entries())
+        .filter(([tableId]) => existingTableIds.has(tableId))
+        .map(([tableId, size]) =>
+          updateTableSize({
+            id: tableId,
+            width: Math.round(size.width),
+            height: Math.round(size.height),
+          })
+        );
 
-      // Save all table rotations
-      const tableRotationPromises = Array.from(tableRotations.entries()).map(([tableId, rotation]) =>
-        updateTableRotation({
-          id: tableId,
-          rotation,
-        })
-      );
+      // Save all block sizes (rounded to integers) - filter out deleted blocks
+      const blockSizePromises = Array.from(blockSizes.entries())
+        .filter(([blockId]) => existingBlockIds.has(blockId))
+        .map(([blockId, size]) =>
+          updateVenueBlockSize({
+            id: blockId,
+            width: Math.round(size.width),
+            height: Math.round(size.height),
+          })
+        );
 
-      // Save all block rotations
-      const blockRotationPromises = Array.from(blockRotations.entries()).map(([blockId, rotation]) =>
-        updateVenueBlockRotation({
-          id: blockId,
-          rotation,
-        })
-      );
+      // Save all table rotations - filter out deleted tables
+      const tableRotationPromises = Array.from(tableRotations.entries())
+        .filter(([tableId]) => existingTableIds.has(tableId))
+        .map(([tableId, rotation]) =>
+          updateTableRotation({
+            id: tableId,
+            rotation,
+          })
+        );
+
+      // Save all block rotations - filter out deleted blocks
+      const blockRotationPromises = Array.from(blockRotations.entries())
+        .filter(([blockId]) => existingBlockIds.has(blockId))
+        .map(([blockId, rotation]) =>
+          updateVenueBlockRotation({
+            id: blockId,
+            rotation,
+          })
+        );
 
       const results = await Promise.all([
         ...tablePositionPromises,
@@ -1331,6 +1349,7 @@ export function TableFloorPlan({
       const errors = results.filter((r) => r.error);
 
       if (errors.length > 0) {
+        console.error("Save position errors:", errors.map((e) => e.error));
         toast.error(t("savePositionError"));
       } else {
         toast.success(t("positionsSaved"));
@@ -1343,7 +1362,8 @@ export function TableFloorPlan({
         // Dispatch event to refresh data
         window.dispatchEvent(new CustomEvent("seating-data-changed"));
       }
-    } catch {
+    } catch (err) {
+      console.error("Save position exception:", err);
       toast.error(t("savePositionError"));
     } finally {
       setIsSaving(false);
@@ -1825,22 +1845,6 @@ export function TableFloorPlan({
             >
               1200
             </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handleWidthChange(1600)}
-              className={cn("h-7", floorWidth === 1600 && "bg-accent")}
-            >
-              1600
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handleWidthChange(2000)}
-              className={cn("h-7", floorWidth === 2000 && "bg-accent")}
-            >
-              2000
-            </Button>
           </div>
         </div>
 
@@ -1882,22 +1886,6 @@ export function TableFloorPlan({
               className={cn("h-7", floorHeight === 1200 && "bg-accent")}
             >
               1200
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handleHeightChange(1600)}
-              className={cn("h-7", floorHeight === 1600 && "bg-accent")}
-            >
-              1600
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handleHeightChange(2000)}
-              className={cn("h-7", floorHeight === 2000 && "bg-accent")}
-            >
-              2000
             </Button>
           </div>
         </div>

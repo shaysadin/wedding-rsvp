@@ -31,36 +31,136 @@ export interface SeatPosition {
 
 /**
  * Generate seat positions based on table configuration
+ * @param capacity - Number of seats
+ * @param shape - Table shape
+ * @param arrangement - Seating arrangement type
+ * @param tableWidth - Optional table width in pixels (for pixel-accurate spacing)
+ * @param tableHeight - Optional table height in pixels (for pixel-accurate spacing)
  */
 export function calculateSeatPositions(
   capacity: number,
   shape: TableShape,
-  arrangement: SeatingArrangement = "even"
+  arrangement: SeatingArrangement = "even",
+  tableWidth?: number,
+  tableHeight?: number
 ): SeatPosition[] {
   switch (arrangement) {
     case "even":
-      return calculateEvenDistribution(capacity, shape);
+      return calculateEvenDistribution(capacity, shape, tableWidth, tableHeight);
     case "bride-side":
       return calculateBrideSideDistribution(capacity, shape);
     case "sides-only":
       return calculateSidesOnlyDistribution(capacity, shape);
     case "custom":
       // Return default even distribution - user will customize
-      return calculateEvenDistribution(capacity, shape);
+      return calculateEvenDistribution(capacity, shape, tableWidth, tableHeight);
     default:
-      return calculateEvenDistribution(capacity, shape);
+      return calculateEvenDistribution(capacity, shape, tableWidth, tableHeight);
   }
 }
 
 /**
+ * Target gap between chairs in pixels
+ */
+const TARGET_GAP = 2;
+
+/**
+ * Distance multiplier used in table-with-seats.tsx to push chairs outside the table
+ */
+const DISTANCE_MULTIPLIER = 1.15;
+
+/**
+ * Max span across a side (in relative coordinates)
+ */
+const MAX_SPAN = 0.9;
+
+/**
+ * Calculate chair size for a given table dimension
+ * Must match the formula in table-with-seats.tsx
+ */
+function calculateChairSize(minDim: number): number {
+  const MIN_CHAIR_SIZE = 13;
+  const MAX_CHAIR_SIZE = 22;
+  const size = Math.round(minDim * 0.24);
+  return Math.max(MIN_CHAIR_SIZE, Math.min(MAX_CHAIR_SIZE, size));
+}
+
+/**
+ * Calculate pixel-accurate spacing for chairs on a side
+ * @param numChairs - Number of chairs on this side
+ * @param sideDimension - Pixel dimension of this side (width or height)
+ * @param minTableDim - Minimum table dimension (for chair size calculation)
+ * @returns Spacing in relative coordinates
+ */
+function getPixelAccurateSpacing(
+  numChairs: number,
+  sideDimension: number,
+  minTableDim: number
+): { start: number; spacing: number } {
+  if (numChairs <= 0) return { start: 0, spacing: 0 };
+  if (numChairs === 1) return { start: 0, spacing: 0 };
+
+  const chairSize = calculateChairSize(minTableDim);
+
+  // Target pixel spacing = chairSize + gap
+  const targetPixelSpacing = chairSize + TARGET_GAP;
+
+  // Convert to relative spacing (accounting for distance multiplier)
+  let spacing = targetPixelSpacing / (sideDimension * DISTANCE_MULTIPLIER);
+  let totalSpan = (numChairs - 1) * spacing;
+
+  // If span exceeds max, scale down
+  if (totalSpan > MAX_SPAN) {
+    spacing = MAX_SPAN / (numChairs - 1);
+    totalSpan = MAX_SPAN;
+  }
+
+  const start = -totalSpan / 2;
+  return { start, spacing };
+}
+
+/**
+ * Fallback spacing when table dimensions are not provided
+ */
+function getFallbackSpacing(numChairs: number): { start: number; spacing: number } {
+  if (numChairs <= 0) return { start: 0, spacing: 0 };
+  if (numChairs === 1) return { start: 0, spacing: 0 };
+
+  // Use a reasonable default spacing
+  const spacing = 0.18;
+  let totalSpan = (numChairs - 1) * spacing;
+
+  if (totalSpan > MAX_SPAN) {
+    const adjustedSpacing = MAX_SPAN / (numChairs - 1);
+    return { start: -MAX_SPAN / 2, spacing: adjustedSpacing };
+  }
+
+  return { start: -totalSpan / 2, spacing };
+}
+
+/**
  * Even distribution based on shape:
- * - Square: seats on top and bottom sides only
+ * - Square: seats on all 4 sides
  * - Circle: seats around the circumference
- * - Rectangle: seats only on top and bottom (long sides)
+ * - Rectangle: seats on all sides (more on long sides)
  * - Oval: seats around the ellipse perimeter
  */
-function calculateEvenDistribution(capacity: number, shape: TableShape): SeatPosition[] {
+function calculateEvenDistribution(
+  capacity: number,
+  shape: TableShape,
+  tableWidth?: number,
+  tableHeight?: number
+): SeatPosition[] {
   const seats: SeatPosition[] = [];
+
+  // Helper to get spacing - uses pixel-accurate if dimensions provided
+  const getSpacing = (numChairs: number, sideDimension?: number) => {
+    if (tableWidth && tableHeight && sideDimension) {
+      const minDim = Math.min(tableWidth, tableHeight);
+      return getPixelAccurateSpacing(numChairs, sideDimension, minDim);
+    }
+    return getFallbackSpacing(numChairs);
+  };
 
   if (shape === "circle") {
     // Distribute evenly around circle
@@ -70,142 +170,165 @@ function calculateEvenDistribution(capacity: number, shape: TableShape): SeatPos
 
       seats.push({
         seatNumber: i + 1,
-        relativeX: Math.cos(radians) * 0.5, // 0.5 = on the edge
+        relativeX: Math.cos(radians) * 0.5,
         relativeY: Math.sin(radians) * 0.5,
         angle: angle,
       });
     }
   } else if (shape === "square") {
-    // Seats equally divided on all 4 sides, tightly packed next to each other
-    const seatsPerSide = Math.floor(capacity / 4);
+    // Seats distributed on all 4 sides, keeping parallel sides equal
+    const basePerSide = Math.floor(capacity / 4);
     const remainder = capacity % 4;
 
-    // Distribute remainder seats to sides (top, right, bottom, left)
-    const topSeats = seatsPerSide + (remainder > 0 ? 1 : 0);
-    const rightSeats = seatsPerSide + (remainder > 1 ? 1 : 0);
-    const bottomSeats = seatsPerSide + (remainder > 2 ? 1 : 0);
-    const leftSeats = seatsPerSide + (remainder > 3 ? 1 : 0);
+    let topSeats = basePerSide;
+    let bottomSeats = basePerSide;
+    let leftSeats = basePerSide;
+    let rightSeats = basePerSide;
+
+    // Distribute remainder to keep parallel sides equal
+    if (remainder >= 2) {
+      topSeats += 1;
+      bottomSeats += 1;
+    }
+    if (remainder === 1) {
+      topSeats += 1;
+    }
+    if (remainder === 3) {
+      topSeats += 1;
+      bottomSeats += 1;
+      leftSeats += 1;
+    }
 
     let seatNum = 1;
-    const chairSpacing = 0.18; // Tight spacing between chairs
 
-    // Top side (chairs facing down toward table) - centered and tight
-    const topWidth = (topSeats - 1) * chairSpacing;
-    const topStartX = -topWidth / 2;
+    // Top side (horizontal, uses width)
+    const top = getSpacing(topSeats, tableWidth);
     for (let i = 0; i < topSeats; i++) {
       seats.push({
         seatNumber: seatNum++,
-        relativeX: topSeats === 1 ? 0 : topStartX + i * chairSpacing,
+        relativeX: topSeats === 1 ? 0 : top.start + i * top.spacing,
         relativeY: -0.5,
         angle: 0,
       });
     }
 
-    // Right side (chairs facing left toward table) - centered and tight
-    const rightHeight = (rightSeats - 1) * chairSpacing;
-    const rightStartY = -rightHeight / 2;
+    // Right side (vertical, uses height)
+    const right = getSpacing(rightSeats, tableHeight);
     for (let i = 0; i < rightSeats; i++) {
       seats.push({
         seatNumber: seatNum++,
         relativeX: 0.5,
-        relativeY: rightSeats === 1 ? 0 : rightStartY + i * chairSpacing,
+        relativeY: rightSeats === 1 ? 0 : right.start + i * right.spacing,
         angle: 90,
       });
     }
 
-    // Bottom side (chairs facing up toward table) - centered and tight
-    const bottomWidth = (bottomSeats - 1) * chairSpacing;
-    const bottomStartX = bottomWidth / 2;
+    // Bottom side (horizontal, uses width, reverse order)
+    const bottom = getSpacing(bottomSeats, tableWidth);
     for (let i = 0; i < bottomSeats; i++) {
       seats.push({
         seatNumber: seatNum++,
-        relativeX: bottomSeats === 1 ? 0 : bottomStartX - i * chairSpacing,
+        relativeX: bottomSeats === 1 ? 0 : -bottom.start - i * bottom.spacing,
         relativeY: 0.5,
         angle: 180,
       });
     }
 
-    // Left side (chairs facing right toward table) - centered and tight
-    const leftHeight = (leftSeats - 1) * chairSpacing;
-    const leftStartY = leftHeight / 2;
+    // Left side (vertical, uses height, reverse order)
+    const left = getSpacing(leftSeats, tableHeight);
     for (let i = 0; i < leftSeats; i++) {
       seats.push({
         seatNumber: seatNum++,
         relativeX: -0.5,
-        relativeY: leftSeats === 1 ? 0 : leftStartY - i * chairSpacing,
+        relativeY: leftSeats === 1 ? 0 : -left.start - i * left.spacing,
         angle: 270,
       });
     }
   } else if (shape === "rectangle") {
-    // For rectangle (stadium shape): 2 chairs on each short side, rest on long sides
-    // Short sides are left and right, long sides are top and bottom
-    const shortSideSeats = Math.min(2, Math.floor(capacity / 4)); // Max 2 per short side
-    const remainingSeats = capacity - (shortSideSeats * 2); // Seats for long sides
+    // Stadium shape: chairs on short sides depend on capacity
+    // More than 24 guests = 3 chairs per short side, otherwise 2
+    const maxShortSideSeats = capacity > 24 ? 3 : 2;
+    const shortSideSeats = Math.min(maxShortSideSeats, Math.floor(capacity / 4));
+    const remainingSeats = capacity - (shortSideSeats * 2);
     const topSeats = Math.ceil(remainingSeats / 2);
     const bottomSeats = remainingSeats - topSeats;
 
-    let seatNum = 1;
-    const chairSpacing = 0.18; // Same spacing as square for consistency
+    // ============ STADIUM CHAIR POSITION SETTINGS ============
+    // Adjust these values to move chairs closer/further from table edge
+    // 0.5 = at edge, lower = closer to center, higher = further out
 
-    // Top side (long side - chairs facing down toward table)
+    // SHORT SIDES (left/right) - per size:
+    let sideChairDistance = 0.5;
+    if (tableWidth === 140 && tableHeight === 60) {
+      sideChairDistance = 0.48; // Medium stadium short sides
+    } else if (tableWidth === 180 && tableHeight === 70) {
+      sideChairDistance = 0.47; // Large stadium short sides
+    }
+
+    // LONG SIDES (top/bottom) - per size:
+    let longSideChairDistance = 0.5;
+    if (tableWidth === 140 && tableHeight === 60) {
+      longSideChairDistance = 0.51; // Medium stadium long sides
+    } else if (tableWidth === 180 && tableHeight === 70) {
+      longSideChairDistance = 0.5; // Large stadium long sides
+    }
+    // =========================================================
+
+    let seatNum = 1;
+
+    // Top side (long side, horizontal, uses width)
+    const top = getSpacing(topSeats, tableWidth);
     for (let i = 0; i < topSeats; i++) {
-      const spacing = topSeats > 1 ? (i / (topSeats - 1)) : 0.5;
       seats.push({
         seatNumber: seatNum++,
-        relativeX: -0.4 + spacing * 0.8,
-        relativeY: -0.5,
+        relativeX: topSeats === 1 ? 0 : top.start + i * top.spacing,
+        relativeY: -longSideChairDistance,
         angle: 0,
       });
     }
 
-    // Right side (short side - more gap, slightly closer to table)
-    const shortSideSpacing = 0.25; // More gap between chairs
-    const rightHeight = (shortSideSeats - 1) * shortSideSpacing;
-    const rightStartY = -rightHeight / 2;
+    // Right side (short side, vertical, uses height)
+    const right = getSpacing(shortSideSeats, tableHeight);
     for (let i = 0; i < shortSideSeats; i++) {
       seats.push({
         seatNumber: seatNum++,
-        relativeX: 0.46, // Slightly closer to table
-        relativeY: shortSideSeats === 1 ? 0 : rightStartY + i * shortSideSpacing,
+        relativeX: sideChairDistance,
+        relativeY: shortSideSeats === 1 ? 0 : right.start + i * right.spacing,
         angle: 90,
       });
     }
 
-    // Bottom side (long side - chairs facing up toward table)
+    // Bottom side (long side, horizontal, uses width, reverse order)
+    const bottom = getSpacing(bottomSeats, tableWidth);
     for (let i = 0; i < bottomSeats; i++) {
-      const spacing = bottomSeats > 1 ? (i / (bottomSeats - 1)) : 0.5;
       seats.push({
         seatNumber: seatNum++,
-        relativeX: 0.4 - spacing * 0.8,
-        relativeY: 0.5,
+        relativeX: bottomSeats === 1 ? 0 : -bottom.start - i * bottom.spacing,
+        relativeY: longSideChairDistance,
         angle: 180,
       });
     }
 
-    // Left side (short side - more gap, slightly closer to table)
-    const leftHeight = (shortSideSeats - 1) * shortSideSpacing;
-    const leftStartY = leftHeight / 2;
+    // Left side (short side, vertical, uses height, reverse order)
+    const left = getSpacing(shortSideSeats, tableHeight);
     for (let i = 0; i < shortSideSeats; i++) {
       seats.push({
         seatNumber: seatNum++,
-        relativeX: -0.46, // Slightly closer to table
-        relativeY: shortSideSeats === 1 ? 0 : leftStartY - i * shortSideSpacing,
+        relativeX: -sideChairDistance,
+        relativeY: shortSideSeats === 1 ? 0 : -left.start - i * left.spacing,
         angle: 270,
       });
     }
   } else if (shape === "oval") {
     // Distribute around ellipse perimeter
-    // Using parametric equation: x = a*cos(θ), y = b*sin(θ)
-    // For visual purposes, we use 0.5 as the base radius
     for (let i = 0; i < capacity; i++) {
       const angle = (i / capacity) * 360;
-      const radians = (angle - 90) * (Math.PI / 180); // Start at top
+      const radians = (angle - 90) * (Math.PI / 180);
 
-      // Oval shape with slight horizontal stretch (a = 0.5, b = 0.45)
       seats.push({
         seatNumber: i + 1,
         relativeX: Math.cos(radians) * 0.5,
-        relativeY: Math.sin(radians) * 0.45,
+        relativeY: Math.sin(radians) * 0.5,
         angle: angle,
       });
     }

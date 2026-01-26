@@ -137,7 +137,7 @@ export function HostessFloorPlan({
             transform: `scale(${scale})`,
             transformOrigin: "top left",
           }}
-          className="relative border-2 border-dashed rounded-lg bg-muted/20"
+          className="relative border-2 border-dashed border-zinc-300 dark:border-zinc-600 rounded-lg bg-zinc-100 dark:bg-zinc-800"
         >
           {/* Venue blocks */}
           {venueBlocks.map((block) => {

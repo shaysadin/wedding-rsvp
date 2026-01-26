@@ -628,7 +628,7 @@ export async function getDuplicatePhoneGuests(eventId: string) {
 export async function bulkUpdateRsvpStatus(input: {
   guestIds: string[];
   eventId: string;
-  status: "PENDING" | "ACCEPTED" | "DECLINED";
+  status: "PENDING" | "ACCEPTED" | "DECLINED" | "MAYBE";
   guestCount?: number;
 }) {
   try {
@@ -674,10 +674,11 @@ export async function bulkUpdateRsvpStatus(input: {
       respondedAt: new Date(),
     };
 
-    // Only set guestCount for ACCEPTED status
+    // Only set guestCount for ACCEPTED status, reset to 0 for DECLINED
+    // For PENDING and MAYBE, keep the existing guestCount or don't set it
     if (input.status === "ACCEPTED" && input.guestCount !== undefined) {
       rsvpData.guestCount = input.guestCount;
-    } else if (input.status !== "ACCEPTED") {
+    } else if (input.status === "DECLINED") {
       rsvpData.guestCount = 0;
     }
 

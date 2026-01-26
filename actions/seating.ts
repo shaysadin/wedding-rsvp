@@ -5,6 +5,7 @@ import { UserRole } from "@prisma/client";
 
 import { prisma } from "@/lib/db";
 import { getCurrentUser } from "@/lib/session";
+import { canAccessEvent } from "@/lib/permissions";
 import {
   createTableSchema,
   updateTableSchema,
@@ -22,6 +23,8 @@ import {
   autoArrangeSchema,
   markGuestArrivedSchema,
   updateGuestTableSchema,
+  getDefaultSizeForShape,
+  type Shape,
   type CreateTableInput,
   type UpdateTableInput,
   type UpdateTablePositionInput,
@@ -81,11 +84,18 @@ export async function createTable(input: CreateTableInput) {
       return { error: "Event not found" };
     }
 
-    // Calculate seat positions
+    // Get dimensions - use input values if provided, otherwise fall back to defaults
+    const defaultDimensions = getDefaultSizeForShape(validatedData.shape);
+    const width = validatedData.width ?? defaultDimensions.width;
+    const height = validatedData.height ?? defaultDimensions.height;
+
+    // Calculate seat positions with actual dimensions for accurate spacing
     const seatPositions = calculateSeatPositions(
       validatedData.capacity,
       validatedData.shape,
-      validatedData.seatingArrangement || "even"
+      validatedData.seatingArrangement || "even",
+      width,
+      height
     );
 
     // Create table with seats in a transaction
@@ -97,6 +107,8 @@ export async function createTable(input: CreateTableInput) {
         shape: validatedData.shape,
         seatingArrangement: validatedData.seatingArrangement || "even",
         colorTheme: validatedData.colorTheme || "default",
+        width: width,
+        height: height,
         seats: {
           create: seatPositions.map((seat) => ({
             seatNumber: seat.seatNumber,
@@ -148,13 +160,21 @@ export async function updateTable(input: UpdateTableInput) {
       (updateData.capacity && updateData.capacity !== existingTable.capacity) ||
       (updateData.seatingArrangement && updateData.seatingArrangement !== existingTable.seatingArrangement);
 
+    // If shape changed, update dimensions too (from SIZE_PRESETS medium)
+    const shapeChanged = updateData.shape && updateData.shape !== existingTable.shape;
+    let dataToUpdate = { ...updateData };
+    if (shapeChanged && updateData.shape) {
+      const dimensions = getDefaultSizeForShape(updateData.shape as Shape);
+      dataToUpdate = { ...dataToUpdate, ...dimensions };
+    }
+
     const table = await prisma.weddingTable.update({
       where: { id },
-      data: updateData,
+      data: dataToUpdate,
     });
 
-    // Regenerate seats if needed
-    if (shouldRegenerateSeats) {
+    // Regenerate seats if capacity, arrangement, or shape changed
+    if (shouldRegenerateSeats || shapeChanged) {
       await regenerateTableSeats(
         id,
         table.capacity,
@@ -184,14 +204,19 @@ export async function updateTablePosition(input: UpdateTablePositionInput) {
 
     const validatedData = updateTablePositionSchema.parse(input);
 
-    // Verify ownership through event
+    // Verify access through event (owner or collaborator with EDITOR role)
     const existingTable = await prisma.weddingTable.findFirst({
       where: { id: validatedData.id },
       include: { weddingEvent: true },
     });
 
-    if (!existingTable || existingTable.weddingEvent.ownerId !== user.id) {
+    if (!existingTable) {
       return { error: "Table not found" };
+    }
+
+    const hasAccess = await canAccessEvent(existingTable.weddingEventId, user.id, "EDITOR");
+    if (!hasAccess) {
+      return { error: "Unauthorized" };
     }
 
     const table = await prisma.weddingTable.update({
@@ -223,14 +248,19 @@ export async function updateTableSize(input: UpdateTableSizeInput) {
 
     const validatedData = updateTableSizeSchema.parse(input);
 
-    // Verify ownership through event
+    // Verify access through event (owner or collaborator with EDITOR role)
     const existingTable = await prisma.weddingTable.findFirst({
       where: { id: validatedData.id },
       include: { weddingEvent: true },
     });
 
-    if (!existingTable || existingTable.weddingEvent.ownerId !== user.id) {
+    if (!existingTable) {
       return { error: "Table not found" };
+    }
+
+    const hasAccess = await canAccessEvent(existingTable.weddingEventId, user.id, "EDITOR");
+    if (!hasAccess) {
+      return { error: "Unauthorized" };
     }
 
     const table = await prisma.weddingTable.update({
@@ -262,14 +292,19 @@ export async function updateTableRotation(input: UpdateTableRotationInput) {
 
     const validatedData = updateTableRotationSchema.parse(input);
 
-    // Verify ownership through event
+    // Verify access through event (owner or collaborator with EDITOR role)
     const existingTable = await prisma.weddingTable.findFirst({
       where: { id: validatedData.id },
       include: { weddingEvent: true },
     });
 
-    if (!existingTable || existingTable.weddingEvent.ownerId !== user.id) {
+    if (!existingTable) {
       return { error: "Table not found" };
+    }
+
+    const hasAccess = await canAccessEvent(existingTable.weddingEventId, user.id, "EDITOR");
+    if (!hasAccess) {
+      return { error: "Unauthorized" };
     }
 
     const table = await prisma.weddingTable.update({
@@ -937,14 +972,19 @@ export async function updateVenueBlockPosition(input: UpdateVenueBlockPositionIn
 
     const validatedData = updateVenueBlockPositionSchema.parse(input);
 
-    // Verify ownership through event
+    // Verify access through event (owner or collaborator with EDITOR role)
     const existingBlock = await prisma.venueBlock.findFirst({
       where: { id: validatedData.id },
       include: { weddingEvent: true },
     });
 
-    if (!existingBlock || existingBlock.weddingEvent.ownerId !== user.id) {
+    if (!existingBlock) {
       return { error: "Block not found" };
+    }
+
+    const hasAccess = await canAccessEvent(existingBlock.weddingEventId, user.id, "EDITOR");
+    if (!hasAccess) {
+      return { error: "Unauthorized" };
     }
 
     const block = await prisma.venueBlock.update({
@@ -976,14 +1016,19 @@ export async function updateVenueBlockSize(input: UpdateVenueBlockSizeInput) {
 
     const validatedData = updateVenueBlockSizeSchema.parse(input);
 
-    // Verify ownership through event
+    // Verify access through event (owner or collaborator with EDITOR role)
     const existingBlock = await prisma.venueBlock.findFirst({
       where: { id: validatedData.id },
       include: { weddingEvent: true },
     });
 
-    if (!existingBlock || existingBlock.weddingEvent.ownerId !== user.id) {
+    if (!existingBlock) {
       return { error: "Block not found" };
+    }
+
+    const hasAccess = await canAccessEvent(existingBlock.weddingEventId, user.id, "EDITOR");
+    if (!hasAccess) {
+      return { error: "Unauthorized" };
     }
 
     const block = await prisma.venueBlock.update({
@@ -1015,14 +1060,19 @@ export async function updateVenueBlockRotation(input: UpdateVenueBlockRotationIn
 
     const validatedData = updateVenueBlockRotationSchema.parse(input);
 
-    // Verify ownership through event
+    // Verify access through event (owner or collaborator with EDITOR role)
     const existingBlock = await prisma.venueBlock.findFirst({
       where: { id: validatedData.id },
       include: { weddingEvent: true },
     });
 
-    if (!existingBlock || existingBlock.weddingEvent.ownerId !== user.id) {
+    if (!existingBlock) {
       return { error: "Block not found" };
+    }
+
+    const hasAccess = await canAccessEvent(existingBlock.weddingEventId, user.id, "EDITOR");
+    if (!hasAccess) {
+      return { error: "Unauthorized" };
     }
 
     const block = await prisma.venueBlock.update({
@@ -1388,6 +1438,9 @@ export async function autoArrangeTables(input: AutoArrangeInput) {
               validatedData.seatingArrangement
             );
 
+            // Get default dimensions based on shape (from SIZE_PRESETS medium)
+            const dimensions = getDefaultSizeForShape(validatedData.tableShape);
+
             const table = await tx.weddingTable.create({
               data: {
                 weddingEventId: validatedData.eventId,
@@ -1396,6 +1449,8 @@ export async function autoArrangeTables(input: AutoArrangeInput) {
                 shape: validatedData.tableShape,
                 seatingArrangement: validatedData.seatingArrangement,
                 colorTheme: "default",
+                width: dimensions.width,
+                height: dimensions.height,
                 seats: {
                   create: seatPositions.map((seat) => ({
                     seatNumber: seat.seatNumber,

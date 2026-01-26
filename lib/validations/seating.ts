@@ -182,26 +182,22 @@ export const updateGuestTableSchema = z.object({
 
 // ============ SIZE PRESETS ============
 
-export type SizePreset = "small" | "medium" | "large";
+export type SizePreset = "medium" | "large";
 
 export const SIZE_PRESETS: Record<Shape, Record<SizePreset, { width: number; height: number }>> = {
   square: {
-    small: { width: 60, height: 60 },
     medium: { width: 80, height: 80 },
     large: { width: 100, height: 100 },
   },
   circle: {
-    small: { width: 60, height: 60 },
     medium: { width: 80, height: 80 },
     large: { width: 100, height: 100 },
   },
   rectangle: {
-    small: { width: 100, height: 50 },
     medium: { width: 140, height: 60 },
     large: { width: 180, height: 70 },
   },
   oval: {
-    small: { width: 80, height: 55 },
     medium: { width: 110, height: 70 },
     large: { width: 140, height: 85 },
   },

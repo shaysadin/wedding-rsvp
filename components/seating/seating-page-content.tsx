@@ -176,9 +176,54 @@ export function SeatingPageContent({ eventId, events, locale }: SeatingPageConte
     loadData();
   }, [loadData]);
 
-  // Listen for data refresh events
+  // Listen for data refresh events - supports both full refresh and optimistic updates
   useEffect(() => {
-    const handleRefresh = () => {
+    const handleRefresh = (e: Event) => {
+      const customEvent = e as CustomEvent;
+      const detail = customEvent.detail;
+
+      // If event has data, do optimistic update instead of full refresh
+      if (detail?.type === "table-added" && detail.table) {
+        setTables((prev) => [...prev, detail.table as Table]);
+        // Update stats optimistically
+        setStats((prev) => prev ? {
+          ...prev,
+          totalTables: prev.totalTables + 1,
+          totalCapacity: prev.totalCapacity + (detail.table.capacity || 0),
+          capacityRemaining: prev.capacityRemaining + (detail.table.capacity || 0),
+        } : prev);
+        return;
+      }
+
+      if (detail?.type === "table-updated" && detail.table) {
+        setTables((prev) =>
+          prev.map((t) => (t.id === detail.table.id ? { ...t, ...detail.table } : t))
+        );
+        return;
+      }
+
+      if (detail?.type === "table-deleted" && detail.tableId) {
+        const deletedTable = tables.find((t) => t.id === detail.tableId);
+        setTables((prev) => prev.filter((t) => t.id !== detail.tableId));
+        // Update stats optimistically
+        if (deletedTable) {
+          setStats((prev) => prev ? {
+            ...prev,
+            totalTables: prev.totalTables - 1,
+            totalCapacity: prev.totalCapacity - deletedTable.capacity,
+            capacityRemaining: prev.capacityRemaining - deletedTable.seatsAvailable,
+            seatedGuestsCount: prev.seatedGuestsCount - deletedTable.assignments.length,
+          } : prev);
+        }
+        return;
+      }
+
+      if (detail?.type === "block-added" && detail.block) {
+        setVenueBlocks((prev) => [...prev, detail.block as VenueBlock]);
+        return;
+      }
+
+      // Full refresh for complex operations or when no detail provided
       loadData();
     };
 
@@ -186,7 +231,7 @@ export function SeatingPageContent({ eventId, events, locale }: SeatingPageConte
     return () => {
       window.removeEventListener("seating-data-changed", handleRefresh);
     };
-  }, [loadData]);
+  }, [loadData, tables]);
 
   // Get the selected event for displaying title
   const selectedEvent = events.find((e) => e.id === eventId) || events[0];

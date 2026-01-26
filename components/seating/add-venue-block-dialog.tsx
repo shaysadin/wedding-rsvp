@@ -166,8 +166,14 @@ export function AddVenueBlockDialog({ eventId, open: controlledOpen, onOpenChang
       form.reset();
       setSizePreset("medium");
 
-      // Dispatch event to refresh data
-      window.dispatchEvent(new CustomEvent("seating-data-changed"));
+      // Dispatch event with new block data for optimistic update
+      if (result.block) {
+        window.dispatchEvent(new CustomEvent("seating-data-changed", {
+          detail: { type: "block-added", block: result.block },
+        }));
+      } else {
+        window.dispatchEvent(new CustomEvent("seating-data-changed"));
+      }
     } catch {
       toast.error("Failed to create venue block");
     } finally {
@@ -242,7 +248,7 @@ export function AddVenueBlockDialog({ eventId, open: controlledOpen, onOpenChang
             <FormItem>
               <FormLabel>{t("sizePreset.label")}</FormLabel>
               <div className="flex gap-2">
-                {(["small", "medium", "large"] as SizePreset[]).map((preset) => (
+                {(["medium", "large"] as SizePreset[]).map((preset) => (
                   <button
                     key={preset}
                     type="button"
