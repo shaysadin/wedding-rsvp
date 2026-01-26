@@ -1148,9 +1148,16 @@ async function sendEventDayReminder(
       }
     }
 
-    // Build venue/address display
-    const venueDisplay = eventVenue || event.venue || eventLocation || "המקום";
-    const addressDisplay = eventLocation || "";
+    // Build venue/address display - combine venue + location with comma
+    // Example: "מאגיה, רחוב החשמל 5, טבריה"
+    let venueAddressDisplay = "";
+    if (event.venue && event.location) {
+      venueAddressDisplay = `${event.venue}, ${event.location}`;
+    } else if (eventVenue && eventLocation) {
+      venueAddressDisplay = `${eventVenue}, ${eventLocation}`;
+    } else {
+      venueAddressDisplay = eventVenue || event.venue || eventLocation || event.location || "המקום";
+    }
 
     // Send via Twilio WhatsApp with template
     const accountSid = providerSettings.whatsappApiKey;
@@ -1180,8 +1187,8 @@ async function sendEventDayReminder(
     // Template variables for Event Day:
     // {{1}} = guest name
     // {{2}} = wedding/event name
-    // {{3}} = table name
-    // {{4}} = venue/address
+    // {{3}} = table name (e.g., "שולחן 5" or "טרם שובץ")
+    // {{4}} = venue/address (e.g., "מאגיה, רחוב החשמל 5, טבריה")
     // {{5}} = navigation link
     // {{6}} = gift link
     const message = await twilio.messages.create({
@@ -1190,9 +1197,9 @@ async function sendEventDayReminder(
         "1": guestName,
         "2": event.title,
         "3": guestTableName || "טרם שובץ",
-        "4": `${venueDisplay}${addressDisplay ? ` - ${addressDisplay}` : ""}`,
-        "5": navigationUrl || "לא זמין",
-        "6": giftLink || "לא זמין",
+        "4": venueAddressDisplay,
+        "5": navigationUrl || "",
+        "6": giftLink || "",
       }),
       from: `whatsapp:${fromNumber}`,
       to: `whatsapp:${formattedPhone}`,

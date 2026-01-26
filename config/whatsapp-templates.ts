@@ -434,8 +434,7 @@ export const WHATSAPP_EVENT_DAY_TEMPLATES: WhatsAppTemplateDefinition[] = [
 
 🗺️ לניווט: {{5}}
 
-💳 רוצים להעניק לזוג מתנה בכרטיס אשראי?
-{{6}}
+💳 רוצים להעניק לזוג מתנה? {{6}}
 
 מחכים לראות אתכם! ❤️`,
     templateTextEn: `Hello {{1}} 👋
@@ -449,8 +448,7 @@ Reminder that {{2}} is today! 🎉
 
 🗺️ Navigation: {{5}}
 
-💳 Want to give a gift by credit card?
-{{6}}
+💳 Want to give a gift? {{6}}
 
 Looking forward to seeing you! ❤️`,
   },
@@ -487,8 +485,8 @@ See you soon! 💃🕺`,
     nameHe: "קצר",
     nameEn: "Short",
     twilioTemplateName: "wedinex_event_day_short",
-    templateTextHe: `{{1}}, מתראים היום! 🪑{{3}} 📍{{4}} 🗺️{{5}} 💳{{6}}`,
-    templateTextEn: `{{1}}, see you today! 🪑{{3}} 📍{{4}} 🗺️{{5}} 💳{{6}}`,
+    templateTextHe: `{{1}}, מתראים היום! 🪑{{3}} 📍{{4}}`,
+    templateTextEn: `{{1}}, see you today! 🪑{{3}} 📍{{4}}`,
   },
 ];
 

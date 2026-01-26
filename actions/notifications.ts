@@ -511,12 +511,16 @@ export async function sendEventDayReminder(guestId: string, channel: ChannelType
     const isHebrew = !event.notes?.includes("locale:en");
     const tableName = guest.tableAssignment?.table?.name || (isHebrew ? "טרם שובץ" : "Not yet assigned");
 
-    // Build venue/address display
-    const venueDisplay = event.venue || event.location || (isHebrew ? "המקום" : "The venue");
-    const addressDisplay = event.location || "";
-    const venue = event.venue && event.location
-      ? `${event.venue}, ${event.location}`
-      : (event.venue || event.location || "");
+    // Build venue/address display - combine venue + location with comma
+    // Example: "מאגיה, רחוב החשמל 5, טבריה"
+    let venueAddressDisplay = "";
+    if (event.venue && event.location) {
+      venueAddressDisplay = `${event.venue}, ${event.location}`;
+    } else {
+      venueAddressDisplay = event.venue || event.location || (isHebrew ? "המקום" : "The venue");
+    }
+
+    const venue = venueAddressDisplay;
 
     // Build navigation URL - always use Waze with address
     let navigationUrl = "";
@@ -568,9 +572,9 @@ export async function sendEventDayReminder(guestId: string, channel: ChannelType
           "1": guest.name,
           "2": event.title,
           "3": tableName,
-          "4": `${venueDisplay}${addressDisplay ? ` - ${addressDisplay}` : ""}`,
-          "5": navigationUrl || (isHebrew ? "לא זמין" : "Not available"),
-          "6": giftLink || (isHebrew ? "לא זמין" : "Not available"),
+          "4": venueAddressDisplay,
+          "5": navigationUrl || "",
+          "6": giftLink || "",
         },
       };
     }

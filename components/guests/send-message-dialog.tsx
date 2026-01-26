@@ -159,7 +159,7 @@ export function SendMessageDialog({
     guestName: mode === "single" && guestNames?.[0] ? guestNames[0] : (isRTL ? "שם האורח" : "Guest Name"),
     eventTitle: isRTL ? "שם האירוע" : "Event Name",
     rsvpLink: "https://...",
-    eventVenue: isRTL ? "מיקום האירוע" : "Event Venue",
+    eventVenue: isRTL ? "מאגיה, רחוב החשמל 5, טבריה" : "Venue Name, Street 5, City",
     tableName: isRTL ? "שולחן 5" : "Table 5",
     navigationUrl: "https://waze.com/ul?q=...",
     giftLink: "https://...",
