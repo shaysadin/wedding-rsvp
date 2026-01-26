@@ -460,6 +460,115 @@ export async function sendReminder(guestId: string, channel: ChannelType = "AUTO
   }
 }
 
+export async function sendEventDayReminder(guestId: string, channel: ChannelType = "AUTO", customTemplate?: string, whatsappContentSid?: string) {
+  try {
+    const user = await getCurrentUser();
+
+    // Check if user has ROLE_WEDDING_OWNER in their roles array
+    const hasWeddingOwnerRole = user?.roles?.includes(UserRole.ROLE_WEDDING_OWNER);
+    if (!user || !hasWeddingOwnerRole) {
+      return { error: "Unauthorized" };
+    }
+
+    // Get guest with event and table assignment
+    const guest = await prisma.guest.findFirst({
+      where: { id: guestId },
+      include: {
+        weddingEvent: true,
+        rsvp: true,
+        tableAssignment: {
+          include: { table: true },
+        },
+      },
+    });
+
+    if (!guest || guest.weddingEvent.ownerId !== user.id) {
+      return { error: "Guest not found" };
+    }
+
+    // Determine channel to use
+    const notificationService = await getNotificationService();
+    const preferredChannel = channel === "AUTO" ? undefined : (channel as NotificationChannel);
+
+    // Check usage before sending
+    const effectiveChannel = preferredChannel || (guest.phoneNumber?.startsWith("+") ? NotificationChannel.WHATSAPP : NotificationChannel.SMS);
+    const remaining = await getRemainingMessages(user.id);
+
+    if (effectiveChannel === NotificationChannel.WHATSAPP && remaining.whatsapp <= 0) {
+      return { error: "WhatsApp message limit reached", limitReached: true };
+    }
+    if (effectiveChannel === NotificationChannel.SMS && remaining.sms <= 0) {
+      return { error: "SMS message limit reached", limitReached: true };
+    }
+
+    // Build event day message
+    const event = guest.weddingEvent;
+    const tableName = guest.tableAssignment?.table?.name || "";
+    const venue = event.venue ? `${event.venue}, ${event.location}` : event.location;
+
+    let message: string;
+    if (customTemplate) {
+      // Render custom SMS template
+      message = customTemplate
+        .replace(/\{\{guestName\}\}/g, guest.name)
+        .replace(/\{\{eventTitle\}\}/g, event.title)
+        .replace(/\{\{eventVenue\}\}/g, venue);
+    } else {
+      // Default message
+      const isHebrew = !event.notes?.includes("locale:en");
+      message = isHebrew
+        ? `שלום ${guest.name}!\n${event.title} מתקיים היום!\nמקום: ${venue}${tableName ? `\nשולחן: ${tableName}` : ""}\nנתראה בשמחה!`
+        : `Dear ${guest.name},\n${event.title} is today!\nVenue: ${venue}${tableName ? `\nTable: ${tableName}` : ""}\nSee you at the celebration!`;
+    }
+
+    // Prepare WhatsApp options if using WhatsApp
+    let whatsappOptions: { contentSid?: string; contentVariables?: Record<string, string> } | undefined;
+    if (whatsappContentSid && effectiveChannel === NotificationChannel.WHATSAPP) {
+      whatsappOptions = {
+        contentSid: whatsappContentSid,
+        contentVariables: {
+          "1": guest.name,
+          "2": event.title,
+          "3": tableName ? (event.notes?.includes("locale:en") ? `Table: ${tableName}` : `שולחן: ${tableName}`) : "",
+          "4": venue,
+        },
+      };
+    }
+
+    // Send using the base sendMessage method via sendReminder (pass the constructed message)
+    const result = await notificationService.sendReminder(guest, event, preferredChannel, message, whatsappOptions ? { whatsappContentSid } : undefined);
+
+    // Log to database
+    await prisma.notificationLog.create({
+      data: {
+        guestId: guest.id,
+        type: NotificationType.EVENT_DAY,
+        channel: result.channel,
+        status: result.status,
+        providerResponse: result.providerResponse,
+        sentAt: result.success ? new Date() : null,
+      },
+    });
+
+    // Update usage tracking if message was sent
+    if (result.success) {
+      await checkAndUpdateUsage(user.id, result.channel, 1);
+      await logMessageCost(user.id, guest.weddingEventId, guest.id, result.channel, NotificationType.EVENT_DAY);
+    }
+
+    revalidatePath(`/dashboard/events/${guest.weddingEventId}`);
+
+    if (!result.success && result.error) {
+      return { error: result.error, channel: result.channel };
+    }
+
+    return { success: result.success, channel: result.channel };
+  } catch (error) {
+    console.error("Error sending event day reminder:", error);
+    return { error: "Failed to send event day reminder" };
+  }
+}
+
 export async function sendBulkReminders(eventId: string) {
   try {
     const user = await getCurrentUser();

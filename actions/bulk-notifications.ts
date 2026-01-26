@@ -17,7 +17,7 @@ const MAX_CONCURRENT = 5; // Max concurrent requests within a batch
 interface BulkMessageOptions {
   eventId: string;
   guestIds: string[];
-  messageType: "INVITE" | "REMINDER";
+  messageType: "INVITE" | "REMINDER" | "EVENT_DAY";
   messageFormat: "STANDARD" | "INTERACTIVE";
   channel: "WHATSAPP" | "SMS" | "AUTO";
   includeImage?: boolean;
@@ -115,6 +115,7 @@ async function processSingleMessage(
       title: string;
       dateTime: Date;
       location: string;
+      venue: string | null;
       ownerId: string;
       invitationImageUrl: string | null;
       smsSenderId: string | null;
@@ -122,9 +123,12 @@ async function processSingleMessage(
       createdAt: Date;
       updatedAt: Date;
     };
+    tableAssignment?: {
+      table: { name: string } | null;
+    } | null;
   },
   options: {
-    messageType: "INVITE" | "REMINDER";
+    messageType: "INVITE" | "REMINDER" | "EVENT_DAY";
     messageFormat: "STANDARD" | "INTERACTIVE";
     channel: NotificationChannel;
     includeImage: boolean;
@@ -142,7 +146,43 @@ async function processSingleMessage(
   try {
     let result;
 
-    if (options.messageFormat === "INTERACTIVE") {
+    if (options.messageType === "EVENT_DAY") {
+      // Event day reminder - build custom message with venue and table info
+      const event = guest.weddingEvent;
+      const tableName = guest.tableAssignment?.table?.name || "";
+      const venue = event.venue ? `${event.venue}, ${event.location}` : event.location;
+      const isHebrew = !event.notes?.includes("locale:en");
+
+      let message: string;
+      if (options.smsTemplate) {
+        message = options.smsTemplate
+          .replace(/\{\{guestName\}\}/g, guest.name)
+          .replace(/\{\{eventTitle\}\}/g, event.title)
+          .replace(/\{\{eventVenue\}\}/g, venue);
+      } else {
+        message = isHebrew
+          ? `שלום ${guest.name}!\n${event.title} מתקיים היום!\nמקום: ${venue}${tableName ? `\nשולחן: ${tableName}` : ""}\nנתראה בשמחה!`
+          : `Dear ${guest.name},\n${event.title} is today!\nVenue: ${venue}${tableName ? `\nTable: ${tableName}` : ""}\nSee you at the celebration!`;
+      }
+
+      // For WhatsApp with template SID, use the content template
+      if (options.channel === NotificationChannel.WHATSAPP && options.whatsappContentSid) {
+        result = await notificationService.sendReminder(
+          guest as any,
+          event as any,
+          options.channel,
+          message,
+          { whatsappContentSid: options.whatsappContentSid }
+        );
+      } else {
+        result = await notificationService.sendReminder(
+          guest as any,
+          event as any,
+          options.channel,
+          message
+        );
+      }
+    } else if (options.messageFormat === "INTERACTIVE") {
       // Interactive button messages (WhatsApp only)
       if (options.messageType === "INVITE") {
         result = await notificationService.sendInteractiveInvite(
@@ -213,6 +253,7 @@ async function processBatch(
       title: string;
       dateTime: Date;
       location: string;
+      venue: string | null;
       ownerId: string;
       invitationImageUrl: string | null;
       smsSenderId: string | null;
@@ -220,9 +261,12 @@ async function processBatch(
       createdAt: Date;
       updatedAt: Date;
     };
+    tableAssignment?: {
+      table: { name: string } | null;
+    } | null;
   }>,
   options: {
-    messageType: "INVITE" | "REMINDER";
+    messageType: "INVITE" | "REMINDER" | "EVENT_DAY";
     messageFormat: "STANDARD" | "INTERACTIVE";
     channel: NotificationChannel;
     includeImage: boolean;
@@ -316,7 +360,7 @@ export async function sendBulkMessages(options: BulkMessageOptions): Promise<Bul
       };
     }
 
-    // Get all requested guests with event data
+    // Get all requested guests with event data and table assignment (for EVENT_DAY)
     const guests = await prisma.guest.findMany({
       where: {
         id: { in: options.guestIds },
@@ -324,6 +368,9 @@ export async function sendBulkMessages(options: BulkMessageOptions): Promise<Bul
       },
       include: {
         weddingEvent: true,
+        tableAssignment: {
+          include: { table: true },
+        },
       },
     });
 
@@ -375,9 +422,14 @@ export async function sendBulkMessages(options: BulkMessageOptions): Promise<Bul
     const notificationService = await getNotificationService();
 
     // Determine notification type
-    const notificationType = options.messageFormat === "INTERACTIVE"
-      ? (options.messageType === "INVITE" ? NotificationType.INTERACTIVE_INVITE : NotificationType.INTERACTIVE_REMINDER)
-      : (options.messageType === "INVITE" ? NotificationType.INVITE : NotificationType.REMINDER);
+    let notificationType: NotificationType;
+    if (options.messageType === "EVENT_DAY") {
+      notificationType = NotificationType.EVENT_DAY;
+    } else if (options.messageFormat === "INTERACTIVE") {
+      notificationType = options.messageType === "INVITE" ? NotificationType.INTERACTIVE_INVITE : NotificationType.INTERACTIVE_REMINDER;
+    } else {
+      notificationType = options.messageType === "INVITE" ? NotificationType.INVITE : NotificationType.REMINDER;
+    }
 
     // Process in batches
     let sent = 0;

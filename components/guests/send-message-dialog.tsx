@@ -24,7 +24,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
-import { sendInvite, sendReminder, sendInteractiveInvite, sendInteractiveReminder, ChannelType, getCurrentUserUsage } from "@/actions/notifications";
+import { sendInvite, sendReminder, sendEventDayReminder, sendInteractiveInvite, sendInteractiveReminder, ChannelType, getCurrentUserUsage } from "@/actions/notifications";
 import { sendBulkMessages } from "@/actions/bulk-notifications";
 import { getAvailableChannels } from "@/actions/messaging-settings";
 import { MessagePreview } from "./message-preview";
@@ -52,7 +52,7 @@ interface SendMessageDialogProps {
   invitationImageUrl?: string | null;
 }
 
-type MessageType = "INVITE" | "REMINDER";
+type MessageType = "INVITE" | "REMINDER" | "EVENT_DAY";
 type MessageFormat = "STANDARD" | "INTERACTIVE";
 
 interface ChannelStatus {
@@ -142,6 +142,9 @@ export function SendMessageDialog({
 
   // Get WhatsApp template type based on message type and format
   const whatsappTemplateType: WhatsAppTemplateType = useMemo(() => {
+    if (messageType === "EVENT_DAY") {
+      return "EVENT_DAY";
+    }
     if (messageFormat === "INTERACTIVE") {
       return messageType === "INVITE" ? "INTERACTIVE_INVITE" : "INTERACTIVE_REMINDER";
     }
@@ -153,6 +156,7 @@ export function SendMessageDialog({
     guestName: mode === "single" && guestNames?.[0] ? guestNames[0] : (isRTL ? "שם האורח" : "Guest Name"),
     eventTitle: isRTL ? "שם האירוע" : "Event Name",
     rsvpLink: "https://...",
+    eventVenue: isRTL ? "מיקום האירוע" : "Event Venue",
   };
 
   // Get template definitions for WhatsApp
@@ -286,7 +290,8 @@ export function SendMessageDialog({
           return dbPreviewText
             .replace(/\{\{1\}\}/g, previewContext.guestName)
             .replace(/\{\{2\}\}/g, previewContext.eventTitle)
-            .replace(/\{\{3\}\}/g, previewContext.rsvpLink);
+            .replace(/\{\{3\}\}/g, messageType === "EVENT_DAY" ? "" : previewContext.rsvpLink)
+            .replace(/\{\{4\}\}/g, previewContext.eventVenue);
         }
       }
 
@@ -297,7 +302,8 @@ export function SendMessageDialog({
         return text
           .replace(/\{\{1\}\}/g, previewContext.guestName)
           .replace(/\{\{2\}\}/g, previewContext.eventTitle)
-          .replace(/\{\{3\}\}/g, previewContext.rsvpLink);
+          .replace(/\{\{3\}\}/g, messageType === "EVENT_DAY" ? "" : previewContext.rsvpLink)
+          .replace(/\{\{4\}\}/g, previewContext.eventVenue);
       }
       return isRTL ? "תצוגה מקדימה לא זמינה" : "Preview not available";
     } else {
@@ -410,7 +416,11 @@ export function SendMessageDialog({
         let result;
         const guestId = guestIds[0];
 
-        if (messageFormat === "INTERACTIVE") {
+        if (messageType === "EVENT_DAY") {
+          const customTemplate = channel === "SMS" ? smsTemplate : undefined;
+          const templateSid = channel === "WHATSAPP" && whatsappContentSid ? whatsappContentSid : undefined;
+          result = await sendEventDayReminder(guestId, channel, customTemplate, templateSid);
+        } else if (messageFormat === "INTERACTIVE") {
           const templateSid = whatsappContentSid || undefined;
           if (messageType === "INVITE") {
             result = await sendInteractiveInvite(guestId, includeImage, templateSid);
@@ -618,7 +628,7 @@ export function SendMessageDialog({
                 {/* Message Type */}
                 <div className="space-y-2">
                   <Label>{t("messageType")}</Label>
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="flex flex-col gap-2">
                     <button
                       onClick={() => setMessageType("INVITE")}
                       disabled={sending}
@@ -659,11 +669,36 @@ export function SendMessageDialog({
                         )}
                       </div>
                     </button>
+                    <button
+                      onClick={() => setMessageType("EVENT_DAY")}
+                      disabled={sending}
+                      className={cn(
+                        "p-3 rounded-lg border-2 text-start transition-all",
+                        messageType === "EVENT_DAY"
+                          ? "border-amber-500 bg-amber-50 dark:bg-amber-900/20"
+                          : "border-border hover:border-amber-500/50"
+                      )}
+                    >
+                      <div className="flex items-center gap-2">
+                        <Icons.calendar className="h-4 w-4 text-amber-600" />
+                        <div className="flex-1">
+                          <span className="font-medium text-sm">
+                            {isRTL ? "תזכורת יום האירוע" : "Event Day Reminder"}
+                          </span>
+                          <p className="text-xs text-muted-foreground">
+                            {isRTL ? "שליחה ביום האירוע" : "Send on event day"}
+                          </p>
+                        </div>
+                        {messageType === "EVENT_DAY" && (
+                          <Icons.check className="h-4 w-4 text-amber-600" />
+                        )}
+                      </div>
+                    </button>
                   </div>
                 </div>
 
-                {/* Message Format (WhatsApp only) */}
-                {channel === "WHATSAPP" && (
+                {/* Message Format (WhatsApp only, not for EVENT_DAY) */}
+                {channel === "WHATSAPP" && messageType !== "EVENT_DAY" && (
                   <div className="space-y-2">
                     <Label>{isRTL ? "פורמט הודעה" : "Message Format"}</Label>
                     <div className="grid grid-cols-2 gap-2">

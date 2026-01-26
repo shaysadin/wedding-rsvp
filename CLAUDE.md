@@ -124,10 +124,12 @@ app/
 actions/                       # Server Actions (30+ files)
   admin.ts                     # User/system management
   automation.ts                # Workflow actions
+  collaborators.ts             # Event collaborator management
   events.ts                    # Event CRUD
   guests.ts                    # Guest management
   generate-invitation.ts       # Invitation generation
   gift-payments.ts             # Gift handling
+  invitations.ts               # Event invitation links
   notifications.ts             # Messaging actions
   rsvp.ts                      # RSVP responses
   rsvp-settings.ts             # Page customization
@@ -145,7 +147,9 @@ components/                    # React components (27+ feature groups)
   admin/                       # Admin panel UI
   automation/                  # Workflow builder UI
   guests/                      # Guest table and forms
-  events/                      # Event list and detail
+  events/                      # Event list, collaboration UI
+    invite-collaborator-dialog.tsx  # Invite via link or email
+    collaborators-list.tsx          # Manage collaborators
   invitations/                 # Invitation UI
   rsvp/                        # RSVP page components
   seating/                     # Table planner UI
@@ -163,6 +167,7 @@ config/                        # App configuration
   plans.ts                     # Plan definitions and helpers
   subscriptions.ts             # Stripe plan IDs
   landing.ts                   # Landing page content
+  sms-templates.ts             # SMS templates (INVITE, REMINDER, EVENT_DAY)
 
 contexts/                      # React contexts
   event-context.tsx            # Event state management
@@ -207,6 +212,7 @@ lib/                           # Shared utilities (25+ files)
   db.ts                        # Prisma client singleton
   r2.ts                        # Cloudflare R2 client
   email.ts                     # Email service
+  permissions.ts               # Event access control (owner + collaborator)
   rate-limit.ts                # Request rate limiting
   session.ts                   # Auth session helpers
   stripe.ts                    # Stripe utilities
@@ -284,6 +290,8 @@ const locale = await getLocale();
 ### Authorization
 - Role-based: `UserRole.ROLE_WEDDING_OWNER`, `ROLE_ADMIN`, `ROLE_PLATFORM_OWNER`
 - Event ownership verified via `ownerId` field
+- Collaborator access via `canAccessEvent()` helper (`lib/permissions.ts`)
+  - Checks owner first, then collaborator role (VIEWER or EDITOR)
 - Plan-based limits (e.g., guest limits per tier)
 
 ---
@@ -345,7 +353,7 @@ All icons through `components/shared/icons.tsx` - exports Lucide icons as `Icons
 
 ### 2. RSVP System
 - Custom RSVP pages with 250+ styling fields (`RsvpPageSettings`)
-- 3 statuses: PENDING, ACCEPTED, DECLINED
+- 4 statuses: PENDING, ACCEPTED, DECLINED, MAYBE
 - Customizable welcome/thank you messages
 - WhatsApp button-based RSVP (interactive)
 - Guest count selection, countdown timers, location maps
@@ -355,8 +363,10 @@ All icons through `components/shared/icons.tsx` - exports Lucide icons as `Icons
 - **Channels**: WhatsApp, SMS, Email
 - **SMS Providers**: Twilio (global) or Upsend (Israeli, cheaper) - configurable in admin panel
 - **Types**: INVITE, REMINDER, CONFIRMATION, IMAGE_INVITE, INTERACTIVE_INVITE, GUEST_COUNT_REQUEST, EVENT_DAY, THANK_YOU, TABLE_ASSIGNMENT
+- **Manual Send Dialog**: 3 message types available - INVITE, REMINDER, EVENT_DAY (vertical selection)
+  - EVENT_DAY includes venue and table assignment info (NOT YET TESTED)
 - **Statuses**: PENDING, SENT, DELIVERED, FAILED
-- **Templates**: Per-event customizable message templates
+- **Templates**: Per-event customizable message templates (`config/sms-templates.ts`)
 - **WhatsApp Templates**: Admin-configurable with preview text (English + Hebrew) for send dialog
 - **Bulk Jobs**: Track batch sending with progress tracking
 
@@ -392,13 +402,14 @@ All icons through `components/shared/icons.tsx` - exports Lucide icons as `Icons
 - Multiple table shapes (circle, rectangle, rectangleRounded, concave, concaveRounded)
 - XY positioning and rotation (floor height up to 3000px)
 - Venue blocks for layout design
-- Guest-to-table assignments with RSVP status indicators (green=accepted, amber=pending, red=declined)
+- Guest-to-table assignments with RSVP status indicators (green=accepted, amber=pending, blue=maybe, red=declined)
 - **Auto-arrange feature**: Automatically create tables and assign guests
   - Groups by: Group → Side (organization), RSVP Status (priority: Approved > Pending)
   - Configurable table size and shape
   - Filter by side, group, or RSVP status
 - Fullscreen editing mode with proper coordinate scaling
 - Hostess check-in page (`/[locale]/hostess/[eventId]`) for event day
+- **Collaborator support**: Event collaborators can edit seating via `canAccessEvent()` helper
 
 ### 8. Task Management
 - Kanban board (BACKLOG, TODO, DOING, DONE)
@@ -426,6 +437,15 @@ All icons through `components/shared/icons.tsx` - exports Lucide icons as `Icons
 - Original event ID tracking
 - Guest count snapshot
 - Date-based searching
+
+### 12. Event Collaboration (In Progress)
+- Share events with other users via link or email
+- **Roles**: VIEWER (read-only), EDITOR (can modify)
+- Invitation links with 7-day expiry
+- Accept invitation page with optional user registration
+- Permission helper: `canAccessEvent(eventId, userId, requiredRole?)`
+- **Files**: `lib/permissions.ts`, `actions/collaborators.ts`, `actions/invitations.ts`
+- **Components**: `invite-collaborator-dialog.tsx`, `collaborators-list.tsx`
 
 ### Cron Jobs (vercel.json)
 - `process-automation-flows` - Hourly
@@ -498,6 +518,10 @@ Plan enforcement in Server Actions via `lib/subscription.ts` and `config/plans.t
 - **EventArchive** - Post-event archival
 - **SystemSetting** - Key-value system config
 - **UsageTracking** - Per-user monthly usage
+
+### Collaboration Models
+- **EventCollaborator** - User access to shared events (VIEWER/EDITOR roles)
+- **EventInvitation** - Shareable invitation links with expiry
 
 ---
 

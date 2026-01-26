@@ -29,6 +29,8 @@
 | Feature | Backend | Frontend | Notes |
 |---------|---------|----------|-------|
 | Gift Payments | ✅ | ⚠️ | Needs Meshulam credentials |
+| Event Collaboration | ⚠️ | ⚠️ | Schema + permissions done, UI in progress |
+| Event Day Reminder | ✅ | ✅ | Implemented, NOT YET TESTED |
 
 > **Note**: Invitation Generation is fully complete (backend + UI with AI generation, gallery, and sending).
 
@@ -46,7 +48,29 @@
 
 ### January 2026 (Latest)
 
-**Upsend SMS Provider Integration** (NEW - needs testing):
+**Event Day Reminder Message Type** (NEW - NOT YET TESTED):
+- Added EVENT_DAY message type to send message dialog (`components/guests/send-message-dialog.tsx`)
+- Vertical message type selection (INVITE, REMINDER, EVENT_DAY)
+- Includes venue location and table assignment in message
+- SMS templates added (`config/sms-templates.ts`): formal, friendly, short variants
+- Server action: `sendEventDayReminder()` in `actions/notifications.ts`
+- Bulk support: `actions/bulk-notifications.ts` updated for EVENT_DAY
+- WhatsApp content variables: {{1}}=guestName, {{2}}=eventTitle, {{3}}=tableName, {{4}}=venue
+- **Status**: Implemented but NOT YET TESTED
+
+**MAYBE RSVP Status in Bulk Dialog**:
+- Added MAYBE status option to bulk status update dialog in guests table
+- Now supports 4 statuses: PENDING, ACCEPTED, DECLINED, MAYBE
+- Updated `bulkUpdateRsvpStatus()` server action to accept MAYBE
+
+**Seating Floor Plan Fixes**:
+- Fixed "Save table positions failed" error - sizes now rounded to integers for Zod validation
+- Fixed "Table not found" error after deleting tables - filters out deleted items before save
+- Added collaborator support via `canAccessEvent()` helper in 6 seating actions:
+  - `updateTablePosition`, `updateTableSize`, `updateTableRotation`
+  - `updateBlockPosition`, `updateBlockSize`, `updateBlockRotation`
+
+**Upsend SMS Provider Integration** (needs testing):
 - Added Upsend (upsend.co.il) as alternative SMS provider to Twilio
 - Significantly cheaper for Israeli market (~₪0.07/SMS vs ~$0.26 Twilio)
 - Admin can switch between providers in Messaging Settings
@@ -164,6 +188,7 @@
 - **Meshulam API credentials** - Gift payments require production credentials
 - **VAPI webhook signature** - Verification not implemented
 - **Upsend SMS testing** - Integration implemented but needs testing with real credentials
+- **Event Day Reminder testing** - MESSAGE_DAY flow needs end-to-end testing with WhatsApp templates
 
 ### Schema Migrations
 - Many `@deprecated` enum values remain for backward compatibility

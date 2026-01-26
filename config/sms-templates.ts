@@ -84,22 +84,67 @@ Let us know: {{rsvpLink}}`,
   },
 ];
 
+export const SMS_EVENT_DAY_TEMPLATES: SmsTemplate[] = [
+  {
+    id: "event-day-formal",
+    nameHe: "רשמי",
+    nameEn: "Formal",
+    messageHe: `שלום {{guestName}}!
+{{eventTitle}} מתקיים היום!
+מקום: {{eventVenue}}
+נתראה בשמחה!`,
+    messageEn: `Dear {{guestName}},
+{{eventTitle}} is today!
+Venue: {{eventVenue}}
+See you at the celebration!`,
+  },
+  {
+    id: "event-day-friendly",
+    nameHe: "ידידותי",
+    nameEn: "Friendly",
+    messageHe: `היי {{guestName}}! 🎉
+היום זה היום! {{eventTitle}} מתחיל!
+📍 {{eventVenue}}
+נתראה בקרוב! 💃🕺`,
+    messageEn: `Hey {{guestName}}! 🎉
+Today's the day! {{eventTitle}} is happening!
+📍 {{eventVenue}}
+See you soon! 💃🕺`,
+  },
+  {
+    id: "event-day-short",
+    nameHe: "קצר",
+    nameEn: "Short",
+    messageHe: `{{guestName}}, מתראים היום! 📍{{eventVenue}}`,
+    messageEn: `{{guestName}}, see you today! 📍{{eventVenue}}`,
+  },
+];
+
 // Maximum SMS length (GSM-7 encoding allows 160 chars, but Unicode limits to ~70)
 // Using 256 as a reasonable limit for multi-part SMS
 export const SMS_MAX_LENGTH = 256;
 
 // Get template by ID
 export function getSmsTemplate(
-  type: "INVITE" | "REMINDER",
+  type: "INVITE" | "REMINDER" | "EVENT_DAY",
   templateId: string
 ): SmsTemplate | undefined {
-  const templates = type === "INVITE" ? SMS_INVITE_TEMPLATES : SMS_REMINDER_TEMPLATES;
+  const templates = getSmsTemplates(type);
   return templates.find((t) => t.id === templateId);
 }
 
 // Get all templates for a type
-export function getSmsTemplates(type: "INVITE" | "REMINDER"): SmsTemplate[] {
-  return type === "INVITE" ? SMS_INVITE_TEMPLATES : SMS_REMINDER_TEMPLATES;
+export function getSmsTemplates(type: "INVITE" | "REMINDER" | "EVENT_DAY"): SmsTemplate[] {
+  switch (type) {
+    case "INVITE":
+      return SMS_INVITE_TEMPLATES;
+    case "REMINDER":
+      return SMS_REMINDER_TEMPLATES;
+    case "EVENT_DAY":
+      return SMS_EVENT_DAY_TEMPLATES;
+    default:
+      return SMS_INVITE_TEMPLATES;
+  }
 }
 
 // Render template with context

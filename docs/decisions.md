@@ -226,6 +226,16 @@ Storing preview text separately from Twilio Content SID:
 - **Fallback**: If no preview text set, falls back to config file templates
 - **UX benefit**: Wedding owners see accurate message preview in send dialog
 
+### SMS Template Types in Config
+
+SMS templates stored in `config/sms-templates.ts`:
+- **Three types**: INVITE, REMINDER, EVENT_DAY
+- **Three variants per type**: Formal, Friendly, Short
+- **Placeholders**: `{{guestName}}`, `{{eventTitle}}`, `{{rsvpLink}}`, `{{eventDate}}`, `{{eventVenue}}`
+- **Bilingual**: Each template has `messageHe` and `messageEn`
+- **Why config file?** Templates rarely change, no need for database overhead
+- **Used by**: Send message dialog, bulk notifications, automation flows
+
 ### VAPI for Voice AI
 
 - Hebrew voice support

@@ -163,6 +163,7 @@ AutomationFlowExecution updated
 | Voice | `lib/vapi/` | VapiCallJob, VapiCallLog, VapiEmbedding | `actions/vapi/` |
 | Bulk Messaging | `lib/bulk-messaging/` | BulkMessageJob, BulkMessageJobItem | `actions/bulk-notifications.ts` |
 | SMS Providers | `lib/notifications/sms-providers/` | MessagingProviderSettings | `actions/messaging-settings.ts` |
+| Collaboration | `lib/permissions.ts` | EventCollaborator, EventInvitation | `actions/collaborators.ts`, `actions/invitations.ts` |
 
 ## External Integrations
 
@@ -210,6 +211,17 @@ const event = await prisma.weddingEvent.findFirst({
 });
 if (!event) return { error: "Not found" };
 ```
+
+### Collaborator Access
+```typescript
+import { canAccessEvent } from "@/lib/permissions";
+
+const hasAccess = await canAccessEvent(eventId, user.id, "EDITOR");
+if (!hasAccess) return { error: "Unauthorized" };
+```
+- Checks owner first, then collaborator role
+- Supports "VIEWER" and "EDITOR" roles
+- Used by seating actions for multi-user editing
 
 ### Plan-Based Limits
 ```typescript
