@@ -191,46 +191,95 @@ export function HostessPageContent({
   useEffect(() => {
     let eventSource: EventSource | null = null;
     let reconnectTimeout: NodeJS.Timeout | null = null;
+    let reconnectAttempts = 0;
+    const maxReconnectDelay = 30000; // Max 30 seconds between reconnects
 
     const connect = () => {
-      if (eventSource) return;
+      if (eventSource && eventSource.readyState !== EventSource.CLOSED) {
+        console.log("[SSE Client] Already connected or connecting, skipping");
+        return;
+      }
 
-      // Connect to SSE endpoint
-      eventSource = new EventSource(`/api/hostess/${eventId}/stream`);
+      const url = `/api/hostess/${eventId}/stream`;
+      console.log(`[SSE Client] Connecting to ${url} (attempt ${reconnectAttempts + 1})`);
 
-      eventSource.onopen = () => {
-        console.log("Hostess SSE connected");
-      };
+      try {
+        // Connect to SSE endpoint
+        eventSource = new EventSource(url, {
+          withCredentials: false
+        });
 
-      eventSource.onmessage = (event) => {
-        try {
-          const data = JSON.parse(event.data);
+        eventSource.onopen = () => {
+          console.log("[SSE Client] ✓ Connection opened successfully");
+          console.log(`[SSE Client] ReadyState: ${eventSource?.readyState} (OPEN)`);
+          reconnectAttempts = 0; // Reset reconnect counter on success
+        };
 
-          // Handle different update types
-          if (data.type === "connected") {
-            console.log("Hostess SSE connection established");
-          } else if (data.type === "guest-arrived" || data.type === "guest-unmarked" || data.type === "refresh") {
-            // Refresh data when any hostess updates guest status
-            refreshData();
+        eventSource.onmessage = (event) => {
+          console.log("[SSE Client] ⬇ Message received:", event.data);
+          try {
+            const data = JSON.parse(event.data);
+
+            // Handle different update types
+            if (data.type === "connected") {
+              console.log("[SSE Client] ✓ Connection confirmed by server");
+            } else if (data.type === "guest-arrived") {
+              console.log(`[SSE Client] 👤 Guest arrived: ${data.guestName} (${data.guestId})`);
+              // Refresh data when any hostess marks guest as arrived
+              refreshData();
+            } else if (data.type === "guest-unmarked") {
+              console.log(`[SSE Client] 👤 Guest unmarked: ${data.guestName} (${data.guestId})`);
+              // Refresh data when any hostess unmarks guest
+              refreshData();
+            } else if (data.type === "table-changed") {
+              console.log(`[SSE Client] 🪑 Table changed for guest ${data.guestId}`);
+              // Refresh data when table assignment changes
+              refreshData();
+            } else if (data.type === "refresh") {
+              console.log("[SSE Client] 🔄 General refresh requested");
+              // General refresh
+              refreshData();
+            } else {
+              console.log("[SSE Client] ❓ Unknown message type:", data.type);
+            }
+          } catch (error) {
+            console.error("[SSE Client] ❌ Error parsing message:", error);
+            console.log("[SSE Client] Raw data:", event.data);
           }
-        } catch (error) {
-          console.error("Error parsing SSE message:", error);
-        }
-      };
+        };
 
-      eventSource.onerror = () => {
-        console.log("Hostess SSE connection lost, reconnecting...");
-        eventSource?.close();
-        eventSource = null;
+        eventSource.onerror = (error) => {
+          const readyState = eventSource?.readyState;
+          console.error("[SSE Client] ❌ Connection error");
+          console.log(`[SSE Client] ReadyState: ${readyState} (${
+            readyState === EventSource.CONNECTING ? "CONNECTING" :
+            readyState === EventSource.OPEN ? "OPEN" :
+            readyState === EventSource.CLOSED ? "CLOSED" : "UNKNOWN"
+          })`);
 
-        // Reconnect after 2 seconds
-        reconnectTimeout = setTimeout(() => {
-          connect();
-        }, 2000);
-      };
+          // Close the connection
+          if (eventSource) {
+            eventSource.close();
+            eventSource = null;
+          }
+
+          // Calculate exponential backoff delay
+          reconnectAttempts++;
+          const delay = Math.min(1000 * Math.pow(2, reconnectAttempts - 1), maxReconnectDelay);
+
+          console.log(`[SSE Client] 🔄 Reconnecting in ${delay}ms (attempt ${reconnectAttempts})...`);
+
+          reconnectTimeout = setTimeout(() => {
+            connect();
+          }, delay);
+        };
+      } catch (error) {
+        console.error("[SSE Client] ❌ Failed to create EventSource:", error);
+      }
     };
 
     const disconnect = () => {
+      console.log("[SSE Client] 🔌 Disconnecting");
       if (reconnectTimeout) {
         clearTimeout(reconnectTimeout);
         reconnectTimeout = null;
@@ -239,22 +288,33 @@ export function HostessPageContent({
         eventSource.close();
         eventSource = null;
       }
+      reconnectAttempts = 0;
     };
 
     const handleVisibility = () => {
       if (document.hidden) {
-        disconnect();
+        console.log("[SSE Client] 👁 Tab hidden, keeping connection open");
+        // Keep connection open even when tab is hidden
+        // This ensures we still receive updates
       } else {
-        // Refresh and reconnect when tab becomes visible
-        refreshData();
-        connect();
+        console.log("[SSE Client] 👁 Tab visible");
+        // If connection was closed, reconnect
+        if (!eventSource || eventSource.readyState === EventSource.CLOSED) {
+          console.log("[SSE Client] 🔄 Tab visible and disconnected, reconnecting...");
+          refreshData();
+          connect();
+        }
       }
     };
 
-    document.addEventListener("visibilitychange", handleVisibility);
+    // Start connection
     connect();
 
+    // Listen for visibility changes
+    document.addEventListener("visibilitychange", handleVisibility);
+
     return () => {
+      console.log("[SSE Client] 🧹 Cleanup - component unmounting");
       disconnect();
       document.removeEventListener("visibilitychange", handleVisibility);
     };

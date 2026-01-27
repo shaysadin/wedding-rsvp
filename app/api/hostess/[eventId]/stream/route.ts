@@ -3,6 +3,7 @@ import { eventConnections } from "@/lib/hostess-broadcaster";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
+export const maxDuration = 300; // 5 minutes max duration
 
 export async function GET(
   request: NextRequest,
@@ -10,50 +11,87 @@ export async function GET(
 ) {
   const { eventId } = await params;
 
-  // Create a new readable stream for SSE
-  const stream = new ReadableStream({
+  console.log(`[SSE] New connection request for event ${eventId}`);
+
+  const encoder = new TextEncoder();
+
+  // Create a custom readable stream for SSE
+  const customReadable = new ReadableStream({
     start(controller) {
+      console.log(`[SSE] Stream started for event ${eventId}`);
+
       // Add this controller to the event's connection set
       if (!eventConnections.has(eventId)) {
         eventConnections.set(eventId, new Set());
       }
       eventConnections.get(eventId)!.add(controller);
 
-      // Send initial connection message
-      const encoder = new TextEncoder();
-      controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: "connected" })}\n\n`));
+      console.log(`[SSE] Connection added. Total connections for event ${eventId}: ${eventConnections.get(eventId)!.size}`);
 
-      // Send ping every 30 seconds to keep connection alive
-      const pingInterval = setInterval(() => {
+      // Send initial connection message immediately
+      try {
+        const connectedMsg = `data: ${JSON.stringify({ type: "connected", timestamp: Date.now() })}\n\n`;
+        controller.enqueue(encoder.encode(connectedMsg));
+        console.log("[SSE] Sent initial connection message");
+      } catch (error) {
+        console.error("[SSE] Error sending initial message:", error);
+      }
+
+      // Send heartbeat every 15 seconds to keep connection alive
+      const heartbeatInterval = setInterval(() => {
         try {
-          controller.enqueue(encoder.encode(`: ping\n\n`));
-        } catch {
-          clearInterval(pingInterval);
+          // Send a comment (: prefix) which won't trigger onmessage but keeps connection alive
+          controller.enqueue(encoder.encode(`:heartbeat ${Date.now()}\n\n`));
+          console.log(`[SSE] Heartbeat sent for event ${eventId}`);
+        } catch (error) {
+          console.error("[SSE] Error sending heartbeat:", error);
+          clearInterval(heartbeatInterval);
         }
-      }, 30000);
+      }, 15000);
 
-      // Cleanup on close
-      request.signal.addEventListener("abort", () => {
-        clearInterval(pingInterval);
-        eventConnections.get(eventId)?.delete(controller);
-        if (eventConnections.get(eventId)?.size === 0) {
-          eventConnections.delete(eventId);
+      // Handle connection close
+      const cleanup = () => {
+        console.log(`[SSE] Cleaning up connection for event ${eventId}`);
+        clearInterval(heartbeatInterval);
+
+        const connections = eventConnections.get(eventId);
+        if (connections) {
+          connections.delete(controller);
+          console.log(`[SSE] Removed connection. Remaining: ${connections.size}`);
+
+          if (connections.size === 0) {
+            eventConnections.delete(eventId);
+            console.log(`[SSE] All connections closed for event ${eventId}`);
+          }
         }
+
         try {
           controller.close();
         } catch {
           // Already closed
         }
-      });
+      };
+
+      // Listen for abort signal
+      request.signal.addEventListener("abort", cleanup);
+
+      // Store cleanup function for manual cleanup if needed
+      (controller as any).cleanup = cleanup;
+    },
+
+    cancel() {
+      console.log(`[SSE] Stream cancelled for event ${eventId}`);
     },
   });
 
-  return new Response(stream, {
+  // Return response with proper SSE headers
+  return new Response(customReadable, {
     headers: {
-      "Content-Type": "text/event-stream",
+      "Content-Type": "text/event-stream; charset=utf-8",
       "Cache-Control": "no-cache, no-transform",
       "Connection": "keep-alive",
-      "X-Accel-Buffering": "no", // Disable buffering in nginx
+      "X-Accel-Buffering": "no",
+      "Access-Control-Allow-Origin": "*",
     },
   });
 }

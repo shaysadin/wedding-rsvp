@@ -14,22 +14,35 @@ export const eventConnections = new Map<string, Set<ReadableStreamDefaultControl
 
 export function broadcastHostessUpdate(eventId: string, data: BroadcastData) {
   const connections = eventConnections.get(eventId);
+
+  console.log(`[Broadcast] Attempting to broadcast to event ${eventId}:`, data);
+  console.log(`[Broadcast] Active connections: ${connections?.size || 0}`);
+
   if (!connections || connections.size === 0) {
     // No active connections for this event
+    console.log(`[Broadcast] No active connections for event ${eventId}`);
     return;
   }
 
   const encoder = new TextEncoder();
   const message = encoder.encode(`data: ${JSON.stringify(data)}\n\n`);
 
+  let successCount = 0;
+  let failCount = 0;
+
   connections.forEach((controller) => {
     try {
       controller.enqueue(message);
+      successCount++;
     } catch (error) {
       // Connection closed, remove it
+      console.error("[Broadcast] Error sending to connection:", error);
       connections.delete(controller);
+      failCount++;
     }
   });
+
+  console.log(`[Broadcast] Sent to ${successCount} connections, ${failCount} failed`);
 
   // Clean up empty event connections
   if (connections.size === 0) {

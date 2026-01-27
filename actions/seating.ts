@@ -1703,6 +1703,8 @@ export async function markGuestArrived(input: MarkGuestArrivedInput) {
       },
     });
 
+    console.log(`[Action] markGuestArrived: ${guest.name} (${guest.id}) for event ${guest.weddingEventId}`);
+
     // Broadcast real-time update to all connected hostesses
     broadcastHostessUpdate(guest.weddingEventId, {
       type: "guest-arrived",
@@ -1745,6 +1747,8 @@ export async function unmarkGuestArrived(guestId: string) {
         arrivedTableId: null,
       },
     });
+
+    console.log(`[Action] unmarkGuestArrived: ${guest.name} (${guest.id}) for event ${guest.weddingEventId}`);
 
     // Broadcast real-time update to all connected hostesses
     broadcastHostessUpdate(guest.weddingEventId, {
@@ -1820,6 +1824,17 @@ export async function updateGuestTableForHostess(input: UpdateGuestTableInput) {
         data: { arrivedTableId: validatedData.tableId },
       });
     }
+
+    console.log(`[Action] updateGuestTableForHostess: ${guest.name} moved to ${newTable.name} for event ${guest.weddingEventId}`);
+
+    // Broadcast real-time update to all connected hostesses
+    broadcastHostessUpdate(guest.weddingEventId, {
+      type: "table-changed",
+      guestId: guest.id,
+      guestName: guest.name,
+      tableId: newTable.id,
+      tableName: newTable.name,
+    });
 
     return { success: true, tableName: newTable.name };
   } catch (error) {
