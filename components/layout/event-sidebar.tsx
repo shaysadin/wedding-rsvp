@@ -56,6 +56,7 @@ const eventNavSections = [
       { href: "/automations", icon: "sparkles", titleKey: "navigation.automations", title: "Automations" },
       { href: "/customize", icon: "palette", titleKey: "navigation.customize", title: "RSVP Design" },
       { href: "/voice-agent", icon: "phone", titleKey: "navigation.voiceAgent", title: "Voice Agent" },
+      { href: "/call-center", icon: "phoneCall", titleKey: "navigation.callCenter", title: "Call Center" },
       { href: "/rsvp", icon: "mailCheck", titleKey: "navigation.rsvp", title: "RSVP Approvals" },
     ],
   },

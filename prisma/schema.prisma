@@ -115,6 +115,8 @@ model User {
   collaborations          EventCollaborator[]      @relation("CollaboratorUser")
   sentCollaboratorInvites EventCollaborator[]      @relation("InviterUser")
   eventInvitations        EventInvitation[]
+  // Call center relations
+  manualCallLogs          ManualCallLog[]
 
   @@index([vapiPhoneNumberId])
   @@index([whatsappPhoneNumberId])
@@ -245,6 +247,7 @@ model WeddingEvent {
   generatedInvitations    GeneratedInvitation[]
   giftPaymentSettings     GiftPaymentSettings?
   giftPayments            GiftPayment[]
+  manualCallLogs          ManualCallLog[]
   // Collaboration relations
   collaborators           EventCollaborator[]
   invitations             EventInvitation[]
@@ -321,6 +324,7 @@ model Guest {
   // New module relations
   automationExecutions AutomationFlowExecution[]
   giftPayments         GiftPayment[]
+  manualCallLogs       ManualCallLog[]
 
   @@index([weddingEventId])
   @@index([slug])
@@ -684,6 +688,13 @@ model MessagingProviderSettings {
   whatsappThankYouContentSid   String? @map("whatsapp_thank_you_content_sid")
   whatsappThankYouTemplateText String? @map("whatsapp_thank_you_template_text")
 
+  // Twilio Voice (Call Center) Settings
+  twilioVoiceApiKey            String?  @map("twilio_voice_api_key")
+  twilioVoiceApiSecret         String?  @map("twilio_voice_api_secret")
+  twilioVoiceTwimlAppSid       String?  @map("twilio_voice_twiml_app_sid")
+  twilioVoicePhoneNumber       String?  @map("twilio_voice_phone_number")
+  twilioVoiceEnabled           Boolean  @default(false) @map("twilio_voice_enabled")
+
   // Related phone numbers
   whatsappPhoneNumbers WhatsAppPhoneNumber[]
 
@@ -992,6 +1003,45 @@ model VapiCallLog {
   @@map("vapi_call_logs")
 }
 
+// ============================================
+// MANUAL CALL CENTER MODULE
+// ============================================
+
+model ManualCallLog {
+  id             String           @id @default(cuid())
+  weddingEventId String           @map("wedding_event_id")
+  guestId        String           @map("guest_id")
+  operatorId     String           @map("operator_id") // User making the call
+  phoneNumber    String           @map("phone_number")
+
+  // Call metadata
+  status         ManualCallStatus @default(INITIATED)
+  direction      String           @default("outbound")
+  twilioCallSid  String?          @unique @map("twilio_call_sid")
+
+  // Timing
+  initiatedAt    DateTime         @default(now()) @map("initiated_at")
+  connectedAt    DateTime?        @map("connected_at")
+  endedAt        DateTime?        @map("ended_at")
+  duration       Int?             // seconds
+
+  // Call outcome
+  notes          String?
+  rsvpUpdated    Boolean          @default(false) @map("rsvp_updated")
+  newRsvpStatus  String?          @map("new_rsvp_status")
+
+  // Relations
+  weddingEvent   WeddingEvent     @relation(fields: [weddingEventId], references: [id], onDelete: Cascade)
+  guest          Guest            @relation(fields: [guestId], references: [id], onDelete: Cascade)
+  operator       User             @relation(fields: [operatorId], references: [id])
+
+  @@index([weddingEventId])
+  @@index([guestId])
+  @@index([operatorId])
+  @@index([status])
+  @@map("manual_call_logs")
+}
+
 model Supplier {
   id             String            @id @default(cuid())
   weddingEventId String            @map("wedding_event_id")
@@ -1192,6 +1242,17 @@ enum VapiCallStatus {
   NO_ANSWER
   BUSY
   CANCELLED
+}
+
+enum ManualCallStatus {
+  INITIATED    // Call started
+  RINGING      // Phone ringing
+  CONNECTED    // Call answered
+  COMPLETED    // Call ended successfully
+  NO_ANSWER    // Not answered
+  BUSY         // Line busy
+  FAILED       // Technical failure
+  CANCELLED    // User cancelled
 }
 
 enum VapiJobStatus {

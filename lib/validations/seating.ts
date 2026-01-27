@@ -186,7 +186,7 @@ export type SizePreset = "medium" | "large";
 
 export const SIZE_PRESETS: Record<Shape, Record<SizePreset, { width: number; height: number }>> = {
   square: {
-    medium: { width: 80, height: 80 },
+    medium: { width: 75, height: 75 },
     large: { width: 100, height: 100 },
   },
   circle: {

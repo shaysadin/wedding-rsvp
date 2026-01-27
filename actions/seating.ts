@@ -2149,6 +2149,11 @@ export async function autoArrangeTablesWithConfigs(input: AutoArrangeWithConfigs
     // Verify event ownership
     const event = await prisma.weddingEvent.findFirst({
       where: { id: input.eventId, ownerId: user.id },
+      select: {
+        id: true,
+        seatingCanvasWidth: true,
+        seatingCanvasHeight: true,
+      },
     });
 
     if (!event) {
@@ -2246,23 +2251,44 @@ export async function autoArrangeTablesWithConfigs(input: AutoArrangeWithConfigs
       // Track which guests have been seated during this run
       const seatedGuestIds = new Set<string>();
 
-      // Grid positioning constants
-      const cols = 4;
-      const spacing = 200;
-      const startX = 100;
-      const startY = 100;
-
       // Process table configs - group-assigned configs first, then open configs
       const groupConfigs = input.tableConfigs.filter((c) => c.groupAssignments && c.groupAssignments.length > 0);
       const openConfigs = input.tableConfigs.filter((c) => !c.groupAssignments || c.groupAssignments.length === 0);
+
+      // Calculate total tables to create
+      const totalTables = input.tableConfigs.reduce((sum, config) => sum + config.count, 0);
+
+      // Calculate grid layout that fits within canvas
+      const canvasWidth = event.seatingCanvasWidth || 2000;
+      const canvasHeight = event.seatingCanvasHeight || 3000;
+
+      // Find the maximum table dimensions
+      const maxTableWidth = Math.max(...input.tableConfigs.map(c => c.width || 100));
+      const maxTableHeight = Math.max(...input.tableConfigs.map(c => c.height || 100));
+
+      // Calculate optimal grid layout
+      const padding = 100; // Padding from edges
+      const minSpacing = 50; // Minimum space between tables
+      const tableSpacingX = maxTableWidth + minSpacing;
+      const tableSpacingY = maxTableHeight + minSpacing;
+
+      // Calculate how many columns we can fit
+      const availableWidth = canvasWidth - (2 * padding);
+      const maxCols = Math.max(1, Math.floor(availableWidth / tableSpacingX));
+      const cols = Math.min(maxCols, Math.ceil(Math.sqrt(totalTables))); // Use square-ish layout when possible
+
+      // Calculate actual spacing to center tables
+      const actualSpacing = cols > 1 ? Math.min(tableSpacingX, availableWidth / cols) : tableSpacingX;
+      const startX = padding + (availableWidth - (cols * actualSpacing)) / 2;
+      const startY = padding;
 
       // Helper: create a table with position
       async function createTable(config: typeof input.tableConfigs[0], currentTableIndex: number) {
         const seatPositions = calculateSeatPositions(config.capacity, config.shape, "even");
         const col = currentTableIndex % cols;
         const row = Math.floor(currentTableIndex / cols);
-        const posX = startX + col * spacing;
-        const posY = startY + row * spacing;
+        const posX = startX + col * actualSpacing;
+        const posY = startY + row * tableSpacingY;
 
         const table = await tx.weddingTable.create({
           data: {
@@ -2373,13 +2399,13 @@ export async function autoArrangeTablesWithConfigs(input: AutoArrangeWithConfigs
         }
       }
 
-      // 2. Process open configs (no group assignments) - fill with remaining guests
+      // 2. Process open configs (no group assignments) - create empty tables
+      // These tables are created WITHOUT guest assignments as requested by user
       for (const config of openConfigs) {
         for (let i = 0; i < config.count; i++) {
-          const remainingGuests = guestsToSeat.filter((g) => !seatedGuestIds.has(g.id));
           const currentTableIndex = existingTableCount + tablesCreated;
-          const table = await createTable(config, currentTableIndex);
-          await seatGuestsIntoTable(table.id, config.capacity, remainingGuests);
+          await createTable(config, currentTableIndex);
+          // Note: Not calling seatGuestsIntoTable - tables with no groups should remain empty
         }
       }
 

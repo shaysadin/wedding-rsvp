@@ -37,6 +37,13 @@ export const adminLinks: SidebarNavItem[] = [
         authorizeOnly: UserRole.ROLE_PLATFORM_OWNER,
       },
       {
+        href: "/admin/twilio-voice",
+        icon: "phoneCall",
+        titleKey: "navigation.twilioVoice",
+        title: "Call Center (Twilio Voice)",
+        authorizeOnly: UserRole.ROLE_PLATFORM_OWNER,
+      },
+      {
         href: "/admin/cron-logs",
         icon: "clock",
         titleKey: "navigation.cronLogs",

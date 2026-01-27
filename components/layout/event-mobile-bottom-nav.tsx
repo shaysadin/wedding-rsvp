@@ -45,6 +45,7 @@ export function EventMobileBottomNav({ eventId, locale }: EventMobileBottomNavPr
     { href: "/automations", icon: Icons.sparkles, labelKey: "navigation.automations", label: "Automations" },
     { href: "/customize", icon: Icons.palette, labelKey: "navigation.customize", label: "RSVP Design" },
     { href: "/voice-agent", icon: Icons.phone, labelKey: "navigation.voiceAgent", label: "Voice Agent" },
+    { href: "/call-center", icon: Icons.phoneCall, labelKey: "navigation.callCenter", label: "Call Center" },
     { href: "/rsvp", icon: Icons.mailCheck, labelKey: "navigation.rsvp", label: "RSVP Approvals" },
   ];
 
