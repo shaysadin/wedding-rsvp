@@ -187,138 +187,56 @@ export function HostessPageContent({
     };
   }, [refreshData]);
 
-  // Server-Sent Events for real-time updates across multiple hostesses
+  // Real-time polling for production (works with serverless)
+  // Polls every 2 seconds to detect changes from other devices
   useEffect(() => {
-    let eventSource: EventSource | null = null;
-    let reconnectTimeout: NodeJS.Timeout | null = null;
-    let reconnectAttempts = 0;
-    const maxReconnectDelay = 30000; // Max 30 seconds between reconnects
+    let pollInterval: NodeJS.Timeout | null = null;
+    let lastDataHash = "";
 
-    const connect = () => {
-      if (eventSource && eventSource.readyState !== EventSource.CLOSED) {
-        console.log("[SSE Client] Already connected or connecting, skipping");
-        return;
-      }
+    console.log("[Polling] Starting real-time polling for event", eventId);
 
-      const url = `/api/hostess/${eventId}/stream`;
-      console.log(`[SSE Client] Connecting to ${url} (attempt ${reconnectAttempts + 1})`);
-
+    const poll = async () => {
       try {
-        // Connect to SSE endpoint
-        eventSource = new EventSource(url, {
-          withCredentials: false
-        });
+        // Fetch latest data
+        const result = await getHostessData(eventId);
 
-        eventSource.onopen = () => {
-          console.log("[SSE Client] ✓ Connection opened successfully");
-          console.log(`[SSE Client] ReadyState: ${eventSource?.readyState} (OPEN)`);
-          reconnectAttempts = 0; // Reset reconnect counter on success
-        };
+        if (result.success && result.guests) {
+          const newGuests = result.guests as GuestWithDetails[];
 
-        eventSource.onmessage = (event) => {
-          console.log("[SSE Client] ⬇ Message received:", event.data);
-          try {
-            const data = JSON.parse(event.data);
+          // Create a hash of the current state to detect changes
+          const dataHash = newGuests
+            .map((g) => `${g.id}:${g.arrivedAt}:${g.arrivedTableId}:${g.tableId}`)
+            .join("|");
 
-            // Handle different update types
-            if (data.type === "connected") {
-              console.log("[SSE Client] ✓ Connection confirmed by server");
-            } else if (data.type === "guest-arrived") {
-              console.log(`[SSE Client] 👤 Guest arrived: ${data.guestName} (${data.guestId})`);
-              // Refresh data when any hostess marks guest as arrived
-              refreshData();
-            } else if (data.type === "guest-unmarked") {
-              console.log(`[SSE Client] 👤 Guest unmarked: ${data.guestName} (${data.guestId})`);
-              // Refresh data when any hostess unmarks guest
-              refreshData();
-            } else if (data.type === "table-changed") {
-              console.log(`[SSE Client] 🪑 Table changed for guest ${data.guestId}`);
-              // Refresh data when table assignment changes
-              refreshData();
-            } else if (data.type === "refresh") {
-              console.log("[SSE Client] 🔄 General refresh requested");
-              // General refresh
-              refreshData();
-            } else {
-              console.log("[SSE Client] ❓ Unknown message type:", data.type);
-            }
-          } catch (error) {
-            console.error("[SSE Client] ❌ Error parsing message:", error);
-            console.log("[SSE Client] Raw data:", event.data);
+          // Only update if data has actually changed
+          if (dataHash !== lastDataHash) {
+            console.log("[Polling] 🔄 Data changed, updating...");
+            setGuests(newGuests);
+            setTables(result.tables as TableWithDetails[]);
+            setStats(result.stats);
+            setLastUpdated(new Date());
+            lastDataHash = dataHash;
           }
-        };
-
-        eventSource.onerror = (error) => {
-          const readyState = eventSource?.readyState;
-          console.error("[SSE Client] ❌ Connection error");
-          console.log(`[SSE Client] ReadyState: ${readyState} (${
-            readyState === EventSource.CONNECTING ? "CONNECTING" :
-            readyState === EventSource.OPEN ? "OPEN" :
-            readyState === EventSource.CLOSED ? "CLOSED" : "UNKNOWN"
-          })`);
-
-          // Close the connection
-          if (eventSource) {
-            eventSource.close();
-            eventSource = null;
-          }
-
-          // Calculate exponential backoff delay
-          reconnectAttempts++;
-          const delay = Math.min(1000 * Math.pow(2, reconnectAttempts - 1), maxReconnectDelay);
-
-          console.log(`[SSE Client] 🔄 Reconnecting in ${delay}ms (attempt ${reconnectAttempts})...`);
-
-          reconnectTimeout = setTimeout(() => {
-            connect();
-          }, delay);
-        };
-      } catch (error) {
-        console.error("[SSE Client] ❌ Failed to create EventSource:", error);
-      }
-    };
-
-    const disconnect = () => {
-      console.log("[SSE Client] 🔌 Disconnecting");
-      if (reconnectTimeout) {
-        clearTimeout(reconnectTimeout);
-        reconnectTimeout = null;
-      }
-      if (eventSource) {
-        eventSource.close();
-        eventSource = null;
-      }
-      reconnectAttempts = 0;
-    };
-
-    const handleVisibility = () => {
-      if (document.hidden) {
-        console.log("[SSE Client] 👁 Tab hidden, keeping connection open");
-        // Keep connection open even when tab is hidden
-        // This ensures we still receive updates
-      } else {
-        console.log("[SSE Client] 👁 Tab visible");
-        // If connection was closed, reconnect
-        if (!eventSource || eventSource.readyState === EventSource.CLOSED) {
-          console.log("[SSE Client] 🔄 Tab visible and disconnected, reconnecting...");
-          refreshData();
-          connect();
         }
+      } catch (error) {
+        console.error("[Polling] Error:", error);
       }
     };
 
-    // Start connection
-    connect();
+    // Initial poll
+    poll();
 
-    // Listen for visibility changes
-    document.addEventListener("visibilitychange", handleVisibility);
+    // Poll every 2 seconds for real-time updates
+    pollInterval = setInterval(poll, 2000);
 
+    // Cleanup
     return () => {
-      console.log("[SSE Client] 🧹 Cleanup - component unmounting");
-      disconnect();
-      document.removeEventListener("visibilitychange", handleVisibility);
+      console.log("[Polling] Stopping polling");
+      if (pollInterval) {
+        clearInterval(pollInterval);
+      }
     };
-  }, [eventId, refreshData]);
+  }, [eventId]);
 
   // Calculate arrival percentage
   const arrivalPercentage = stats.totalGuests > 0

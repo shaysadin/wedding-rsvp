@@ -2,8 +2,8 @@ import { NextRequest } from "next/server";
 import { eventConnections } from "@/lib/hostess-broadcaster";
 
 export const dynamic = "force-dynamic";
-export const runtime = "nodejs";
-export const maxDuration = 300; // 5 minutes max duration
+export const runtime = "edge"; // Use Edge Runtime for better streaming support
+// Note: Edge runtime doesn't support maxDuration
 
 export async function GET(
   request: NextRequest,
