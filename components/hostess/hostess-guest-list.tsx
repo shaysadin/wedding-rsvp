@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, memo } from "react";
-import { Search, Check, UserCheck, Users } from "lucide-react";
+import { Search, Check, UserCheck, Users, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { markGuestArrived, unmarkGuestArrived, updateGuestTableForHostess } from "@/actions/seating";
@@ -350,7 +350,14 @@ export function HostessGuestList({ guests, tables, locale }: HostessGuestListPro
                         disabled={isLoading}
                       >
                         <SelectTrigger className="w-[130px] min-h-[48px] rounded-xl text-sm">
-                          <SelectValue placeholder={t.noTable} />
+                          {isLoading ? (
+                            <div className="flex items-center gap-2">
+                              <Loader2 className="h-3 w-3 animate-spin" />
+                              <span className="text-xs opacity-70">{isRTL ? "מעדכן..." : "Updating..."}</span>
+                            </div>
+                          ) : (
+                            <SelectValue placeholder={t.noTable} />
+                          )}
                         </SelectTrigger>
                         <SelectContent>
                           {tables.map((table) => (
@@ -369,7 +376,11 @@ export function HostessGuestList({ guests, tables, locale }: HostessGuestListPro
                           disabled={isLoading}
                           className="min-h-[48px] min-w-[100px] border-green-600 text-green-600 hover:bg-green-50 rounded-xl text-sm font-medium"
                         >
-                          <Check className="h-4 w-4 me-1.5" />
+                          {isLoading ? (
+                            <Loader2 className="h-4 w-4 me-1.5 animate-spin" />
+                          ) : (
+                            <Check className="h-4 w-4 me-1.5" />
+                          )}
                           {t.arrived}
                         </Button>
                       ) : (
@@ -380,7 +391,11 @@ export function HostessGuestList({ guests, tables, locale }: HostessGuestListPro
                           disabled={isLoading}
                           className="min-h-[48px] min-w-[100px] bg-green-600 hover:bg-green-700 rounded-xl text-sm font-medium"
                         >
-                          <UserCheck className="h-4 w-4 me-1.5" />
+                          {isLoading ? (
+                            <Loader2 className="h-4 w-4 me-1.5 animate-spin" />
+                          ) : (
+                            <UserCheck className="h-4 w-4 me-1.5" />
+                          )}
                           {t.markArrived}
                         </Button>
                       )}
