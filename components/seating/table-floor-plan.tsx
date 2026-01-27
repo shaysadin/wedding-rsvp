@@ -1163,12 +1163,12 @@ export function TableFloorPlan({
   const hasUnsavedChanges = localPositions.size > 0 || blockPositions.size > 0 || tableSizes.size > 0 || blockSizes.size > 0 || tableRotations.size > 0 || blockRotations.size > 0;
   const totalUnsavedCount = localPositions.size + blockPositions.size + tableSizes.size + blockSizes.size + tableRotations.size + blockRotations.size;
 
-  // Combined activation: instant on move OR hold to activate
+  // Combined activation: move distance OR hold to activate
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
-        distance: 1, // Drag activates with 1px movement (instant feel)
-        delay: 100, // OR drag activates after 150ms hold
+        distance: 8, // Drag activates after 8px movement (prevents accidental drags on click)
+        delay: 150, // OR drag activates after 150ms hold
         tolerance: 5, // Allow 5px jitter during hold
       },
     })
