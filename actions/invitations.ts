@@ -50,7 +50,7 @@ export async function createEventInvitationLink(
       },
     });
 
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://0.0.0.0:3000";
     // Include locale in the invite link - default to Hebrew for Israeli market
     const inviteLink = `${appUrl}/he/accept-invite/${token}`;
 
@@ -144,7 +144,7 @@ export async function sendEventInvitation(
       },
     });
 
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://0.0.0.0:3000";
     // Include locale in the invite link - default to Hebrew for Israeli market
     const inviteLink = `${appUrl}/he/accept-invite/${token}`;
 

@@ -129,6 +129,7 @@ export function SeatingPageContent({ eventId, events, locale }: SeatingPageConte
 
   function copyHostessLink() {
     const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
+    // Use current protocol (will be HTTP for LAN, HTTPS for external)
     const hostessUrl = `${baseUrl}/${locale}/hostess/${eventId}`;
     navigator.clipboard.writeText(hostessUrl);
     toast.success(isRTL ? "קישור הועתק ללוח" : "Link copied to clipboard");
@@ -220,6 +221,28 @@ export function SeatingPageContent({ eventId, events, locale }: SeatingPageConte
 
       if (detail?.type === "block-added" && detail.block) {
         setVenueBlocks((prev) => [...prev, detail.block as VenueBlock]);
+        return;
+      }
+
+      if (detail?.type === "guests-assigned" && detail.tableId && detail.guestIds) {
+        // Fast refresh: only reload tables and stats, no full page reload
+        Promise.all([
+          getEventTables(eventId),
+          getSeatingStats(eventId),
+        ]).then(([tablesResult, statsResult]) => {
+          if (tablesResult.success && tablesResult.tables) {
+            setTables(tablesResult.tables as Table[]);
+          }
+          if (statsResult.success && statsResult.stats) {
+            setStats(statsResult.stats);
+          }
+        });
+        return;
+      }
+
+      if (detail?.type === "positions-saved") {
+        // No need to refetch - positions are already saved and local state cleared
+        // Just show success without causing UI flicker
         return;
       }
 

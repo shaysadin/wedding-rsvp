@@ -190,7 +190,7 @@ export const SIZE_PRESETS: Record<Shape, Record<SizePreset, { width: number; hei
     large: { width: 100, height: 100 },
   },
   circle: {
-    medium: { width: 80, height: 80 },
+    medium: { width: 72, height: 72 },
     large: { width: 100, height: 100 },
   },
   rectangle: {

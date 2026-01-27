@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+// import { revalidatePath } from "next/cache"; // Disabled for optimistic updates
 import { UserRole } from "@prisma/client";
 
 import { prisma } from "@/lib/db";
@@ -123,7 +123,7 @@ export async function createTable(input: CreateTableInput) {
       },
     });
 
-    revalidatePath(`/dashboard/events/${validatedData.weddingEventId}/seating`);
+    // revalidatePath(`/dashboard/events/${validatedData.weddingEventId}/seating`);
 
     return { success: true, table };
   } catch (error) {
@@ -183,7 +183,7 @@ export async function updateTable(input: UpdateTableInput) {
       );
     }
 
-    revalidatePath(`/dashboard/events/${existingTable.weddingEventId}/seating`);
+    // revalidatePath(`/dashboard/events/${existingTable.weddingEventId}/seating`);
 
     return { success: true, table };
   } catch (error) {
@@ -227,7 +227,7 @@ export async function updateTablePosition(input: UpdateTablePositionInput) {
       },
     });
 
-    revalidatePath(`/dashboard/events/${existingTable.weddingEventId}/seating`);
+    // revalidatePath(`/dashboard/events/${existingTable.weddingEventId}/seating`);
 
     return { success: true, table };
   } catch (error) {
@@ -271,7 +271,7 @@ export async function updateTableSize(input: UpdateTableSizeInput) {
       },
     });
 
-    revalidatePath(`/dashboard/events/${existingTable.weddingEventId}/seating`);
+    // revalidatePath(`/dashboard/events/${existingTable.weddingEventId}/seating`);
 
     return { success: true, table };
   } catch (error) {
@@ -314,7 +314,7 @@ export async function updateTableRotation(input: UpdateTableRotationInput) {
       },
     });
 
-    revalidatePath(`/dashboard/events/${existingTable.weddingEventId}/seating`);
+    // revalidatePath(`/dashboard/events/${existingTable.weddingEventId}/seating`);
 
     return { success: true, table };
   } catch (error) {
@@ -347,7 +347,7 @@ export async function deleteTable(tableId: string) {
       where: { id: tableId },
     });
 
-    revalidatePath(`/dashboard/events/${existingTable.weddingEventId}/seating`);
+    // revalidatePath(`/dashboard/events/${existingTable.weddingEventId}/seating`);
 
     return { success: true };
   } catch (error) {
@@ -519,7 +519,7 @@ export async function assignGuestsToTable(input: AssignGuestsInput) {
       });
     }
 
-    revalidatePath(`/dashboard/events/${table.weddingEventId}/seating`);
+    // revalidatePath(`/dashboard/events/${table.weddingEventId}/seating`);
 
     return {
       success: true,
@@ -647,7 +647,7 @@ export async function moveGuestToTable(input: MoveGuestInput) {
       },
     });
 
-    revalidatePath(`/dashboard/events/${newTable.weddingEventId}/seating`);
+    // revalidatePath(`/dashboard/events/${newTable.weddingEventId}/seating`);
 
     return { success: true };
   } catch (error) {
@@ -914,7 +914,7 @@ export async function createVenueBlock(input: CreateVenueBlockInput) {
       },
     });
 
-    revalidatePath(`/dashboard/events/${validatedData.weddingEventId}/seating`);
+    // revalidatePath(`/dashboard/events/${validatedData.weddingEventId}/seating`);
 
     return { success: true, block };
   } catch (error) {
@@ -951,7 +951,7 @@ export async function updateVenueBlock(input: UpdateVenueBlockInput) {
       data: updateData,
     });
 
-    revalidatePath(`/dashboard/events/${existingBlock.weddingEventId}/seating`);
+    // revalidatePath(`/dashboard/events/${existingBlock.weddingEventId}/seating`);
 
     return { success: true, block };
   } catch (error) {
@@ -995,7 +995,7 @@ export async function updateVenueBlockPosition(input: UpdateVenueBlockPositionIn
       },
     });
 
-    revalidatePath(`/dashboard/events/${existingBlock.weddingEventId}/seating`);
+    // revalidatePath(`/dashboard/events/${existingBlock.weddingEventId}/seating`);
 
     return { success: true, block };
   } catch (error) {
@@ -1039,7 +1039,7 @@ export async function updateVenueBlockSize(input: UpdateVenueBlockSizeInput) {
       },
     });
 
-    revalidatePath(`/dashboard/events/${existingBlock.weddingEventId}/seating`);
+    // revalidatePath(`/dashboard/events/${existingBlock.weddingEventId}/seating`);
 
     return { success: true, block };
   } catch (error) {
@@ -1082,7 +1082,7 @@ export async function updateVenueBlockRotation(input: UpdateVenueBlockRotationIn
       },
     });
 
-    revalidatePath(`/dashboard/events/${existingBlock.weddingEventId}/seating`);
+    // revalidatePath(`/dashboard/events/${existingBlock.weddingEventId}/seating`);
 
     return { success: true, block };
   } catch (error) {
@@ -1115,7 +1115,7 @@ export async function deleteVenueBlock(blockId: string) {
       where: { id: blockId },
     });
 
-    revalidatePath(`/dashboard/events/${existingBlock.weddingEventId}/seating`);
+    // revalidatePath(`/dashboard/events/${existingBlock.weddingEventId}/seating`);
 
     return { success: true };
   } catch (error) {
@@ -1481,7 +1481,7 @@ export async function autoArrangeTables(input: AutoArrangeInput) {
       return { tablesCreated, guestsSeated };
     });
 
-    revalidatePath(`/dashboard/events/${validatedData.eventId}/seating`);
+    // revalidatePath(`/dashboard/events/${validatedData.eventId}/seating`);
 
     return {
       success: true,
@@ -1910,7 +1910,7 @@ export async function assignGuestToSeat(seatId: string, guestId: string) {
       });
     }
 
-    revalidatePath(`/dashboard/events/${seat.table.weddingEventId}/seating`);
+    // revalidatePath(`/dashboard/events/${seat.table.weddingEventId}/seating`);
 
     return { success: true };
   } catch (error) {
@@ -1971,7 +1971,7 @@ export async function unassignSeat(seatId: string) {
       }
     }
 
-    revalidatePath(`/dashboard/events/${seat.table.weddingEventId}/seating`);
+    // revalidatePath(`/dashboard/events/${seat.table.weddingEventId}/seating`);
 
     return { success: true };
   } catch (error) {
@@ -2018,7 +2018,7 @@ export async function updateSeatPosition(
       },
     });
 
-    revalidatePath(`/dashboard/events/${seat.table.weddingEventId}/seating`);
+    // revalidatePath(`/dashboard/events/${seat.table.weddingEventId}/seating`);
 
     return { success: true };
   } catch (error) {
@@ -2103,7 +2103,7 @@ export async function regenerateTableSeats(
       }
     }
 
-    revalidatePath(`/dashboard/events/${table.weddingEventId}/seating`);
+    // revalidatePath(`/dashboard/events/${table.weddingEventId}/seating`);
 
     return { success: true, seatsCreated: newSeats.count };
   } catch (error) {
@@ -2130,6 +2130,7 @@ interface AutoArrangeWithConfigsInput {
     groupAssignments?: string[];
   }[];
   clearExisting: boolean;
+  assignGuests?: boolean; // If false, create tables without assigning guests
   mixRemaining?: boolean;
 }
 
@@ -2345,72 +2346,85 @@ export async function autoArrangeTablesWithConfigs(input: AutoArrangeWithConfigs
         return guestsForTable.length;
       }
 
-      // 1. Process group-assigned configs
-      // Each group gets its own dedicated tables - groups are NEVER mixed in the same table
-      for (const config of groupConfigs) {
-        const groupNames = config.groupAssignments!;
+      // Check if we should assign guests (default true for backward compatibility)
+      const shouldAssignGuests = input.assignGuests !== false;
 
-        // Calculate each group's guest list and seat needs
-        const groupData = groupNames.map((name) => {
-          const guests = guestsToSeat.filter(
-            (g) => g.groupName === name && !seatedGuestIds.has(g.id)
-          );
-          const seatsNeeded = guests.reduce((sum, g) => sum + getSeatsUsed(g), 0);
-          return { name, guests, seatsNeeded };
-        }).filter((g) => g.guests.length > 0);
-
-        // Distribute tables among groups:
-        // Each group with guests gets at least 1 table, extras go to groups needing more
-        let tablesRemaining = config.count;
-        const tableAllocation: Map<string, number> = new Map();
-
-        // First pass: each group with guests gets 1 table
-        for (const group of groupData) {
-          if (tablesRemaining <= 0) break;
-          tableAllocation.set(group.name, 1);
-          tablesRemaining--;
+      if (!shouldAssignGuests) {
+        // Create all tables without any guest assignments
+        for (const config of [...groupConfigs, ...openConfigs]) {
+          for (let i = 0; i < config.count; i++) {
+            const currentTableIndex = existingTableCount + tablesCreated;
+            await createTable(config, currentTableIndex);
+          }
         }
+      } else {
+        // 1. Process group-assigned configs
+        // Each group gets its own dedicated tables - groups are NEVER mixed in the same table
+        for (const config of groupConfigs) {
+          const groupNames = config.groupAssignments!;
 
-        // Second pass: give extra tables to groups that need more capacity
-        while (tablesRemaining > 0) {
-          let allocated = false;
+          // Calculate each group's guest list and seat needs
+          const groupData = groupNames.map((name) => {
+            const guests = guestsToSeat.filter(
+              (g) => g.groupName === name && !seatedGuestIds.has(g.id)
+            );
+            const seatsNeeded = guests.reduce((sum, g) => sum + getSeatsUsed(g), 0);
+            return { name, guests, seatsNeeded };
+          }).filter((g) => g.guests.length > 0);
+
+          // Distribute tables among groups:
+          // Each group with guests gets at least 1 table, extras go to groups needing more
+          let tablesRemaining = config.count;
+          const tableAllocation: Map<string, number> = new Map();
+
+          // First pass: each group with guests gets 1 table
           for (const group of groupData) {
             if (tablesRemaining <= 0) break;
-            const currentTables = tableAllocation.get(group.name) || 0;
-            const currentCapacity = currentTables * config.capacity;
-            if (group.seatsNeeded > currentCapacity) {
-              tableAllocation.set(group.name, currentTables + 1);
-              tablesRemaining--;
-              allocated = true;
+            tableAllocation.set(group.name, 1);
+            tablesRemaining--;
+          }
+
+          // Second pass: give extra tables to groups that need more capacity
+          while (tablesRemaining > 0) {
+            let allocated = false;
+            for (const group of groupData) {
+              if (tablesRemaining <= 0) break;
+              const currentTables = tableAllocation.get(group.name) || 0;
+              const currentCapacity = currentTables * config.capacity;
+              if (group.seatsNeeded > currentCapacity) {
+                tableAllocation.set(group.name, currentTables + 1);
+                tablesRemaining--;
+                allocated = true;
+              }
+            }
+            if (!allocated) break; // No group needs more tables
+          }
+
+          // Create tables per group - each group fills its own tables exclusively
+          for (const group of groupData) {
+            const tablesToCreate = tableAllocation.get(group.name) || 0;
+            for (let i = 0; i < tablesToCreate; i++) {
+              const currentTableIndex = existingTableCount + tablesCreated;
+              const table = await createTable(config, currentTableIndex);
+              // Only seat THIS group's guests in this table
+              await seatGuestsIntoTable(table.id, config.capacity, group.guests);
             }
           }
-          if (!allocated) break; // No group needs more tables
         }
 
-        // Create tables per group - each group fills its own tables exclusively
-        for (const group of groupData) {
-          const tablesToCreate = tableAllocation.get(group.name) || 0;
-          for (let i = 0; i < tablesToCreate; i++) {
+        // 2. Process open configs (no group assignments) - create empty tables
+        // These tables are created WITHOUT guest assignments as requested by user
+        for (const config of openConfigs) {
+          for (let i = 0; i < config.count; i++) {
             const currentTableIndex = existingTableCount + tablesCreated;
-            const table = await createTable(config, currentTableIndex);
-            // Only seat THIS group's guests in this table
-            await seatGuestsIntoTable(table.id, config.capacity, group.guests);
+            await createTable(config, currentTableIndex);
+            // Note: Not calling seatGuestsIntoTable - tables with no groups should remain empty
           }
         }
       }
 
-      // 2. Process open configs (no group assignments) - create empty tables
-      // These tables are created WITHOUT guest assignments as requested by user
-      for (const config of openConfigs) {
-        for (let i = 0; i < config.count; i++) {
-          const currentTableIndex = existingTableCount + tablesCreated;
-          await createTable(config, currentTableIndex);
-          // Note: Not calling seatGuestsIntoTable - tables with no groups should remain empty
-        }
-      }
-
-      // 3. Mix remaining guests into available seats if requested
-      if (input.mixRemaining) {
+      // 3. Mix remaining guests into available seats if requested (only when assigning guests)
+      if (shouldAssignGuests && input.mixRemaining) {
         const remainingGuests = guestsToSeat.filter((g) => !seatedGuestIds.has(g.id));
         if (remainingGuests.length > 0) {
           // Find all tables with available capacity
@@ -2441,7 +2455,7 @@ export async function autoArrangeTablesWithConfigs(input: AutoArrangeWithConfigs
       return { tablesCreated, guestsSeated, remainingUnseated };
     }, { timeout: 30000 });
 
-    revalidatePath(`/dashboard/events/${input.eventId}/seating`);
+    // revalidatePath(`/dashboard/events/${input.eventId}/seating`);
 
     return {
       success: true,

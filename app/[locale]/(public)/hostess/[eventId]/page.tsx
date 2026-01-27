@@ -10,18 +10,10 @@ interface HostessPageProps {
 }
 
 export async function generateMetadata({ params }: HostessPageProps): Promise<Metadata> {
-  const { eventId } = await params;
-  const result = await getHostessData(eventId);
-
-  if (result.error || !result.event) {
-    return {
-      title: "Guest List",
-    };
-  }
-
+  // Simple metadata - don't load full data here
   return {
-    title: `Guest List - ${result.event.title}`,
-    description: `Guest list for ${result.event.title}`,
+    title: "Guest List",
+    description: "Manage guest arrivals",
   };
 }
 

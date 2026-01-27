@@ -79,8 +79,57 @@ export function formatDate(input: string | number): string {
   });
 }
 
+/**
+ * Check if an IP address is in a private/LAN range
+ */
+function isLanIP(hostname: string): boolean {
+  // Check for localhost variations
+  if (hostname === "localhost" || hostname === "127.0.0.1" || hostname === "::1") {
+    return true;
+  }
+
+  // Check for private IP ranges
+  const ipRegex = /^(\d+)\.(\d+)\.(\d+)\.(\d+)$/;
+  const match = hostname.match(ipRegex);
+
+  if (match) {
+    const [, a, b, c, d] = match.map(Number);
+
+    // Private IP ranges:
+    // 10.0.0.0 - 10.255.255.255
+    if (a === 10) return true;
+
+    // 172.16.0.0 - 172.31.255.255
+    if (a === 172 && b >= 16 && b <= 31) return true;
+
+    // 192.168.0.0 - 192.168.255.255
+    if (a === 192 && b === 168) return true;
+  }
+
+  return false;
+}
+
+/**
+ * Get the base URL with the appropriate protocol based on origin
+ * Uses HTTP for LAN/local requests, HTTPS for external domains
+ */
+export function getBaseUrl(): string {
+  // Server-side: use configured URL
+  if (typeof window === "undefined") {
+    return env.NEXT_PUBLIC_APP_URL;
+  }
+
+  // Client-side: detect if LAN or external
+  const hostname = window.location.hostname;
+  const isLan = isLanIP(hostname);
+  const protocol = isLan ? "http" : "https";
+  const port = window.location.port ? `:${window.location.port}` : "";
+
+  return `${protocol}://${hostname}${port}`;
+}
+
 export function absoluteUrl(path: string) {
-  return `${env.NEXT_PUBLIC_APP_URL}${path}`;
+  return `${getBaseUrl()}${path}`;
 }
 
 // Utils from precedent.dev

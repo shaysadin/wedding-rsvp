@@ -237,8 +237,14 @@ export function AssignGuestsDialog({
         }
         onOpenChange(false);
 
-        // Dispatch event to refresh data
-        window.dispatchEvent(new CustomEvent("seating-data-changed"));
+        // Dispatch optimistic update event with guest assignment data
+        window.dispatchEvent(new CustomEvent("seating-data-changed", {
+          detail: {
+            type: "guests-assigned",
+            tableId,
+            guestIds: Array.from(selectedIds),
+          },
+        }));
       }
     } catch {
       toast.error("Failed to assign guests");

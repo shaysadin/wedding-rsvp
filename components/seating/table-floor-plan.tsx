@@ -1359,8 +1359,11 @@ export function TableFloorPlan({
         setBlockSizes(new Map());
         setTableRotations(new Map());
         setBlockRotations(new Map());
-        // Dispatch event to refresh data
-        window.dispatchEvent(new CustomEvent("seating-data-changed"));
+
+        // Trigger light refresh to update server-saved positions without full reload
+        window.dispatchEvent(new CustomEvent("seating-data-changed", {
+          detail: { type: "positions-saved" },
+        }));
       }
     } catch (err) {
       console.error("Save position exception:", err);

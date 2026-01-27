@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useEffect, useState, useMemo } from "react";
+import { useRef, useEffect, useState, useMemo, memo } from "react";
 import { cn } from "@/lib/utils";
 import { TableWithSeats, type TableGuest } from "@/components/seating/table-with-seats";
 import { Icons } from "@/components/shared/icons";
@@ -208,3 +208,6 @@ export function HostessFloorPlan({
     </div>
   );
 }
+
+// Memoize the component to prevent unnecessary re-renders
+export const HostessFloorPlanMemo = memo(HostessFloorPlan);

@@ -1,7 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { useState, useMemo, memo } from "react";
 import { Search, Check, UserCheck, Users } from "lucide-react";
 import { toast } from "sonner";
 
@@ -106,52 +105,58 @@ export function HostessGuestList({ guests, tables, locale }: HostessGuestListPro
     };
   }, [guests]);
 
-  // Filter and sort guests
+  // Filter and sort guests - optimized for performance
   const filteredGuests = useMemo(() => {
-    let result = guests;
-
-    // Search filter
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      result = result.filter(
-        (guest) =>
+    // Apply all filters in one pass
+    const filtered = guests.filter((guest) => {
+      // Search filter
+      if (searchQuery) {
+        const query = searchQuery.toLowerCase();
+        const matchesSearch =
           guest.name.toLowerCase().includes(query) ||
-          (guest.tableName && guest.tableName.toLowerCase().includes(query))
-      );
-    }
+          (guest.tableName && guest.tableName.toLowerCase().includes(query));
+        if (!matchesSearch) return false;
+      }
 
-    // Table filter
-    if (filterTable !== "all") {
-      result = result.filter((guest) => guest.tableId === filterTable);
-    }
+      // Table filter
+      if (filterTable !== "all" && guest.tableId !== filterTable) {
+        return false;
+      }
 
-    // Status filter
-    if (filterStatus === "arrived") {
-      result = result.filter((guest) => guest.isArrived);
-    } else if (filterStatus === "not-arrived") {
-      result = result.filter((guest) => !guest.isArrived);
-    }
+      // Status filter
+      if (filterStatus === "arrived" && !guest.isArrived) {
+        return false;
+      } else if (filterStatus === "not-arrived" && guest.isArrived) {
+        return false;
+      }
 
-    // Side filter
-    if (filterSide !== "all") {
-      result = result.filter((guest) => guest.side === filterSide);
-    }
+      // Side filter
+      if (filterSide !== "all" && guest.side !== filterSide) {
+        return false;
+      }
 
-    // Group filter
-    if (filterGroup !== "all") {
-      result = result.filter((guest) => guest.groupName === filterGroup);
-    }
+      // Group filter
+      if (filterGroup !== "all" && guest.groupName !== filterGroup) {
+        return false;
+      }
 
-    // Sort by table name, then by name
-    return [...result].sort((a, b) => {
-      if (!a.tableName && !b.tableName) return a.name.localeCompare(b.name, locale);
+      return true;
+    });
+
+    // Sort only if needed
+    if (filtered.length === 0) return filtered;
+
+    // Simple sort by table name, then by name
+    return filtered.sort((a, b) => {
+      if (!a.tableName && !b.tableName) return a.name < b.name ? -1 : 1;
       if (!a.tableName) return 1;
       if (!b.tableName) return -1;
-      const tableCompare = a.tableName.localeCompare(b.tableName, locale, { numeric: true });
-      if (tableCompare !== 0) return tableCompare;
-      return a.name.localeCompare(b.name, locale);
+      if (a.tableName !== b.tableName) {
+        return a.tableName < b.tableName ? -1 : 1;
+      }
+      return a.name < b.name ? -1 : 1;
     });
-  }, [guests, searchQuery, filterTable, filterStatus, filterSide, filterGroup, locale]);
+  }, [guests, searchQuery, filterTable, filterStatus, filterSide, filterGroup]);
 
   const handleMarkArrived = async (guestId: string) => {
     setLoadingGuests((prev) => new Set(prev).add(guestId));
@@ -304,27 +309,19 @@ export function HostessGuestList({ guests, tables, locale }: HostessGuestListPro
         </Card>
       ) : (
         <div className="space-y-2">
-          <AnimatePresence mode="popLayout">
-            {filteredGuests.map((guest) => {
-              const isLoading = loadingGuests.has(guest.id);
+          {filteredGuests.map((guest) => {
+            const isLoading = loadingGuests.has(guest.id);
 
-              return (
-                <motion.div
-                  key={guest.id}
-                  layout
-                  initial={{ opacity: 0, y: -4 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -4 }}
-                  transition={{ duration: 0.15 }}
-                >
-                  <div
-                    className={cn(
-                      "flex items-center gap-4 p-4 rounded-xl border transition-colors",
-                      guest.isArrived
-                        ? "border-green-500 bg-green-50/80 dark:bg-green-950/30"
-                        : "border-zinc-200 dark:border-zinc-800 bg-card"
-                    )}
-                  >
+            return (
+              <div
+                key={guest.id}
+                className={cn(
+                  "flex items-center gap-4 p-4 rounded-xl border transition-colors",
+                  guest.isArrived
+                    ? "border-green-500 bg-green-50/80 dark:bg-green-950/30"
+                    : "border-zinc-200 dark:border-zinc-800 bg-card"
+                )}
+              >
                     {/* Guest info - single row */}
                     <div className="flex-1 min-w-0 flex items-center gap-3 flex-wrap">
                       <span className="font-semibold text-base truncate">{guest.name}</span>
@@ -389,12 +386,13 @@ export function HostessGuestList({ guests, tables, locale }: HostessGuestListPro
                       )}
                     </div>
                   </div>
-                </motion.div>
               );
             })}
-          </AnimatePresence>
         </div>
       )}
     </div>
   );
 }
+
+// Memoize the component to prevent unnecessary re-renders
+export const HostessGuestListMemo = memo(HostessGuestList);

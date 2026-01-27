@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { motion } from "framer-motion";
 import {
   RefreshCw,
   Users,
@@ -188,13 +187,14 @@ export function HostessPageContent({
     };
   }, [refreshData]);
 
-  // Real-time polling with visibility API
+  // Smart polling: longer interval, only when visible
   useEffect(() => {
     let intervalId: NodeJS.Timeout | null = null;
 
     const startPolling = () => {
       if (intervalId) return;
-      intervalId = setInterval(refreshData, 5000);
+      // Reduced from 5s to 30s - most updates come via events
+      intervalId = setInterval(refreshData, 30000);
     };
 
     const stopPolling = () => {
@@ -208,6 +208,7 @@ export function HostessPageContent({
       if (document.hidden) {
         stopPolling();
       } else {
+        // Only refresh when tab becomes visible
         refreshData();
         startPolling();
       }
@@ -232,12 +233,7 @@ export function HostessPageContent({
       {/* Hero Header */}
       <div className="bg-gray-600 dark:bg-gray-700 text-white">
         <div className="container mx-auto px-4 py-6 sm:py-8 max-w-6xl">
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="text-center"
-          >
+          <div className="text-center">
             <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-3">{event.title}</h1>
             <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-6 text-white/90">
               <div className="flex items-center gap-1.5">
@@ -266,18 +262,13 @@ export function HostessPageContent({
                 </div>
               )}
             </div>
-          </motion.div>
+          </div>
         </div>
       </div>
 
       <div className="container mx-auto px-3 sm:px-4 max-w-6xl -mt-6">
         {/* Stats Cards */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.1 }}
-          className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 mb-4"
-        >
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 mb-4">
           {/* Arrived - with progress */}
           <Card className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/50 dark:to-emerald-950/30 border-green-200 dark:border-green-800 shadow-md">
             <CardContent className="p-3 sm:p-3">
@@ -360,15 +351,10 @@ export function HostessPageContent({
               </div>
             </CardContent>
           </Card>
-        </motion.div>
+        </div>
 
         {/* Refresh Section */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
-          className="flex items-center justify-between mb-4 px-1"
-        >
+        <div className="flex items-center justify-between mb-4 px-1">
           <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
             <div className="flex items-center gap-1.5">
               <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
@@ -387,14 +373,10 @@ export function HostessPageContent({
             <RefreshCw className={cn("h-4 w-4 me-2", isRefreshing && "animate-spin")} />
             {t.refresh}
           </Button>
-        </motion.div>
+        </div>
 
         {/* Tabs */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.3 }}
-        >
+        <div>
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="grid w-full grid-cols-2 mb-4 p-1 h-auto bg-zinc-100 dark:bg-zinc-800 rounded-xl">
               <TabsTrigger
@@ -450,7 +432,7 @@ export function HostessPageContent({
               />
             </TabsContent>
           </Tabs>
-        </motion.div>
+        </div>
 
         {/* Footer spacing */}
         <div className="h-8" />

@@ -112,6 +112,7 @@ export function AutoArrangeStepper({
 
   // Step 4: Arrange mode and remaining guests options
   const [arrangeMode, setArrangeMode] = useState<"add" | "replace">("add");
+  const [assignGuests, setAssignGuests] = useState(true);
   const [mixRemaining, setMixRemaining] = useState(true);
 
   // Load guests when dialog opens
@@ -374,6 +375,7 @@ export function AutoArrangeStepper({
           groupAssignments: config.groupAssignments.length > 0 ? config.groupAssignments : undefined,
         })),
         clearExisting: arrangeMode === "replace",
+        assignGuests,
         mixRemaining,
       });
 
@@ -386,8 +388,10 @@ export function AutoArrangeStepper({
         }));
         onOpenChange(false);
 
-        // Dispatch event to refresh data
-        window.dispatchEvent(new CustomEvent("seating-data-changed"));
+        // Dispatch event to trigger full refresh (auto-arrange creates multiple tables)
+        window.dispatchEvent(new CustomEvent("seating-data-changed", {
+          detail: { type: "auto-arrange-complete" },
+        }));
       }
     } catch {
       toast.error("Failed to auto-arrange tables");
@@ -762,6 +766,39 @@ export function AutoArrangeStepper({
           <p className="text-sm text-muted-foreground">{t("autoArrange.step4Description")}</p>
         </div>
 
+        {/* Guest Assignment Option */}
+        <div className="rounded-lg border p-3 space-y-3">
+          <p className="text-sm font-medium">Guest Assignment</p>
+          <div className="space-y-2">
+            <label className="flex items-start gap-3 cursor-pointer p-2 rounded-md hover:bg-muted transition-colors">
+              <input
+                type="radio"
+                name="assignGuests"
+                checked={assignGuests}
+                onChange={() => setAssignGuests(true)}
+                className="mt-0.5 h-4 w-4"
+              />
+              <div>
+                <span className="text-sm font-medium">Assign guests to tables</span>
+                <p className="text-xs text-muted-foreground">Tables will be created and guests will be automatically assigned based on groups</p>
+              </div>
+            </label>
+            <label className="flex items-start gap-3 cursor-pointer p-2 rounded-md hover:bg-muted transition-colors">
+              <input
+                type="radio"
+                name="assignGuests"
+                checked={!assignGuests}
+                onChange={() => setAssignGuests(false)}
+                className="mt-0.5 h-4 w-4"
+              />
+              <div>
+                <span className="text-sm font-medium">Create empty tables</span>
+                <p className="text-xs text-muted-foreground">Tables will be created without any guests assigned - you can assign them manually later</p>
+              </div>
+            </label>
+          </div>
+        </div>
+
         {/* Arrange Mode Selection */}
         <div className="rounded-lg border p-3 space-y-3">
           <p className="text-sm font-medium">{t("autoArrange.arrangeModeTitle")}</p>
@@ -864,7 +901,7 @@ export function AutoArrangeStepper({
         </div>
 
         {/* Remaining guests option */}
-        {previewStats.remainingGuests > 0 && (
+        {assignGuests && previewStats.remainingGuests > 0 && (
           <div className="rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20 p-3 space-y-2">
             <p className="text-sm font-medium text-amber-800 dark:text-amber-200">
               {t("autoArrange.remainingGuests", { count: previewStats.remainingGuests })}
