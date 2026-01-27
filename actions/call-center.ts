@@ -297,7 +297,15 @@ export async function getCallHistory(eventId: string) {
       take: 100, // Limit to last 100 calls
     });
 
-    return { success: true, calls };
+    // Serialize Date objects to strings for client component
+    const serializedCalls = calls.map((call) => ({
+      ...call,
+      initiatedAt: call.initiatedAt.toISOString(),
+      connectedAt: call.connectedAt?.toISOString() || null,
+      endedAt: call.endedAt?.toISOString() || null,
+    }));
+
+    return { success: true, calls: serializedCalls };
   } catch (error) {
     console.error("Error fetching call history:", error);
     return { error: "Failed to fetch call history" };

@@ -7,7 +7,7 @@
  * Reference: https://www.twilio.com/docs/voice/sdks/javascript/twilio-client-quickstart
  */
 
-import { AccessToken } from "twilio";
+import AccessToken from "twilio/lib/jwt/AccessToken";
 
 import { prisma } from "@/lib/db";
 
