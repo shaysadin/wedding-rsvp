@@ -241,8 +241,69 @@ export function SeatingPageContent({ eventId, events, locale }: SeatingPageConte
       }
 
       if (detail?.type === "positions-saved") {
-        // No need to refetch - positions are already saved and local state cleared
-        // Just show success without causing UI flicker
+        // Apply optimistic updates immediately to prevent visual glitch
+        if (detail.updatedPositions) {
+          const { tables: tablePos, blocks: blockPos, tableSizes: sizes, blockSizes: bSizes, tableRotations: tRot, blockRotations: bRot } = detail.updatedPositions;
+
+          // Update tables with new positions immediately
+          if (tablePos && Object.keys(tablePos).length > 0) {
+            setTables((prevTables) =>
+              prevTables.map((table) => {
+                if (tablePos[table.id]) {
+                  return {
+                    ...table,
+                    positionX: tablePos[table.id].x,
+                    positionY: tablePos[table.id].y,
+                    ...(sizes?.[table.id] && {
+                      width: sizes[table.id].width,
+                      height: sizes[table.id].height,
+                    }),
+                    ...(tRot?.[table.id] !== undefined && {
+                      rotation: tRot[table.id],
+                    }),
+                  };
+                }
+                return table;
+              })
+            );
+          }
+
+          // Update blocks with new positions immediately
+          if (blockPos && Object.keys(blockPos).length > 0) {
+            setVenueBlocks((prevBlocks) =>
+              prevBlocks.map((block) => {
+                if (blockPos[block.id]) {
+                  return {
+                    ...block,
+                    positionX: blockPos[block.id].x,
+                    positionY: blockPos[block.id].y,
+                    ...(bSizes?.[block.id] && {
+                      width: bSizes[block.id].width,
+                      height: bSizes[block.id].height,
+                    }),
+                    ...(bRot?.[block.id] !== undefined && {
+                      rotation: bRot[block.id],
+                    }),
+                  };
+                }
+                return block;
+              })
+            );
+          }
+        }
+
+        // Then fetch from server to confirm (in background, no visual impact)
+        Promise.all([
+          getEventTables(eventId),
+          getEventVenueBlocks(eventId),
+        ]).then(([tablesResult, blocksResult]) => {
+          if (tablesResult.success && tablesResult.tables) {
+            setTables(tablesResult.tables as Table[]);
+          }
+          if (blocksResult.success && blocksResult.blocks) {
+            setVenueBlocks(blocksResult.blocks as VenueBlock[]);
+          }
+        });
         return;
       }
 

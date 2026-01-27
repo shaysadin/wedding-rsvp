@@ -187,41 +187,78 @@ export function HostessPageContent({
     };
   }, [refreshData]);
 
-  // Smart polling: longer interval, only when visible
+  // Server-Sent Events for real-time updates across multiple hostesses
   useEffect(() => {
-    let intervalId: NodeJS.Timeout | null = null;
+    let eventSource: EventSource | null = null;
+    let reconnectTimeout: NodeJS.Timeout | null = null;
 
-    const startPolling = () => {
-      if (intervalId) return;
-      // Reduced from 5s to 30s - most updates come via events
-      intervalId = setInterval(refreshData, 30000);
+    const connect = () => {
+      if (eventSource) return;
+
+      // Connect to SSE endpoint
+      eventSource = new EventSource(`/api/hostess/${eventId}/stream`);
+
+      eventSource.onopen = () => {
+        console.log("Hostess SSE connected");
+      };
+
+      eventSource.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+
+          // Handle different update types
+          if (data.type === "connected") {
+            console.log("Hostess SSE connection established");
+          } else if (data.type === "guest-arrived" || data.type === "guest-unmarked" || data.type === "refresh") {
+            // Refresh data when any hostess updates guest status
+            refreshData();
+          }
+        } catch (error) {
+          console.error("Error parsing SSE message:", error);
+        }
+      };
+
+      eventSource.onerror = () => {
+        console.log("Hostess SSE connection lost, reconnecting...");
+        eventSource?.close();
+        eventSource = null;
+
+        // Reconnect after 2 seconds
+        reconnectTimeout = setTimeout(() => {
+          connect();
+        }, 2000);
+      };
     };
 
-    const stopPolling = () => {
-      if (intervalId) {
-        clearInterval(intervalId);
-        intervalId = null;
+    const disconnect = () => {
+      if (reconnectTimeout) {
+        clearTimeout(reconnectTimeout);
+        reconnectTimeout = null;
+      }
+      if (eventSource) {
+        eventSource.close();
+        eventSource = null;
       }
     };
 
     const handleVisibility = () => {
       if (document.hidden) {
-        stopPolling();
+        disconnect();
       } else {
-        // Only refresh when tab becomes visible
+        // Refresh and reconnect when tab becomes visible
         refreshData();
-        startPolling();
+        connect();
       }
     };
 
     document.addEventListener("visibilitychange", handleVisibility);
-    startPolling();
+    connect();
 
     return () => {
-      stopPolling();
+      disconnect();
       document.removeEventListener("visibilitychange", handleVisibility);
     };
-  }, [refreshData]);
+  }, [eventId, refreshData]);
 
   // Calculate arrival percentage
   const arrivalPercentage = stats.totalGuests > 0

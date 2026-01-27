@@ -1353,6 +1353,38 @@ export function TableFloorPlan({
         toast.error(t("savePositionError"));
       } else {
         toast.success(t("positionsSaved"));
+
+        // Build the updated positions data to pass to parent for optimistic updates
+        const updatedPositions = {
+          tables: Object.fromEntries(
+            Array.from(localPositions.entries()).map(([tableId, pos]) => [
+              tableId,
+              { x: Math.round(pos.x * scaleX), y: Math.round(pos.y * scaleY) },
+            ])
+          ),
+          blocks: Object.fromEntries(
+            Array.from(blockPositions.entries()).map(([blockId, pos]) => [
+              blockId,
+              { x: Math.round(pos.x * scaleX), y: Math.round(pos.y * scaleY) },
+            ])
+          ),
+          tableSizes: Object.fromEntries(
+            Array.from(tableSizes.entries()).map(([tableId, size]) => [
+              tableId,
+              { width: Math.round(size.width), height: Math.round(size.height) },
+            ])
+          ),
+          blockSizes: Object.fromEntries(
+            Array.from(blockSizes.entries()).map(([blockId, size]) => [
+              blockId,
+              { width: Math.round(size.width), height: Math.round(size.height) },
+            ])
+          ),
+          tableRotations: Object.fromEntries(tableRotations.entries()),
+          blockRotations: Object.fromEntries(blockRotations.entries()),
+        };
+
+        // Clear local state
         setLocalPositions(new Map());
         setBlockPositions(new Map());
         setTableSizes(new Map());
@@ -1360,9 +1392,12 @@ export function TableFloorPlan({
         setTableRotations(new Map());
         setBlockRotations(new Map());
 
-        // Trigger light refresh to update server-saved positions without full reload
+        // Trigger optimistic refresh
         window.dispatchEvent(new CustomEvent("seating-data-changed", {
-          detail: { type: "positions-saved" },
+          detail: {
+            type: "positions-saved",
+            updatedPositions,
+          },
         }));
       }
     } catch (err) {

@@ -3,6 +3,7 @@ import { NextIntlClientProvider } from "next-intl";
 import { getMessages } from "next-intl/server";
 import { SessionProvider } from "next-auth/react";
 import { ThemeProvider } from "next-themes";
+import { headers } from "next/headers";
 
 import { locales, localeDirection, type Locale } from "@/lib/i18n/config";
 import { constructMetadata } from "@/lib/utils";
@@ -17,7 +18,11 @@ interface LocaleLayoutProps {
   params: Promise<{ locale: string }>;
 }
 
-export const metadata = constructMetadata();
+export async function generateMetadata() {
+  const headersList = await headers();
+  const host = headersList.get("host") || undefined;
+  return constructMetadata({ host });
+}
 
 export function generateStaticParams() {
   return locales.map((locale) => ({ locale }));

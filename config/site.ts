@@ -1,5 +1,6 @@
 import { SidebarNavItem, SiteConfig } from "@/types";
 import { env } from "@/env.mjs";
+import { getBaseUrl } from "@/lib/utils";
 
 const site_url = env.NEXT_PUBLIC_APP_URL;
 
@@ -15,6 +16,19 @@ export const siteConfig: SiteConfig = {
   },
   mailSupport: "support@wedinex.com",
 };
+
+/**
+ * Get dynamic site config with LAN-aware URLs
+ * @param host - Optional host from request headers
+ */
+export function getDynamicSiteConfig(host?: string): SiteConfig {
+  const baseUrl = getBaseUrl(host);
+  return {
+    ...siteConfig,
+    url: baseUrl,
+    ogImage: `${baseUrl}/_static/og.jpg`,
+  };
+}
 
 export const footerLinks: SidebarNavItem[] = [
   {

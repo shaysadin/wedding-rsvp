@@ -6,6 +6,7 @@ import { UserRole } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { getCurrentUser } from "@/lib/session";
 import { canAccessEvent } from "@/lib/permissions";
+import { broadcastHostessUpdate } from "@/lib/hostess-broadcaster";
 import {
   createTableSchema,
   updateTableSchema,
@@ -1702,6 +1703,13 @@ export async function markGuestArrived(input: MarkGuestArrivedInput) {
       },
     });
 
+    // Broadcast real-time update to all connected hostesses
+    broadcastHostessUpdate(guest.weddingEventId, {
+      type: "guest-arrived",
+      guestId: guest.id,
+      guestName: guest.name,
+    });
+
     return { success: true };
   } catch (error) {
     console.error("Error marking guest as arrived:", error);
@@ -1736,6 +1744,13 @@ export async function unmarkGuestArrived(guestId: string) {
         arrivedAt: null,
         arrivedTableId: null,
       },
+    });
+
+    // Broadcast real-time update to all connected hostesses
+    broadcastHostessUpdate(guest.weddingEventId, {
+      type: "guest-unmarked",
+      guestId: guest.id,
+      guestName: guest.name,
     });
 
     return { success: true };

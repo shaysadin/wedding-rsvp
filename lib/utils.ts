@@ -16,13 +16,19 @@ export function constructMetadata({
   image = siteConfig.ogImage,
   icons = "/favicon.ico",
   noIndex = false,
+  host,
 }: {
   title?: string;
   description?: string;
   image?: string;
   icons?: string;
   noIndex?: boolean;
+  host?: string;
 } = {}): Metadata {
+  // Use dynamic site config if host is provided (for LAN detection)
+  const { getDynamicSiteConfig } = require("@/config/site");
+  const config = host ? getDynamicSiteConfig(host) : siteConfig;
+
   return {
     title,
     description,
@@ -46,7 +52,7 @@ export function constructMetadata({
     openGraph: {
       type: "website",
       locale: "en_US",
-      url: siteConfig.url,
+      url: config.url,
       title,
       description,
       siteName: title,
@@ -59,8 +65,8 @@ export function constructMetadata({
       creator: "@miickasmt",
     },
     icons,
-    metadataBase: new URL(siteConfig.url),
-    manifest: `${siteConfig.url}/site.webmanifest`,
+    metadataBase: new URL(config.url),
+    manifest: `${config.url}/site.webmanifest`,
     ...(noIndex && {
       robots: {
         index: false,
@@ -112,9 +118,22 @@ function isLanIP(hostname: string): boolean {
 /**
  * Get the base URL with the appropriate protocol based on origin
  * Uses HTTP for LAN/local requests, HTTPS for external domains
+ *
+ * @param host - Optional host from request headers (for server-side usage)
  */
-export function getBaseUrl(): string {
-  // Server-side: use configured URL
+export function getBaseUrl(host?: string): string {
+  // Server-side with host parameter: detect based on host
+  if (typeof window === "undefined" && host) {
+    // Parse hostname and port from host header
+    const [hostname, port] = host.split(":");
+    const isLan = isLanIP(hostname);
+    const protocol = isLan ? "http" : "https";
+    const portStr = port ? `:${port}` : "";
+
+    return `${protocol}://${hostname}${portStr}`;
+  }
+
+  // Server-side without host: use configured URL
   if (typeof window === "undefined") {
     return env.NEXT_PUBLIC_APP_URL;
   }
@@ -128,8 +147,28 @@ export function getBaseUrl(): string {
   return `${protocol}://${hostname}${port}`;
 }
 
-export function absoluteUrl(path: string) {
-  return `${getBaseUrl()}${path}`;
+/**
+ * Get absolute URL for a path
+ *
+ * @param path - The path to convert to absolute URL
+ * @param host - Optional host from request headers (for server-side usage)
+ */
+export function absoluteUrl(path: string, host?: string) {
+  return `${getBaseUrl(host)}${path}`;
+}
+
+/**
+ * Get the request host from Next.js headers (for server components/API routes)
+ * Usage: const host = await getRequestHost();
+ */
+export async function getRequestHost(): Promise<string | undefined> {
+  try {
+    const { headers } = await import("next/headers");
+    const headersList = await headers();
+    return headersList.get("host") || undefined;
+  } catch {
+    return undefined;
+  }
 }
 
 // Utils from precedent.dev
