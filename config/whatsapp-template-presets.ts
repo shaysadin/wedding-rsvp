@@ -37,7 +37,7 @@ export const WHATSAPP_TEMPLATE_PRESETS: WhatsAppTemplatePreset[] = [
 נשמח מאוד לראות אותך שם 💙
 
 לאישור הגעה ופרטים נוספים:
-{{7}}
+{{11}}
 
 מחכים לך בשמחה!`,
     previewTextHe: `היי {{1}} 👋
@@ -47,7 +47,7 @@ export const WHATSAPP_TEMPLATE_PRESETS: WhatsAppTemplatePreset[] = [
 נשמח מאוד לראות אותך שם 💙
 
 לאישור הגעה ופרטים נוספים:
-{{7}}
+{{11}}
 
 מחכים לך בשמחה!`,
   },
@@ -64,10 +64,10 @@ export const WHATSAPP_TEMPLATE_PRESETS: WhatsAppTemplatePreset[] = [
 
 📅 מתי? {{5}} בשעה {{6}}
 
-🗺 ניווט למקום:
-{{7}}
-
 נשמח לאישור הגעה כדי שנוכל לתכנן בשבילך את הערב המושלם.
+
+לאישור הגעה:
+{{11}}
 
 מצפים לראותכם! 💫`,
     previewTextHe: `שלום {{1}} 🎉
@@ -78,10 +78,10 @@ export const WHATSAPP_TEMPLATE_PRESETS: WhatsAppTemplatePreset[] = [
 
 📅 מתי? {{5}} בשעה {{6}}
 
-🗺 ניווט למקום:
-{{7}}
-
 נשמח לאישור הגעה כדי שנוכל לתכנן בשבילך את הערב המושלם.
+
+לאישור הגעה:
+{{11}}
 
 מצפים לראותכם! 💫`,
   },
@@ -98,8 +98,8 @@ export const WHATSAPP_TEMPLATE_PRESETS: WhatsAppTemplatePreset[] = [
 
 📅 מתי? {{5}} בשעה {{6}}
 
-🗺 ניווט למקום:
-{{7}}
+לאישור הגעה:
+{{11}}
 
 🚌 דאגנו לכם להסעות נוחות! לרישום להסעה:
 {{9}}
@@ -115,8 +115,8 @@ export const WHATSAPP_TEMPLATE_PRESETS: WhatsAppTemplatePreset[] = [
 
 📅 מתי? {{5}} בשעה {{6}}
 
-🗺 ניווט למקום:
-{{7}}
+לאישור הגעה:
+{{11}}
 
 🚌 דאגנו לכם להסעות נוחות! לרישום להסעה:
 {{9}}
@@ -140,8 +140,8 @@ export const WHATSAPP_TEMPLATE_PRESETS: WhatsAppTemplatePreset[] = [
 
 עדיין מחכים לאישור ההגעה שלך 💙
 
-לחצו כאן:
-{{7}}
+לאישור הגעה:
+{{11}}
 
 נתראה בקרוב!`,
     previewTextHe: `היי {{1}} ⏰
@@ -150,8 +150,8 @@ export const WHATSAPP_TEMPLATE_PRESETS: WhatsAppTemplatePreset[] = [
 
 עדיין מחכים לאישור ההגעה שלך 💙
 
-לחצו כאן:
-{{7}}
+לאישור הגעה:
+{{11}}
 
 נתראה בקרוב!`,
   },
@@ -168,10 +168,10 @@ export const WHATSAPP_TEMPLATE_PRESETS: WhatsAppTemplatePreset[] = [
 
 📅 מתי: {{5}} בשעה {{6}}
 
-🗺 ניווט למקום:
-{{7}}
-
 אם עדיין לא אישרת הגעה, נשמח שתעשה זאת עכשיו כדי שנוכל לדאוג לכל הפרטים בשבילך.
+
+לאישור הגעה:
+{{11}}
 
 מצפים לראותכם! ✨`,
     previewTextHe: `שלום {{1}} 📢
@@ -182,10 +182,10 @@ export const WHATSAPP_TEMPLATE_PRESETS: WhatsAppTemplatePreset[] = [
 
 📅 מתי: {{5}} בשעה {{6}}
 
-🗺 ניווט למקום:
-{{7}}
-
 אם עדיין לא אישרת הגעה, נשמח שתעשה זאת עכשיו כדי שנוכל לדאוג לכל הפרטים בשבילך.
+
+לאישור הגעה:
+{{11}}
 
 מצפים לראותכם! ✨`,
   },
@@ -202,13 +202,13 @@ export const WHATSAPP_TEMPLATE_PRESETS: WhatsAppTemplatePreset[] = [
 
 📅 מתי: {{5}} בשעה {{6}}
 
-🗺 ניווט למקום:
-{{7}}
+אם עדיין לא אישרת הגעה, נשמח שתעשה זאת עכשיו כדי שנוכל לדאוג לכל הפרטים בשבילך.
+
+לאישור הגעה:
+{{11}}
 
 🚌 רוצים הסעה? נשמח לראותכם! לרישום:
 {{9}}
-
-אם עדיין לא אישרת הגעה, נשמח שתעשה זאת עכשיו כדי שנוכל לדאוג לכל הפרטים בשבילך.
 
 מצפים לראותכם! ✨`,
     previewTextHe: `שלום {{1}} 📢
@@ -219,13 +219,13 @@ export const WHATSAPP_TEMPLATE_PRESETS: WhatsAppTemplatePreset[] = [
 
 📅 מתי: {{5}} בשעה {{6}}
 
-🗺 ניווט למקום:
-{{7}}
+אם עדיין לא אישרת הגעה, נשמח שתעשה זאת עכשיו כדי שנוכל לדאוג לכל הפרטים בשבילך.
+
+לאישור הגעה:
+{{11}}
 
 🚌 רוצים הסעה? נשמח לראותכם! לרישום:
 {{9}}
-
-אם עדיין לא אישרת הגעה, נשמח שתעשה זאת עכשיו כדי שנוכל לדאוג לכל הפרטים בשבילך.
 
 מצפים לראותכם! ✨`,
   },
@@ -255,9 +255,9 @@ export const WHATSAPP_TEMPLATE_PRESETS: WhatsAppTemplatePreset[] = [
 
 נשמח לדעת אם תוכלו להגיע`,
     buttons: [
-      { id: "accept", titleHe: "✅ מגיע בשמחה" },
-      { id: "decline", titleHe: "❌ לא יכול" },
-      { id: "maybe", titleHe: "🤔 לא בטוח" },
+      { id: "accept", titleHe: "כן, אני אגיע" },
+      { id: "decline", titleHe: "לא אגיע" },
+      { id: "maybe", titleHe: "עדיין לא בטוח" },
     ],
   },
   {
@@ -288,9 +288,9 @@ export const WHATSAPP_TEMPLATE_PRESETS: WhatsAppTemplatePreset[] = [
 
 נשמח לדעת אם תוכלו להגיע`,
     buttons: [
-      { id: "accept", titleHe: "✅ מאשר הגעה" },
-      { id: "decline", titleHe: "❌ לא מגיע" },
-      { id: "maybe", titleHe: "🤔 אולי" },
+      { id: "accept", titleHe: "כן, אני אגיע" },
+      { id: "decline", titleHe: "לא אגיע" },
+      { id: "maybe", titleHe: "עדיין לא בטוח" },
     ],
   },
   {
@@ -327,9 +327,9 @@ export const WHATSAPP_TEMPLATE_PRESETS: WhatsAppTemplatePreset[] = [
 
 נשמח לדעת אם תוכלו להגיע`,
     buttons: [
-      { id: "accept", titleHe: "✅ מאשר הגעה" },
-      { id: "decline", titleHe: "❌ לא מגיע" },
-      { id: "maybe", titleHe: "🤔 אולי" },
+      { id: "accept", titleHe: "כן, אני אגיע" },
+      { id: "decline", titleHe: "לא אגיע" },
+      { id: "maybe", titleHe: "עדיין לא בטוח" },
     ],
   },
 
@@ -358,9 +358,9 @@ export const WHATSAPP_TEMPLATE_PRESETS: WhatsAppTemplatePreset[] = [
 
 נשמח לדעת אם תוכלו להגיע`,
     buttons: [
-      { id: "accept", titleHe: "✅ כן, מגיע" },
-      { id: "decline", titleHe: "❌ לא יכול" },
-      { id: "maybe", titleHe: "🤔 עוד לא בטוח" },
+      { id: "accept", titleHe: "כן, אני אגיע" },
+      { id: "decline", titleHe: "לא אגיע" },
+      { id: "maybe", titleHe: "עדיין לא בטוח" },
     ],
   },
   {
@@ -391,9 +391,9 @@ export const WHATSAPP_TEMPLATE_PRESETS: WhatsAppTemplatePreset[] = [
 
 נשמח לדעת אם תוכלו להגיע`,
     buttons: [
-      { id: "accept", titleHe: "✅ מאשר הגעה" },
-      { id: "decline", titleHe: "❌ מצטער, לא" },
-      { id: "maybe", titleHe: "🤔 לא בטוח" },
+      { id: "accept", titleHe: "כן, אני אגיע" },
+      { id: "decline", titleHe: "לא אגיע" },
+      { id: "maybe", titleHe: "עדיין לא בטוח" },
     ],
   },
   {
@@ -430,9 +430,9 @@ export const WHATSAPP_TEMPLATE_PRESETS: WhatsAppTemplatePreset[] = [
 
 נשמח לדעת אם תוכלו להגיע`,
     buttons: [
-      { id: "accept", titleHe: "✅ מאשר הגעה" },
-      { id: "decline", titleHe: "❌ מצטער, לא" },
-      { id: "maybe", titleHe: "🤔 לא בטוח" },
+      { id: "accept", titleHe: "כן, אני אגיע" },
+      { id: "decline", titleHe: "לא אגיע" },
+      { id: "maybe", titleHe: "עדיין לא בטוח" },
     ],
   },
 
@@ -451,7 +451,7 @@ export const WHATSAPP_TEMPLATE_PRESETS: WhatsAppTemplatePreset[] = [
 📍 המקום: {{3}}, {{4}}
 📅 מתי: {{5}} בשעה {{6}}
 
-לאישור הגעה:
+🗺 ניווט למקום:
 {{7}}
 
 מצפים לראותך! ✨`,
@@ -462,7 +462,7 @@ export const WHATSAPP_TEMPLATE_PRESETS: WhatsAppTemplatePreset[] = [
 📍 המקום: {{3}}, {{4}}
 📅 מתי: {{5}} בשעה {{6}}
 
-לאישור הגעה:
+🗺 ניווט למקום:
 {{7}}
 
 מצפים לראותך! ✨`,
@@ -638,6 +638,348 @@ export const WHATSAPP_TEMPLATE_PRESETS: WhatsAppTemplatePreset[] = [
 {{7}}
 
 תודה! 🙏`,
+  },
+  {
+    type: "GUEST_COUNT_LIST",
+    style: "style2",
+    contentType: "twilio/list-picker",
+    category: "MARKETING",
+    templateBodyHe: `היי {{1}}! 👥
+
+כמה אתם מגיעים ל{{2}}?
+
+תבחרו מהרשימה 😊
+
+🗺 ניווט:
+{{7}}`,
+    previewTextHe: `היי {{1}}! 👥
+
+כמה אתם מגיעים ל{{2}}?
+
+תבחרו מהרשימה 😊
+
+🗺 ניווט:
+{{7}}`,
+  },
+  {
+    type: "GUEST_COUNT_LIST",
+    style: "style3",
+    contentType: "twilio/list-picker",
+    category: "MARKETING",
+    templateBodyHe: `{{1}}, כמה מגיעים ל{{2}}?
+
+בחרו למטה 👇`,
+    previewTextHe: `{{1}}, כמה מגיעים ל{{2}}?
+
+בחרו למטה 👇`,
+  },
+
+  // ========================================
+  // TRANSPORTATION_INVITE Templates
+  // ========================================
+  {
+    type: "TRANSPORTATION_INVITE",
+    style: "style1",
+    contentType: "twilio/text",
+    category: "MARKETING",
+    templateBodyHe: `שלום {{1}} 🎉
+
+מוזמנים לחגוג איתנו את {{2}}!
+
+📍 היכן? {{3}}, {{4}}
+📅 מתי? {{5}} בשעה {{6}}
+
+לאישור הגעה:
+{{11}}
+
+🚌 יש הסעות! להרשמה:
+{{9}}
+
+🗺 ניווט למקום:
+{{7}}
+
+מצפים לראותכם! 💫`,
+    previewTextHe: `שלום {{1}} 🎉
+
+מוזמנים לחגוג איתנו את {{2}}!
+
+📍 היכן? {{3}}, {{4}}
+📅 מתי? {{5}} בשעה {{6}}
+
+לאישור הגעה:
+{{11}}
+
+🚌 יש הסעות! להרשמה:
+{{9}}
+
+🗺 ניווט למקום:
+{{7}}
+
+מצפים לראותכם! 💫`,
+  },
+  {
+    type: "TRANSPORTATION_INVITE",
+    style: "style2",
+    contentType: "twilio/text",
+    category: "MARKETING",
+    templateBodyHe: `היי {{1}}! 💍
+
+מוזמנים ל{{2}}!
+
+📅 {{5}} בשעה {{6}}
+📍 {{3}}, {{4}}
+
+לאישור הגעה:
+{{11}}
+
+🚌 הסעות נוחות:
+{{9}}
+
+🗺 ניווט:
+{{7}}`,
+    previewTextHe: `היי {{1}}! 💍
+
+מוזמנים ל{{2}}!
+
+📅 {{5}} בשעה {{6}}
+📍 {{3}}, {{4}}
+
+לאישור הגעה:
+{{11}}
+
+🚌 הסעות נוחות:
+{{9}}
+
+🗺 ניווט:
+{{7}}`,
+  },
+  {
+    type: "TRANSPORTATION_INVITE",
+    style: "style3",
+    contentType: "twilio/text",
+    category: "MARKETING",
+    templateBodyHe: `{{1}}, מוזמנים ל{{2}}!
+
+RSVP: {{11}}
+🚌 הסעות: {{9}}
+🗺 ניווט: {{7}}`,
+    previewTextHe: `{{1}}, מוזמנים ל{{2}}!
+
+RSVP: {{11}}
+🚌 הסעות: {{9}}
+🗺 ניווט: {{7}}`,
+  },
+
+  // ========================================
+  // IMAGE_INVITE style2 and style3
+  // ========================================
+  {
+    type: "IMAGE_INVITE",
+    style: "style2",
+    contentType: "twilio/media",
+    category: "MARKETING",
+    templateBodyHe: `שלום {{1}}! 💌
+
+הזמנה ל{{2}}
+
+📅 {{5}} | {{6}}
+📍 {{3}}, {{4}}
+
+🗺 ניווט:
+{{7}}`,
+    previewTextHe: `שלום {{1}}! 💌
+
+הזמנה ל{{2}}
+
+📅 {{5}} | {{6}}
+📍 {{3}}, {{4}}
+
+🗺 ניווט:
+{{7}}`,
+    mediaType: "IMAGE",
+    includeMedia: true,
+  },
+  {
+    type: "IMAGE_INVITE",
+    style: "style3",
+    contentType: "twilio/media",
+    category: "MARKETING",
+    templateBodyHe: `{{1}}, מוזמנים ל{{2}}!
+
+🗺 {{7}}`,
+    previewTextHe: `{{1}}, מוזמנים ל{{2}}!
+
+🗺 {{7}}`,
+    mediaType: "IMAGE",
+    includeMedia: true,
+  },
+
+  // ========================================
+  // CONFIRMATION style2 and style3
+  // ========================================
+  {
+    type: "CONFIRMATION",
+    style: "style2",
+    contentType: "twilio/text",
+    category: "MARKETING",
+    templateBodyHe: `יש! קיבלנו {{1}} 🎉
+
+תודה שאישרת הגעה ל{{2}}
+
+📅 {{5}} | {{6}}
+📍 {{3}}, {{4}}
+
+🗺 ניווט:
+{{7}}
+
+נתראה! ✨`,
+    previewTextHe: `יש! קיבלנו {{1}} 🎉
+
+תודה שאישרת הגעה ל{{2}}
+
+📅 {{5}} | {{6}}
+📍 {{3}}, {{4}}
+
+🗺 ניווט:
+{{7}}
+
+נתראה! ✨`,
+  },
+  {
+    type: "CONFIRMATION",
+    style: "style3",
+    contentType: "twilio/text",
+    category: "MARKETING",
+    templateBodyHe: `{{1}}, תודה! קיבלנו את האישור ל{{2}} ✅
+
+🗺 ניווט: {{7}}`,
+    previewTextHe: `{{1}}, תודה! קיבלנו את האישור ל{{2}} ✅
+
+🗺 ניווט: {{7}}`,
+  },
+
+  // ========================================
+  // EVENT_DAY style2 and style3
+  // ========================================
+  {
+    type: "EVENT_DAY",
+    style: "style2",
+    contentType: "twilio/text",
+    category: "MARKETING",
+    templateBodyHe: `{{1}}, היום! 🎊
+
+{{2}} מתחיל!
+
+🪑 שולחן {{8}}
+📍 {{3}}, {{4}}
+🕐 {{6}}
+
+🗺 ניווט:
+{{7}}
+
+נתראה! 💃`,
+    previewTextHe: `{{1}}, היום! 🎊
+
+{{2}} מתחיל!
+
+🪑 שולחן {{8}}
+📍 {{3}}, {{4}}
+🕐 {{6}}
+
+🗺 ניווט:
+{{7}}
+
+נתראה! 💃`,
+  },
+  {
+    type: "EVENT_DAY",
+    style: "style3",
+    contentType: "twilio/text",
+    category: "MARKETING",
+    templateBodyHe: `{{1}}, {{2}} היום! 🪑{{8}} 📍{{4}} 🗺{{7}}`,
+    previewTextHe: `{{1}}, {{2}} היום! 🪑{{8}} 📍{{4}} 🗺{{7}}`,
+  },
+
+  // ========================================
+  // THANK_YOU style2 and style3
+  // ========================================
+  {
+    type: "THANK_YOU",
+    style: "style2",
+    contentType: "twilio/text",
+    category: "MARKETING",
+    templateBodyHe: `{{1}}, תודה ענקית! 💙
+
+היה נהדר לחגוג את {{2}} איתכם!
+
+🗺 פידבק:
+{{7}}
+
+אהבה רבה! 🎊`,
+    previewTextHe: `{{1}}, תודה ענקית! 💙
+
+היה נהדר לחגוג את {{2}} איתכם!
+
+🗺 פידבק:
+{{7}}
+
+אהבה רבה! 🎊`,
+  },
+  {
+    type: "THANK_YOU",
+    style: "style3",
+    contentType: "twilio/text",
+    category: "MARKETING",
+    templateBodyHe: `{{1}}, תודה שהייתם ב{{2}}! 💕
+
+פידבק: {{7}}`,
+    previewTextHe: `{{1}}, תודה שהייתם ב{{2}}! 💕
+
+פידבק: {{7}}`,
+  },
+
+  // ========================================
+  // TABLE_ASSIGNMENT style2 and style3
+  // ========================================
+  {
+    type: "TABLE_ASSIGNMENT",
+    style: "style2",
+    contentType: "twilio/text",
+    category: "MARKETING",
+    templateBodyHe: `{{1}}! 🪑
+
+שולחן {{8}} ב{{2}}
+
+📍 {{3}}, {{4}}
+🕐 {{6}}
+
+🗺 ניווט:
+{{7}}
+
+נתראה! 🎉`,
+    previewTextHe: `{{1}}! 🪑
+
+שולחן {{8}} ב{{2}}
+
+📍 {{3}}, {{4}}
+🕐 {{6}}
+
+🗺 ניווט:
+{{7}}
+
+נתראה! 🎉`,
+  },
+  {
+    type: "TABLE_ASSIGNMENT",
+    style: "style3",
+    contentType: "twilio/text",
+    category: "MARKETING",
+    templateBodyHe: `{{1}}, שולחן {{8}} ב{{2}} 🪑
+
+🗺 {{7}}`,
+    previewTextHe: `{{1}}, שולחן {{8}} ב{{2}} 🪑
+
+🗺 {{7}}`,
   },
 ];
 

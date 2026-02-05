@@ -295,6 +295,7 @@ export function getDefaultVariables(
 
 /**
  * Get default buttons for interactive templates
+ * NOTE: NO EMOJIS IN BUTTONS - They cause WhatsApp rejection!
  */
 export function getDefaultButtons(
   templateType: WhatsAppTemplateType
@@ -307,18 +308,18 @@ export function getDefaultButtons(
     return [
       {
         id: "yes",
-        titleHe: "כן, מגיע",
-        titleEn: "Yes, Coming",
+        titleHe: "כן, אני אגיע",
+        titleEn: "Yes, I'll come",
       },
       {
         id: "no",
-        titleHe: "לא מגיע",
-        titleEn: "Not Coming",
+        titleHe: "לא אגיע",
+        titleEn: "Can't make it",
       },
       {
         id: "maybe",
-        titleHe: "אולי",
-        titleEn: "Maybe",
+        titleHe: "עדיין לא בטוח",
+        titleEn: "Not sure yet",
       },
     ];
   }

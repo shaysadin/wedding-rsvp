@@ -126,12 +126,19 @@ export type TwilioContentBody =
   | TwilioCallToActionContent;
 
 /**
+ * Content Variables with examples (for WhatsApp approval)
+ * Example: { "1": "דני ושרה", "2": "חתונת יוסי ומרים" }
+ */
+export type TwilioContentVariables = Record<string, string>;
+
+/**
  * Create Content Request
  */
 export interface CreateTwilioContentRequest {
   friendly_name: string; // Unique identifier for this template
   language: string; // Language code (e.g., "he", "en")
-  variables?: TwilioVariables; // Variable definitions
+  variables?: TwilioVariables; // Variable definitions (descriptions)
+  content_variables?: TwilioContentVariables; // Example values for WhatsApp approval
   types: {
     [K in TwilioContentType]?: TwilioContentBody;
   };

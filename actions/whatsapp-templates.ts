@@ -573,6 +573,7 @@ export async function createWhatsAppTemplateContent(data: {
   headerText?: string;
   footerText?: string;
   mediaType?: string;
+  replaceExisting?: boolean;
 }) {
   try {
     const user = await getCurrentUser();
@@ -591,16 +592,18 @@ export async function createWhatsAppTemplateContent(data: {
       },
     });
 
-    // If an active template exists, reject
-    if (existing && existing.isActive) {
+    // If an active template exists and replaceExisting is not true, ask for confirmation
+    if (existing && existing.isActive && !data.replaceExisting) {
       return {
         success: false,
-        error: `Template already exists for ${data.type} - ${data.style}`,
-      };
+        error: "TEMPLATE_EXISTS",
+        message: `Template already exists for ${data.type} - ${data.style}`,
+        existingTemplateId: existing.id,
+      } as any;
     }
 
-    // If an inactive template exists, delete it first to avoid unique constraint conflict
-    if (existing && !existing.isActive) {
+    // If replaceExisting is true or an inactive template exists, delete it first
+    if (existing && (data.replaceExisting || !existing.isActive)) {
       await prisma.whatsAppTemplate.delete({
         where: { id: existing.id },
       });
@@ -842,6 +845,12 @@ export async function submitTemplateToTwilio(templateId: string) {
       };
     }
 
+    // Import example values helper
+    const { getExampleVariables } = await import("@/lib/notifications/whatsapp-template-renderer");
+
+    // Get example values for WhatsApp approval
+    const exampleVariables = getExampleVariables();
+
     // Build Hebrew template request
     const hebrewRequest: any = {
       friendly_name:
@@ -849,6 +858,7 @@ export async function submitTemplateToTwilio(templateId: string) {
         `wedinex_${template.type.toLowerCase()}_${template.style}_he`,
       language: template.language || "he",
       variables: (template.variables as any) || undefined,
+      content_variables: exampleVariables, // Example values for WhatsApp approval
       types,
     };
 

@@ -13,6 +13,16 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -114,6 +124,10 @@ export function TemplateCreationDialogV3({
   const [currentStep, setCurrentStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
   const [submissionStatus, setSubmissionStatus] = useState<"idle" | "submitting" | "pending" | "approved" | "rejected">("idle");
+
+  // Replace confirmation state
+  const [showReplaceConfirm, setShowReplaceConfirm] = useState(false);
+  const [pendingTemplateData, setPendingTemplateData] = useState<any>(null);
 
   // Step 1: Basic Settings
   const [templateSelection, setTemplateSelection] = useState<string>("INVITE-style1");
@@ -347,10 +361,43 @@ export function TemplateCreationDialogV3({
       });
 
       if (!result.success) {
+        // Check if template already exists - show confirmation dialog
+        if (result.error === "TEMPLATE_EXISTS") {
+          console.log("[Template Creation] Template exists, showing confirmation dialog");
+          setPendingTemplateData({
+            type,
+            style,
+            nameHe: displayNameHe,
+            nameEn: displayNameEn,
+            twilioTemplateName,
+            templateBodyHe,
+            templateBodyEn: templateBodyHe,
+            variables: getDefaultVariables(),
+            buttonsConfig: isInteractive ? buttons.map(b => ({
+              ...b,
+              titleEn: b.titleHe,
+            })) : undefined,
+            previewText: previewTextHe || templateBodyHe.substring(0, 100),
+            previewTextHe: previewTextHe || templateBodyHe.substring(0, 100),
+            contentType,
+            category,
+            language,
+            headerText: headerText || undefined,
+            footerText: footerText || undefined,
+            mediaType: hasMedia ? mediaType : undefined,
+          });
+          setShowReplaceConfirm(true);
+          setSubmissionStatus("idle");
+          setIsLoading(false);
+          submissionLockRef.current = false;
+          return;
+        }
+
         console.error("[Template Creation] Error:", result.error);
-        toast.error(result.error || "שגיאה ביצירת התבנית");
+        toast.error((result as any).message || result.error || "שגיאה ביצירת התבנית");
         setSubmissionStatus("idle");
         setIsLoading(false);
+        submissionLockRef.current = false;
         return;
       }
 
@@ -389,6 +436,70 @@ export function TemplateCreationDialogV3({
     }
   };
 
+  const handleConfirmReplace = async () => {
+    if (!pendingTemplateData) return;
+
+    setShowReplaceConfirm(false);
+    setIsLoading(true);
+    setSubmissionStatus("submitting");
+    submissionLockRef.current = true;
+
+    try {
+      // Create template with replaceExisting: true
+      const result = await createWhatsAppTemplateContent({
+        ...pendingTemplateData,
+        replaceExisting: true,
+      });
+
+      if (!result.success) {
+        console.error("[Template Creation] Error:", result.error);
+        toast.error((result as any).message || result.error || "שגיאה ביצירת התבנית");
+        setSubmissionStatus("idle");
+        setIsLoading(false);
+        submissionLockRef.current = false;
+        return;
+      }
+
+      // Step 2: Submit to Twilio for WhatsApp approval
+      toast.info("שולח לאישור WhatsApp...");
+      setSubmissionStatus("pending");
+
+      const approvalResult = await submitTemplateToTwilio(result.template!.id);
+
+      if (approvalResult.success) {
+        setSubmissionStatus("pending");
+        toast.success("התבנית נוצרה ונשלחה לאישור. הסטטוס יתעדכן בקרוב.");
+        setTimeout(() => {
+          onOpenChange(false);
+          resetForm();
+          onSuccess?.();
+        }, 2000);
+      } else {
+        toast.warning("התבנית נוצרה אך לא נשלחה לאישור. תוכל לשלוח מאוחר יותר.");
+        setSubmissionStatus("idle");
+        setTimeout(() => {
+          onOpenChange(false);
+          resetForm();
+          onSuccess?.();
+        }, 1500);
+      }
+    } catch (error) {
+      toast.error("שגיאה ביצירת התבנית");
+      setSubmissionStatus("idle");
+    } finally {
+      setIsLoading(false);
+      setPendingTemplateData(null);
+      setTimeout(() => {
+        submissionLockRef.current = false;
+      }, 100);
+    }
+  };
+
+  const handleCancelReplace = () => {
+    setShowReplaceConfirm(false);
+    setPendingTemplateData(null);
+  };
+
   const getDefaultVariables = () => {
     const vars: Record<string, string> = {
       "1": "שם האורח/ת",
@@ -397,7 +508,7 @@ export function TemplateCreationDialogV3({
       "4": "כתובת מלאה",
       "5": "תאריך",
       "6": "שעה",
-      "7": "קישור RSVP",
+      "7": "קישור ניווט (Waze)",
       "8": "מספר שולחן",
       "9": "קישור הסעות",
     };
@@ -405,6 +516,11 @@ export function TemplateCreationDialogV3({
     // Add {{10}} for media URL in ALL media templates (IMAGE_INVITE, interactive with media header, etc.)
     if (hasMedia || type === "IMAGE_INVITE") {
       vars["10"] = "demo/image/upload/sample.jpg";
+    }
+
+    // Add {{11}} for RSVP link (only for INVITE/REMINDER templates)
+    if (type === "INVITE" || type === "REMINDER") {
+      vars["11"] = "קישור RSVP";
     }
 
     return vars;
@@ -751,7 +867,7 @@ export function TemplateCreationDialogV3({
                   dir="rtl"
                 />
                 <p className="text-xs text-muted-foreground">
-                  משתנים זמינים: {`{{1}}`} שם אורח, {`{{2}}`} שם אירוע, {`{{3}}`} שם מקום, {`{{4}}`} כתובת, {`{{5}}`} תאריך, {`{{6}}`} שעה, {`{{7}}`} קישור, {`{{8}}`} מספר שולחן, {`{{9}}`} הסעות, {`{{10}}`} תמונה
+                  משתנים זמינים: {`{{1}}`} שם אורח, {`{{2}}`} שם אירוע, {`{{3}}`} שם מקום, {`{{4}}`} כתובת, {`{{5}}`} תאריך, {`{{6}}`} שעה, {`{{7}}`} ניווט (Waze), {`{{8}}`} מספר שולחן, {`{{9}}`} הסעות, {`{{10}}`} תמונה, {`{{11}}`} RSVP
                 </p>
               </div>
 
@@ -846,6 +962,27 @@ export function TemplateCreationDialogV3({
           )}
         </DialogFooter>
       </DialogContent>
+
+      {/* Replace Confirmation Dialog */}
+      <AlertDialog open={showReplaceConfirm} onOpenChange={setShowReplaceConfirm}>
+        <AlertDialogContent dir="rtl">
+          <AlertDialogHeader>
+            <AlertDialogTitle>התבנית כבר קיימת</AlertDialogTitle>
+            <AlertDialogDescription>
+              תבנית עבור {TEMPLATE_SELECTION_OPTIONS.find(opt => opt.value === templateSelection)?.label} כבר קיימת במערכת.
+              האם ברצונך להחליף את התבנית הקיימת?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={handleCancelReplace}>
+              ביטול
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmReplace}>
+              כן, החלף
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Dialog>
   );
 }

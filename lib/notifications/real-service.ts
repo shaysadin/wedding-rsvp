@@ -228,9 +228,9 @@ export class TwilioNotificationService implements NotificationService {
       const needsMedia = template?.type === "IMAGE_INVITE" ||
                          (template?.type?.includes("INTERACTIVE") && template?.mediaType);
 
-      // Use Content Template for WhatsApp Business API with new 10-variable system
+      // Use Content Template for WhatsApp Business API with new 11-variable system
       const templateVars = buildWhatsAppTemplateVariables(guest, event, {
-        customRsvpLink: this.getRsvpLink(guest.slug),
+        includeRsvpLink: true, // Include RSVP link in {{11}} for INVITE templates
         includeTransportationLink: true, // Always include transportation link ({{9}})
         mediaUrl: needsMedia ? event.invitationImageUrl || undefined : undefined, // Include invitation image URL for media templates
       });
@@ -279,12 +279,12 @@ export class TwilioNotificationService implements NotificationService {
       const needsMedia = template?.type === "IMAGE_INVITE" ||
                          (template?.type?.includes("INTERACTIVE") && template?.mediaType);
 
-      // Use Content Template for WhatsApp Business API with new 10-variable system
+      // Use Content Template for WhatsApp Business API with new 11-variable system
       // If custom contentVariables are provided (e.g., with custom table number), use them
       // Otherwise build standard REMINDER variables
       const templateVars = options?.contentVariables || convertToTwilioVariables(
         buildWhatsAppTemplateVariables(guest, event, {
-          customRsvpLink: this.getRsvpLink(guest.slug),
+          includeRsvpLink: true, // Include RSVP link in {{11}} for REMINDER templates
           includeTransportationLink: true, // Always include transportation link ({{9}})
           mediaUrl: needsMedia ? event.invitationImageUrl || undefined : undefined, // Include invitation image URL for media templates
         })
@@ -440,9 +440,9 @@ export class TwilioNotificationService implements NotificationService {
 
     const needsMedia = includeImage || template?.mediaType;
 
-    // Build content variables for template using new 10-variable system
+    // Build content variables for template using new 11-variable system
+    // Interactive templates use {{7}} for navigation (always included) and buttons for RSVP
     const templateVars = buildWhatsAppTemplateVariables(guest, event, {
-      customRsvpLink: getNavigationLink(event), // Use navigation for interactive templates
       includeTransportationLink: true, // Always include transportation link ({{9}})
       mediaUrl: needsMedia ? event.invitationImageUrl || undefined : undefined, // Include invitation image URL if requested
     });
@@ -555,9 +555,9 @@ export class TwilioNotificationService implements NotificationService {
 
     const needsMedia = includeImage || template?.mediaType;
 
-    // Build content variables for template using new 10-variable system
+    // Build content variables for template using new 11-variable system
+    // Interactive templates use {{7}} for navigation (always included) and buttons for RSVP
     const templateVars = buildWhatsAppTemplateVariables(guest, event, {
-      customRsvpLink: getNavigationLink(event), // Use navigation for interactive templates
       includeTransportationLink: true, // Always include transportation link ({{9}})
       mediaUrl: needsMedia ? event.invitationImageUrl || undefined : undefined, // Include invitation image URL if requested
     });

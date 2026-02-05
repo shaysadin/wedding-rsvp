@@ -12,8 +12,12 @@ interface VariableHelperProps {
 }
 
 /**
- * New 10-variable structure for WhatsApp templates
+ * 11-variable structure for WhatsApp templates
  * Each detail has its own variable for maximum flexibility
+ *
+ * IMPORTANT:
+ * - {{7}} = Navigation URL (Waze/Google Maps) - USED IN ALL TEMPLATES
+ * - {{11}} = RSVP Link (guest RSVP page) - ONLY for INVITE/REMINDER
  */
 const ALL_VARIABLES = [
   { variable: "{{1}}", name: "Guest Name", description: "שם האורח/ת", example: "דני, משפחת כהן", priority: "high" },
@@ -22,10 +26,11 @@ const ALL_VARIABLES = [
   { variable: "{{4}}", name: "Venue Address", description: "כתובת מלאה", example: "רחוב החשמל 5, טבריה", priority: "medium" },
   { variable: "{{5}}", name: "Event Date", description: "תאריך", example: "יום שישי, 15 במרץ 2026", priority: "medium" },
   { variable: "{{6}}", name: "Event Time", description: "שעה", example: "20:00, שבע בערב", priority: "medium" },
-  { variable: "{{7}}", name: "RSVP Link", description: "קישור אישור הגעה", example: "https://wedinex.co/r/abc", priority: "high" },
+  { variable: "{{7}}", name: "Navigation URL", description: "קישור ניווט (Waze)", example: "https://wedinex.co/n/abc", priority: "high" },
   { variable: "{{8}}", name: "Table Number", description: "מספר שולחן", example: "12, VIP-3", priority: "low" },
   { variable: "{{9}}", name: "Transportation Link", description: "קישור רישום להסעות", example: "https://wedinex.co/t/abc", priority: "medium" },
   { variable: "{{10}}", name: "Media URL", description: "נתיב תמונה/מדיה", example: "invitations/sample.jpg", priority: "medium" },
+  { variable: "{{11}}", name: "RSVP Link", description: "קישור אישור הגעה", example: "https://wedinex.co/rsvp/abc", priority: "high" },
 ];
 
 // Define which variables are typically used for each template type and style
@@ -36,40 +41,40 @@ const VARIABLE_USAGE: Record<WhatsAppTemplateType, {
   description: string;
 }> = {
   INVITE: {
-    style1: ["{{1}}", "{{2}}", "{{7}}"],
-    style2: ["{{1}}", "{{2}}", "{{3}}", "{{4}}", "{{5}}", "{{6}}", "{{7}}"],
-    style3: ["{{1}}", "{{2}}", "{{3}}", "{{4}}", "{{5}}", "{{6}}", "{{7}}", "{{9}}"],
-    description: "{{7}} = RSVP Link | Style 3: {{7}} = RSVP + {{9}} = Transportation"
+    style1: ["{{1}}", "{{2}}", "{{11}}"],
+    style2: ["{{1}}", "{{2}}", "{{3}}", "{{4}}", "{{5}}", "{{6}}", "{{11}}"],
+    style3: ["{{1}}", "{{2}}", "{{3}}", "{{4}}", "{{5}}", "{{6}}", "{{7}}", "{{9}}", "{{11}}"],
+    description: "{{11}} = RSVP Link | Style 3: {{11}} = RSVP + {{9}} = Transportation + {{7}} = Navigation"
   },
   REMINDER: {
-    style1: ["{{1}}", "{{2}}", "{{7}}"],
-    style2: ["{{1}}", "{{2}}", "{{3}}", "{{4}}", "{{5}}", "{{6}}", "{{7}}"],
-    style3: ["{{1}}", "{{2}}", "{{3}}", "{{4}}", "{{5}}", "{{6}}", "{{7}}", "{{9}}"],
-    description: "{{7}} = RSVP Link | Style 3: {{7}} = RSVP + {{9}} = Transportation"
+    style1: ["{{1}}", "{{2}}", "{{11}}"],
+    style2: ["{{1}}", "{{2}}", "{{3}}", "{{4}}", "{{5}}", "{{6}}", "{{11}}"],
+    style3: ["{{1}}", "{{2}}", "{{3}}", "{{4}}", "{{5}}", "{{6}}", "{{7}}", "{{9}}", "{{11}}"],
+    description: "{{11}} = RSVP Link | Style 3: {{11}} = RSVP + {{9}} = Transportation + {{7}} = Navigation"
   },
   INTERACTIVE_INVITE: {
     style1: ["{{1}}", "{{2}}", "{{7}}"],
     style2: ["{{1}}", "{{2}}", "{{3}}", "{{4}}", "{{5}}", "{{6}}", "{{7}}"],
     style3: ["{{1}}", "{{2}}", "{{3}}", "{{4}}", "{{5}}", "{{6}}", "{{7}}", "{{9}}"],
-    description: "{{7}} = RSVP Link | Style 3: {{7}} = RSVP + {{9}} = Transportation"
+    description: "{{7}} = Navigation | Buttons handle RSVP | Style 3: +{{9}} = Transportation"
   },
   INTERACTIVE_REMINDER: {
     style1: ["{{1}}", "{{2}}", "{{7}}"],
     style2: ["{{1}}", "{{2}}", "{{3}}", "{{4}}", "{{5}}", "{{6}}", "{{7}}"],
     style3: ["{{1}}", "{{2}}", "{{3}}", "{{4}}", "{{5}}", "{{6}}", "{{7}}", "{{9}}"],
-    description: "{{7}} = RSVP Link | Style 3: {{7}} = RSVP + {{9}} = Transportation"
+    description: "{{7}} = Navigation | Buttons handle RSVP | Style 3: +{{9}} = Transportation"
   },
   IMAGE_INVITE: {
     style1: ["{{1}}", "{{2}}", "{{7}}"],
     style2: ["{{1}}", "{{2}}", "{{7}}"],
     style3: ["{{1}}", "{{2}}", "{{7}}"],
-    description: "{{7}} = RSVP Link"
+    description: "{{7}} = Navigation | Buttons handle RSVP"
   },
   CONFIRMATION: {
     style1: ["{{1}}", "{{2}}", "{{7}}"],
-    style2: ["{{1}}", "{{2}}", "{{7}}"],
-    style3: ["{{1}}", "{{2}}", "{{7}}"],
-    description: "{{7}} = Event Details Link"
+    style2: ["{{1}}", "{{2}}", "{{3}}", "{{4}}", "{{5}}", "{{6}}", "{{7}}"],
+    style3: ["{{1}}", "{{2}}", "{{3}}", "{{4}}", "{{5}}", "{{6}}", "{{7}}"],
+    description: "{{7}} = Navigation Link (Waze to venue)"
   },
   EVENT_DAY: {
     style1: ["{{1}}", "{{2}}", "{{3}}", "{{4}}", "{{6}}", "{{7}}", "{{8}}"],
@@ -81,7 +86,7 @@ const VARIABLE_USAGE: Record<WhatsAppTemplateType, {
     style1: ["{{1}}", "{{2}}", "{{7}}"],
     style2: ["{{1}}", "{{2}}", "{{7}}"],
     style3: ["{{1}}", "{{2}}", "{{7}}"],
-    description: "{{7}} = Feedback Link"
+    description: "{{7}} = Feedback/Photo Link"
   },
   TABLE_ASSIGNMENT: {
     style1: ["{{1}}", "{{2}}", "{{3}}", "{{4}}", "{{6}}", "{{7}}", "{{8}}"],
@@ -95,12 +100,12 @@ const VARIABLE_USAGE: Record<WhatsAppTemplateType, {
     style3: ["{{1}}", "{{2}}", "{{7}}"],
     description: "{{7}} = Guest Count Selection Link"
   },
-  // Legacy - deprecated
+  // Legacy - deprecated (Style 3 transportation-focused)
   TRANSPORTATION_INVITE: {
-    style1: ["{{1}}", "{{2}}", "{{7}}"],
-    style2: ["{{1}}", "{{2}}", "{{3}}", "{{4}}", "{{5}}", "{{6}}", "{{7}}"],
-    style3: ["{{1}}", "{{2}}", "{{3}}", "{{4}}", "{{5}}", "{{6}}", "{{7}}"],
-    description: "{{7}} = Transportation Link"
+    style1: ["{{1}}", "{{2}}", "{{11}}"],
+    style2: ["{{1}}", "{{2}}", "{{3}}", "{{4}}", "{{5}}", "{{6}}", "{{11}}"],
+    style3: ["{{1}}", "{{2}}", "{{3}}", "{{4}}", "{{5}}", "{{6}}", "{{7}}", "{{9}}", "{{11}}"],
+    description: "{{11}} = RSVP | {{9}} = Transportation | {{7}} = Navigation"
   },
 };
 
@@ -126,10 +131,10 @@ export function VariableHelper({ templateType, style = "style1" }: VariableHelpe
         <div className="space-y-3 flex-1">
           <div>
             <h4 className="text-sm font-semibold text-blue-900 dark:text-blue-100">
-              Available Variables - 10 Variable System
+              Available Variables - 11 Variable System
             </h4>
             <p className="text-xs text-blue-700 dark:text-blue-300 mt-1">
-              Each piece of information has its own variable. Variable 7 is ALWAYS RSVP Link. Variable 9 is Transportation Link (Style 3). Variable 10 is Media URL (for templates with images).
+              Each piece of information has its own variable. <strong>Variable 7 is ALWAYS Navigation URL</strong> (Waze/Google Maps). <strong>Variable 11 is RSVP Link</strong> (only for INVITE/REMINDER). Variable 9 is Transportation Link (Style 3). Variable 10 is Media URL (templates with images).
             </p>
           </div>
 

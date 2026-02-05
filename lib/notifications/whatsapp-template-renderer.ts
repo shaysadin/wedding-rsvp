@@ -1,17 +1,23 @@
 /**
- * WhatsApp Template Renderer - 10 Variable System
+ * WhatsApp Template Renderer - 11 Variable System
  *
- * Handles rendering of WhatsApp templates with the new 10-variable structure:
+ * Handles rendering of WhatsApp templates with the 11-variable structure:
  * {{1}} = Guest Name
  * {{2}} = Event Title
  * {{3}} = Venue Name (ALWAYS venue name, not media URL)
  * {{4}} = Venue Address
  * {{5}} = Event Date
  * {{6}} = Event Time
- * {{7}} = RSVP Link (or Navigation Link for interactive templates)
+ * {{7}} = Navigation URL (Waze link to venue) - USED IN ALL TEMPLATES
  * {{8}} = Table Number
  * {{9}} = Transportation Link (used in Style 3 transportation-focused templates)
  * {{10}} = Media URL (for media templates: IMAGE_INVITE, interactive with media header)
+ * {{11}} = RSVP Link (for guest to confirm attendance) - ONLY USED IN INVITE/REMINDER
+ *
+ * IMPORTANT:
+ * - {{7}} is ALWAYS Navigation URL (short link to Waze/Google Maps)
+ * - {{11}} is RSVP Link (only for INVITE/REMINDER where guests need to click to RSVP page)
+ * - Interactive templates use {{7}} for navigation and buttons for RSVP (no {{11}} needed)
  */
 
 import { Guest, WeddingEvent } from "@prisma/client";
@@ -30,26 +36,28 @@ export interface WhatsAppTemplateVariables {
   eventDate?: string;
   /** {{6}} - Event Time */
   eventTime?: string;
-  /** {{7}} - RSVP Link (or Navigation Link for interactive templates) */
-  rsvpLink?: string;
+  /** {{7}} - Navigation URL (Waze/Google Maps link - used in ALL templates) */
+  navigationLink?: string;
   /** {{8}} - Table Number */
   tableNumber?: string;
   /** {{9}} - Transportation Link (unique per guest via transportationSlug) */
   transportationLink?: string;
   /** {{10}} - Media URL (for media templates only) */
   mediaUrl?: string;
+  /** {{11}} - RSVP Link (for guest RSVP page - only INVITE/REMINDER) */
+  rsvpLink?: string;
 }
 
 /**
  * Build WhatsApp template variables from guest and event data
- * Provides all 10 variables for maximum flexibility
+ * Provides all 11 variables for maximum flexibility
  */
 export function buildWhatsAppTemplateVariables(
   guest: Guest,
   event: WeddingEvent,
   options?: {
-    /** Custom RSVP link for {{7}} (if not provided, uses default RSVP link) */
-    customRsvpLink?: string;
+    /** Include RSVP link in {{11}} (for INVITE/REMINDER templates only) */
+    includeRsvpLink?: boolean;
     /** Transportation link for {{9}} (for Style 3 templates) */
     includeTransportationLink?: boolean;
     /** Table number for {{8}} */
@@ -77,8 +85,13 @@ export function buildWhatsAppTemplateVariables(
     hour12: false,
   });
 
-  // RSVP link ({{7}})
-  const rsvpLink = options?.customRsvpLink || `${env.NEXT_PUBLIC_APP_URL}/rsvp/${guest.slug}`;
+  // {{7}} - Navigation URL (ALWAYS - for ALL templates)
+  const navigationLink = getNavigationLink(event);
+
+  // {{11}} - RSVP Link (ONLY for INVITE/REMINDER templates)
+  const rsvpLink = options?.includeRsvpLink
+    ? `${env.NEXT_PUBLIC_APP_URL}/rsvp/${guest.slug}`
+    : undefined;
 
   // Transportation link ({{9}}) - only if requested
   // Uses guest's unique transportationSlug, not event ID
@@ -109,10 +122,11 @@ export function buildWhatsAppTemplateVariables(
     venueAddress,
     eventDate,
     eventTime,
-    rsvpLink,
+    navigationLink,
     tableNumber: options?.tableNumber,
     transportationLink,
     mediaUrl,
+    rsvpLink,
   };
 }
 
@@ -141,8 +155,8 @@ export function convertToTwilioVariables(
   if (variables.eventTime) {
     twilioVars["6"] = variables.eventTime;
   }
-  if (variables.rsvpLink) {
-    twilioVars["7"] = variables.rsvpLink;
+  if (variables.navigationLink) {
+    twilioVars["7"] = variables.navigationLink;
   }
   if (variables.tableNumber) {
     twilioVars["8"] = variables.tableNumber;
@@ -152,6 +166,9 @@ export function convertToTwilioVariables(
   }
   if (variables.mediaUrl) {
     twilioVars["10"] = variables.mediaUrl;
+  }
+  if (variables.rsvpLink) {
+    twilioVars["11"] = variables.rsvpLink;
   }
 
   return twilioVars;
@@ -279,9 +296,10 @@ export function previewTemplate(
     venueAddress: "רחוב החשמל 5, טבריה",
     eventDate: "יום שישי, 15 במרץ 2026",
     eventTime: "20:00",
-    rsvpLink: "https://wedinex.co/r/sample",
+    navigationLink: "https://wedinex.co/n/sample",
     tableNumber: "12",
     transportationLink: "https://wedinex.co/t/sample",
+    rsvpLink: "https://wedinex.co/rsvp/sample",
   };
 
   const sample = { ...defaultSample, ...sampleData };
@@ -302,6 +320,39 @@ export async function shortenUrl(url: string): Promise<string> {
   // TODO: Implement with your preferred URL shortener (Bitly, TinyURL, etc.)
   // For now, return the original URL
   return url;
+}
+
+/**
+ * Get example values for WhatsApp template approval
+ * These are used by WhatsApp reviewers to preview the template
+ *
+ * Returns example values for all 11 variables:
+ * {{1}} - Guest Name
+ * {{2}} - Event Title
+ * {{3}} - Venue Name
+ * {{4}} - Venue Address
+ * {{5}} - Event Date
+ * {{6}} - Event Time
+ * {{7}} - Navigation URL
+ * {{8}} - Table Number
+ * {{9}} - Transportation Link
+ * {{10}} - Media URL
+ * {{11}} - RSVP Link
+ */
+export function getExampleVariables(): Record<string, string> {
+  return {
+    "1": "דני ושרה",
+    "2": "חתונת יוסי ומרים",
+    "3": "אולם מאגיה",
+    "4": "רחוב החשמל 5, טבריה",
+    "5": "יום שישי, 15 במרץ 2026",
+    "6": "20:00",
+    "7": "https://wedinex.co/n/sample",
+    "8": "12",
+    "9": "https://wedinex.co/t/sample-transport",
+    "10": "demo/wedding_invite_sample.jpg",
+    "11": "https://wedinex.co/rsvp/sample",
+  };
 }
 
 /**
