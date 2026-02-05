@@ -69,7 +69,7 @@ interface UsageStatus {
 interface ActiveTemplate {
   id: string;
   style: string;
-  contentSid: string;
+  contentSid: string | null;
   nameHe: string;
   nameEn: string;
   templateText: string | null;
@@ -154,13 +154,22 @@ export function SendMessageDialog({
   // Get current templates from cache (must be after whatsappTemplateType is defined)
   const whatsappTemplates = whatsappTemplatesCache.get(whatsappTemplateType) || [];
 
-  // Preview context
+  // Preview context - 10-variable system
   const previewContext = {
-    guestName: mode === "single" && guestNames?.[0] ? guestNames[0] : (isRTL ? "שם האורח" : "Guest Name"),
-    eventTitle: isRTL ? "שם האירוע" : "Event Name",
-    rsvpLink: "https://...",
+    guestName: mode === "single" && guestNames?.[0] ? guestNames[0] : (isRTL ? "דני ושרה" : "Guest Name"),
+    eventTitle: isRTL ? "חתונת דני ושרה" : "Event Name",
+    venueName: isRTL ? "אולם מאגיה" : "Venue Name",
+    venueAddress: isRTL ? "רחוב החשמל 5, טבריה" : "Street 5, City",
+    eventDate: isRTL ? "יום שישי, 15 במרץ 2026" : "Friday, March 15, 2026",
+    eventTime: isRTL ? "20:00" : "8:00 PM",
+    rsvpLink: "https://wedinex.co/r/sample",
+    tableNumber: isRTL ? "12" : "12",
+    transportationLink: "https://wedinex.co/t/sample",
+    mediaUrl: "demo/image/upload/sample.jpg", // {{10}} - Cloudinary path for WhatsApp Card templates
+    // Legacy mappings for SMS templates (keep for backward compatibility)
+    dynamicLink: "https://wedinex.co/r/sample",  // Deprecated, use rsvpLink
     eventVenue: isRTL ? "מאגיה, רחוב החשמל 5, טבריה" : "Venue Name, Street 5, City",
-    tableName: isRTL ? "שולחן 5" : "Table 5",
+    tableName: isRTL ? "שולחן 12" : "Table 12",
     navigationUrl: "https://waze.com/ul?q=...",
     giftLink: "https://...",
   };
@@ -332,24 +341,18 @@ export function SendMessageDialog({
       if (activeTemplate) {
         const dbPreviewText = isRTL ? activeTemplate.previewTextHe : activeTemplate.previewText;
         if (dbPreviewText) {
-          // Handle different variable mappings based on message type
-          if (messageType === "EVENT_DAY") {
-            // EVENT_DAY has 6 variables: name, title, table, venue, navigation, gift
-            return dbPreviewText
-              .replace(/\{\{1\}\}/g, previewContext.guestName)
-              .replace(/\{\{2\}\}/g, previewContext.eventTitle)
-              .replace(/\{\{3\}\}/g, previewContext.tableName)
-              .replace(/\{\{4\}\}/g, previewContext.eventVenue)
-              .replace(/\{\{5\}\}/g, previewContext.navigationUrl)
-              .replace(/\{\{6\}\}/g, previewContext.giftLink);
-          } else {
-            // Standard templates: name, title, rsvp link
-            return dbPreviewText
-              .replace(/\{\{1\}\}/g, previewContext.guestName)
-              .replace(/\{\{2\}\}/g, previewContext.eventTitle)
-              .replace(/\{\{3\}\}/g, previewContext.rsvpLink)
-              .replace(/\{\{4\}\}/g, previewContext.eventVenue);
-          }
+          // New 10-variable system - universal mapping
+          return dbPreviewText
+            .replace(/\{\{1\}\}/g, previewContext.guestName)
+            .replace(/\{\{2\}\}/g, previewContext.eventTitle)
+            .replace(/\{\{3\}\}/g, previewContext.venueName)
+            .replace(/\{\{4\}\}/g, previewContext.venueAddress)
+            .replace(/\{\{5\}\}/g, previewContext.eventDate)
+            .replace(/\{\{6\}\}/g, previewContext.eventTime)
+            .replace(/\{\{7\}\}/g, previewContext.rsvpLink)
+            .replace(/\{\{8\}\}/g, previewContext.tableNumber)
+            .replace(/\{\{9\}\}/g, previewContext.transportationLink)
+            .replace(/\{\{10\}\}/g, previewContext.mediaUrl);
         }
       }
 
@@ -357,28 +360,22 @@ export function SendMessageDialog({
       const definition = whatsappTemplateDefinitions.find((d) => d.style === selectedWhatsappStyle);
       if (definition) {
         const text = isRTL ? definition.templateTextHe : definition.templateTextEn;
-        // Handle different variable mappings based on message type
-        if (messageType === "EVENT_DAY") {
-          // EVENT_DAY has 6 variables: name, title, table, venue, navigation, gift
-          return text
-            .replace(/\{\{1\}\}/g, previewContext.guestName)
-            .replace(/\{\{2\}\}/g, previewContext.eventTitle)
-            .replace(/\{\{3\}\}/g, previewContext.tableName)
-            .replace(/\{\{4\}\}/g, previewContext.eventVenue)
-            .replace(/\{\{5\}\}/g, previewContext.navigationUrl)
-            .replace(/\{\{6\}\}/g, previewContext.giftLink);
-        } else {
-          // Standard templates: name, title, rsvp link
-          return text
-            .replace(/\{\{1\}\}/g, previewContext.guestName)
-            .replace(/\{\{2\}\}/g, previewContext.eventTitle)
-            .replace(/\{\{3\}\}/g, previewContext.rsvpLink)
-            .replace(/\{\{4\}\}/g, previewContext.eventVenue);
-        }
+        // New 10-variable system - universal mapping
+        return text
+          .replace(/\{\{1\}\}/g, previewContext.guestName)
+          .replace(/\{\{2\}\}/g, previewContext.eventTitle)
+          .replace(/\{\{3\}\}/g, previewContext.venueName)
+          .replace(/\{\{4\}\}/g, previewContext.venueAddress)
+          .replace(/\{\{5\}\}/g, previewContext.eventDate)
+          .replace(/\{\{6\}\}/g, previewContext.eventTime)
+          .replace(/\{\{7\}\}/g, previewContext.rsvpLink)
+          .replace(/\{\{8\}\}/g, previewContext.tableNumber)
+          .replace(/\{\{9\}\}/g, previewContext.transportationLink)
+          .replace(/\{\{10\}\}/g, previewContext.mediaUrl);
       }
       return isRTL ? "תצוגה מקדימה לא זמינה" : "Preview not available";
     } else {
-      // SMS
+      // SMS - uses legacy variable names for backward compatibility
       if (isCustomSms) {
         return renderSmsTemplate(customSmsMessage || "", previewContext);
       }
@@ -966,7 +963,7 @@ export function SendMessageDialog({
                               )}
                             >
                               <p className="font-medium text-xs sm:text-sm">
-                                {getStyleName(definition.style)}
+                                {isRTL ? definition.nameHe : definition.nameEn}
                               </p>
                               {!isActive && (
                                 <p className="text-[9px] sm:text-[10px] text-muted-foreground mt-0.5">

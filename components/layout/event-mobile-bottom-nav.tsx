@@ -41,6 +41,7 @@ export function EventMobileBottomNav({ eventId, locale }: EventMobileBottomNavPr
     { href: "/tasks", icon: Icons.checkSquare, labelKey: "navigation.tasks", label: "Tasks" },
     { href: "/seating", icon: Icons.layoutGrid, labelKey: "navigation.seating", label: "Seating" },
     { href: "/suppliers", icon: Icons.suppliers, labelKey: "navigation.suppliers", label: "Suppliers" },
+    { href: "/transportation", icon: Icons.bus, labelKey: "navigation.transportation", label: "Transportation" },
     { href: "/gifts", icon: Icons.gift, labelKey: "navigation.gifts", label: "Gifts" },
     { href: "/automations", icon: Icons.sparkles, labelKey: "navigation.automations", label: "Automations" },
     { href: "/customize", icon: Icons.palette, labelKey: "navigation.customize", label: "RSVP Design" },

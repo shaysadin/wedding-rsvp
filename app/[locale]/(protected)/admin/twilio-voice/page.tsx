@@ -25,7 +25,7 @@ export default async function AdminTwilioVoicePage() {
         text="Configure Twilio Voice API for browser-based calling. Event owners can use the call center to make outbound calls to guests with voice changing capabilities."
       />
 
-      <div className="grid gap-6 overflow-auto">
+      <div className="space-y-6">
         <TwilioVoiceSettingsForm settings={settings} />
       </div>
     </>

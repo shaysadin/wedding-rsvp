@@ -104,6 +104,7 @@ interface SerializedEvent {
   invitationImageUrl: string | null;
   invitationImagePublicId: string | null;
   smsSenderId: string | null;
+  navigationCode: string | null;
   isActive: boolean;
   isArchived: boolean;
   archivedAt: Date | null;

@@ -29,7 +29,10 @@ export async function getEventsForDropdown(): Promise<{
     }
 
     const events = await prisma.weddingEvent.findMany({
-      where: { ownerId: user.id },
+      where: {
+        ownerId: user.id,
+        isArchived: false,
+      },
       select: {
         id: true,
         title: true,

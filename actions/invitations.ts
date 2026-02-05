@@ -6,6 +6,7 @@ import crypto from "crypto";
 
 import { prisma } from "@/lib/db";
 import { getCurrentUser } from "@/lib/session";
+import { canAccessEvent } from "@/lib/permissions";
 import { isEventOwner } from "@/lib/permissions";
 import { sendEventInvitationEmail } from "@/lib/email";
 

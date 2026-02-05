@@ -28,7 +28,7 @@ interface WhatsAppTemplateSelectorProps {
 interface ActiveTemplate {
   id: string;
   style: string;
-  contentSid: string;
+  contentSid: string | null;
   nameHe: string;
   nameEn: string;
   templateText: string | null;

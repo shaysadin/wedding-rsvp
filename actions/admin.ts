@@ -463,13 +463,23 @@ export async function getUsageStats() {
       return { error: "Unauthorized" };
     }
 
-    // Get aggregate usage stats
-    const usageStats = await prisma.usageTracking.aggregate({
-      _sum: {
-        whatsappSent: true,
-        smsSent: true,
-      },
-    });
+    // Get actual message counts from NotificationLog (source of truth)
+    const [whatsappCount, smsCount] = await Promise.all([
+      // Count WhatsApp messages (SENT or DELIVERED status)
+      prisma.notificationLog.count({
+        where: {
+          channel: "WHATSAPP",
+          status: { in: ["SENT", "DELIVERED"] },
+        },
+      }),
+      // Count SMS messages (SENT or DELIVERED status)
+      prisma.notificationLog.count({
+        where: {
+          channel: "SMS",
+          status: { in: ["SENT", "DELIVERED"] },
+        },
+      }),
+    ]);
 
     // Get pending approvals count
     const pendingApprovals = await prisma.user.count({
@@ -499,8 +509,8 @@ export async function getUsageStats() {
     return {
       success: true,
       stats: {
-        totalWhatsappSent: usageStats._sum.whatsappSent || 0,
-        totalSmsSent: usageStats._sum.smsSent || 0,
+        totalWhatsappSent: whatsappCount,
+        totalSmsSent: smsCount,
         pendingApprovals,
         recentEvents,
         recentRsvps,
@@ -529,28 +539,56 @@ export async function getUserUsage(userId: string) {
       return { error: "User not found" };
     }
 
+    // Get actual message counts from NotificationLog for this user
+    const [whatsappCount, smsCount] = await Promise.all([
+      prisma.notificationLog.count({
+        where: {
+          guest: {
+            weddingEvent: {
+              ownerId: userId,
+            },
+          },
+          channel: "WHATSAPP",
+          status: { in: ["SENT", "DELIVERED"] },
+        },
+      }),
+      prisma.notificationLog.count({
+        where: {
+          guest: {
+            weddingEvent: {
+              ownerId: userId,
+            },
+          },
+          channel: "SMS",
+          status: { in: ["SENT", "DELIVERED"] },
+        },
+      }),
+    ]);
+
     const planLimits = PLAN_LIMITS[user.plan];
     const usage = user.usageTracking;
+    const whatsappBonus = usage?.whatsappBonus || 0;
+    const smsBonus = usage?.smsBonus || 0;
 
     return {
       success: true,
       data: {
         plan: user.plan,
         planLimits,
-        usage: usage || {
-          whatsappSent: 0,
-          smsSent: 0,
-          whatsappBonus: 0,
-          smsBonus: 0,
+        usage: {
+          whatsappSent: whatsappCount,
+          smsSent: smsCount,
+          whatsappBonus,
+          smsBonus,
         },
         remaining: {
           whatsapp: Math.max(
             0,
-            planLimits.maxWhatsappMessages + (usage?.whatsappBonus || 0) - (usage?.whatsappSent || 0)
+            planLimits.maxWhatsappMessages + whatsappBonus - whatsappCount
           ),
           sms: Math.max(
             0,
-            planLimits.maxSmsMessages + (usage?.smsBonus || 0) - (usage?.smsSent || 0)
+            planLimits.maxSmsMessages + smsBonus - smsCount
           ),
         },
       },
@@ -668,5 +706,50 @@ export async function getAdminStats() {
   } catch (error) {
     console.error("Error fetching admin stats:", error);
     return { error: "Failed to fetch stats" };
+  }
+}
+
+export async function adminChangeUserPassword(userId: string, newPassword: string) {
+  try {
+    const currentUser = await requirePlatformOwner();
+
+    if (!currentUser) {
+      return { error: "Unauthorized" };
+    }
+
+    // Validate password length
+    if (!newPassword || newPassword.length < 6) {
+      return { error: "Password must be at least 6 characters" };
+    }
+
+    const targetUser = await prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!targetUser) {
+      return { error: "User not found" };
+    }
+
+    // Hash the new password
+    const bcrypt = require("bcryptjs");
+    const hashedPassword = await bcrypt.hash(newPassword, 12);
+
+    // Update user password and ensure email is verified
+    // (Admin-set passwords should allow immediate login)
+    const updatedUser = await prisma.user.update({
+      where: { id: userId },
+      data: {
+        password: hashedPassword,
+        emailVerified: targetUser.emailVerified || new Date(),
+      },
+    });
+
+    revalidatePath("/admin");
+    revalidatePath("/admin/users");
+
+    return { success: true, user: updatedUser };
+  } catch (error) {
+    console.error("Error changing user password:", error);
+    return { error: "Failed to change password" };
   }
 }

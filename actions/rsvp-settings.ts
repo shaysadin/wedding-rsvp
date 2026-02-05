@@ -5,6 +5,7 @@ import { UserRole, BackgroundType, CardStyle, DateDisplayStyle, Prisma } from "@
 
 import { prisma } from "@/lib/db";
 import { getCurrentUser } from "@/lib/session";
+import { canAccessEvent } from "@/lib/permissions";
 
 export interface RsvpPageSettingsInput {
   eventId: string;

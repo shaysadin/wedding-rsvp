@@ -14,6 +14,11 @@ export const createGuestSchema = z.object({
 
 export const updateGuestSchema = createGuestSchema.partial().extend({
   id: z.string(),
+  // Override optional fields to accept null values from database
+  side: z.string().max(100).optional().nullable().transform(val => val ?? undefined),
+  groupName: z.string().max(100).optional().nullable().transform(val => val ?? undefined),
+  phoneNumber: z.string().max(50).optional().nullable().transform(val => val ?? undefined),
+  notes: z.string().max(1000).optional().nullable().transform(val => val ?? undefined),
   // RSVP fields (optional - only used when editing RSVP status)
   rsvpStatus: z.nativeEnum(RsvpStatus).optional(),
   rsvpGuestCount: z.number().int().min(0).max(20).optional(),

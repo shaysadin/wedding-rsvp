@@ -5,7 +5,7 @@ import { User, UserStatus, UserRole, PlanTier, UsageTracking, VapiPhoneNumber } 
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 
-import { reactivateUser, suspendUser, changeUserPlan, resetUserUsage, adjustCredits, toggleUserAdminRole } from "@/actions/admin";
+import { reactivateUser, suspendUser, changeUserPlan, resetUserUsage, adjustCredits, toggleUserAdminRole, adminChangeUserPassword } from "@/actions/admin";
 import { assignPhoneNumberToUser } from "@/actions/vapi/phone-numbers";
 import { assignWhatsAppPhoneNumberToUser } from "@/actions/whatsapp-phone-numbers";
 import { PlanLimits } from "@/config/plans";
@@ -128,6 +128,22 @@ export function AdminUsersTable({ users, vapiPhoneNumbers = [], whatsappPhoneNum
   const [creditsSms, setCreditsSms] = useState("");
   const [creditsVoiceCalls, setCreditsVoiceCalls] = useState("");
   const [isRemoveMode, setIsRemoveMode] = useState(false);
+
+  // Password change dialog state
+  const [passwordDialog, setPasswordDialog] = useState<{
+    open: boolean;
+    userId: string;
+    userName: string;
+    userEmail: string;
+  }>({
+    open: false,
+    userId: "",
+    userName: "",
+    userEmail: "",
+  });
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleStatusChange = async (userId: string, action: "reactivate" | "suspend") => {
     setLoading(userId);
@@ -255,6 +271,49 @@ export function AdminUsersTable({ users, vapiPhoneNumbers = [], whatsappPhoneNum
       toast.error(result.error);
     } else {
       toast.success(result.hasAdminRole ? t("adminRoleGranted") : t("adminRoleRevoked"));
+    }
+  };
+
+  const openPasswordDialog = (userId: string, userName: string, userEmail: string) => {
+    setPasswordDialog({
+      open: true,
+      userId,
+      userName,
+      userEmail,
+    });
+    setNewPassword("");
+    setConfirmPassword("");
+  };
+
+  const closePasswordDialog = () => {
+    setPasswordDialog({ open: false, userId: "", userName: "", userEmail: "" });
+    setNewPassword("");
+    setConfirmPassword("");
+    setShowPassword(false);
+  };
+
+  const handleChangePassword = async () => {
+    if (!passwordDialog.userId) return;
+
+    if (newPassword !== confirmPassword) {
+      toast.error(tc("passwordsDoNotMatch"));
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      toast.error(tc("passwordTooShort"));
+      return;
+    }
+
+    setLoading(passwordDialog.userId);
+    const result = await adminChangeUserPassword(passwordDialog.userId, newPassword);
+    setLoading(null);
+
+    if (result.error) {
+      toast.error(result.error);
+    } else {
+      toast.success(tc("passwordChanged"));
+      closePasswordDialog();
     }
   };
 
@@ -570,6 +629,11 @@ export function AdminUsersTable({ users, vapiPhoneNumbers = [], whatsappPhoneNum
                             : t("grantAdminRole")}
                         </DropdownMenuItem>
 
+                        <DropdownMenuItem onClick={() => openPasswordDialog(user.id, user.name || "", user.email)}>
+                          <Icons.lock className="me-2 h-4 w-4" />
+                          {t("changePassword")}
+                        </DropdownMenuItem>
+
                         {vapiPhoneNumbers.length > 0 && (
                           <>
                             <DropdownMenuSeparator />
@@ -783,6 +847,96 @@ export function AdminUsersTable({ users, vapiPhoneNumbers = [], whatsappPhoneNum
             >
               {loading === creditsDialog.userId && <Icons.spinner className="me-2 h-4 w-4 animate-spin" />}
               {isRemoveMode ? t("removeCredits") : t("addCredits")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Password Change Dialog */}
+      <Dialog open={passwordDialog.open} onOpenChange={(open) => !open && closePasswordDialog()}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t("changePassword")}</DialogTitle>
+            <DialogDescription>
+              {tc("changePasswordDesc", { name: passwordDialog.userName, email: passwordDialog.userEmail })}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="new-password">
+                {tc("newPassword")}
+              </Label>
+              <div className="relative">
+                <Input
+                  id="new-password"
+                  type={showPassword ? "text" : "password"}
+                  placeholder="••••••••"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  autoComplete="new-password"
+                  className="pe-10"
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="absolute end-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? (
+                    <Icons.eyeOff className="h-4 w-4 text-muted-foreground" />
+                  ) : (
+                    <Icons.eye className="h-4 w-4 text-muted-foreground" />
+                  )}
+                </Button>
+              </div>
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="confirm-password">
+                {tc("confirmPassword")}
+              </Label>
+              <div className="relative">
+                <Input
+                  id="confirm-password"
+                  type={showPassword ? "text" : "password"}
+                  placeholder="••••••••"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  autoComplete="new-password"
+                  className="pe-10"
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="absolute end-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? (
+                    <Icons.eyeOff className="h-4 w-4 text-muted-foreground" />
+                  ) : (
+                    <Icons.eye className="h-4 w-4 text-muted-foreground" />
+                  )}
+                </Button>
+              </div>
+            </div>
+            {newPassword && newPassword.length < 6 && (
+              <p className="text-xs text-red-600">{tc("passwordTooShort")}</p>
+            )}
+            {newPassword && confirmPassword && newPassword !== confirmPassword && (
+              <p className="text-xs text-red-600">{tc("passwordsDoNotMatch")}</p>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={closePasswordDialog}>
+              {tc("cancel")}
+            </Button>
+            <Button
+              onClick={handleChangePassword}
+              disabled={loading === passwordDialog.userId || !newPassword || newPassword !== confirmPassword || newPassword.length < 6}
+            >
+              {loading === passwordDialog.userId && <Icons.spinner className="me-2 h-4 w-4 animate-spin" />}
+              {t("changePassword")}
             </Button>
           </DialogFooter>
         </DialogContent>

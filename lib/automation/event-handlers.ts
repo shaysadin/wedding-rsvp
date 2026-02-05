@@ -124,38 +124,50 @@ export async function onNotificationSent(data: NotificationSentEventData): Promi
     if (scheduledFor && scheduledFor > new Date()) {
       // Use upsert to atomically create or update - prevents race conditions
       // Separate transaction to handle update conditionally based on status
-      await prisma.$transaction(async (tx) => {
-        const existing = await tx.automationFlowExecution.findUnique({
-          where: {
-            flowId_guestId: {
-              flowId: flow.id,
-              guestId,
-            },
-          },
-        });
-
-        if (existing) {
-          // Only update if still pending
-          if (existing.status === "PENDING") {
-            await tx.automationFlowExecution.update({
-              where: { id: existing.id },
-              data: { scheduledFor },
-            });
-            console.log(`[onNotificationSent] Updated execution ${existing.id}`);
-          }
-        } else {
-          // Create new execution atomically
-          const newExecution = await tx.automationFlowExecution.create({
-            data: {
-              flowId: flow.id,
-              guestId,
-              status: "PENDING",
-              scheduledFor,
+      try {
+        await prisma.$transaction(async (tx) => {
+          const existing = await tx.automationFlowExecution.findUnique({
+            where: {
+              flowId_guestId: {
+                flowId: flow.id,
+                guestId,
+              },
             },
           });
-          console.log(`[onNotificationSent] Created execution ${newExecution.id} scheduled for ${scheduledFor}`);
+
+          if (existing) {
+            // Only update if still pending
+            if (existing.status === "PENDING") {
+              await tx.automationFlowExecution.update({
+                where: { id: existing.id },
+                data: { scheduledFor },
+              });
+              console.log(`[onNotificationSent] Updated execution ${existing.id} to ${scheduledFor}`);
+            } else {
+              console.log(`[onNotificationSent] Execution ${existing.id} already ${existing.status}, not updating`);
+            }
+          } else {
+            // Create new execution atomically
+            const newExecution = await tx.automationFlowExecution.create({
+              data: {
+                flowId: flow.id,
+                guestId,
+                status: "PENDING",
+                scheduledFor,
+              },
+            });
+            console.log(`[onNotificationSent] Created execution ${newExecution.id} scheduled for ${scheduledFor}`);
+          }
+        });
+      } catch (error) {
+        // Silently catch unique constraint violations (race condition - another process already created it)
+        if (error instanceof Error && error.message.includes('Unique constraint')) {
+          console.log(`[onNotificationSent] Execution already exists for flow ${flow.id} and guest ${guestId} (race condition handled)`);
+        } else {
+          // Re-throw other errors
+          throw error;
         }
-      });
+      }
     }
   }
 }
@@ -241,27 +253,37 @@ export async function onFlowActivated(flowId: string): Promise<void> {
 
     if (isEligible && scheduledFor && scheduledFor > new Date()) {
       // Use transaction to atomically check and create - prevents duplicates
-      await prisma.$transaction(async (tx) => {
-        const existing = await tx.automationFlowExecution.findUnique({
-          where: {
-            flowId_guestId: {
-              flowId: flow.id,
-              guestId: guest.id,
-            },
-          },
-        });
-
-        if (!existing) {
-          await tx.automationFlowExecution.create({
-            data: {
-              flowId: flow.id,
-              guestId: guest.id,
-              status: "PENDING",
-              scheduledFor,
+      try {
+        await prisma.$transaction(async (tx) => {
+          const existing = await tx.automationFlowExecution.findUnique({
+            where: {
+              flowId_guestId: {
+                flowId: flow.id,
+                guestId: guest.id,
+              },
             },
           });
+
+          if (!existing) {
+            await tx.automationFlowExecution.create({
+              data: {
+                flowId: flow.id,
+                guestId: guest.id,
+                status: "PENDING",
+                scheduledFor,
+              },
+            });
+          }
+        });
+      } catch (error) {
+        // Silently catch unique constraint violations (race condition - another process already created it)
+        if (error instanceof Error && error.message.includes('Unique constraint')) {
+          console.log(`[onFlowActivated] Execution already exists for flow ${flow.id} and guest ${guest.id}`);
+        } else {
+          // Re-throw other errors
+          throw error;
         }
-      });
+      }
     }
   }
 }

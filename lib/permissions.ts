@@ -1,14 +1,24 @@
 import { prisma } from "@/lib/db";
-import { CollaboratorRole } from "@prisma/client";
+import { CollaboratorRole, UserRole } from "@prisma/client";
 
 /**
- * Check if a user can access an event (as owner or collaborator)
+ * Check if a user can access an event (as owner, collaborator, or platform owner)
  */
 export async function canAccessEvent(
   eventId: string,
   userId: string,
   requiredRole?: CollaboratorRole
 ): Promise<boolean> {
+  // Check if user is platform owner - platform owners have access to ALL events
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { roles: true },
+  });
+
+  if (user?.roles?.includes(UserRole.ROLE_PLATFORM_OWNER)) {
+    return true;
+  }
+
   // Check owner first
   const isOwner = await prisma.weddingEvent.findFirst({
     where: { id: eventId, ownerId: userId, isArchived: false },
@@ -33,12 +43,22 @@ export async function canAccessEvent(
 }
 
 /**
- * Check if user is the owner of an event
+ * Check if user is the owner of an event (or platform owner)
  */
 export async function isEventOwner(
   eventId: string,
   userId: string
 ): Promise<boolean> {
+  // Platform owners are treated as owners of all events
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { roles: true },
+  });
+
+  if (user?.roles?.includes(UserRole.ROLE_PLATFORM_OWNER)) {
+    return true;
+  }
+
   const event = await prisma.weddingEvent.findFirst({
     where: { id: eventId, ownerId: userId },
   });
@@ -47,13 +67,29 @@ export async function isEventOwner(
 
 /**
  * Get user's role for an event
- * Returns 'owner', 'editor', 'viewer', or null if no access
+ * Returns 'platform_owner', 'owner', 'editor', 'viewer', or null if no access
  */
 export async function getUserEventRole(
   eventId: string,
   userId: string
-): Promise<"owner" | "editor" | "viewer" | null> {
-  // Check owner first
+): Promise<"platform_owner" | "owner" | "editor" | "viewer" | null> {
+  // Check if platform owner - they have full access to all events
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { roles: true },
+  });
+
+  if (user?.roles?.includes(UserRole.ROLE_PLATFORM_OWNER)) {
+    // Check if they're also the actual owner
+    const event = await prisma.weddingEvent.findFirst({
+      where: { id: eventId, ownerId: userId },
+    });
+    if (event) return "owner";
+
+    return "platform_owner";
+  }
+
+  // Check owner
   const event = await prisma.weddingEvent.findFirst({
     where: { id: eventId, ownerId: userId },
   });

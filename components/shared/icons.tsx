@@ -12,6 +12,7 @@ import {
   BookOpen,
   Box,
   Briefcase,
+  Bus,
   Cake,
   Calendar,
   CalendarX2,
@@ -276,6 +277,8 @@ export const Icons = {
   // Suppliers
   suppliers: Store,
   briefcase: Briefcase,
+  // Transportation
+  bus: Bus,
   // Zoom
   zoomIn: ZoomIn,
 };

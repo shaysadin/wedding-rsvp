@@ -76,12 +76,9 @@ export async function createTable(input: CreateTableInput) {
 
     const validatedData = createTableSchema.parse(input);
 
-    // Verify event ownership
-    const event = await prisma.weddingEvent.findFirst({
-      where: { id: validatedData.weddingEventId, ownerId: user.id },
-    });
-
-    if (!event) {
+    // Verify event access (owner or collaborator with EDITOR role)
+    const hasAccess = await canAccessEvent(validatedData.weddingEventId, user.id, "EDITOR");
+    if (!hasAccess) {
       return { error: "Event not found" };
     }
 
@@ -146,14 +143,19 @@ export async function updateTable(input: UpdateTableInput) {
     const validatedData = updateTableSchema.parse(input);
     const { id, ...updateData } = validatedData;
 
-    // Verify ownership through event
+    // Verify access through event (owner or collaborator with EDITOR role)
     const existingTable = await prisma.weddingTable.findFirst({
       where: { id },
       include: { weddingEvent: true },
     });
 
-    if (!existingTable || existingTable.weddingEvent.ownerId !== user.id) {
+    if (!existingTable) {
       return { error: "Table not found" };
+    }
+
+    const hasAccess = await canAccessEvent(existingTable.weddingEventId, user.id, "EDITOR");
+    if (!hasAccess) {
+      return { error: "Unauthorized" };
     }
 
     // Check if capacity or arrangement changed - if so, regenerate seats
@@ -334,14 +336,19 @@ export async function deleteTable(tableId: string) {
       return { error: "Unauthorized" };
     }
 
-    // Verify ownership through event
+    // Verify access through event (owner or collaborator with EDITOR role)
     const existingTable = await prisma.weddingTable.findFirst({
       where: { id: tableId },
       include: { weddingEvent: true },
     });
 
-    if (!existingTable || existingTable.weddingEvent.ownerId !== user.id) {
+    if (!existingTable) {
       return { error: "Table not found" };
+    }
+
+    const hasAccess = await canAccessEvent(existingTable.weddingEventId, user.id, "EDITOR");
+    if (!hasAccess) {
+      return { error: "Unauthorized" };
     }
 
     await prisma.weddingTable.delete({
@@ -369,12 +376,9 @@ export async function getEventTables(eventId: string) {
       return { error: "Unauthorized" };
     }
 
-    // Verify event ownership
-    const event = await prisma.weddingEvent.findFirst({
-      where: { id: eventId, ownerId: user.id },
-    });
-
-    if (!event) {
+    // Verify event access (owner or collaborator)
+    const hasAccess = await canAccessEvent(eventId, user.id);
+    if (!hasAccess) {
       return { error: "Event not found" };
     }
 
@@ -438,7 +442,7 @@ export async function assignGuestsToTable(input: AssignGuestsInput) {
 
     const validatedData = assignGuestsSchema.parse(input);
 
-    // Verify table ownership
+    // Verify table access (owner or collaborator with EDITOR role)
     const table = await prisma.weddingTable.findFirst({
       where: { id: validatedData.tableId },
       include: {
@@ -453,8 +457,13 @@ export async function assignGuestsToTable(input: AssignGuestsInput) {
       },
     });
 
-    if (!table || table.weddingEvent.ownerId !== user.id) {
+    if (!table) {
       return { error: "Table not found" };
+    }
+
+    const hasAccess = await canAccessEvent(table.weddingEventId, user.id, "EDITOR");
+    if (!hasAccess) {
+      return { error: "Unauthorized" };
     }
 
     // Verify all guests belong to the same event
@@ -545,21 +554,30 @@ export async function removeGuestFromTable(input: RemoveGuestInput) {
 
     const validatedData = removeGuestSchema.parse(input);
 
-    // Delete with ownership check in single query using nested where
-    const result = await prisma.tableAssignment.deleteMany({
-      where: {
-        guestId: validatedData.guestId,
+    // First get the assignment to verify access
+    const assignment = await prisma.tableAssignment.findFirst({
+      where: { guestId: validatedData.guestId },
+      include: {
         table: {
-          weddingEvent: {
-            ownerId: user.id,
-          },
+          include: { weddingEvent: true },
         },
       },
     });
 
-    if (result.count === 0) {
+    if (!assignment) {
       return { error: "Assignment not found" };
     }
+
+    // Verify access (owner or collaborator with EDITOR role)
+    const hasAccess = await canAccessEvent(assignment.table.weddingEventId, user.id, "EDITOR");
+    if (!hasAccess) {
+      return { error: "Unauthorized" };
+    }
+
+    // Delete the assignment
+    await prisma.tableAssignment.delete({
+      where: { id: assignment.id },
+    });
 
     return { success: true };
   } catch (error) {
@@ -582,14 +600,32 @@ export async function removeGuestsFromTableBulk(guestIds: string[]) {
       return { error: "No guests provided" };
     }
 
-    // Delete all in single query with ownership check built into the where clause
+    // First get an assignment to verify access to the event
+    const assignment = await prisma.tableAssignment.findFirst({
+      where: { guestId: { in: guestIds } },
+      include: {
+        table: {
+          include: { weddingEvent: true },
+        },
+      },
+    });
+
+    if (!assignment) {
+      return { error: "No assignments found" };
+    }
+
+    // Verify access (owner or collaborator with EDITOR role)
+    const hasAccess = await canAccessEvent(assignment.table.weddingEventId, user.id, "EDITOR");
+    if (!hasAccess) {
+      return { error: "Unauthorized" };
+    }
+
+    // Delete all assignments for this event
     const result = await prisma.tableAssignment.deleteMany({
       where: {
         guestId: { in: guestIds },
         table: {
-          weddingEvent: {
-            ownerId: user.id,
-          },
+          weddingEventId: assignment.table.weddingEventId,
         },
       },
     });
@@ -613,14 +649,20 @@ export async function moveGuestToTable(input: MoveGuestInput) {
 
     const validatedData = moveGuestSchema.parse(input);
 
-    // Verify the new table exists and belongs to user
+    // Verify the new table exists and user has access
     const newTable = await prisma.weddingTable.findFirst({
       where: { id: validatedData.newTableId },
       include: { weddingEvent: true },
     });
 
-    if (!newTable || newTable.weddingEvent.ownerId !== user.id) {
+    if (!newTable) {
       return { error: "Target table not found" };
+    }
+
+    // Verify access (owner or collaborator with EDITOR role)
+    const hasAccess = await canAccessEvent(newTable.weddingEventId, user.id, "EDITOR");
+    if (!hasAccess) {
+      return { error: "Unauthorized" };
     }
 
     // Verify the guest exists and belongs to the same event
@@ -669,12 +711,9 @@ export async function getUnseatedGuests(eventId: string) {
       return { error: "Unauthorized" };
     }
 
-    // Verify event ownership
-    const event = await prisma.weddingEvent.findFirst({
-      where: { id: eventId, ownerId: user.id },
-    });
-
-    if (!event) {
+    // Verify event access (owner or collaborator)
+    const hasAccess = await canAccessEvent(eventId, user.id);
+    if (!hasAccess) {
       return { error: "Event not found" };
     }
 
@@ -712,9 +751,15 @@ export async function getSeatingStats(eventId: string) {
       return { error: "Unauthorized" };
     }
 
-    // Verify event ownership and get stats in a single optimized query
+    // Verify event access (owner or collaborator)
+    const hasAccess = await canAccessEvent(eventId, user.id);
+    if (!hasAccess) {
+      return { error: "Event not found" };
+    }
+
+    // Get stats in a single optimized query
     const event = await prisma.weddingEvent.findFirst({
-      where: { id: eventId, ownerId: user.id },
+      where: { id: eventId },
       select: {
         id: true,
         tables: {
@@ -814,12 +859,9 @@ export async function getGuestsForAssignment(
       return { error: "Unauthorized" };
     }
 
-    // Verify event ownership
-    const event = await prisma.weddingEvent.findFirst({
-      where: { id: eventId, ownerId: user.id },
-    });
-
-    if (!event) {
+    // Verify event access (owner or collaborator)
+    const hasAccess = await canAccessEvent(eventId, user.id);
+    if (!hasAccess) {
       return { error: "Event not found" };
     }
 
@@ -894,12 +936,9 @@ export async function createVenueBlock(input: CreateVenueBlockInput) {
 
     const validatedData = createVenueBlockSchema.parse(input);
 
-    // Verify event ownership
-    const event = await prisma.weddingEvent.findFirst({
-      where: { id: validatedData.weddingEventId, ownerId: user.id },
-    });
-
-    if (!event) {
+    // Verify event access (owner or collaborator with EDITOR role)
+    const hasAccess = await canAccessEvent(validatedData.weddingEventId, user.id, "EDITOR");
+    if (!hasAccess) {
       return { error: "Event not found" };
     }
 
@@ -937,14 +976,19 @@ export async function updateVenueBlock(input: UpdateVenueBlockInput) {
     const validatedData = updateVenueBlockSchema.parse(input);
     const { id, ...updateData } = validatedData;
 
-    // Verify ownership through event
+    // Verify access through event (owner or collaborator with EDITOR role)
     const existingBlock = await prisma.venueBlock.findFirst({
       where: { id },
       include: { weddingEvent: true },
     });
 
-    if (!existingBlock || existingBlock.weddingEvent.ownerId !== user.id) {
+    if (!existingBlock) {
       return { error: "Block not found" };
+    }
+
+    const hasAccess = await canAccessEvent(existingBlock.weddingEventId, user.id, "EDITOR");
+    if (!hasAccess) {
+      return { error: "Unauthorized" };
     }
 
     const block = await prisma.venueBlock.update({
@@ -1102,14 +1146,19 @@ export async function deleteVenueBlock(blockId: string) {
       return { error: "Unauthorized" };
     }
 
-    // Verify ownership through event
+    // Verify access through event (owner or collaborator with EDITOR role)
     const existingBlock = await prisma.venueBlock.findFirst({
       where: { id: blockId },
       include: { weddingEvent: true },
     });
 
-    if (!existingBlock || existingBlock.weddingEvent.ownerId !== user.id) {
+    if (!existingBlock) {
       return { error: "Block not found" };
+    }
+
+    const hasAccess = await canAccessEvent(existingBlock.weddingEventId, user.id, "EDITOR");
+    if (!hasAccess) {
+      return { error: "Unauthorized" };
     }
 
     await prisma.venueBlock.delete({
@@ -1135,12 +1184,9 @@ export async function getEventVenueBlocks(eventId: string) {
       return { error: "Unauthorized" };
     }
 
-    // Verify event ownership
-    const event = await prisma.weddingEvent.findFirst({
-      where: { id: eventId, ownerId: user.id },
-    });
-
-    if (!event) {
+    // Verify event access (owner or collaborator)
+    const hasAccess = await canAccessEvent(eventId, user.id);
+    if (!hasAccess) {
       return { error: "Event not found" };
     }
 
@@ -1252,12 +1298,9 @@ export async function autoArrangeTables(input: AutoArrangeInput) {
 
     const validatedData = autoArrangeSchema.parse(input);
 
-    // Verify event ownership
-    const event = await prisma.weddingEvent.findFirst({
-      where: { id: validatedData.eventId, ownerId: user.id },
-    });
-
-    if (!event) {
+    // Verify event access (owner or collaborator with EDITOR role)
+    const hasAccess = await canAccessEvent(validatedData.eventId, user.id, "EDITOR");
+    if (!hasAccess) {
       return { error: "Event not found" };
     }
 
@@ -1503,11 +1546,11 @@ export async function autoArrangeTables(input: AutoArrangeInput) {
  */
 export async function getHostessData(eventId: string) {
   try {
-    // Verify event exists and is active
+    // Verify event exists and is not archived (hostess page works until 1 week after event)
     const event = await prisma.weddingEvent.findFirst({
       where: {
         id: eventId,
-        isActive: true,
+        isArchived: false,
       },
       select: {
         id: true,
@@ -1881,7 +1924,7 @@ export async function assignGuestToSeat(seatId: string, guestId: string) {
       return { error: "Unauthorized" };
     }
 
-    // Verify seat exists and belongs to user's event
+    // Verify seat exists and user has access to event
     const seat = await prisma.tableSeat.findFirst({
       where: { id: seatId },
       include: {
@@ -1891,8 +1934,14 @@ export async function assignGuestToSeat(seatId: string, guestId: string) {
       },
     });
 
-    if (!seat || seat.table.weddingEvent.ownerId !== user.id) {
+    if (!seat) {
       return { error: "Seat not found" };
+    }
+
+    // Verify access (owner or collaborator with EDITOR role)
+    const hasAccess = await canAccessEvent(seat.table.weddingEventId, user.id, "EDITOR");
+    if (!hasAccess) {
+      return { error: "Unauthorized" };
     }
 
     // Verify guest exists and belongs to same event
@@ -1960,7 +2009,7 @@ export async function unassignSeat(seatId: string) {
       return { error: "Unauthorized" };
     }
 
-    // Verify seat exists and belongs to user's event
+    // Verify seat exists and user has access to event
     const seat = await prisma.tableSeat.findFirst({
       where: { id: seatId },
       include: {
@@ -1971,8 +2020,14 @@ export async function unassignSeat(seatId: string) {
       },
     });
 
-    if (!seat || seat.table.weddingEvent.ownerId !== user.id) {
+    if (!seat) {
       return { error: "Seat not found" };
+    }
+
+    // Verify access (owner or collaborator with EDITOR role)
+    const hasAccess = await canAccessEvent(seat.table.weddingEventId, user.id, "EDITOR");
+    if (!hasAccess) {
+      return { error: "Unauthorized" };
     }
 
     if (!seat.guestId) {
@@ -2025,7 +2080,7 @@ export async function updateSeatPosition(
       return { error: "Unauthorized" };
     }
 
-    // Verify seat exists and belongs to user's event
+    // Verify seat exists and user has access to event
     const seat = await prisma.tableSeat.findFirst({
       where: { id: seatId },
       include: {
@@ -2035,8 +2090,14 @@ export async function updateSeatPosition(
       },
     });
 
-    if (!seat || seat.table.weddingEvent.ownerId !== user.id) {
+    if (!seat) {
       return { error: "Seat not found" };
+    }
+
+    // Verify access (owner or collaborator with EDITOR role)
+    const hasAccess = await canAccessEvent(seat.table.weddingEventId, user.id, "EDITOR");
+    if (!hasAccess) {
+      return { error: "Unauthorized" };
     }
 
     // Update seat position
@@ -2073,7 +2134,7 @@ export async function regenerateTableSeats(
       return { error: "Unauthorized" };
     }
 
-    // Verify table exists and belongs to user's event
+    // Verify table exists and user has access to event
     const table = await prisma.weddingTable.findFirst({
       where: { id: tableId },
       include: {
@@ -2084,8 +2145,14 @@ export async function regenerateTableSeats(
       },
     });
 
-    if (!table || table.weddingEvent.ownerId !== user.id) {
+    if (!table) {
       return { error: "Table not found" };
+    }
+
+    // Verify access (owner or collaborator with EDITOR role)
+    const hasAccess = await canAccessEvent(table.weddingEventId, user.id, "EDITOR");
+    if (!hasAccess) {
+      return { error: "Unauthorized" };
     }
 
     // Calculate new seat positions
@@ -2177,9 +2244,15 @@ export async function autoArrangeTablesWithConfigs(input: AutoArrangeWithConfigs
       return { error: "Unauthorized" };
     }
 
-    // Verify event ownership
+    // Verify event access (owner or collaborator with EDITOR role)
+    const hasAccess = await canAccessEvent(input.eventId, user.id, "EDITOR");
+    if (!hasAccess) {
+      return { error: "Event not found" };
+    }
+
+    // Get event canvas dimensions
     const event = await prisma.weddingEvent.findFirst({
-      where: { id: input.eventId, ownerId: user.id },
+      where: { id: input.eventId },
       select: {
         id: true,
         seatingCanvasWidth: true,
@@ -2511,8 +2584,14 @@ export async function getCanvasDimensions(eventId: string) {
       return { error: "Unauthorized" };
     }
 
+    // Verify event access (owner or collaborator)
+    const hasAccess = await canAccessEvent(eventId, user.id);
+    if (!hasAccess) {
+      return { error: "Event not found" };
+    }
+
     const event = await prisma.weddingEvent.findFirst({
-      where: { id: eventId, ownerId: user.id },
+      where: { id: eventId },
       select: {
         seatingCanvasWidth: true,
         seatingCanvasHeight: true,
@@ -2547,6 +2626,12 @@ export async function updateCanvasDimensions(
       return { error: "Unauthorized" };
     }
 
+    // Verify event access (owner or collaborator with EDITOR role)
+    const hasAccess = await canAccessEvent(eventId, user.id, "EDITOR");
+    if (!hasAccess) {
+      return { error: "Event not found" };
+    }
+
     // Validate dimensions
     const MIN_WIDTH = 600;
     const MAX_WIDTH = 4000;
@@ -2557,7 +2642,7 @@ export async function updateCanvasDimensions(
     const validHeight = Math.max(MIN_HEIGHT, Math.min(MAX_HEIGHT, height));
 
     const event = await prisma.weddingEvent.updateMany({
-      where: { id: eventId, ownerId: user.id },
+      where: { id: eventId },
       data: {
         seatingCanvasWidth: validWidth,
         seatingCanvasHeight: validHeight,

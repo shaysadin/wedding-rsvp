@@ -5,6 +5,7 @@ import { UserRole, NotificationType, NotificationChannel, NotificationStatus } f
 
 import { prisma } from "@/lib/db";
 import { getCurrentUser } from "@/lib/session";
+import { canAccessEvent } from "@/lib/permissions";
 import { getNotificationService } from "@/lib/notifications";
 import { PLAN_LIMITS } from "@/config/plans";
 import { logWhatsAppCost, logSmsCost } from "@/lib/analytics/usage-tracking";

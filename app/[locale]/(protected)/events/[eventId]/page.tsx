@@ -167,6 +167,7 @@ export default async function EventDashboardPage({ params }: EventDashboardPageP
     invitationImageUrl: event.invitationImageUrl,
     invitationImagePublicId: event.invitationImagePublicId,
     smsSenderId: event.smsSenderId,
+    navigationCode: event.navigationCode,
     isActive: event.isActive,
     isArchived: event.isArchived,
     archivedAt: event.archivedAt,

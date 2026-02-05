@@ -20,6 +20,8 @@ export async function proxy(request: NextRequest) {
     pathname.startsWith("/_next") ||
     pathname.startsWith("/rsvp") ||
     pathname.startsWith("/gift") ||
+    pathname.startsWith("/transportation") ||
+    pathname.startsWith("/n") ||
     pathname.includes(".");
 
   if (shouldSkipI18n) {
@@ -37,6 +39,6 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   // Match all pathnames except for API routes, _next, static files
-  // Note: rsvp routes are handled by shouldSkipI18n check in middleware function
+  // Note: rsvp, gift, transportation, and /n routes are handled by shouldSkipI18n check in middleware function
   matcher: ["/((?!api|_next|.*\\..*).*)"],
 };

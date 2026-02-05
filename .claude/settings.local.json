@@ -21,7 +21,8 @@
       "Bash(find:*)",
       "Bash(ls:*)",
       "Bash(npm install:*)",
-      "Bash(npm run db:push:*)"
+      "Bash(npm run db:push:*)",
+      "Bash(node scripts/migrate-template-styles.js:*)"
     ],
     "deny": [],
     "ask": []

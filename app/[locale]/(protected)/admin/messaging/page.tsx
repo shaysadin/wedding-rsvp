@@ -4,11 +4,11 @@ import { getLocale } from "next-intl/server";
 import { getCurrentUser } from "@/lib/session";
 import { getMessagingSettings } from "@/actions/messaging-settings";
 import { getWhatsAppPhoneNumbersWithUsers } from "@/actions/whatsapp-phone-numbers";
-import { getAllWhatsAppTemplates } from "@/actions/whatsapp-templates";
+import { getAllTemplatesWithTwilioSync } from "@/actions/whatsapp-templates";
 import { DashboardHeader } from "@/components/dashboard/header";
 import { MessagingSettingsForm } from "@/components/admin/messaging-settings-form";
 import { WhatsAppPhoneNumbersAdmin } from "@/components/admin/whatsapp-phone-numbers-admin";
-import { WhatsAppTemplatesAdmin } from "@/components/admin/whatsapp-templates-admin";
+import { WhatsAppTemplatesAdminV2 } from "@/components/admin/whatsapp-templates-admin-v2";
 
 export default async function AdminMessagingPage() {
   const user = await getCurrentUser();
@@ -22,7 +22,7 @@ export default async function AdminMessagingPage() {
   const [settingsResult, phoneNumbersResult, templatesResult] = await Promise.all([
     getMessagingSettings(),
     getWhatsAppPhoneNumbersWithUsers(),
-    getAllWhatsAppTemplates(),
+    getAllTemplatesWithTwilioSync(),
   ]);
 
   const settings = settingsResult.success ? settingsResult.settings : null;
@@ -61,7 +61,7 @@ export default async function AdminMessagingPage() {
             <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-primary text-xs font-bold">3</span>
             WhatsApp Message Templates
           </h2>
-          <WhatsAppTemplatesAdmin templates={templates as any} />
+          <WhatsAppTemplatesAdminV2 templates={templates as any} />
         </section>
       </div>
     </>

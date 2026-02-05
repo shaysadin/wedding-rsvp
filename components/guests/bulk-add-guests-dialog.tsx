@@ -386,6 +386,10 @@ export function BulkAddGuestsDialog({ eventId }: BulkAddGuestsDialogProps) {
           // Remove the duplicate from the list by phone number
           setDuplicatesWithExisting(prev => prev.filter(d => d.phone !== phone));
         }}
+        onSkipAllDuplicates={() => {
+          // Clear all duplicates at once (keeping first occurrence of each)
+          setDuplicatesWithExisting([]);
+        }}
       />
     </>
   );

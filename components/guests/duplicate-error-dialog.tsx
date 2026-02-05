@@ -49,6 +49,8 @@ interface DuplicateErrorDialogProps {
   onEditGuest?: (guestId: string) => void;
   // Callback to skip/remove a duplicate from the import list (by phone)
   onSkipDuplicate?: (phone: string) => void;
+  // Callback to skip all duplicates at once
+  onSkipAllDuplicates?: () => void;
   // Callback when an existing guest is deleted (for single add mode)
   onExistingGuestDeleted?: () => void;
 }
@@ -64,6 +66,7 @@ export function DuplicateErrorDialog({
   phoneNumber,
   onEditGuest,
   onSkipDuplicate,
+  onSkipAllDuplicates,
   onExistingGuestDeleted,
 }: DuplicateErrorDialogProps) {
   const t = useTranslations("guests");
@@ -122,6 +125,15 @@ export function DuplicateErrorDialog({
     if (onSkipDuplicate) {
       onSkipDuplicate(phone);
       toast.success(t("duplicates.skipped"));
+    }
+  };
+
+  // Skip all duplicates at once (keeping first of each)
+  const handleSkipAllDuplicates = () => {
+    if (onSkipAllDuplicates) {
+      onSkipAllDuplicates();
+      toast.success(t("duplicates.allSkipped"));
+      onOpenChange(false);
     }
   };
 
@@ -292,7 +304,18 @@ export function DuplicateErrorDialog({
             </div>
           </ScrollArea>
 
-          <DialogFooter>
+          <DialogFooter className="flex-col gap-2 sm:flex-row sm:gap-0">
+            {/* Show "Skip All Duplicates" button only in bulk mode with duplicates */}
+            {(hasExistingDuplicates || hasBatchDuplicates) && onSkipAllDuplicates && (
+              <Button
+                variant="outline"
+                onClick={handleSkipAllDuplicates}
+                className="sm:mr-auto"
+              >
+                <Icons.close className="me-2 h-4 w-4" />
+                {t("duplicates.skipAll")}
+              </Button>
+            )}
             <Button onClick={() => onOpenChange(false)}>
               {tc("understood")}
             </Button>

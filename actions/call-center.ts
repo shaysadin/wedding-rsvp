@@ -32,7 +32,7 @@ interface UpdateCallNotesInput {
 }
 
 interface UpdateRsvpFromCallInput {
-  callLogId: string;
+  callLogId?: string;
   guestId: string;
   newRsvpStatus: RsvpStatus;
   guestCount?: number;
@@ -173,8 +173,8 @@ export async function updateCallNotes(input: UpdateCallNotesInput) {
       return { error: "Forbidden" };
     }
 
-    // Check event access
-    const hasAccess = await canAccessEvent(eventId, user.id);
+    // Check event access (require EDITOR role for modifying data)
+    const hasAccess = await canAccessEvent(eventId, user.id, "EDITOR");
     if (!hasAccess) {
       return { error: "Forbidden" };
     }
@@ -194,7 +194,7 @@ export async function updateCallNotes(input: UpdateCallNotesInput) {
 }
 
 /**
- * Update guest RSVP status from call
+ * Update guest RSVP status from call center (with or without active call)
  */
 export async function updateRsvpFromCall(input: UpdateRsvpFromCallInput) {
   try {
@@ -211,18 +211,20 @@ export async function updateRsvpFromCall(input: UpdateRsvpFromCallInput) {
       return { error: "Forbidden" };
     }
 
-    // Get call log
-    const callLog = await prisma.manualCallLog.findUnique({
-      where: { id: callLogId },
-    });
+    // If call log is provided, verify access to it
+    if (callLogId) {
+      const callLog = await prisma.manualCallLog.findUnique({
+        where: { id: callLogId },
+      });
 
-    if (!callLog) {
-      return { error: "Call log not found" };
-    }
+      if (!callLog) {
+        return { error: "Call log not found" };
+      }
 
-    // Verify user is the operator
-    if (callLog.operatorId !== user.id) {
-      return { error: "Forbidden" };
+      // Verify user is the operator
+      if (callLog.operatorId !== user.id) {
+        return { error: "Forbidden" };
+      }
     }
 
     // Update or create RSVP
@@ -239,14 +241,16 @@ export async function updateRsvpFromCall(input: UpdateRsvpFromCallInput) {
       },
     });
 
-    // Mark call log as having updated RSVP
-    await prisma.manualCallLog.update({
-      where: { id: callLogId },
-      data: {
-        rsvpUpdated: true,
-        newRsvpStatus: newRsvpStatus,
-      },
-    });
+    // Mark call log as having updated RSVP (only if callLogId provided)
+    if (callLogId) {
+      await prisma.manualCallLog.update({
+        where: { id: callLogId },
+        data: {
+          rsvpUpdated: true,
+          newRsvpStatus: newRsvpStatus,
+        },
+      });
+    }
 
     revalidatePath(`/${locale}/events/${eventId}/call-center`);
     revalidatePath(`/${locale}/events/${eventId}/guests`);

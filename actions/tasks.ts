@@ -5,6 +5,7 @@ import { TaskStatus } from "@prisma/client";
 
 import { prisma } from "@/lib/db";
 import { getCurrentUser } from "@/lib/session";
+import { canAccessEvent } from "@/lib/permissions";
 
 export type TaskNote = {
   id: string;
@@ -36,15 +37,9 @@ export async function getTasks(eventId: string): Promise<{
       return { error: "Unauthorized" };
     }
 
-    // Verify user owns the event
-    const event = await prisma.weddingEvent.findFirst({
-      where: {
-        id: eventId,
-        ownerId: user.id,
-      },
-    });
-
-    if (!event) {
+    // Verify event access (owner or collaborator)
+    const hasAccess = await canAccessEvent(eventId, user.id);
+    if (!hasAccess) {
       return { error: "Event not found" };
     }
 
@@ -85,15 +80,9 @@ export async function createTask(
       return { error: "Unauthorized" };
     }
 
-    // Verify user owns the event
-    const event = await prisma.weddingEvent.findFirst({
-      where: {
-        id: eventId,
-        ownerId: user.id,
-      },
-    });
-
-    if (!event) {
+    // Verify event access (owner or collaborator with EDITOR role)
+    const hasAccess = await canAccessEvent(eventId, user.id, "EDITOR");
+    if (!hasAccess) {
       return { error: "Event not found" };
     }
 
@@ -144,7 +133,7 @@ export async function updateTaskStatus(
       return { error: "Unauthorized" };
     }
 
-    // Verify user owns the task's event
+    // Verify task exists and user has access
     const task = await prisma.weddingTask.findFirst({
       where: {
         id: taskId,
@@ -154,8 +143,14 @@ export async function updateTaskStatus(
       },
     });
 
-    if (!task || task.weddingEvent.ownerId !== user.id) {
+    if (!task) {
       return { error: "Task not found" };
+    }
+
+    // Verify access (owner or collaborator with EDITOR role)
+    const hasAccess = await canAccessEvent(task.weddingEventId, user.id, "EDITOR");
+    if (!hasAccess) {
+      return { error: "Unauthorized" };
     }
 
     await prisma.weddingTask.update({
@@ -184,7 +179,7 @@ export async function deleteTask(taskId: string): Promise<{
       return { error: "Unauthorized" };
     }
 
-    // Verify user owns the task's event
+    // Verify task exists and user has access
     const task = await prisma.weddingTask.findFirst({
       where: {
         id: taskId,
@@ -194,8 +189,14 @@ export async function deleteTask(taskId: string): Promise<{
       },
     });
 
-    if (!task || task.weddingEvent.ownerId !== user.id) {
+    if (!task) {
       return { error: "Task not found" };
+    }
+
+    // Verify access (owner or collaborator with EDITOR role)
+    const hasAccess = await canAccessEvent(task.weddingEventId, user.id, "EDITOR");
+    if (!hasAccess) {
+      return { error: "Unauthorized" };
     }
 
     await prisma.weddingTask.delete({
@@ -227,7 +228,7 @@ export async function updateTask(
       return { error: "Unauthorized" };
     }
 
-    // Verify user owns the task's event
+    // Verify task exists and user has access
     const existingTask = await prisma.weddingTask.findFirst({
       where: {
         id: taskId,
@@ -237,8 +238,14 @@ export async function updateTask(
       },
     });
 
-    if (!existingTask || existingTask.weddingEvent.ownerId !== user.id) {
+    if (!existingTask) {
       return { error: "Task not found" };
+    }
+
+    // Verify access (owner or collaborator with EDITOR role)
+    const hasAccess = await canAccessEvent(existingTask.weddingEventId, user.id, "EDITOR");
+    if (!hasAccess) {
+      return { error: "Unauthorized" };
     }
 
     const task = await prisma.weddingTask.update({
@@ -271,14 +278,20 @@ export async function addTaskNote(
       return { error: "Unauthorized" };
     }
 
-    // Verify user owns the task's event
+    // Verify task exists and user has access
     const task = await prisma.weddingTask.findFirst({
       where: { id: taskId },
       include: { weddingEvent: true },
     });
 
-    if (!task || task.weddingEvent.ownerId !== user.id) {
+    if (!task) {
       return { error: "Task not found" };
+    }
+
+    // Verify access (owner or collaborator with EDITOR role)
+    const hasAccess = await canAccessEvent(task.weddingEventId, user.id, "EDITOR");
+    if (!hasAccess) {
+      return { error: "Unauthorized" };
     }
 
     const note = await prisma.taskNote.create({
@@ -309,7 +322,7 @@ export async function updateTaskNote(
       return { error: "Unauthorized" };
     }
 
-    // Verify user owns the note's task's event
+    // Verify note exists and user has access
     const existingNote = await prisma.taskNote.findFirst({
       where: { id: noteId },
       include: {
@@ -319,8 +332,14 @@ export async function updateTaskNote(
       },
     });
 
-    if (!existingNote || existingNote.task.weddingEvent.ownerId !== user.id) {
+    if (!existingNote) {
       return { error: "Note not found" };
+    }
+
+    // Verify access (owner or collaborator with EDITOR role)
+    const hasAccess = await canAccessEvent(existingNote.task.weddingEventId, user.id, "EDITOR");
+    if (!hasAccess) {
+      return { error: "Unauthorized" };
     }
 
     const note = await prisma.taskNote.update({
@@ -346,7 +365,7 @@ export async function deleteTaskNote(noteId: string): Promise<{
       return { error: "Unauthorized" };
     }
 
-    // Verify user owns the note's task's event
+    // Verify note exists and user has access
     const existingNote = await prisma.taskNote.findFirst({
       where: { id: noteId },
       include: {
@@ -356,8 +375,14 @@ export async function deleteTaskNote(noteId: string): Promise<{
       },
     });
 
-    if (!existingNote || existingNote.task.weddingEvent.ownerId !== user.id) {
+    if (!existingNote) {
       return { error: "Note not found" };
+    }
+
+    // Verify access (owner or collaborator with EDITOR role)
+    const hasAccess = await canAccessEvent(existingNote.task.weddingEventId, user.id, "EDITOR");
+    if (!hasAccess) {
+      return { error: "Unauthorized" };
     }
 
     await prisma.taskNote.delete({

@@ -6,6 +6,7 @@ import { UserRole, PlanTier } from "@prisma/client";
 
 import { prisma } from "@/lib/db";
 import { getCurrentUser } from "@/lib/session";
+import { canAccessEvent } from "@/lib/permissions";
 import {
   createGuestSchema,
   updateGuestSchema,
@@ -30,8 +31,18 @@ const generateSlug = customAlphabet(
   12
 );
 
+// Short slug for transportation links (6 chars, URL-friendly, no confusing chars)
+const generateShortSlug = customAlphabet(
+  "abcdefghjkmnpqrstuvwxyz23456789", // No 0, O, l, 1
+  6
+);
+
 function generateGuestSlug(): string {
   return generateSlug();
+}
+
+function generateTransportationSlug(): string {
+  return generateShortSlug();
 }
 
 // Normalize phone number for comparison (remove spaces, dashes, etc.)
@@ -51,9 +62,14 @@ export async function createGuest(input: CreateGuestInput) {
 
     const validatedData = createGuestSchema.parse(input);
 
-    // Verify event ownership
+    // Verify event access (owner or collaborator with EDITOR role)
+    const hasAccess = await canAccessEvent(validatedData.weddingEventId, user.id, "EDITOR");
+    if (!hasAccess) {
+      return { error: "Event not found" };
+    }
+
     const event = await prisma.weddingEvent.findFirst({
-      where: { id: validatedData.weddingEventId, ownerId: user.id },
+      where: { id: validatedData.weddingEventId },
       include: { _count: { select: { guests: true } } },
     });
 
@@ -100,6 +116,7 @@ export async function createGuest(input: CreateGuestInput) {
         data: {
           ...validatedData,
           slug: generateGuestSlug(),
+          transportationSlug: generateTransportationSlug(), // Generate short transportation link (6 chars)
         },
       });
 
@@ -142,7 +159,13 @@ export async function updateGuest(input: UpdateGuestInput) {
       include: { weddingEvent: true, rsvp: true },
     });
 
-    if (!existingGuest || existingGuest.weddingEvent.ownerId !== user.id) {
+    if (!existingGuest) {
+      return { error: "Guest not found" };
+    }
+
+    // Verify event access (owner or collaborator with EDITOR role)
+    const hasAccess = await canAccessEvent(existingGuest.weddingEventId, user.id, "EDITOR");
+    if (!hasAccess) {
       return { error: "Guest not found" };
     }
 
@@ -225,7 +248,13 @@ export async function deleteGuest(guestId: string) {
       include: { weddingEvent: true },
     });
 
-    if (!existingGuest || existingGuest.weddingEvent.ownerId !== user.id) {
+    if (!existingGuest) {
+      return { error: "Guest not found" };
+    }
+
+    // Verify event access (owner or collaborator with EDITOR role)
+    const hasAccess = await canAccessEvent(existingGuest.weddingEventId, user.id, "EDITOR");
+    if (!hasAccess) {
       return { error: "Guest not found" };
     }
 
@@ -256,18 +285,19 @@ export async function deleteGuests(guestIds: string[]) {
       return { error: "No guests selected" };
     }
 
-    // Verify ownership of all guests
+    // Verify access to all guests
     const guests = await prisma.guest.findMany({
       where: { id: { in: guestIds } },
       include: { weddingEvent: true },
     });
 
-    const unauthorizedGuests = guests.filter(
-      (g) => g.weddingEvent.ownerId !== user.id
-    );
-
-    if (unauthorizedGuests.length > 0) {
-      return { error: "Unauthorized to delete some guests" };
+    // Check access for each unique event
+    const eventIds = [...new Set(guests.map(g => g.weddingEventId))];
+    for (const eventId of eventIds) {
+      const hasAccess = await canAccessEvent(eventId, user.id, "EDITOR");
+      if (!hasAccess) {
+        return { error: "Unauthorized to delete some guests" };
+      }
     }
 
     // Get event ID for revalidation
@@ -305,9 +335,14 @@ export async function bulkImportGuests(input: BulkImportGuestInput) {
 
     const validatedData = bulkImportGuestSchema.parse(input);
 
-    // Verify event ownership
+    // Verify event access (owner or collaborator with EDITOR role)
+    const hasAccess = await canAccessEvent(validatedData.weddingEventId, user.id, "EDITOR");
+    if (!hasAccess) {
+      return { error: "Event not found" };
+    }
+
     const event = await prisma.weddingEvent.findFirst({
-      where: { id: validatedData.weddingEventId, ownerId: user.id },
+      where: { id: validatedData.weddingEventId },
       include: { _count: { select: { guests: true } } },
     });
 
@@ -415,6 +450,7 @@ export async function bulkImportGuests(input: BulkImportGuestInput) {
               ...guestData,
               weddingEventId: validatedData.weddingEventId,
               slug: generateGuestSlug(),
+              transportationSlug: generateTransportationSlug(), // Generate short transportation link (6 chars)
             },
           })
         )
@@ -458,12 +494,9 @@ export async function getEventGuests(eventId: string) {
       return { error: "Unauthorized" };
     }
 
-    // Verify event ownership
-    const event = await prisma.weddingEvent.findFirst({
-      where: { id: eventId, ownerId: user.id },
-    });
-
-    if (!event) {
+    // Verify event access (owner or collaborator with any role)
+    const hasAccess = await canAccessEvent(eventId, user.id);
+    if (!hasAccess) {
       return { error: "Event not found" };
     }
 
@@ -514,12 +547,9 @@ export async function checkDuplicatePhone(
 
     const normalizedPhone = normalizePhoneNumber(phoneNumber);
 
-    // Verify event ownership
-    const event = await prisma.weddingEvent.findFirst({
-      where: { id: eventId, ownerId: user.id },
-    });
-
-    if (!event) {
+    // Verify event access (owner or collaborator with any role)
+    const hasAccess = await canAccessEvent(eventId, user.id);
+    if (!hasAccess) {
       return { error: "Event not found" };
     }
 
@@ -563,12 +593,9 @@ export async function getDuplicatePhoneGuests(eventId: string) {
       return { error: "Unauthorized" };
     }
 
-    // Verify event ownership
-    const event = await prisma.weddingEvent.findFirst({
-      where: { id: eventId, ownerId: user.id },
-    });
-
-    if (!event) {
+    // Verify event access (owner or collaborator with any role)
+    const hasAccess = await canAccessEvent(eventId, user.id);
+    if (!hasAccess) {
       return { error: "Event not found" };
     }
 
@@ -640,12 +667,9 @@ export async function bulkUpdateRsvpStatus(input: {
       return { error: "Unauthorized" };
     }
 
-    // Verify event ownership
-    const event = await prisma.weddingEvent.findFirst({
-      where: { id: input.eventId, ownerId: user.id },
-    });
-
-    if (!event) {
+    // Verify event access (owner or collaborator with EDITOR role)
+    const hasAccess = await canAccessEvent(input.eventId, user.id, "EDITOR");
+    if (!hasAccess) {
       return { error: "Event not found" };
     }
 

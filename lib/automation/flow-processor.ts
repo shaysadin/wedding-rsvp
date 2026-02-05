@@ -133,11 +133,22 @@ export async function processAutomationFlows(): Promise<ProcessResult> {
         }
       }
 
-      // Mark as processing
-      await prisma.automationFlowExecution.update({
-        where: { id: execution.id },
+      // Mark as processing - Use atomic update to prevent race conditions
+      // This ensures only one process can transition from PENDING to PROCESSING
+      const updated = await prisma.automationFlowExecution.updateMany({
+        where: {
+          id: execution.id,
+          status: "PENDING", // Only update if still pending
+        },
         data: { status: "PROCESSING" },
       });
+
+      // If no rows were updated, another process already started processing this
+      if (updated.count === 0) {
+        console.log(`[processAutomationFlows] Execution ${execution.id} already processing, skipping`);
+        result.skipped++;
+        continue;
+      }
 
       // Build RSVP URL
       const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://rsvp.app";

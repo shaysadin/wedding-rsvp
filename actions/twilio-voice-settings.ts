@@ -12,6 +12,8 @@ import { prisma } from "@/lib/db";
 import { requirePlatformOwner } from "@/lib/session";
 
 export interface TwilioVoiceSettingsInput {
+  twilioVoiceAccountSid?: string | null;
+  twilioVoiceAuthToken?: string | null;
   twilioVoiceApiKey?: string | null;
   twilioVoiceApiSecret?: string | null;
   twilioVoiceTwimlAppSid?: string | null;
@@ -51,6 +53,12 @@ export async function getTwilioVoiceSettings() {
     return {
       success: true,
       settings: {
+        twilioVoiceAccountSid: settings.twilioVoiceAccountSid
+          ? maskApiKey(settings.twilioVoiceAccountSid)
+          : null,
+        twilioVoiceAuthToken: settings.twilioVoiceAuthToken
+          ? maskApiKey(settings.twilioVoiceAuthToken)
+          : null,
         twilioVoiceApiKey: settings.twilioVoiceApiKey
           ? maskApiKey(settings.twilioVoiceApiKey)
           : null,
@@ -61,6 +69,8 @@ export async function getTwilioVoiceSettings() {
         twilioVoicePhoneNumber: settings.twilioVoicePhoneNumber,
         twilioVoiceEnabled: settings.twilioVoiceEnabled,
         isConfigured: !!(
+          settings.twilioVoiceAccountSid &&
+          settings.twilioVoiceAuthToken &&
           settings.twilioVoiceApiKey &&
           settings.twilioVoiceApiSecret &&
           settings.twilioVoiceTwimlAppSid
@@ -69,7 +79,8 @@ export async function getTwilioVoiceSettings() {
     };
   } catch (error) {
     console.error("Error fetching Twilio Voice settings:", error);
-    return { error: "Failed to fetch Twilio Voice settings" };
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    return { error: `Failed to fetch Twilio Voice settings: ${errorMessage}` };
   }
 }
 
@@ -89,6 +100,16 @@ export async function updateTwilioVoiceSettings(input: TwilioVoiceSettingsInput)
 
     // Prepare update data - don't update masked values
     const updateData: Record<string, unknown> = {};
+
+    // Account SID (don't update if masked)
+    if (input.twilioVoiceAccountSid !== undefined && !input.twilioVoiceAccountSid?.includes("•")) {
+      updateData.twilioVoiceAccountSid = input.twilioVoiceAccountSid || null;
+    }
+
+    // Auth Token (don't update if masked)
+    if (input.twilioVoiceAuthToken !== undefined && !input.twilioVoiceAuthToken?.includes("•")) {
+      updateData.twilioVoiceAuthToken = input.twilioVoiceAuthToken || null;
+    }
 
     // API Key (don't update if masked)
     if (input.twilioVoiceApiKey !== undefined && !input.twilioVoiceApiKey?.includes("•")) {
@@ -132,7 +153,8 @@ export async function updateTwilioVoiceSettings(input: TwilioVoiceSettingsInput)
     return { success: true };
   } catch (error) {
     console.error("Error updating Twilio Voice settings:", error);
-    return { error: "Failed to update Twilio Voice settings" };
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    return { error: `Failed to update Twilio Voice settings: ${errorMessage}` };
   }
 }
 
@@ -149,15 +171,8 @@ export async function testTwilioVoiceConnection() {
 
     const settings = await prisma.messagingProviderSettings.findFirst();
 
-    if (!settings || !settings.twilioVoiceApiKey || !settings.twilioVoiceApiSecret) {
-      return { error: "Twilio Voice not configured" };
-    }
-
-    // Test by generating a token (basic validation)
-    // We can't actually test calling without making a real call
-    const accountSid = process.env.TWILIO_ACCOUNT_SID;
-    if (!accountSid) {
-      return { error: "TWILIO_ACCOUNT_SID not set in environment" };
+    if (!settings || !settings.twilioVoiceAccountSid || !settings.twilioVoiceAuthToken || !settings.twilioVoiceApiKey || !settings.twilioVoiceApiSecret) {
+      return { error: "Twilio Voice not configured. Please configure Account SID, Auth Token, API Key, and API Secret." };
     }
 
     // If we get here, basic configuration looks valid
@@ -167,6 +182,7 @@ export async function testTwilioVoiceConnection() {
     };
   } catch (error) {
     console.error("Error testing Twilio Voice connection:", error);
-    return { error: "Connection test failed" };
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    return { error: `Connection test failed: ${errorMessage}` };
   }
 }

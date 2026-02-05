@@ -44,6 +44,7 @@ const eventNavSections = [
       { href: "/tasks", icon: "checkSquare", titleKey: "navigation.tasks", title: "Tasks" },
       { href: "/seating", icon: "layoutGrid", titleKey: "navigation.seating", title: "Seating" },
       { href: "/suppliers", icon: "suppliers", titleKey: "navigation.suppliers", title: "Suppliers" },
+      { href: "/transportation", icon: "bus", titleKey: "navigation.transportation", title: "Transportation" },
       { href: "/gifts", icon: "gift", titleKey: "navigation.gifts", title: "Gifts" },
     ],
   },

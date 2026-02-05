@@ -5,6 +5,7 @@ import { UserRole, NotificationType, NotificationChannel, NotificationStatus, Pl
 
 import { prisma } from "@/lib/db";
 import { getCurrentUser } from "@/lib/session";
+import { canAccessEvent } from "@/lib/permissions";
 import { getNotificationService } from "@/lib/notifications";
 import { PLAN_LIMITS, BUSINESS_VOICE_ADDON_CALLS, getVoiceCallLimit } from "@/config/plans";
 import { onNotificationSent } from "@/lib/automation/event-handlers";
@@ -632,12 +633,9 @@ export async function sendBulkReminders(eventId: string) {
       return { error: "Unauthorized" };
     }
 
-    // Verify event ownership
-    const event = await prisma.weddingEvent.findFirst({
-      where: { id: eventId, ownerId: user.id },
-    });
-
-    if (!event) {
+    // Verify event access (owner or collaborator with EDITOR role)
+    const hasAccess = await canAccessEvent(eventId, user.id, "EDITOR");
+    if (!hasAccess) {
       return { error: "Event not found" };
     }
 
@@ -757,12 +755,9 @@ export async function sendBulkInvites(eventId: string) {
       return { error: "Unauthorized" };
     }
 
-    // Verify event ownership
-    const event = await prisma.weddingEvent.findFirst({
-      where: { id: eventId, ownerId: user.id },
-    });
-
-    if (!event) {
+    // Verify event access (owner or collaborator with EDITOR role)
+    const hasAccess = await canAccessEvent(eventId, user.id, "EDITOR");
+    if (!hasAccess) {
       console.log(`[sendBulkInvites] Event not found`);
       return { error: "Event not found" };
     }
@@ -1086,13 +1081,9 @@ export async function getFailedNotifications(eventId: string) {
       return { error: "Unauthorized" };
     }
 
-    // Verify event ownership
-    const event = await prisma.weddingEvent.findFirst({
-      where: { id: eventId, ownerId: user.id },
-      select: { id: true },
-    });
-
-    if (!event) {
+    // Verify event access (owner or collaborator)
+    const hasAccess = await canAccessEvent(eventId, user.id);
+    if (!hasAccess) {
       return { error: "Event not found" };
     }
 
@@ -1152,13 +1143,9 @@ export async function getFailedNotificationsCount(eventId: string) {
       return { error: "Unauthorized" };
     }
 
-    // Verify event ownership
-    const event = await prisma.weddingEvent.findFirst({
-      where: { id: eventId, ownerId: user.id },
-      select: { id: true },
-    });
-
-    if (!event) {
+    // Verify event access (owner or collaborator)
+    const hasAccess = await canAccessEvent(eventId, user.id);
+    if (!hasAccess) {
       return { error: "Event not found" };
     }
 

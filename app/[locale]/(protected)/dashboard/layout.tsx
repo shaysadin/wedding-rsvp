@@ -42,8 +42,9 @@ export default async function DashboardLayout({ children }: DashboardLayoutProps
   }
 
   // Fetch events (filtered by workspace for BUSINESS users)
-  const whereClause: { ownerId: string; workspaceId?: string } = {
+  const whereClause: { ownerId: string; workspaceId?: string; isArchived: boolean } = {
     ownerId: user.id,
+    isArchived: false,
   };
 
   if (userPlan === PlanTier.BUSINESS && workspaceId) {

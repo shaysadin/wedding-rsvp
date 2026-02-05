@@ -5,6 +5,7 @@ import { InvitationFieldType, UserRole } from "@prisma/client";
 
 import { prisma } from "@/lib/db";
 import { getCurrentUser } from "@/lib/session";
+import { canAccessEvent } from "@/lib/permissions";
 import { generateInvitationWithAI, InvitationField } from "@/lib/gemini";
 import { uploadToR2, getPublicR2Url } from "@/lib/r2";
 

@@ -45,11 +45,15 @@ export async function POST(req: NextRequest) {
     // Generate unique identity for this user + event combination
     const identity = generateCallCenterIdentity(user.id, eventId);
 
+    console.log("[Token API] Generating token for identity:", identity);
+
     // Generate token (async now - reads from database)
     const token = await generateVoiceToken({
       identity,
       ttl: 3600, // 1 hour
     });
+
+    console.log("[Token API] Token generated successfully, length:", token?.length);
 
     return NextResponse.json({
       token,
@@ -57,9 +61,10 @@ export async function POST(req: NextRequest) {
       expiresIn: 3600,
     });
   } catch (error) {
-    console.error("Error generating Twilio Voice token:", error);
+    console.error("[Token API] Error generating Twilio Voice token:", error);
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
     return NextResponse.json(
-      { error: "Failed to generate token" },
+      { error: `Failed to generate token: ${errorMessage}` },
       { status: 500 }
     );
   }

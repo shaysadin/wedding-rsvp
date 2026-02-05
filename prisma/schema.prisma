@@ -222,6 +222,7 @@ model WeddingEvent {
   invitationImagePublicId String?               @map("invitation_image_public_id")
   invitationImageUrl      String?               @map("invitation_image_url")
   totalBudget             Decimal?              @map("total_budget") @db.Decimal(10, 2)
+  navigationCode          String?               @unique @map("navigation_code") // Short code for navigation links (e.g., /n/abc123)
   // Custom system automation messages (overrides defaults if set)
   rsvpConfirmedMessage    String?               @map("rsvp_confirmed_message")
   rsvpDeclinedMessage     String?               @map("rsvp_declined_message")
@@ -248,6 +249,7 @@ model WeddingEvent {
   giftPaymentSettings     GiftPaymentSettings?
   giftPayments            GiftPayment[]
   manualCallLogs          ManualCallLog[]
+  transportationRegistrations TransportationRegistration[]
   // Collaboration relations
   collaborators           EventCollaborator[]
   invitations             EventInvitation[]
@@ -297,37 +299,40 @@ model EventInvitation {
 }
 
 model Guest {
-  id                   String                    @id @default(cuid())
-  weddingEventId       String                    @map("wedding_event_id")
-  name                 String
-  phoneNumber          String?                   @map("phone_number")
-  email                String?
-  slug                 String                    @unique
-  side                 String?
-  groupName            String?                   @map("group_name")
-  notes                String?
-  createdAt            DateTime                  @default(now()) @map("created_at")
-  updatedAt            DateTime                  @default(now()) @updatedAt @map("updated_at")
-  expectedGuests       Int                       @default(1) @map("expected_guests")
+  id                      String                    @id @default(cuid())
+  weddingEventId          String                    @map("wedding_event_id")
+  name                    String
+  phoneNumber             String?                   @map("phone_number")
+  email                   String?
+  slug                    String                    @unique
+  transportationSlug      String?                   @unique @map("transportation_slug")
+  side                    String?
+  groupName               String?                   @map("group_name")
+  notes                   String?
+  createdAt               DateTime                  @default(now()) @map("created_at")
+  updatedAt               DateTime                  @default(now()) @updatedAt @map("updated_at")
+  expectedGuests          Int                       @default(1) @map("expected_guests")
   // Arrival tracking for hostess page
-  arrivedAt            DateTime?                 @map("arrived_at")
-  arrivedTableId       String?                   @map("arrived_table_id")
-  bulkMessageJobItems  BulkMessageJobItem[]
-  costLogs             CostLog[]
-  rsvp                 GuestRsvp?
-  weddingEvent         WeddingEvent              @relation(fields: [weddingEventId], references: [id], onDelete: Cascade)
-  notificationLogs     NotificationLog[]
-  tableAssignment      TableAssignment?
-  seatAssignment       TableSeat? // NEW RELATION for seat-level assignment
-  vapiCallLogs         VapiCallLog[]
-  whatsappResponses    WhatsAppButtonResponse[]
+  arrivedAt               DateTime?                 @map("arrived_at")
+  arrivedTableId          String?                   @map("arrived_table_id")
+  bulkMessageJobItems     BulkMessageJobItem[]
+  costLogs                CostLog[]
+  rsvp                    GuestRsvp?
+  weddingEvent            WeddingEvent              @relation(fields: [weddingEventId], references: [id], onDelete: Cascade)
+  notificationLogs        NotificationLog[]
+  tableAssignment         TableAssignment?
+  seatAssignment          TableSeat? // NEW RELATION for seat-level assignment
+  vapiCallLogs            VapiCallLog[]
+  whatsappResponses       WhatsAppButtonResponse[]
   // New module relations
-  automationExecutions AutomationFlowExecution[]
-  giftPayments         GiftPayment[]
-  manualCallLogs       ManualCallLog[]
+  automationExecutions    AutomationFlowExecution[]
+  giftPayments            GiftPayment[]
+  manualCallLogs          ManualCallLog[]
+  transportationRegistration TransportationRegistration?
 
   @@index([weddingEventId])
   @@index([slug])
+  @@index([transportationSlug])
   @@map("guests")
 }
 
@@ -344,6 +349,26 @@ model GuestRsvp {
 
   @@index([status])
   @@map("guest_rsvps")
+}
+
+model TransportationRegistration {
+  id             String       @id @default(cuid())
+  weddingEventId String       @map("wedding_event_id")
+  guestId        String?      @unique @map("guest_id") // Optional - allows generic registrations
+  fullName       String       @map("full_name")
+  phoneNumber    String       @map("phone_number")
+  location       String // Pickup location/address
+  notes          String? // Optional notes from guest
+  registeredAt   DateTime     @default(now()) @map("registered_at")
+  createdAt      DateTime     @default(now()) @map("created_at")
+  updatedAt      DateTime     @default(now()) @updatedAt @map("updated_at")
+
+  weddingEvent WeddingEvent @relation(fields: [weddingEventId], references: [id], onDelete: Cascade)
+  guest        Guest?       @relation(fields: [guestId], references: [id], onDelete: Cascade)
+
+  @@index([weddingEventId])
+  @@index([guestId])
+  @@map("transportation_registrations")
 }
 
 model NotificationLog {
@@ -689,6 +714,8 @@ model MessagingProviderSettings {
   whatsappThankYouTemplateText String? @map("whatsapp_thank_you_template_text")
 
   // Twilio Voice (Call Center) Settings
+  twilioVoiceAccountSid        String?  @map("twilio_voice_account_sid")
+  twilioVoiceAuthToken         String?  @map("twilio_voice_auth_token")
   twilioVoiceApiKey            String?  @map("twilio_voice_api_key")
   twilioVoiceApiSecret         String?  @map("twilio_voice_api_secret")
   twilioVoiceTwimlAppSid       String?  @map("twilio_voice_twiml_app_sid")
@@ -722,23 +749,52 @@ model MessageTemplate {
 // WhatsApp templates approved in Twilio dashboard
 // Supports multiple templates per type (e.g., formal, friendly, short)
 model WhatsAppTemplate {
-  id            String               @id @default(cuid())
-  type          WhatsAppTemplateType
-  style         String // "formal", "friendly", "short"
-  nameHe        String               @map("name_he")
-  nameEn        String               @map("name_en")
-  contentSid    String               @map("content_sid") // Twilio Content SID
-  templateText  String?              @map("template_text") // For display/reference
-  previewText   String?              @map("preview_text") // Preview text in English for send dialog
-  previewTextHe String?              @map("preview_text_he") // Preview text in Hebrew for send dialog
-  isActive      Boolean              @default(true) @map("is_active")
-  sortOrder     Int                  @default(0) @map("sort_order")
-  createdAt     DateTime             @default(now()) @map("created_at")
-  updatedAt     DateTime             @default(now()) @updatedAt @map("updated_at")
+  id                String                      @id @default(cuid())
+  type              WhatsAppTemplateType
+  style             String // "style1", "style2", "style3"
+  nameHe            String                      @map("name_he")
+  nameEn            String                      @map("name_en")
+  contentSid        String?                     @map("content_sid") // Twilio Content SID (null until approved)
+  templateText      String?                     @map("template_text") // For display/reference
+  previewText       String?                     @map("preview_text") // Preview text in English for send dialog
+  previewTextHe     String?                     @map("preview_text_he") // Preview text in Hebrew for send dialog
+  isActive          Boolean                     @default(true) @map("is_active")
+  sortOrder         Int                         @default(0) @map("sort_order")
+
+  // Template creation and approval tracking
+  approvalStatus    WhatsAppTemplateApprovalStatus @default(DRAFT) @map("approval_status")
+  twilioTemplateName String?                    @map("twilio_template_name") // Suggested/actual Twilio template name
+  templateBodyHe    String?                     @map("template_body_he") @db.Text // Hebrew template body text
+  templateBodyEn    String?                     @map("template_body_en") @db.Text // English template body text
+  variables         Json?                       // Variable definitions: {1: "Guest Name", 2: "Event Title", etc.}
+  buttonsConfig     Json?                       @map("buttons_config") // Button configuration for interactive templates
+  rejectionReason   String?                     @map("rejection_reason") @db.Text // Reason for rejection (if rejected)
+  submittedAt       DateTime?                   @map("submitted_at") // When submitted to Twilio
+  approvedAt        DateTime?                   @map("approved_at") // When approved by WhatsApp
+
+  // Twilio Content API fields
+  contentType       String?                     @map("content_type") // twilio/text, twilio/quick-reply, twilio/media, etc.
+  category          String?                     @default("UTILITY") // UTILITY, MARKETING, AUTHENTICATION
+  language          String?                     @default("he") // Language code (he, en, en_US, he_IL)
+  headerText        String?                     @map("header_text") // Optional header text
+  footerText        String?                     @map("footer_text") // Optional footer text
+  mediaType         String?                     @map("media_type") // IMAGE, VIDEO, DOCUMENT (for media templates)
+
+  createdAt         DateTime                    @default(now()) @map("created_at")
+  updatedAt         DateTime                    @default(now()) @updatedAt @map("updated_at")
 
   @@unique([type, style])
   @@index([type, isActive])
+  @@index([approvalStatus])
   @@map("whatsapp_templates")
+}
+
+enum WhatsAppTemplateApprovalStatus {
+  DRAFT          // Created in admin but not submitted to Twilio yet
+  PENDING        // Submitted to Twilio, awaiting WhatsApp approval
+  APPROVED       // Approved by WhatsApp and ready to use
+  REJECTED       // Rejected by WhatsApp
+  PAUSED         // Temporarily paused/disabled
 }
 
 enum WhatsAppTemplateType {
@@ -747,6 +803,7 @@ enum WhatsAppTemplateType {
   INTERACTIVE_INVITE // Interactive buttons invite
   INTERACTIVE_REMINDER // Interactive buttons reminder
   IMAGE_INVITE // Image invite with invitation image
+  TRANSPORTATION_INVITE // Formal invite with RSVP link + Transportation link
   CONFIRMATION // RSVP confirmation message
   EVENT_DAY // Event day reminder (morning of event)
   THANK_YOU // Thank you message (day after event)
@@ -1176,6 +1233,7 @@ enum NotificationType {
   INTERACTIVE_INVITE
   INTERACTIVE_REMINDER
   GUEST_COUNT_REQUEST
+  TRANSPORTATION_INVITE // Invite with transportation link
   EVENT_DAY // Event day reminder (table, navigation, gift)
   THANK_YOU // Thank you message after event
   TABLE_ASSIGNMENT // Table assignment notification

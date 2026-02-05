@@ -75,6 +75,7 @@ const TYPE_LABELS: Record<WhatsAppTemplateType, { en: string; he: string }> = {
   INTERACTIVE_INVITE: { en: "Interactive Invite", he: "הזמנה אינטראקטיבית" },
   INTERACTIVE_REMINDER: { en: "Interactive Reminder", he: "תזכורת אינטראקטיבית" },
   IMAGE_INVITE: { en: "Image Invite", he: "הזמנה עם תמונה" },
+  TRANSPORTATION_INVITE: { en: "Transportation Invite", he: "הזמנה עם הסעות" },
   CONFIRMATION: { en: "RSVP Confirmation", he: "אישור RSVP" },
   EVENT_DAY: { en: "Event Day Reminder", he: "תזכורת יום האירוע" },
   THANK_YOU: { en: "Thank You", he: "הודעת תודה" },
@@ -83,9 +84,9 @@ const TYPE_LABELS: Record<WhatsAppTemplateType, { en: string; he: string }> = {
 };
 
 const STYLE_LABELS: Record<WhatsAppTemplateStyle, { en: string; he: string }> = {
-  formal: { en: "Formal", he: "רשמי" },
-  friendly: { en: "Friendly", he: "ידידותי" },
-  short: { en: "Short", he: "קצר" },
+  style1: { en: "Style 1", he: "סגנון 1" },
+  style2: { en: "Style 2", he: "סגנון 2" },
+  style3: { en: "Style 3", he: "סגנון 3" },
 };
 
 export function WhatsAppTemplatesAdmin({ templates }: WhatsAppTemplatesAdminProps) {
@@ -95,7 +96,7 @@ export function WhatsAppTemplatesAdmin({ templates }: WhatsAppTemplatesAdminProp
 
   // Form state
   const [formType, setFormType] = useState<WhatsAppTemplateType>("INVITE");
-  const [formStyle, setFormStyle] = useState<WhatsAppTemplateStyle>("formal");
+  const [formStyle, setFormStyle] = useState<WhatsAppTemplateStyle>("style1");
   const [formContentSid, setFormContentSid] = useState("");
   const [formPreviewText, setFormPreviewText] = useState("");
   const [formPreviewTextHe, setFormPreviewTextHe] = useState("");
@@ -131,7 +132,7 @@ export function WhatsAppTemplatesAdmin({ templates }: WhatsAppTemplatesAdminProp
     } else {
       setEditingTemplate(null);
       setFormType("INVITE");
-      setFormStyle("formal");
+      setFormStyle("style1");
       setFormContentSid("");
       setFormPreviewText("");
       setFormPreviewTextHe("");
@@ -168,7 +169,7 @@ export function WhatsAppTemplatesAdmin({ templates }: WhatsAppTemplatesAdminProp
         templateText: definition.twilioTemplateName,
         previewText: formPreviewText.trim() || undefined,
         previewTextHe: formPreviewTextHe.trim() || undefined,
-        sortOrder: formStyle === "formal" ? 0 : formStyle === "friendly" ? 1 : 2,
+        sortOrder: formStyle === "style1" ? 0 : formStyle === "style2" ? 1 : 2,
       });
 
       if (result.success) {
@@ -216,7 +217,7 @@ export function WhatsAppTemplatesAdmin({ templates }: WhatsAppTemplatesAdminProp
             </CardTitle>
             <CardDescription>
               Manage approved WhatsApp Content Templates from Twilio. Each template type
-              can have 3 styles: Formal, Friendly, and Short.
+              can have 3 styles: Style 1, Style 2, and Style 3.
             </CardDescription>
           </div>
           <Button onClick={() => handleOpenDialog()} className="gap-2">
@@ -246,7 +247,7 @@ export function WhatsAppTemplatesAdmin({ templates }: WhatsAppTemplatesAdminProp
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {(["formal", "friendly", "short"] as WhatsAppTemplateStyle[]).map(
+                  {(["style1", "style2", "style3"] as WhatsAppTemplateStyle[]).map(
                     (style) => {
                       const existing = getExistingTemplate(type, style);
                       const definition = getDefinition(type, style);
@@ -395,7 +396,7 @@ export function WhatsAppTemplatesAdmin({ templates }: WhatsAppTemplatesAdminProp
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {(["formal", "friendly", "short"] as WhatsAppTemplateStyle[]).map(
+                      {(["style1", "style2", "style3"] as WhatsAppTemplateStyle[]).map(
                         (style) => (
                           <SelectItem key={style} value={style}>
                             {STYLE_LABELS[style].en}

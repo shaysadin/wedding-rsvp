@@ -21,6 +21,7 @@ const adminNavItems = [
   { href: "/admin/users", icon: "users", titleKey: "navigation.users", title: "Users" },
   { href: "/admin/messaging", icon: "messageSquare", titleKey: "navigation.messaging", title: "Messaging" },
   { href: "/admin/vapi", icon: "phone", titleKey: "navigation.vapi", title: "Voice Agent" },
+  { href: "/admin/twilio-voice", icon: "phoneCall", titleKey: "navigation.twilioVoice", title: "Call Center (Twilio Voice)" },
   { href: "/admin/cron-logs", icon: "clock", titleKey: "navigation.cronLogs", title: "Cron Logs" },
   { href: "/admin/usage-tracking", icon: "chart", titleKey: "navigation.usageTracking", title: "Usage Tracking" },
   { href: "/admin/invitation-templates", icon: "fileText", titleKey: "navigation.invitationTemplates", title: "Invitation Templates" },

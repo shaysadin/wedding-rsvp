@@ -16,7 +16,13 @@ import { env } from "@/env.mjs";
 import { prisma } from "@/lib/db";
 
 // Get the status callback URL for Twilio message status updates
+// DISABLED IN DEVELOPMENT for easier testing
 function getStatusCallbackUrl(): string | undefined {
+  // Skip status callback in development
+  if (process.env.NODE_ENV === "development") {
+    return undefined;
+  }
+
   const appUrl = process.env.NEXT_PUBLIC_APP_URL;
   if (!appUrl) return undefined;
   return `${appUrl}/api/twilio/status`;
@@ -35,6 +41,11 @@ import {
 import { formatToE164 } from "./phone-formatter";
 import { renderMessage } from "./template-renderer";
 import { createSmsProvider } from "./sms-providers";
+import {
+  buildWhatsAppTemplateVariables,
+  convertToTwilioVariables,
+  getNavigationLink,
+} from "./whatsapp-template-renderer";
 
 export class TwilioNotificationService implements NotificationService {
   private async getSettings() {
@@ -207,16 +218,28 @@ export class TwilioNotificationService implements NotificationService {
     const contentSid = options?.whatsappContentSid || settings?.whatsappInviteContentSid;
 
     if (contentSid && channel === NotificationChannel.WHATSAPP) {
-      // Use Content Template for WhatsApp Business API
+      // Fetch template to check if it's Style 3 (needs transportation link)
+      const template = await prisma.whatsAppTemplate.findFirst({
+        where: { contentSid },
+        select: { style: true, type: true, mediaType: true },
+      });
+
+      // Check if template needs media URL (IMAGE_INVITE or interactive with media)
+      const needsMedia = template?.type === "IMAGE_INVITE" ||
+                         (template?.type?.includes("INTERACTIVE") && template?.mediaType);
+
+      // Use Content Template for WhatsApp Business API with new 10-variable system
+      const templateVars = buildWhatsAppTemplateVariables(guest, event, {
+        customRsvpLink: this.getRsvpLink(guest.slug),
+        includeTransportationLink: true, // Always include transportation link ({{9}})
+        mediaUrl: needsMedia ? event.invitationImageUrl || undefined : undefined, // Include invitation image URL for media templates
+      });
       whatsappOptions = {
         contentSid,
-        contentVariables: {
-          "1": guest.name, // {{1}} = guest name
-          "2": event.title, // {{2}} = event title
-          "3": this.getRsvpLink(guest.slug), // {{3}} = RSVP link
-        },
+        contentVariables: convertToTwilioVariables(templateVars),
       };
-      console.log(`Using WhatsApp Content Template for INVITE: ${contentSid}`);
+      console.log(`Using WhatsApp Content Template for INVITE: ${contentSid} (Style: ${template?.style || 'unknown'}, Media: ${needsMedia ? 'yes' : 'no'})`);
+      console.log(`Content Variables:`, whatsappOptions.contentVariables);
     }
 
     // Pass event's SMS sender ID for SMS channel
@@ -246,18 +269,31 @@ export class TwilioNotificationService implements NotificationService {
     const contentSid = options?.whatsappContentSid || settings?.whatsappReminderContentSid;
 
     if (contentSid && channel === NotificationChannel.WHATSAPP) {
-      // Use Content Template for WhatsApp Business API
-      // If custom contentVariables are provided (e.g., for EVENT_DAY), use them
-      // Otherwise use default REMINDER variables
+      // Fetch template to check if it needs media
+      const template = await prisma.whatsAppTemplate.findFirst({
+        where: { contentSid },
+        select: { style: true, type: true, mediaType: true },
+      });
+
+      // Check if template needs media URL (IMAGE_INVITE or interactive with media)
+      const needsMedia = template?.type === "IMAGE_INVITE" ||
+                         (template?.type?.includes("INTERACTIVE") && template?.mediaType);
+
+      // Use Content Template for WhatsApp Business API with new 10-variable system
+      // If custom contentVariables are provided (e.g., with custom table number), use them
+      // Otherwise build standard REMINDER variables
+      const templateVars = options?.contentVariables || convertToTwilioVariables(
+        buildWhatsAppTemplateVariables(guest, event, {
+          customRsvpLink: this.getRsvpLink(guest.slug),
+          includeTransportationLink: true, // Always include transportation link ({{9}})
+          mediaUrl: needsMedia ? event.invitationImageUrl || undefined : undefined, // Include invitation image URL for media templates
+        })
+      );
       whatsappOptions = {
         contentSid,
-        contentVariables: options?.contentVariables || {
-          "1": guest.name, // {{1}} = guest name
-          "2": event.title, // {{2}} = event title
-          "3": this.getRsvpLink(guest.slug), // {{3}} = RSVP link
-        },
+        contentVariables: templateVars,
       };
-      console.log(`Using WhatsApp Content Template for REMINDER: ${contentSid}`);
+      console.log(`Using WhatsApp Content Template for REMINDER: ${contentSid} (Style: ${template?.style || 'unknown'}, Media: ${needsMedia ? 'yes' : 'no'})`);
       console.log(`Content Variables:`, whatsappOptions.contentVariables);
     }
 
@@ -335,13 +371,11 @@ export class TwilioNotificationService implements NotificationService {
     let whatsappOptions: { contentSid?: string; contentVariables?: Record<string, string> } | undefined;
 
     if (settings?.whatsappConfirmationContentSid && channel === NotificationChannel.WHATSAPP) {
-      // Use Content Template for WhatsApp Business API
+      // Use Content Template for WhatsApp Business API with new 8-variable system
+      const templateVars = buildWhatsAppTemplateVariables(guest, event);
       whatsappOptions = {
         contentSid: settings.whatsappConfirmationContentSid,
-        contentVariables: {
-          "1": guest.name, // {{1}} = guest name
-          "2": event.title, // {{2}} = event title
-        },
+        contentVariables: convertToTwilioVariables(templateVars),
       };
       console.log(`Using WhatsApp Content Template for CONFIRMATION: ${settings.whatsappConfirmationContentSid}`);
     }
@@ -398,17 +432,21 @@ export class TwilioNotificationService implements NotificationService {
     });
     const fromNumber = activePhone?.phoneNumber || settings.whatsappPhoneNumber!;
 
-    // Build content variables for template
-    const contentVariables: Record<string, string> = {
-      "1": guest.name, // {{1}} = guest name
-      "2": event.title, // {{2}} = event title
-    };
+    // Fetch template to check if it needs media
+    const template = await prisma.whatsAppTemplate.findFirst({
+      where: { contentSid },
+      select: { style: true, type: true, mediaType: true },
+    });
 
-    // Add image URL as {{3}} if including image
-    // Template uses https://res.cloudinary.com/{{3}} format, so we strip the base URL
-    if (includeImage && event.invitationImageUrl) {
-      contentVariables["3"] = event.invitationImageUrl.replace("https://res.cloudinary.com/", "");
-    }
+    const needsMedia = includeImage || template?.mediaType;
+
+    // Build content variables for template using new 10-variable system
+    const templateVars = buildWhatsAppTemplateVariables(guest, event, {
+      customRsvpLink: getNavigationLink(event), // Use navigation for interactive templates
+      includeTransportationLink: true, // Always include transportation link ({{9}})
+      mediaUrl: needsMedia ? event.invitationImageUrl || undefined : undefined, // Include invitation image URL if requested
+    });
+    const contentVariables = convertToTwilioVariables(templateVars);
 
     // Create Twilio client
     const client = createTwilioClient(settings.whatsappApiKey, settings.whatsappApiSecret);
@@ -509,17 +547,21 @@ export class TwilioNotificationService implements NotificationService {
     });
     const fromNumber = activePhone?.phoneNumber || settings.whatsappPhoneNumber!;
 
-    // Build content variables for template
-    const contentVariables: Record<string, string> = {
-      "1": guest.name, // {{1}} = guest name
-      "2": event.title, // {{2}} = event title
-    };
+    // Fetch template to check if it needs media
+    const template = await prisma.whatsAppTemplate.findFirst({
+      where: { contentSid },
+      select: { style: true, type: true, mediaType: true },
+    });
 
-    // Add image URL as {{3}} if including image
-    // Template uses https://res.cloudinary.com/{{3}} format, so we strip the base URL
-    if (includeImage && event.invitationImageUrl) {
-      contentVariables["3"] = event.invitationImageUrl.replace("https://res.cloudinary.com/", "");
-    }
+    const needsMedia = includeImage || template?.mediaType;
+
+    // Build content variables for template using new 10-variable system
+    const templateVars = buildWhatsAppTemplateVariables(guest, event, {
+      customRsvpLink: getNavigationLink(event), // Use navigation for interactive templates
+      includeTransportationLink: true, // Always include transportation link ({{9}})
+      mediaUrl: needsMedia ? event.invitationImageUrl || undefined : undefined, // Include invitation image URL if requested
+    });
+    const contentVariables = convertToTwilioVariables(templateVars);
 
     // Create Twilio client
     const client = createTwilioClient(settings.whatsappApiKey, settings.whatsappApiSecret);

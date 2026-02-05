@@ -26,7 +26,7 @@ async function logCronJob(params: {
 
 /**
  * Auto-close events cron job
- * Runs daily to mark events as inactive when their date has passed
+ * Runs daily to archive events 1 week after their date has passed
  */
 export async function GET(req: NextRequest) {
   try {
@@ -37,12 +37,14 @@ export async function GET(req: NextRequest) {
     }
 
     const now = new Date();
+    const oneWeekAgo = new Date(now);
+    oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
 
-    // Find all active events where dateTime has passed
-    const eventsToClose = await prisma.weddingEvent.findMany({
+    // Find all non-archived events where dateTime was more than 1 week ago
+    const eventsToArchive = await prisma.weddingEvent.findMany({
       where: {
-        isActive: true,
-        dateTime: { lt: now },
+        isArchived: false,
+        dateTime: { lt: oneWeekAgo },
       },
       select: {
         id: true,
@@ -52,40 +54,41 @@ export async function GET(req: NextRequest) {
       },
     });
 
-    if (eventsToClose.length === 0) {
+    if (eventsToArchive.length === 0) {
       await logCronJob({
         status: CronJobStatus.SUCCESS,
-        message: "No events to auto-close",
+        message: "No events to auto-archive",
       });
 
       return NextResponse.json({
         success: true,
-        message: "No events to auto-close",
-        closedCount: 0,
+        message: "No events to auto-archive",
+        archivedCount: 0,
       });
     }
 
-    // Update all events to isActive = false
+    // Update all events to isArchived = true and isActive = false
     const result = await prisma.weddingEvent.updateMany({
       where: {
-        id: { in: eventsToClose.map((e) => e.id) },
+        id: { in: eventsToArchive.map((e) => e.id) },
       },
       data: {
+        isArchived: true,
         isActive: false,
       },
     });
 
-    const eventTitles = eventsToClose.map((e) => e.title).join(", ");
+    const eventTitles = eventsToArchive.map((e) => e.title).join(", ");
     await logCronJob({
       status: CronJobStatus.SUCCESS,
-      message: `Auto-closed ${result.count} event(s): ${eventTitles}`,
+      message: `Auto-archived ${result.count} event(s): ${eventTitles}`,
     });
 
     return NextResponse.json({
       success: true,
-      message: `Auto-closed ${result.count} event(s)`,
-      closedCount: result.count,
-      events: eventsToClose.map((e) => ({
+      message: `Auto-archived ${result.count} event(s)`,
+      archivedCount: result.count,
+      events: eventsToArchive.map((e) => ({
         id: e.id,
         title: e.title,
         dateTime: e.dateTime,

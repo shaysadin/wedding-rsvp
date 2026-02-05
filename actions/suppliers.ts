@@ -5,6 +5,7 @@ import { Decimal } from "@prisma/client/runtime/library";
 
 import { prisma } from "@/lib/db";
 import { getCurrentUser } from "@/lib/session";
+import { canAccessEvent } from "@/lib/permissions";
 import {
   createSupplierSchema,
   updateSupplierSchema,
@@ -34,12 +35,9 @@ export async function createSupplier(input: CreateSupplierInput) {
 
     const validatedData = createSupplierSchema.parse(input);
 
-    // Verify event belongs to user
-    const event = await prisma.weddingEvent.findFirst({
-      where: { id: validatedData.weddingEventId, ownerId: user.id },
-    });
-
-    if (!event) {
+    // Verify event access (owner or collaborator with EDITOR role)
+    const hasAccess = await canAccessEvent(validatedData.weddingEventId, user.id, "EDITOR");
+    if (!hasAccess) {
       return { error: "Event not found or unauthorized" };
     }
 
@@ -101,13 +99,13 @@ export async function updateSupplier(input: UpdateSupplierInput) {
 
     const validatedData = updateSupplierSchema.parse(input);
 
-    // Verify supplier belongs to user's event and get existing payments
+    // Verify supplier exists and user has access
     const existingSupplier = await prisma.supplier.findFirst({
       where: {
         id: validatedData.id,
-        weddingEvent: { ownerId: user.id },
       },
       include: {
+        weddingEvent: true,
         payments: {
           select: { amount: true },
         },
@@ -116,6 +114,12 @@ export async function updateSupplier(input: UpdateSupplierInput) {
 
     if (!existingSupplier) {
       return { error: "Supplier not found or unauthorized" };
+    }
+
+    // Verify access (owner or collaborator with EDITOR role)
+    const hasAccess = await canAccessEvent(existingSupplier.weddingEventId, user.id, "EDITOR");
+    if (!hasAccess) {
+      return { error: "Unauthorized" };
     }
 
     const supplier = await prisma.supplier.update({
@@ -201,16 +205,24 @@ export async function deleteSupplier(supplierId: string) {
       return { error: "Unauthorized" };
     }
 
-    // Verify supplier belongs to user's event
+    // Verify supplier exists and user has access
     const supplier = await prisma.supplier.findFirst({
       where: {
         id: supplierId,
-        weddingEvent: { ownerId: user.id },
+      },
+      include: {
+        weddingEvent: true,
       },
     });
 
     if (!supplier) {
       return { error: "Supplier not found or unauthorized" };
+    }
+
+    // Verify access (owner or collaborator with EDITOR role)
+    const hasAccess = await canAccessEvent(supplier.weddingEventId, user.id, "EDITOR");
+    if (!hasAccess) {
+      return { error: "Unauthorized" };
     }
 
     await prisma.supplier.delete({
@@ -236,12 +248,9 @@ export async function getEventSuppliers(eventId: string) {
       return { error: "Unauthorized" };
     }
 
-    // Verify event belongs to user
-    const event = await prisma.weddingEvent.findFirst({
-      where: { id: eventId, ownerId: user.id },
-    });
-
-    if (!event) {
+    // Verify event access (owner or collaborator)
+    const hasAccess = await canAccessEvent(eventId, user.id);
+    if (!hasAccess) {
       return { error: "Event not found or unauthorized" };
     }
 
@@ -275,9 +284,9 @@ export async function getSupplierDetails(supplierId: string) {
     const supplier = await prisma.supplier.findFirst({
       where: {
         id: supplierId,
-        weddingEvent: { ownerId: user.id },
       },
       include: {
+        weddingEvent: true,
         payments: {
           orderBy: { paidAt: "desc" },
         },
@@ -286,6 +295,12 @@ export async function getSupplierDetails(supplierId: string) {
 
     if (!supplier) {
       return { error: "Supplier not found or unauthorized" };
+    }
+
+    // Verify access (owner or collaborator)
+    const hasAccess = await canAccessEvent(supplier.weddingEventId, user.id);
+    if (!hasAccess) {
+      return { error: "Unauthorized" };
     }
 
     return { success: true, supplier };
@@ -309,16 +324,24 @@ export async function addSupplierPayment(input: CreatePaymentInput) {
 
     const validatedData = createPaymentSchema.parse(input);
 
-    // Verify supplier belongs to user's event
+    // Verify supplier exists and user has access
     const supplier = await prisma.supplier.findFirst({
       where: {
         id: validatedData.supplierId,
-        weddingEvent: { ownerId: user.id },
+      },
+      include: {
+        weddingEvent: true,
       },
     });
 
     if (!supplier) {
       return { error: "Supplier not found or unauthorized" };
+    }
+
+    // Verify access (owner or collaborator with EDITOR role)
+    const hasAccess = await canAccessEvent(supplier.weddingEventId, user.id, "EDITOR");
+    if (!hasAccess) {
+      return { error: "Unauthorized" };
     }
 
     const payment = await prisma.supplierPayment.create({
@@ -355,17 +378,28 @@ export async function updateSupplierPayment(input: UpdatePaymentInput) {
 
     const validatedData = updatePaymentSchema.parse(input);
 
-    // Verify payment's supplier belongs to user's event
+    // Verify payment exists and user has access
     const existingPayment = await prisma.supplierPayment.findFirst({
       where: {
         id: validatedData.id,
-        supplier: { weddingEvent: { ownerId: user.id } },
       },
-      include: { supplier: true },
+      include: {
+        supplier: {
+          include: {
+            weddingEvent: true,
+          },
+        },
+      },
     });
 
     if (!existingPayment) {
       return { error: "Payment not found or unauthorized" };
+    }
+
+    // Verify access (owner or collaborator with EDITOR role)
+    const hasAccess = await canAccessEvent(existingPayment.supplier.weddingEventId, user.id, "EDITOR");
+    if (!hasAccess) {
+      return { error: "Unauthorized" };
     }
 
     const payment = await prisma.supplierPayment.update({
@@ -405,17 +439,28 @@ export async function deleteSupplierPayment(paymentId: string) {
       return { error: "Unauthorized" };
     }
 
-    // Verify payment's supplier belongs to user's event
+    // Verify payment exists and user has access
     const payment = await prisma.supplierPayment.findFirst({
       where: {
         id: paymentId,
-        supplier: { weddingEvent: { ownerId: user.id } },
       },
-      include: { supplier: true },
+      include: {
+        supplier: {
+          include: {
+            weddingEvent: true,
+          },
+        },
+      },
     });
 
     if (!payment) {
       return { error: "Payment not found or unauthorized" };
+    }
+
+    // Verify access (owner or collaborator with EDITOR role)
+    const hasAccess = await canAccessEvent(payment.supplier.weddingEventId, user.id, "EDITOR");
+    if (!hasAccess) {
+      return { error: "Unauthorized" };
     }
 
     await prisma.supplierPayment.delete({
@@ -447,12 +492,9 @@ export async function updateEventBudget(input: UpdateBudgetInput) {
 
     const validatedData = updateBudgetSchema.parse(input);
 
-    // Verify event belongs to user
-    const event = await prisma.weddingEvent.findFirst({
-      where: { id: validatedData.eventId, ownerId: user.id },
-    });
-
-    if (!event) {
+    // Verify event access (owner or collaborator with EDITOR role)
+    const hasAccess = await canAccessEvent(validatedData.eventId, user.id, "EDITOR");
+    if (!hasAccess) {
       return { error: "Event not found or unauthorized" };
     }
 
@@ -487,9 +529,15 @@ export async function getSupplierStats(eventId: string) {
       return { error: "Unauthorized" };
     }
 
-    // Verify event belongs to user and get budget + guests
+    // Verify event access (owner or collaborator)
+    const hasAccess = await canAccessEvent(eventId, user.id);
+    if (!hasAccess) {
+      return { error: "Event not found or unauthorized" };
+    }
+
+    // Get budget + guests
     const event = await prisma.weddingEvent.findFirst({
-      where: { id: eventId, ownerId: user.id },
+      where: { id: eventId },
       select: {
         totalBudget: true,
         guests: {

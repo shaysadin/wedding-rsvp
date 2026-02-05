@@ -21,6 +21,7 @@ interface EventWithStats {
   notes: string | null;
   imageUrl: string | null;
   smsSenderId: string | null;
+  navigationCode: string | null;
   isActive: boolean;
   isArchived: boolean;
   archivedAt: Date | null;

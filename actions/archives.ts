@@ -29,7 +29,18 @@ export async function getMyArchives() {
       return { success: true, archives: [], r2Configured: false };
     }
 
-    const archives = await getUserArchives(user.id);
+    // Fetch fresh roles from database (session might be stale)
+    const dbUser = await prisma.user.findUnique({
+      where: { id: user.id },
+      select: { roles: true },
+    });
+    const userRoles = dbUser?.roles || user.roles || [];
+    const isPlatformOwner = userRoles.includes(UserRole.ROLE_PLATFORM_OWNER);
+
+    // Platform owners see all archives, regular users see only their own
+    const archives = isPlatformOwner
+      ? await prisma.eventArchive.findMany({ orderBy: { archivedAt: "desc" } })
+      : await getUserArchives(user.id);
 
     // Serialize dates for client components
     const serializedArchives = archives.map((archive) => ({
@@ -71,7 +82,24 @@ export async function getArchiveDetails(archiveId: string): Promise<{
       return { error: "Archive storage is not configured" };
     }
 
-    const snapshot = await getArchivedEvent(archiveId, user.id);
+    // Fetch fresh roles from database (session might be stale)
+    const dbUser = await prisma.user.findUnique({
+      where: { id: user.id },
+      select: { roles: true },
+    });
+    const userRoles = dbUser?.roles || user.roles || [];
+    const isPlatformOwner = userRoles.includes(UserRole.ROLE_PLATFORM_OWNER);
+
+    // Platform owners can access any archive, regular users only their own
+    const archive = await prisma.eventArchive.findFirst({
+      where: isPlatformOwner ? { id: archiveId } : { id: archiveId, userId: user.id },
+    });
+
+    if (!archive) {
+      return { error: "Archive not found" };
+    }
+
+    const snapshot = await getArchivedEvent(archiveId, isPlatformOwner ? archive.userId : user.id);
 
     if (!snapshot) {
       return { error: "Archive not found" };
@@ -101,8 +129,17 @@ export async function getArchiveDownloadUrl(archiveId: string) {
       return { error: "Archive storage is not configured" };
     }
 
+    // Fetch fresh roles from database (session might be stale)
+    const dbUser = await prisma.user.findUnique({
+      where: { id: user.id },
+      select: { roles: true },
+    });
+    const userRoles = dbUser?.roles || user.roles || [];
+    const isPlatformOwner = userRoles.includes(UserRole.ROLE_PLATFORM_OWNER);
+
+    // Platform owners can download any archive, regular users only their own
     const archive = await prisma.eventArchive.findFirst({
-      where: { id: archiveId, userId: user.id },
+      where: isPlatformOwner ? { id: archiveId } : { id: archiveId, userId: user.id },
     });
 
     if (!archive) {
@@ -135,8 +172,17 @@ export async function deleteArchive(archiveId: string) {
       return { error: "Archive storage is not configured" };
     }
 
+    // Fetch fresh roles from database (session might be stale)
+    const dbUser = await prisma.user.findUnique({
+      where: { id: user.id },
+      select: { roles: true },
+    });
+    const userRoles = dbUser?.roles || user.roles || [];
+    const isPlatformOwner = userRoles.includes(UserRole.ROLE_PLATFORM_OWNER);
+
+    // Platform owners can delete any archive, regular users only their own
     const archive = await prisma.eventArchive.findFirst({
-      where: { id: archiveId, userId: user.id },
+      where: isPlatformOwner ? { id: archiveId } : { id: archiveId, userId: user.id },
     });
 
     if (!archive) {

@@ -465,49 +465,69 @@ async function handleListResponse(
 }
 
 /**
- * Send guest count list picker to a guest
+ * Send guest count request to a guest
+ * Uses CUSTOM LIST-PICKER content (free-form within 24-hour window - saves costs!)
+ *
+ * This uses a custom Twilio Content API resource with type "twilio/list-picker"
+ * which is NOT a WhatsApp-approved template, so it's cheaper than marketing templates.
+ *
+ * Since this is sent within 24 hours of the guest's reply, we can use free-form
+ * interactive messages without needing WhatsApp template approval.
+ *
+ * Setup: Create the list-picker content using scripts/create-guest-count-list-picker.js
+ * and configure the ContentSid in MessagingProviderSettings.whatsappGuestCountListContentSid
  */
 async function sendGuestCountList(guestId: string, toNumber: string) {
   try {
     const settings = await prisma.messagingProviderSettings.findFirst();
-
-    if (!settings?.whatsappGuestCountListContentSid) {
-      console.log("Guest count list template not configured, skipping");
-      return;
-    }
 
     // Get the active phone number
     const activePhone = await prisma.whatsAppPhoneNumber.findFirst({
       where: { isActive: true },
     });
 
-    const fromNumber = activePhone?.phoneNumber || settings.whatsappPhoneNumber;
+    const fromNumber = activePhone?.phoneNumber || settings?.whatsappPhoneNumber;
 
-    if (!fromNumber || !settings.whatsappApiKey || !settings.whatsappApiSecret) {
+    if (!fromNumber || !settings?.whatsappApiKey || !settings?.whatsappApiSecret) {
       console.error("WhatsApp not properly configured");
       return;
     }
 
-    // Send the guest count list via Twilio
+    if (!settings?.whatsappGuestCountListContentSid) {
+      console.error("Guest count list-picker ContentSid not configured. Run scripts/create-guest-count-list-picker.js");
+      return;
+    }
+
+    // Get guest info for personalized message
+    const guest = await prisma.guest.findUnique({
+      where: { id: guestId },
+      include: { weddingEvent: true },
+    });
+
+    if (!guest) {
+      console.error("Guest not found:", guestId);
+      return;
+    }
+
+    // Send the guest count request using custom list-picker content
     const twilio = require("twilio");
     const client = twilio(settings.whatsappApiKey, settings.whatsappApiSecret);
 
-    // Build content variables with guest ID for callback
-    const contentVariables = JSON.stringify({
-      1: guestId, // Include guest ID in the list for callback parsing
-    });
-
+    // Use custom list-picker content (NOT a WhatsApp-approved template)
+    // This is cheaper because it's free-form content within the 24-hour window
     const response = await client.messages.create({
       from: `whatsapp:${fromNumber}`,
       to: toNumber.startsWith("whatsapp:") ? toNumber : `whatsapp:${toNumber}`,
       contentSid: settings.whatsappGuestCountListContentSid,
-      contentVariables: contentVariables,
+      contentVariables: JSON.stringify({
+        "1": guest.name || "אורח יקר",
+        "2": guest.weddingEvent.title,
+      }),
     });
 
-    console.log(`Guest count list sent to ${toNumber}: ${response.sid}`);
+    console.log(`List-picker guest count request sent to ${toNumber}: ${response.sid} (custom content - lower cost!)`);
 
     // Log the notification WITH the message SID for proper guest lookup on response
-    const guest = await prisma.guest.findUnique({ where: { id: guestId } });
     if (guest) {
       await prisma.notificationLog.create({
         data: {
@@ -520,6 +540,7 @@ async function sendGuestCountList(guestId: string, toNumber: string) {
           providerResponse: JSON.stringify({
             messageId: response.sid,
             status: response.status,
+            customContent: true, // Mark as custom content (not WhatsApp-approved template)
           }),
         },
       });

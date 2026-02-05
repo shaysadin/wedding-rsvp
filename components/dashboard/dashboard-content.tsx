@@ -62,6 +62,7 @@ interface EventData {
     totalGuestCount: number;
   };
   isOwner?: boolean;
+  isPlatformOwner?: boolean;
   collaboratorRole?: CollaboratorRole | null;
   owner?: {
     id: string;
@@ -156,9 +157,10 @@ export function DashboardContent({ userName, events, collaboratedEvents = [], st
     return "grid";
   });
 
-  // Combine owned events (marked as isOwner) and collaborated events
+  // Combine owned events and collaborated events
+  // Preserve the isOwner field from the server (important for platform owners)
   const allEvents = [
-    ...events.map(e => ({ ...e, isOwner: true })),
+    ...events, // These already have the correct isOwner field
     ...collaboratedEvents.map(e => ({ ...e, isOwner: false })),
   ];
 
@@ -393,7 +395,7 @@ export function DashboardContent({ userName, events, collaboratedEvents = [], st
           </EmptyPlaceholder>
         ) : viewMode === "grid" ? (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {allEvents.slice(0, 6).map((event, index) => (
+            {allEvents.map((event, index) => (
               <EventCard
                 key={event.id}
                 event={event}
@@ -407,14 +409,14 @@ export function DashboardContent({ userName, events, collaboratedEvents = [], st
           </div>
         ) : (
           <div className="rounded-lg border">
-            {allEvents.slice(0, 10).map((event, index) => (
+            {allEvents.map((event, index) => (
               <EventListItem
                 key={event.id}
                 event={event}
                 locale={locale}
                 index={index}
                 isRTL={isRTL}
-                isLast={index === Math.min(allEvents.length - 1, 9)}
+                isLast={index === allEvents.length - 1}
                 sharedLabel={tCollab("sharedWithYou")}
               />
             ))}
@@ -595,7 +597,8 @@ const EventCard = React.memo(function EventCard({
   const isUpcoming = eventDate > new Date();
   const daysUntil = Math.ceil((eventDate.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
   const isOwner = event.isOwner !== false;
-  const isShared = event.isOwner === false;
+  const isShared = event.isOwner === false && !event.isPlatformOwner;
+  const isOtherUsersEvent = event.isOwner === false && event.isPlatformOwner === true;
 
   const formattedDate = eventDate.toLocaleDateString(locale === "he" ? "he-IL" : "en-US", {
     weekday: "short",
@@ -645,19 +648,34 @@ const EventCard = React.memo(function EventCard({
           "shadow-sm hover:shadow-lg hover:shadow-primary/10 dark:hover:shadow-primary/5",
           "hover:-translate-y-1"
         )}>
-          {/* Top bar with shared badge, manage text, and actions dropdown */}
+          {/* Top bar with badges, manage text, and actions dropdown */}
           <div className="absolute top-4 end-4 flex items-center gap-1.5 text-xs text-muted-foreground group-hover:text-primary transition-colors z-10">
+            {/* Collaborated event badge */}
             {isShared && sharedLabel && (
               <span className="flex items-center gap-1 rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-medium text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 me-1">
                 <Share2 className="h-3 w-3" />
                 {sharedLabel}
               </span>
             )}
+            {/* Platform owner viewing another user's event - show owner info */}
+            {isOtherUsersEvent && event.owner && (
+              <span className="flex items-center gap-1 rounded-full bg-purple-100 px-2 py-0.5 text-[10px] font-medium text-purple-700 dark:bg-purple-900/30 dark:text-purple-400 me-1">
+                <Users className="h-3 w-3" />
+                {event.owner.name || event.owner.email}
+              </span>
+            )}
+            {/* My event badge for platform owners */}
+            {event.isPlatformOwner && isOwner && (
+              <span className="flex items-center gap-1 rounded-full bg-green-100 px-2 py-0.5 text-[10px] font-medium text-green-700 dark:bg-green-900/30 dark:text-green-400 me-1">
+                <Heart className="h-3 w-3" />
+                {isRTL ? "שלי" : "My Event"}
+              </span>
+            )}
             <span className="hidden sm:inline">{isRTL ? "לחץ לניהול" : "Click to manage"}</span>
             <ArrowUpRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
 
-            {/* Actions dropdown for owners - always visible, at the end */}
-            {isOwner && (
+            {/* Actions dropdown - show for all events when platform owner, only for owned events otherwise */}
+            {(isOwner || event.isPlatformOwner) && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <button
@@ -806,7 +824,9 @@ const EventListItem = React.memo(function EventListItem({
   const eventDate = new Date(event.dateTime);
   const isUpcoming = eventDate > new Date();
   const daysUntil = Math.ceil((eventDate.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
-  const isShared = event.isOwner === false;
+  const isOwner = event.isOwner !== false;
+  const isShared = event.isOwner === false && !event.isPlatformOwner;
+  const isOtherUsersEvent = event.isOwner === false && event.isPlatformOwner === true;
 
   const formattedDate = eventDate.toLocaleDateString(locale === "he" ? "he-IL" : "en-US", {
     weekday: "short",
@@ -839,10 +859,25 @@ const EventListItem = React.memo(function EventListItem({
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
               <h3 className="font-semibold truncate">{event.title}</h3>
+              {/* Collaborated event badge */}
               {isShared && sharedLabel && (
                 <span className="flex items-center gap-1 rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-medium text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 shrink-0">
                   <Share2 className="h-3 w-3" />
                   {sharedLabel}
+                </span>
+              )}
+              {/* Platform owner viewing another user's event */}
+              {isOtherUsersEvent && event.owner && (
+                <span className="flex items-center gap-1 rounded-full bg-purple-100 px-2 py-0.5 text-[10px] font-medium text-purple-700 dark:bg-purple-900/30 dark:text-purple-400 shrink-0">
+                  <Users className="h-3 w-3" />
+                  {event.owner.name || event.owner.email}
+                </span>
+              )}
+              {/* My event badge for platform owners */}
+              {event.isPlatformOwner && isOwner && (
+                <span className="flex items-center gap-1 rounded-full bg-green-100 px-2 py-0.5 text-[10px] font-medium text-green-700 dark:bg-green-900/30 dark:text-green-400 shrink-0">
+                  <Heart className="h-3 w-3" />
+                  {isRTL ? "שלי" : "My Event"}
                 </span>
               )}
               {isUpcoming && daysUntil <= 7 && (

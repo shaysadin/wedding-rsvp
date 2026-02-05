@@ -124,8 +124,17 @@ export function EditGuestDialog({ guest, open, onOpenChange }: EditGuestDialogPr
     setIsLoading(true);
 
     try {
+      // Transform empty strings to undefined for optional fields
+      const cleanedData = {
+        ...data,
+        side: data.side && data.side.trim() !== "" ? data.side : undefined,
+        groupName: data.groupName && data.groupName.trim() !== "" ? data.groupName : undefined,
+        phoneNumber: data.phoneNumber && data.phoneNumber.trim() !== "" ? data.phoneNumber : undefined,
+        notes: data.notes && data.notes.trim() !== "" ? data.notes : undefined,
+      };
+
       // Update guest data
-      const result = await updateGuest(data);
+      const result = await updateGuest(cleanedData);
 
       if (result.error) {
         if (result.error === "DUPLICATE_PHONE" && "duplicateNames" in result) {
@@ -185,7 +194,7 @@ export function EditGuestDialog({ guest, open, onOpenChange }: EditGuestDialogPr
                 <FormItem>
                   <FormLabel>{t("phone")}</FormLabel>
                   <FormControl>
-                    <Input placeholder="+972..." dir="ltr" className="text-start" {...field} />
+                    <Input placeholder="+972..." dir="ltr" className="text-start" {...field} value={field.value || ""} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -207,11 +216,13 @@ export function EditGuestDialog({ guest, open, onOpenChange }: EditGuestDialogPr
                           if (value === "__custom__") {
                             setShowCustomSide(true);
                             field.onChange("");
+                          } else if (value === "__none__") {
+                            field.onChange("");
                           } else {
                             field.onChange(value);
                           }
                         }}
-                        value={field.value || ""}
+                        value={field.value || "__none__"}
                       >
                         <FormControl>
                           <SelectTrigger>
@@ -219,6 +230,7 @@ export function EditGuestDialog({ guest, open, onOpenChange }: EditGuestDialogPr
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
+                          <SelectItem value="__none__">{tc("none") || "None"}</SelectItem>
                           <SelectItem value="bride">{t("sides.bride")}</SelectItem>
                           <SelectItem value="groom">{t("sides.groom")}</SelectItem>
                           <SelectItem value="both">{t("sides.both")}</SelectItem>
@@ -268,11 +280,13 @@ export function EditGuestDialog({ guest, open, onOpenChange }: EditGuestDialogPr
                           if (value === "__custom__") {
                             setShowCustomGroup(true);
                             field.onChange("");
+                          } else if (value === "__none__") {
+                            field.onChange("");
                           } else {
                             field.onChange(value);
                           }
                         }}
-                        value={field.value || ""}
+                        value={field.value || "__none__"}
                       >
                         <FormControl>
                           <SelectTrigger>
@@ -280,6 +294,7 @@ export function EditGuestDialog({ guest, open, onOpenChange }: EditGuestDialogPr
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
+                          <SelectItem value="__none__">{tc("none") || "None"}</SelectItem>
                           <SelectItem value="family">{t("groups.family")}</SelectItem>
                           <SelectItem value="friends">{t("groups.friends")}</SelectItem>
                           <SelectItem value="work">{t("groups.work")}</SelectItem>
@@ -422,7 +437,7 @@ export function EditGuestDialog({ guest, open, onOpenChange }: EditGuestDialogPr
                 <FormItem>
                   <FormLabel>{tc("notes")}</FormLabel>
                   <FormControl>
-                    <Textarea placeholder={tc("notes")} rows={2} {...field} />
+                    <Textarea placeholder={tc("notes")} rows={2} {...field} value={field.value || ""} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

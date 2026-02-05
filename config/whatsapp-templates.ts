@@ -10,6 +10,7 @@
  * - INTERACTIVE_INVITE: Interactive buttons invite (Yes/No/Maybe)
  * - INTERACTIVE_REMINDER: Interactive buttons reminder (Yes/No/Maybe)
  * - IMAGE_INVITE: Same as Interactive Invite but with wedding invitation image
+ * - TRANSPORTATION_INVITE: Formal invite with RSVP link + Transportation registration link
  * - CONFIRMATION: RSVP confirmation/thank you for responding
  * - EVENT_DAY: Event day reminder (morning of event with table, address, gift link)
  * - THANK_YOU: Thank you message (day after event)
@@ -17,9 +18,9 @@
  * - GUEST_COUNT_LIST: Guest count selection list (interactive)
  *
  * Each type has 3 styles:
- * - formal: Professional, respectful tone (DEFAULT - already approved)
- * - friendly: Warm, casual tone with emoji (NEEDS APPROVAL)
- * - short: Brief, to the point (NEEDS APPROVAL)
+ * - style1: Professional, respectful tone (DEFAULT - already approved)
+ * - style2: Warm, casual tone with emoji (NEEDS APPROVAL)
+ * - style3: Brief, to the point (NEEDS APPROVAL)
  *
  * Placeholders for Twilio Content Templates:
  * - {{1}} = Guest name
@@ -46,13 +47,14 @@ export type WhatsAppTemplateType =
   | "INTERACTIVE_INVITE"
   | "INTERACTIVE_REMINDER"
   | "IMAGE_INVITE"
+  | "TRANSPORTATION_INVITE"
   | "CONFIRMATION"
   | "EVENT_DAY"
   | "THANK_YOU"
   | "TABLE_ASSIGNMENT"
   | "GUEST_COUNT_LIST";
 
-export type WhatsAppTemplateStyle = "formal" | "friendly" | "short";
+export type WhatsAppTemplateStyle = "style1" | "style2" | "style3";
 
 export interface WhatsAppTemplateDefinition {
   type: WhatsAppTemplateType;
@@ -75,9 +77,9 @@ export interface WhatsAppTemplateDefinition {
 export const WHATSAPP_INVITE_TEMPLATES: WhatsAppTemplateDefinition[] = [
   {
     type: "INVITE",
-    style: "formal",
-    nameHe: "רשמי",
-    nameEn: "Formal",
+    style: "style1",
+    nameHe: "סגנון 1",
+    nameEn: "Style 1",
     twilioTemplateName: "copy_wedding_invitation",
     existingContentSid: "HX1a4aaf40cf5f7fd8a9a36f5c83226bd3",
     templateTextHe: `שלום {{1}},
@@ -101,9 +103,9 @@ The Hosts`,
   },
   {
     type: "INVITE",
-    style: "friendly",
-    nameHe: "ידידותי",
-    nameEn: "Friendly",
+    style: "style2",
+    nameHe: "סגנון 2",
+    nameEn: "Style 2",
     twilioTemplateName: "wedinex_invite_friendly",
     templateTextHe: `היי {{1}}! 💍
 
@@ -120,9 +122,9 @@ RSVP here: {{3}}`,
   },
   {
     type: "INVITE",
-    style: "short",
-    nameHe: "קצר",
-    nameEn: "Short",
+    style: "style3",
+    nameHe: "סגנון 3",
+    nameEn: "Style 3",
     twilioTemplateName: "wedinex_invite_short",
     templateTextHe: `{{1}}, מוזמנים ל{{2}}!
 לאישור הגעה: {{3}}`,
@@ -138,9 +140,9 @@ RSVP: {{3}}`,
 export const WHATSAPP_REMINDER_TEMPLATES: WhatsAppTemplateDefinition[] = [
   {
     type: "REMINDER",
-    style: "formal",
-    nameHe: "עדין",
-    nameEn: "Gentle",
+    style: "style1",
+    nameHe: "סגנון 1",
+    nameEn: "Style 1",
     twilioTemplateName: "copy_wedding_reminder",
     existingContentSid: "HXb9855ad5e6b9797f3195574a090417ac",
     templateTextHe: `שלום {{1}},
@@ -162,9 +164,9 @@ Thank you`,
   },
   {
     type: "REMINDER",
-    style: "friendly",
-    nameHe: "חברי",
-    nameEn: "Casual",
+    style: "style2",
+    nameHe: "סגנון 2",
+    nameEn: "Style 2",
     twilioTemplateName: "wedinex_reminder_friendly",
     templateTextHe: `היי {{1}}! 👋
 
@@ -181,9 +183,9 @@ Click here: {{3}}`,
   },
   {
     type: "REMINDER",
-    style: "short",
-    nameHe: "דחוף",
-    nameEn: "Urgent",
+    style: "style3",
+    nameHe: "סגנון 3",
+    nameEn: "Style 3",
     twilioTemplateName: "wedinex_reminder_short",
     templateTextHe: `{{1}}, ממתינים לתשובתך ל{{2}}! ⏰
 אשרו כאן: {{3}}`,
@@ -194,15 +196,16 @@ RSVP: {{3}}`,
 
 /**
  * Interactive Invite Templates (with buttons: Yes/No/Maybe)
- * Placeholders: {{1}} = guestName, {{2}} = eventTitle
+ * Placeholders: {{1}} = guestName, {{2}} = eventTitle, {{4}} = transportationLink (optional)
  * Note: No RSVP link needed - buttons handle the response
+ * Note: {{3}} is skipped to maintain consistency with other templates (where {{3}} = RSVP link)
  */
 export const WHATSAPP_INTERACTIVE_INVITE_TEMPLATES: WhatsAppTemplateDefinition[] = [
   {
     type: "INTERACTIVE_INVITE",
-    style: "formal",
-    nameHe: "רשמי",
-    nameEn: "Formal",
+    style: "style1",
+    nameHe: "סגנון 1",
+    nameEn: "Style 1",
     twilioTemplateName: "interactive_invite_card",
     existingContentSid: "HXff76515d76bbe3e50656ef59bdf90fc6",
     templateTextHe: `שלום {{1}},
@@ -211,6 +214,8 @@ export const WHATSAPP_INTERACTIVE_INVITE_TEMPLATES: WhatsAppTemplateDefinition[]
 
 נודה לכם אם תאשרו את הגעתכם על ידי לחיצה על אחד הכפתורים למטה.
 
+{{4}}
+
 בברכה`,
     templateTextEn: `Dear {{1}},
 
@@ -218,18 +223,22 @@ You are cordially invited to {{2}}.
 
 Please confirm your attendance by clicking one of the buttons below.
 
+{{4}}
+
 Best regards`,
   },
   {
     type: "INTERACTIVE_INVITE",
-    style: "friendly",
-    nameHe: "ידידותי",
-    nameEn: "Friendly",
+    style: "style2",
+    nameHe: "סגנון 2",
+    nameEn: "Style 2",
     twilioTemplateName: "wedinex_interactive_invite_friendly",
     templateTextHe: `היי {{1}}! 💍✨
 
 מוזמנים ל{{2}}!
 נשמח מאוד אם תגיעו לחגוג איתנו 🎉
+
+{{4}}
 
 ספרו לנו - מגיעים?`,
     templateTextEn: `Hey {{1}}! 💍✨
@@ -237,31 +246,40 @@ Best regards`,
 You're invited to {{2}}!
 We'd love to have you celebrate with us 🎉
 
+{{4}}
+
 Let us know - are you coming?`,
   },
   {
     type: "INTERACTIVE_INVITE",
-    style: "short",
-    nameHe: "קצר",
-    nameEn: "Short",
+    style: "style3",
+    nameHe: "סגנון 3",
+    nameEn: "Style 3",
     twilioTemplateName: "wedinex_interactive_invite_short",
     templateTextHe: `{{1}}, מוזמנים ל{{2}}!
+
+{{4}}
+
 מגיעים?`,
     templateTextEn: `{{1}}, invited to {{2}}!
+
+{{4}}
+
 Coming?`,
   },
 ];
 
 /**
  * Interactive Reminder Templates (with buttons: Yes/No/Maybe)
- * Placeholders: {{1}} = guestName, {{2}} = eventTitle
+ * Placeholders: {{1}} = guestName, {{2}} = eventTitle, {{4}} = transportationLink (optional)
+ * Note: {{3}} is skipped to maintain consistency with other templates (where {{3}} = RSVP link)
  */
 export const WHATSAPP_INTERACTIVE_REMINDER_TEMPLATES: WhatsAppTemplateDefinition[] = [
   {
     type: "INTERACTIVE_REMINDER",
-    style: "formal",
-    nameHe: "עדין",
-    nameEn: "Gentle",
+    style: "style1",
+    nameHe: "סגנון 1",
+    nameEn: "Style 1",
     twilioTemplateName: "interactive_reminder_card",
     existingContentSid: "HXba2294e9683d133dfe92c62692e9d3f2",
     templateTextHe: `שלום {{1}},
@@ -270,6 +288,8 @@ export const WHATSAPP_INTERACTIVE_REMINDER_TEMPLATES: WhatsAppTemplateDefinition
 
 נודה לתשובתכם על ידי לחיצה על אחד הכפתורים.
 
+{{4}}
+
 תודה רבה`,
     templateTextEn: `Hi {{1}},
 
@@ -277,18 +297,22 @@ A gentle reminder that we haven't received your RSVP for {{2}}.
 
 Please respond by clicking one of the buttons.
 
+{{4}}
+
 Thank you`,
   },
   {
     type: "INTERACTIVE_REMINDER",
-    style: "friendly",
-    nameHe: "חברי",
-    nameEn: "Casual",
+    style: "style2",
+    nameHe: "סגנון 2",
+    nameEn: "Style 2",
     twilioTemplateName: "wedinex_interactive_reminder_friendly",
     templateTextHe: `היי {{1}}! 👋
 
 עדיין מחכים לתשובתך ל{{2}}!
 נשמח לדעת אם מגיעים 😊
+
+{{4}}
 
 בחרו למטה:`,
     templateTextEn: `Hey {{1}}! 👋
@@ -296,16 +320,22 @@ Thank you`,
 Still waiting to hear about {{2}}!
 Would love to know if you're coming 😊
 
+{{4}}
+
 Choose below:`,
   },
   {
     type: "INTERACTIVE_REMINDER",
-    style: "short",
-    nameHe: "דחוף",
-    nameEn: "Urgent",
+    style: "style3",
+    nameHe: "סגנון 3",
+    nameEn: "Style 3",
     twilioTemplateName: "wedinex_interactive_reminder_short",
-    templateTextHe: `{{1}}, ממתינים לתשובתך ל{{2}}! ⏰`,
-    templateTextEn: `{{1}}, awaiting your response for {{2}}! ⏰`,
+    templateTextHe: `{{1}}, ממתינים לתשובתך ל{{2}}! ⏰
+
+{{4}}`,
+    templateTextEn: `{{1}}, awaiting your response for {{2}}! ⏰
+
+{{4}}`,
   },
 ];
 
@@ -317,9 +347,9 @@ Choose below:`,
 export const WHATSAPP_IMAGE_INVITE_TEMPLATES: WhatsAppTemplateDefinition[] = [
   {
     type: "IMAGE_INVITE",
-    style: "formal",
-    nameHe: "רשמי",
-    nameEn: "Formal",
+    style: "style1",
+    nameHe: "סגנון 1",
+    nameEn: "Style 1",
     twilioTemplateName: "interactive_invite_card",
     existingContentSid: "HXff76515d76bbe3e50656ef59bdf90fc6", // Same as Interactive Invite
     templateTextHe: `שלום {{1}},
@@ -339,9 +369,9 @@ Best regards`,
   },
   {
     type: "IMAGE_INVITE",
-    style: "friendly",
-    nameHe: "ידידותי",
-    nameEn: "Friendly",
+    style: "style2",
+    nameHe: "סגנון 2",
+    nameEn: "Style 2",
     twilioTemplateName: "wedinex_image_invite_friendly",
     templateTextHe: `היי {{1}}! 💍✨
 
@@ -354,12 +384,88 @@ We'd love to see you there 🎉`,
   },
   {
     type: "IMAGE_INVITE",
-    style: "short",
-    nameHe: "קצר",
-    nameEn: "Short",
+    style: "style3",
+    nameHe: "סגנון 3",
+    nameEn: "Style 3",
     twilioTemplateName: "wedinex_image_invite_short",
     templateTextHe: `{{1}}, מצורפת ההזמנה ל{{2}}!`,
     templateTextEn: `{{1}}, here's your invitation to {{2}}!`,
+  },
+];
+
+/**
+ * Transportation Invite Templates (with RSVP link + Transportation registration link)
+ * Placeholders: {{1}} = guestName, {{2}} = eventTitle, {{3}} = rsvpLink, {{4}} = transportationLink
+ */
+export const WHATSAPP_TRANSPORTATION_INVITE_TEMPLATES: WhatsAppTemplateDefinition[] = [
+  {
+    type: "TRANSPORTATION_INVITE",
+    style: "style1",
+    nameHe: "סגנון 1 + הסעות",
+    nameEn: "Style 1 + Transportation",
+    twilioTemplateName: "wedinex_transportation_invite_formal",
+    templateTextHe: `שלום {{1}},
+
+אתם מוזמנים בשמחה ל{{2}}.
+
+נודה לכם אם תאשרו את הגעתכם בקישור הבא:
+{{3}}
+
+בנוסף, נשמח לארגן עבורכם הסעות לאירוע. להרשמה להסעות:
+{{4}}
+
+בברכה,
+המארגנים`,
+    templateTextEn: `Dear {{1}},
+
+You are cordially invited to {{2}}.
+
+Please confirm your attendance:
+{{3}}
+
+Additionally, we'd be happy to arrange transportation for you. To register for transportation:
+{{4}}
+
+Best regards,
+The Hosts`,
+  },
+  {
+    type: "TRANSPORTATION_INVITE",
+    style: "style2",
+    nameHe: "סגנון 2 + הסעות",
+    nameEn: "Style 2 + Transportation",
+    twilioTemplateName: "wedinex_transportation_invite_friendly",
+    templateTextHe: `היי {{1}}! 💍
+
+מזל טוב! מוזמנים ל{{2}}!
+נשמח מאוד לראותכם 🎉
+
+אשרו הגעה כאן: {{3}}
+
+רוצים הסעות? 🚐 נשמח לארגן!
+הרשמו כאן: {{4}}`,
+    templateTextEn: `Hey {{1}}! 💍
+
+Great news! You're invited to {{2}}!
+We'd love to see you there 🎉
+
+RSVP here: {{3}}
+
+Need transportation? 🚐 We'd love to arrange it!
+Register here: {{4}}`,
+  },
+  {
+    type: "TRANSPORTATION_INVITE",
+    style: "style3",
+    nameHe: "סגנון 3 + הסעות",
+    nameEn: "Style 3 + Transportation",
+    twilioTemplateName: "wedinex_transportation_invite_short",
+    templateTextHe: `{{1}}, מוזמנים ל{{2}}!
+אישור הגעה: {{3}}
+הרשמה להסעות: {{4}}`,
+    templateTextEn: `{{1}}, you're invited to {{2}}!
+RSVP: {{3}}
+Transportation: {{4}}`,
   },
 ];
 
@@ -370,9 +476,9 @@ We'd love to see you there 🎉`,
 export const WHATSAPP_CONFIRMATION_TEMPLATES: WhatsAppTemplateDefinition[] = [
   {
     type: "CONFIRMATION",
-    style: "formal",
-    nameHe: "רשמי",
-    nameEn: "Formal",
+    style: "style1",
+    nameHe: "סגנון 1",
+    nameEn: "Style 1",
     twilioTemplateName: "wedinex_confirmation_formal",
     templateTextHe: `שלום {{1}},
 
@@ -387,9 +493,9 @@ Thank you`,
   },
   {
     type: "CONFIRMATION",
-    style: "friendly",
-    nameHe: "ידידותי",
-    nameEn: "Friendly",
+    style: "style2",
+    nameHe: "סגנון 2",
+    nameEn: "Style 2",
     twilioTemplateName: "wedinex_confirmation_friendly",
     templateTextHe: `היי {{1}}! ✅
 
@@ -402,9 +508,9 @@ Thanks for letting us know 💕`,
   },
   {
     type: "CONFIRMATION",
-    style: "short",
-    nameHe: "קצר",
-    nameEn: "Short",
+    style: "style3",
+    nameHe: "סגנון 3",
+    nameEn: "Style 3",
     twilioTemplateName: "wedinex_confirmation_short",
     templateTextHe: `{{1}}, קיבלנו את תשובתך ל{{2}}. תודה! ✅`,
     templateTextEn: `{{1}}, your RSVP for {{2}} received. Thanks! ✅`,
@@ -418,9 +524,9 @@ Thanks for letting us know 💕`,
 export const WHATSAPP_EVENT_DAY_TEMPLATES: WhatsAppTemplateDefinition[] = [
   {
     type: "EVENT_DAY",
-    style: "formal",
-    nameHe: "רשמי",
-    nameEn: "Formal",
+    style: "style1",
+    nameHe: "סגנון 1",
+    nameEn: "Style 1",
     twilioTemplateName: "wedinex_event_day_formal",
     existingContentSid: "HX80e0ff2024fb29d65878e002df31afd3",
     templateTextHe: `שלום {{1}} 👋
@@ -454,9 +560,9 @@ Looking forward to seeing you! ❤️`,
   },
   {
     type: "EVENT_DAY",
-    style: "friendly",
-    nameHe: "ידידותי",
-    nameEn: "Friendly",
+    style: "style2",
+    nameHe: "סגנון 2",
+    nameEn: "Style 2",
     twilioTemplateName: "wedinex_event_day_friendly",
     templateTextHe: `היי {{1}}! 🎉
 
@@ -481,9 +587,9 @@ See you soon! 💃🕺`,
   },
   {
     type: "EVENT_DAY",
-    style: "short",
-    nameHe: "קצר",
-    nameEn: "Short",
+    style: "style3",
+    nameHe: "סגנון 3",
+    nameEn: "Style 3",
     twilioTemplateName: "wedinex_event_day_short",
     templateTextHe: `{{1}}, מתראים היום! 🪑{{3}} 📍{{4}}`,
     templateTextEn: `{{1}}, see you today! 🪑{{3}} 📍{{4}}`,
@@ -497,9 +603,9 @@ See you soon! 💃🕺`,
 export const WHATSAPP_THANK_YOU_TEMPLATES: WhatsAppTemplateDefinition[] = [
   {
     type: "THANK_YOU",
-    style: "formal",
-    nameHe: "רשמי",
-    nameEn: "Formal",
+    style: "style1",
+    nameHe: "סגנון 1",
+    nameEn: "Style 1",
     twilioTemplateName: "wedinex_thank_you_formal",
     existingContentSid: "HX2e0cc26147f657e88a902b48349158b7",
     templateTextHe: `שלום {{1}},
@@ -519,9 +625,9 @@ Best regards`,
   },
   {
     type: "THANK_YOU",
-    style: "friendly",
-    nameHe: "ידידותי",
-    nameEn: "Friendly",
+    style: "style2",
+    nameHe: "סגנון 2",
+    nameEn: "Style 2",
     twilioTemplateName: "wedinex_thank_you_friendly",
     templateTextHe: `היי {{1}}! 💕
 
@@ -538,9 +644,9 @@ Much love`,
   },
   {
     type: "THANK_YOU",
-    style: "short",
-    nameHe: "קצר",
-    nameEn: "Short",
+    style: "style3",
+    nameHe: "סגנון 3",
+    nameEn: "Style 3",
     twilioTemplateName: "wedinex_thank_you_short",
     templateTextHe: `{{1}}, תודה שהייתם ב{{2}}! 💕`,
     templateTextEn: `{{1}}, thanks for being at {{2}}! 💕`,
@@ -554,9 +660,9 @@ Much love`,
 export const WHATSAPP_TABLE_ASSIGNMENT_TEMPLATES: WhatsAppTemplateDefinition[] = [
   {
     type: "TABLE_ASSIGNMENT",
-    style: "formal",
-    nameHe: "רשמי",
-    nameEn: "Formal",
+    style: "style1",
+    nameHe: "סגנון 1",
+    nameEn: "Style 1",
     twilioTemplateName: "wedinex_table_assignment_formal",
     templateTextHe: `שלום {{1}},
 
@@ -573,9 +679,9 @@ See you soon!`,
   },
   {
     type: "TABLE_ASSIGNMENT",
-    style: "friendly",
-    nameHe: "ידידותי",
-    nameEn: "Friendly",
+    style: "style2",
+    nameHe: "סגנון 2",
+    nameEn: "Style 2",
     twilioTemplateName: "wedinex_table_assignment_friendly",
     templateTextHe: `היי {{1}}! 🪑
 
@@ -592,9 +698,9 @@ See you there! 🎉`,
   },
   {
     type: "TABLE_ASSIGNMENT",
-    style: "short",
-    nameHe: "קצר",
-    nameEn: "Short",
+    style: "style3",
+    nameHe: "סגנון 3",
+    nameEn: "Style 3",
     twilioTemplateName: "wedinex_table_assignment_short",
     templateTextHe: `{{1}}, {{3}} ב{{2}} 🪑`,
     templateTextEn: `{{1}}, {{3}} at {{2}} 🪑`,
@@ -609,9 +715,9 @@ See you there! 🎉`,
 export const WHATSAPP_GUEST_COUNT_LIST_TEMPLATES: WhatsAppTemplateDefinition[] = [
   {
     type: "GUEST_COUNT_LIST",
-    style: "formal",
-    nameHe: "רשמי",
-    nameEn: "Formal",
+    style: "style1",
+    nameHe: "סגנון 1",
+    nameEn: "Style 1",
     twilioTemplateName: "wedinex_guest_count_formal",
     existingContentSid: "HX4322c2482da4bce43d001668b83234a6",
     templateTextHe: `שלום {{1}},
@@ -627,9 +733,9 @@ Please select from the list below.`,
   },
   {
     type: "GUEST_COUNT_LIST",
-    style: "friendly",
-    nameHe: "ידידותי",
-    nameEn: "Friendly",
+    style: "style2",
+    nameHe: "סגנון 2",
+    nameEn: "Style 2",
     twilioTemplateName: "wedinex_guest_count_friendly",
     templateTextHe: `היי {{1}}! 👥
 
@@ -642,9 +748,9 @@ Choose below 😊`,
   },
   {
     type: "GUEST_COUNT_LIST",
-    style: "short",
-    nameHe: "קצר",
-    nameEn: "Short",
+    style: "style3",
+    nameHe: "סגנון 3",
+    nameEn: "Style 3",
     twilioTemplateName: "wedinex_guest_count_short",
     templateTextHe: `{{1}}, כמה מגיעים ל{{2}}?`,
     templateTextEn: `{{1}}, how many coming to {{2}}?`,
@@ -668,6 +774,8 @@ export function getWhatsAppTemplateDefinitions(
       return WHATSAPP_INTERACTIVE_REMINDER_TEMPLATES;
     case "IMAGE_INVITE":
       return WHATSAPP_IMAGE_INVITE_TEMPLATES;
+    case "TRANSPORTATION_INVITE":
+      return WHATSAPP_TRANSPORTATION_INVITE_TEMPLATES;
     case "CONFIRMATION":
       return WHATSAPP_CONFIRMATION_TEMPLATES;
     case "EVENT_DAY":
@@ -703,6 +811,7 @@ export const ALL_WHATSAPP_TEMPLATE_DEFINITIONS: WhatsAppTemplateDefinition[] = [
   ...WHATSAPP_INTERACTIVE_INVITE_TEMPLATES,
   ...WHATSAPP_INTERACTIVE_REMINDER_TEMPLATES,
   ...WHATSAPP_IMAGE_INVITE_TEMPLATES,
+  ...WHATSAPP_TRANSPORTATION_INVITE_TEMPLATES,
   ...WHATSAPP_CONFIRMATION_TEMPLATES,
   ...WHATSAPP_EVENT_DAY_TEMPLATES,
   ...WHATSAPP_THANK_YOU_TEMPLATES,

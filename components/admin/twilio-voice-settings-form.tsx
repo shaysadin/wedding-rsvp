@@ -24,6 +24,8 @@ import {
 
 interface TwilioVoiceSettingsFormProps {
   settings: {
+    twilioVoiceAccountSid: string | null;
+    twilioVoiceAuthToken: string | null;
     twilioVoiceApiKey: string | null;
     twilioVoiceApiSecret: string | null;
     twilioVoiceTwimlAppSid: string | null;
@@ -38,6 +40,8 @@ export function TwilioVoiceSettingsForm({ settings }: TwilioVoiceSettingsFormPro
   const [isTesting, setIsTesting] = useState(false);
 
   // Form state
+  const [twilioVoiceAccountSid, setTwilioVoiceAccountSid] = useState(settings?.twilioVoiceAccountSid || "");
+  const [twilioVoiceAuthToken, setTwilioVoiceAuthToken] = useState(settings?.twilioVoiceAuthToken || "");
   const [twilioVoiceApiKey, setTwilioVoiceApiKey] = useState(settings?.twilioVoiceApiKey || "");
   const [twilioVoiceApiSecret, setTwilioVoiceApiSecret] = useState(settings?.twilioVoiceApiSecret || "");
   const [twilioVoiceTwimlAppSid, setTwilioVoiceTwimlAppSid] = useState(settings?.twilioVoiceTwimlAppSid || "");
@@ -48,6 +52,8 @@ export function TwilioVoiceSettingsForm({ settings }: TwilioVoiceSettingsFormPro
   const handleSaveConfig = () => {
     startTransition(async () => {
       const result = await updateTwilioVoiceSettings({
+        twilioVoiceAccountSid,
+        twilioVoiceAuthToken,
         twilioVoiceApiKey,
         twilioVoiceApiSecret,
         twilioVoiceTwimlAppSid,
@@ -155,6 +161,34 @@ export function TwilioVoiceSettingsForm({ settings }: TwilioVoiceSettingsFormPro
 
           <div className="grid gap-4">
             <div className="space-y-2">
+              <Label htmlFor="twilio-voice-account-sid">Twilio Account SID</Label>
+              <Input
+                id="twilio-voice-account-sid"
+                type="text"
+                placeholder="ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+                value={twilioVoiceAccountSid}
+                onChange={(e) => setTwilioVoiceAccountSid(e.target.value)}
+              />
+              <p className="text-xs text-muted-foreground">
+                Found in Twilio Console → Account Info
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="twilio-voice-auth-token">Twilio Auth Token</Label>
+              <Input
+                id="twilio-voice-auth-token"
+                type="password"
+                placeholder="Enter Auth Token"
+                value={twilioVoiceAuthToken}
+                onChange={(e) => setTwilioVoiceAuthToken(e.target.value)}
+              />
+              <p className="text-xs text-muted-foreground">
+                Found in Twilio Console → Account Info (next to Account SID)
+              </p>
+            </div>
+
+            <div className="space-y-2">
               <Label htmlFor="twilio-voice-api-key">Twilio API Key (SID)</Label>
               <Input
                 id="twilio-voice-api-key"
@@ -245,9 +279,13 @@ export function TwilioVoiceSettingsForm({ settings }: TwilioVoiceSettingsFormPro
             <p className="text-sm">After saving your configuration:</p>
             <ol className="list-decimal list-inside space-y-1 text-sm">
               <li>Go to Twilio Console → Voice → TwiML Apps</li>
-              <li>Set Voice Request URL to: <code className="text-xs bg-muted px-1 py-0.5 rounded">{`${process.env.NEXT_PUBLIC_APP_URL}/api/twilio-voice/twiml`}</code></li>
-              <li>Set Voice Status Callback URL to: <code className="text-xs bg-muted px-1 py-0.5 rounded">{`${process.env.NEXT_PUBLIC_APP_URL}/api/twilio-voice/status`}</code></li>
+              <li>Set Voice Request URL to: <code className="text-xs bg-muted px-1 py-0.5 rounded break-all">{`${process.env.NEXT_PUBLIC_APP_URL || 'https://wedinex.com'}/api/twilio-voice/twiml`}</code></li>
+              <li>Set Voice Status Callback URL to: <code className="text-xs bg-muted px-1 py-0.5 rounded break-all">{`${process.env.NEXT_PUBLIC_APP_URL || 'https://wedinex.com'}/api/twilio-voice/status`}</code></li>
+              <li>Set Voice Fallback URL to: <code className="text-xs bg-muted px-1 py-0.5 rounded break-all">{`${process.env.NEXT_PUBLIC_APP_URL || 'https://wedinex.com'}/api/twilio-voice/twiml-fallback`}</code> <span className="text-xs text-muted-foreground">(Optional, recommended for production)</span></li>
             </ol>
+            <p className="text-xs text-muted-foreground mt-3">
+              💡 <strong>Local Development:</strong> Use <a href="https://ngrok.com" target="_blank" rel="noopener noreferrer" className="underline">ngrok</a> to expose localhost and update these URLs with your ngrok address during testing.
+            </p>
           </AlertDescription>
         </Alert>
       </CardContent>
