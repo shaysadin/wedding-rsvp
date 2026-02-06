@@ -1,7 +1,7 @@
 /**
- * WhatsApp Template Renderer - 11 Variable System
+ * WhatsApp Template Renderer - 12 Variable System
  *
- * Handles rendering of WhatsApp templates with the 11-variable structure:
+ * Handles rendering of WhatsApp templates with the 12-variable structure:
  * {{1}} = Guest Name
  * {{2}} = Event Title
  * {{3}} = Venue Name (ALWAYS venue name, not media URL)
@@ -13,14 +13,16 @@
  * {{9}} = Transportation Link (used in Style 3 transportation-focused templates)
  * {{10}} = Media URL (for media templates: IMAGE_INVITE, interactive with media header)
  * {{11}} = RSVP Link (for guest to confirm attendance) - ONLY USED IN INVITE/REMINDER
+ * {{12}} = Gift Payment URL (credit card gift link - external or app URL)
  *
  * IMPORTANT:
  * - {{7}} is ALWAYS Navigation URL (short link to Waze/Google Maps)
  * - {{11}} is RSVP Link (only for INVITE/REMINDER where guests need to click to RSVP page)
+ * - {{12}} is Gift URL (external provider if set, otherwise app's gift page)
  * - Interactive templates use {{7}} for navigation and buttons for RSVP (no {{11}} needed)
  */
 
-import { Guest, WeddingEvent } from "@prisma/client";
+import { Guest, WeddingEvent, GiftPaymentSettings } from "@prisma/client";
 import { env } from "@/env.mjs";
 
 export interface WhatsAppTemplateVariables {
@@ -46,11 +48,13 @@ export interface WhatsAppTemplateVariables {
   mediaUrl?: string;
   /** {{11}} - RSVP Link (for guest RSVP page - only INVITE/REMINDER) */
   rsvpLink?: string;
+  /** {{12}} - Gift Payment URL (external or app URL based on settings) */
+  giftUrl?: string;
 }
 
 /**
  * Build WhatsApp template variables from guest and event data
- * Provides all 11 variables for maximum flexibility
+ * Provides all 12 variables for maximum flexibility
  */
 export function buildWhatsAppTemplateVariables(
   guest: Guest,
@@ -66,6 +70,8 @@ export function buildWhatsAppTemplateVariables(
     locale?: "he" | "en";
     /** Media URL for {{10}} (for media templates only) */
     mediaUrl?: string;
+    /** Gift payment settings for {{12}} (EVENT_DAY templates) */
+    giftSettings?: GiftPaymentSettings | null;
   }
 ): WhatsAppTemplateVariables {
   const locale = options?.locale || "he";
@@ -115,6 +121,19 @@ export function buildWhatsAppTemplateVariables(
   const venueName = event.venue || event.location || '';
   const venueAddress = event.location || '';
 
+  // {{12}} - Gift Payment URL
+  // Use external provider URL if configured, otherwise use app's gift page
+  let giftUrl: string | undefined = undefined;
+  if (options?.giftSettings?.isEnabled) {
+    if (options.giftSettings.useExternalProvider && options.giftSettings.externalProviderUrl) {
+      // Use external provider URL
+      giftUrl = options.giftSettings.externalProviderUrl;
+    } else {
+      // Use app's own gift payment page
+      giftUrl = `${env.NEXT_PUBLIC_APP_URL}/gift/${guest.slug}`;
+    }
+  }
+
   return {
     guestName: guest.name,
     eventTitle: event.title,
@@ -127,6 +146,7 @@ export function buildWhatsAppTemplateVariables(
     transportationLink,
     mediaUrl,
     rsvpLink,
+    giftUrl,
   };
 }
 
@@ -169,6 +189,9 @@ export function convertToTwilioVariables(
   }
   if (variables.rsvpLink) {
     twilioVars["11"] = variables.rsvpLink;
+  }
+  if (variables.giftUrl) {
+    twilioVars["12"] = variables.giftUrl;
   }
 
   return twilioVars;
@@ -300,6 +323,7 @@ export function previewTemplate(
     tableNumber: "12",
     transportationLink: "https://wedinex.co/t/sample",
     rsvpLink: "https://wedinex.co/rsvp/sample",
+    giftUrl: "https://wedinex.co/gift/sample",
   };
 
   const sample = { ...defaultSample, ...sampleData };
@@ -326,7 +350,7 @@ export async function shortenUrl(url: string): Promise<string> {
  * Get example values for WhatsApp template approval
  * These are used by WhatsApp reviewers to preview the template
  *
- * Returns example values for all 11 variables:
+ * Returns example values for all 12 variables:
  * {{1}} - Guest Name
  * {{2}} - Event Title
  * {{3}} - Venue Name
@@ -338,6 +362,7 @@ export async function shortenUrl(url: string): Promise<string> {
  * {{9}} - Transportation Link
  * {{10}} - Media URL
  * {{11}} - RSVP Link
+ * {{12}} - Gift Payment URL
  */
 export function getExampleVariables(): Record<string, string> {
   return {
@@ -352,6 +377,7 @@ export function getExampleVariables(): Record<string, string> {
     "9": "https://wedinex.co/t/sample-transport",
     "10": "demo/wedding_invite_sample.jpg",
     "11": "https://wedinex.co/rsvp/sample",
+    "12": "https://wedinex.co/gift/sample",
   };
 }
 

@@ -12,12 +12,13 @@ interface VariableHelperProps {
 }
 
 /**
- * 11-variable structure for WhatsApp templates
+ * 12-variable structure for WhatsApp templates
  * Each detail has its own variable for maximum flexibility
  *
  * IMPORTANT:
  * - {{7}} = Navigation URL (Waze/Google Maps) - USED IN ALL TEMPLATES
  * - {{11}} = RSVP Link (guest RSVP page) - ONLY for INVITE/REMINDER
+ * - {{12}} = Gift Payment URL (external or app URL) - USED IN EVENT_DAY
  */
 const ALL_VARIABLES = [
   { variable: "{{1}}", name: "Guest Name", description: "שם האורח/ת", example: "דני, משפחת כהן", priority: "high" },
@@ -31,6 +32,7 @@ const ALL_VARIABLES = [
   { variable: "{{9}}", name: "Transportation Link", description: "קישור רישום להסעות", example: "https://wedinex.co/t/abc", priority: "medium" },
   { variable: "{{10}}", name: "Media URL", description: "נתיב תמונה/מדיה", example: "invitations/sample.jpg", priority: "medium" },
   { variable: "{{11}}", name: "RSVP Link", description: "קישור אישור הגעה", example: "https://wedinex.co/rsvp/abc", priority: "high" },
+  { variable: "{{12}}", name: "Gift Payment URL", description: "קישור מתנה (כרטיס אשראי)", example: "https://wedinex.co/gift/abc", priority: "medium" },
 ];
 
 // Define which variables are typically used for each template type and style
@@ -77,10 +79,10 @@ const VARIABLE_USAGE: Record<WhatsAppTemplateType, {
     description: "{{7}} = Navigation Link (Waze to venue)"
   },
   EVENT_DAY: {
-    style1: ["{{1}}", "{{2}}", "{{3}}", "{{4}}", "{{6}}", "{{7}}", "{{8}}"],
-    style2: ["{{1}}", "{{2}}", "{{3}}", "{{4}}", "{{6}}", "{{7}}", "{{8}}"],
-    style3: ["{{1}}", "{{2}}", "{{3}}", "{{4}}", "{{6}}", "{{7}}", "{{8}}"],
-    description: "{{7}} = Navigation Link | {{8}} = Table Number"
+    style1: ["{{1}}", "{{2}}", "{{3}}", "{{4}}", "{{6}}", "{{12}}", "{{7}}", "{{8}}"],
+    style2: ["{{1}}", "{{2}}", "{{3}}", "{{4}}", "{{6}}", "{{12}}", "{{7}}", "{{8}}"],
+    style3: ["{{1}}", "{{2}}", "{{3}}", "{{4}}", "{{6}}", "{{12}}", "{{7}}", "{{8}}"],
+    description: "{{12}} = Gift URL | {{7}} = Navigation Link | {{8}} = Table Number"
   },
   THANK_YOU: {
     style1: ["{{1}}", "{{2}}", "{{7}}"],
@@ -131,10 +133,10 @@ export function VariableHelper({ templateType, style = "style1" }: VariableHelpe
         <div className="space-y-3 flex-1">
           <div>
             <h4 className="text-sm font-semibold text-blue-900 dark:text-blue-100">
-              Available Variables - 11 Variable System
+              Available Variables - 12 Variable System
             </h4>
             <p className="text-xs text-blue-700 dark:text-blue-300 mt-1">
-              Each piece of information has its own variable. <strong>Variable 7 is ALWAYS Navigation URL</strong> (Waze/Google Maps). <strong>Variable 11 is RSVP Link</strong> (only for INVITE/REMINDER). Variable 9 is Transportation Link (Style 3). Variable 10 is Media URL (templates with images).
+              Each piece of information has its own variable. <strong>Variable 7 is ALWAYS Navigation URL</strong> (Waze/Google Maps). <strong>Variable 11 is RSVP Link</strong> (only for INVITE/REMINDER). <strong>Variable 12 is Gift URL</strong> (EVENT_DAY). Variable 9 is Transportation Link (Style 3). Variable 10 is Media URL (templates with images).
             </p>
           </div>
 

@@ -522,6 +522,9 @@ export const WHATSAPP_TEMPLATE_PRESETS: WhatsAppTemplatePreset[] = [
 🕐 שעה: {{6}}
 🪑 השולחן שלך: מספר {{8}}
 
+💳 מתנה דיגיטלית:
+{{12}}
+
 🗺 ניווט מהיר למקום:
 {{7}}
 
@@ -533,6 +536,9 @@ export const WHATSAPP_TEMPLATE_PRESETS: WhatsAppTemplatePreset[] = [
 📍 איפה: {{3}}, {{4}}
 🕐 שעה: {{6}}
 🪑 השולחן שלך: מספר {{8}}
+
+💳 מתנה דיגיטלית:
+{{12}}
 
 🗺 ניווט מהיר למקום:
 {{7}}
@@ -874,6 +880,8 @@ RSVP: {{11}}
 📍 {{3}}, {{4}}
 🕐 {{6}}
 
+💳 מתנה: {{12}}
+
 🗺 ניווט:
 {{7}}
 
@@ -886,6 +894,8 @@ RSVP: {{11}}
 📍 {{3}}, {{4}}
 🕐 {{6}}
 
+💳 מתנה: {{12}}
+
 🗺 ניווט:
 {{7}}
 
@@ -896,8 +906,8 @@ RSVP: {{11}}
     style: "style3",
     contentType: "twilio/text",
     category: "MARKETING",
-    templateBodyHe: `{{1}}, {{2}} היום! 🪑{{8}} 📍{{4}} 🗺{{7}}`,
-    previewTextHe: `{{1}}, {{2}} היום! 🪑{{8}} 📍{{4}} 🗺{{7}}`,
+    templateBodyHe: `{{1}}, {{2}} היום! 🪑{{8}} 📍{{4}} 💳{{12}} 🗺{{7}}`,
+    previewTextHe: `{{1}}, {{2}} היום! 🪑{{8}} 📍{{4}} 💳{{12}} 🗺{{7}}`,
   },
 
   // ========================================
