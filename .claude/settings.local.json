@@ -22,7 +22,8 @@
       "Bash(ls:*)",
       "Bash(npm install:*)",
       "Bash(npm run db:push:*)",
-      "Bash(node scripts/migrate-template-styles.js:*)"
+      "Bash(node scripts/migrate-template-styles.js:*)",
+      "Bash(\"app/[locale]/(protected)/events/[eventId]/messages/page.tsx\")"
     ],
     "deny": [],
     "ask": []

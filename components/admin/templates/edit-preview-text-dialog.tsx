@@ -37,23 +37,21 @@ export function EditPreviewTextDialog({
   onSuccess,
 }: EditPreviewTextDialogProps) {
   const [previewTextHe, setPreviewTextHe] = useState("");
-  const [previewTextEn, setPreviewTextEn] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
   // Reset form when template changes or dialog opens
   useEffect(() => {
     if (open && template) {
       setPreviewTextHe(template.previewTextHe || "");
-      setPreviewTextEn(template.previewText || "");
     }
   }, [open, template]);
 
   const handleSave = async () => {
     if (!template) return;
 
-    // Validate that at least Hebrew preview is provided
+    // Validate that Hebrew preview is provided
     if (!previewTextHe.trim()) {
-      toast.error("נא להזין טקסט תצוגה מקדימה בעברית");
+      toast.error("נא להזין טקסט תצוגה מקדימה");
       return;
     }
 
@@ -62,7 +60,7 @@ export function EditPreviewTextDialog({
     try {
       const result = await updateWhatsAppTemplateContent({
         id: template.id,
-        previewText: previewTextEn || previewTextHe, // Fallback to Hebrew if English not provided
+        previewText: previewTextHe, // Use Hebrew for both fields
         previewTextHe,
       });
 
@@ -95,24 +93,39 @@ export function EditPreviewTextDialog({
         <DialogHeader>
           <DialogTitle>עריכת טקסט תצוגה מקדימה</DialogTitle>
           <DialogDescription>
-            עדכן את הטקסט שמוצג בתצוגה המקדימה של ההודעה
+            עדכן את הטקסט המלא שמוצג בתצוגה המקדימה של ההודעה
             <br />
-            <span className="font-medium">{template.nameHe} ({template.nameEn})</span>
+            <span className="font-medium">{template.nameHe}</span>
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 py-4">
+          {/* Current Preview Display */}
+          {template.previewTextHe && (
+            <div className="space-y-3">
+              <Label className="text-base font-semibold">תצוגה מקדימה נוכחית</Label>
+
+              <div className="rounded-lg border bg-muted/30 p-4">
+                <pre className="text-sm whitespace-pre-wrap break-words font-mono" dir="rtl" style={{ margin: 0, padding: 0, border: 'none', background: 'transparent' }}>
+{template.previewTextHe}
+                </pre>
+              </div>
+
+              <div className="h-px bg-border my-4" />
+            </div>
+          )}
+
           {/* Hebrew Preview Text */}
           <div className="space-y-2">
             <Label htmlFor="previewTextHe" className="text-base font-semibold">
-              טקסט תצוגה מקדימה - עברית <span className="text-red-500">*</span>
+              טקסט תצוגה מקדימה <span className="text-red-500">*</span>
             </Label>
             <Textarea
               id="previewTextHe"
               value={previewTextHe}
               onChange={(e) => setPreviewTextHe(e.target.value)}
               placeholder="הזן את הטקסט המלא שיוצג בתצוגה מקדימה..."
-              className="min-h-[200px] font-sans text-base"
+              className="min-h-[300px] font-mono text-base"
               dir="rtl"
               disabled={isLoading}
             />
@@ -121,34 +134,6 @@ export function EditPreviewTextDialog({
               השתמש במשתנים כמו {`{{1}}`}, {`{{2}}`} וכו'.
             </p>
           </div>
-
-          {/* English Preview Text (Optional) */}
-          <div className="space-y-2">
-            <Label htmlFor="previewTextEn" className="text-base font-semibold">
-              טקסט תצוגה מקדימה - אנגלית (אופציונלי)
-            </Label>
-            <Textarea
-              id="previewTextEn"
-              value={previewTextEn}
-              onChange={(e) => setPreviewTextEn(e.target.value)}
-              placeholder="Enter the full preview text in English..."
-              className="min-h-[200px] font-sans text-base"
-              dir="ltr"
-              disabled={isLoading}
-            />
-            <p className="text-sm text-muted-foreground">
-              אם לא מסופק, יוצג הטקסט בעברית גם עבור משתמשי אנגלית.
-            </p>
-          </div>
-
-          {/* Warning for DRAFT templates */}
-          {template.approvalStatus === "DRAFT" && (
-            <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 dark:bg-amber-900/20 dark:border-amber-800">
-              <p className="text-sm text-amber-700 dark:text-amber-300">
-                💡 טיפ: תבנית זו במצב טיוטה. תוכל לערוך את הטקסט המלא של ההודעה בטרם הגשתה לאישור.
-              </p>
-            </div>
-          )}
         </div>
 
         <DialogFooter>

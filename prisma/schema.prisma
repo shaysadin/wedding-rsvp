@@ -250,6 +250,7 @@ model WeddingEvent {
   giftPayments            GiftPayment[]
   manualCallLogs          ManualCallLog[]
   transportationRegistrations TransportationRegistration[]
+  smsTemplates            EventSmsTemplate[]
   // Collaboration relations
   collaborators           EventCollaborator[]
   invitations             EventInvitation[]
@@ -787,6 +788,38 @@ model WhatsAppTemplate {
   @@index([type, isActive])
   @@index([approvalStatus])
   @@map("whatsapp_templates")
+}
+
+// Event-scoped SMS templates (user-created)
+model EventSmsTemplate {
+  id             String              @id @default(cuid())
+  weddingEventId String              @map("wedding_event_id")
+  type           SmsTemplateType     // INVITE, REMINDER, EVENT_DAY, THANK_YOU
+  style          String              // "style1" (Normal), "style2" (Informative), "style3" (Transportation)
+  nameHe         String              @map("name_he") // Display name in Hebrew
+  nameEn         String              @map("name_en") // Display name in English
+  messageBodyHe  String              @map("message_body_he") @db.Text // SMS body in Hebrew (with {{1}}-{{12}} variables)
+  messageBodyEn  String?             @map("message_body_en") @db.Text // SMS body in English (optional)
+  variables      Json?               // Variable definitions: {1: "Guest Name", 2: "Event Title", etc.}
+  isActive       Boolean             @default(true) @map("is_active")
+  isDefault      Boolean             @default(false) @map("is_default") // System default templates
+  sortOrder      Int                 @default(0) @map("sort_order")
+  createdAt      DateTime            @default(now()) @map("created_at")
+  updatedAt      DateTime            @default(now()) @updatedAt @map("updated_at")
+
+  weddingEvent   WeddingEvent        @relation(fields: [weddingEventId], references: [id], onDelete: Cascade)
+
+  @@unique([weddingEventId, type, style])
+  @@index([weddingEventId, isActive])
+  @@index([type])
+  @@map("event_sms_templates")
+}
+
+enum SmsTemplateType {
+  INVITE      // Standard invite with RSVP link
+  REMINDER    // Standard reminder with RSVP link
+  EVENT_DAY   // Event day reminder (morning of event)
+  THANK_YOU   // Thank you message (day after event - aka DAY_AFTER_EVENT)
 }
 
 enum WhatsAppTemplateApprovalStatus {

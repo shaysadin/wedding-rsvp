@@ -18,7 +18,7 @@ const MAX_CONCURRENT = 5; // Max concurrent requests within a batch
 interface BulkMessageOptions {
   eventId: string;
   guestIds: string[];
-  messageType: "INVITE" | "REMINDER" | "EVENT_DAY";
+  messageType: "INVITE" | "REMINDER" | "EVENT_DAY" | "THANK_YOU";
   messageFormat: "STANDARD" | "INTERACTIVE";
   channel: "WHATSAPP" | "SMS" | "AUTO";
   includeImage?: boolean;
@@ -129,7 +129,7 @@ async function processSingleMessage(
     } | null;
   },
   options: {
-    messageType: "INVITE" | "REMINDER" | "EVENT_DAY";
+    messageType: "INVITE" | "REMINDER" | "EVENT_DAY" | "THANK_YOU";
     messageFormat: "STANDARD" | "INTERACTIVE";
     channel: NotificationChannel;
     includeImage: boolean;
@@ -267,7 +267,7 @@ async function processBatch(
     } | null;
   }>,
   options: {
-    messageType: "INVITE" | "REMINDER" | "EVENT_DAY";
+    messageType: "INVITE" | "REMINDER" | "EVENT_DAY" | "THANK_YOU";
     messageFormat: "STANDARD" | "INTERACTIVE";
     channel: NotificationChannel;
     includeImage: boolean;

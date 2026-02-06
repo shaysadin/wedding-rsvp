@@ -266,7 +266,8 @@ export async function getAllTemplatesWithTwilioSync() {
           twilioTemplateName: twilioTemplate.friendlyName,
           contentType: twilioTemplate.contentType,
           templateBodyHe: twilioTemplate.fullBody,
-          previewText: twilioTemplate.previewText,
+          previewText: assignment?.previewText || twilioTemplate.previewText,
+          previewTextHe: assignment?.previewTextHe || null,
           language: twilioTemplate.language,
 
           // Assignment data (from local DB if assigned)
@@ -277,11 +278,14 @@ export async function getAllTemplatesWithTwilioSync() {
           nameEn: assignment?.nameEn || twilioTemplate.friendlyName,
           isActive: true,
           approvalStatus: "APPROVED" as const,
+          rejectionReason: assignment?.rejectionReason || null,
           isAssigned: !!assignment,
 
           // Metadata
           createdAt: assignment?.createdAt || new Date(twilioTemplate.dateCreated),
           updatedAt: assignment?.updatedAt || new Date(twilioTemplate.dateUpdated),
+          submittedAt: assignment?.submittedAt || null,
+          approvedAt: assignment?.approvedAt || null,
         });
       }
     }
@@ -307,6 +311,7 @@ export async function getAllTemplatesWithTwilioSync() {
         language: localTemplate.language,
         isActive: localTemplate.isActive,
         approvalStatus: localTemplate.approvalStatus,
+        rejectionReason: localTemplate.rejectionReason,
         isAssigned: true, // Local templates are always assigned to a type/style
         createdAt: localTemplate.createdAt,
         updatedAt: localTemplate.updatedAt,

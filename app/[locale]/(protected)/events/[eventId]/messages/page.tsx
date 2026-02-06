@@ -1,83 +1,69 @@
-import { redirect, notFound } from "next/navigation";
-import { getLocale, getTranslations } from "next-intl/server";
-import { UserRole } from "@prisma/client";
+import { Metadata } from "next";
+import { notFound } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 
 import { getCurrentUser } from "@/lib/session";
+import { canAccessEvent } from "@/lib/permissions";
 import { prisma } from "@/lib/db";
-import { getEventTemplates, initializeEventTemplates } from "@/actions/message-templates";
-import { MessageTemplateList } from "@/components/dashboard/message-template-list";
-import { PageFadeIn } from "@/components/shared/page-fade-in";
-import { cn } from "@/lib/utils";
+import { MessagesPageContent } from "@/components/messages/messages-page-content";
+
+export const metadata: Metadata = {
+  title: "Message Templates",
+  description: "Manage SMS and WhatsApp message templates",
+};
 
 interface MessagesPageProps {
-  params: Promise<{ eventId: string }>;
+  params: {
+    eventId: string;
+    locale: string;
+  };
 }
 
 export default async function MessagesPage({ params }: MessagesPageProps) {
-  const { eventId } = await params;
+  // Await params for Next.js 16 compatibility
+  const resolvedParams = await params;
   const user = await getCurrentUser();
-  const locale = await getLocale();
-  const t = await getTranslations("messageTemplates");
-  const isRTL = locale === "he";
 
-  // Check if user has ROLE_WEDDING_OWNER in their roles array
-  const hasWeddingOwnerRole = user?.roles?.includes(UserRole.ROLE_WEDDING_OWNER);
-  if (!user || !hasWeddingOwnerRole) {
-    redirect(`/${locale}/dashboard`);
+  if (!user) {
+    notFound();
   }
 
-  // Verify event exists and user has access (owner or collaborator)
-  const event = await prisma.weddingEvent.findFirst({
-    where: {
-      id: eventId,
-      isArchived: false,
-      OR: [
-        { ownerId: user.id },
-        {
-          collaborators: {
-            some: {
-              userId: user.id,
-              acceptedAt: { not: null },
-            },
-          },
-        },
-      ],
+  // Check if user can access this event
+  const hasAccess = await canAccessEvent(resolvedParams.eventId, user.id);
+  if (!hasAccess) {
+    notFound();
+  }
+
+  // Get event details
+  const event = await prisma.weddingEvent.findUnique({
+    where: { id: resolvedParams.eventId },
+    select: {
+      id: true,
+      title: true,
+      dateTime: true,
     },
-    select: { id: true, title: true },
   });
 
   if (!event) {
     notFound();
   }
 
-  // Initialize default templates if needed
-  await initializeEventTemplates(eventId, locale);
-
-  const result = await getEventTemplates(eventId);
-
-  if (!result.success || !result.event) {
-    notFound();
-  }
+  // Get translations
+  const t = await getTranslations();
+  const isRTL = resolvedParams.locale === "he";
 
   return (
-    <PageFadeIn>
-      {/* Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between mb-6">
-        <div className={cn("space-y-1", isRTL && "text-right")}>
-          <h1 className="font-heading text-2xl font-semibold">{t("pageTitle")}</h1>
-          <p className="text-sm text-muted-foreground">
-            {t("pageDescription", { eventTitle: result.event.title })}
-          </p>
-        </div>
+    <div className="flex flex-col gap-6">
+      <div className={isRTL ? "text-right" : "text-left"}>
+        <h1 className="text-3xl font-bold tracking-tight">
+          {t("messages.title")}
+        </h1>
+        <p className="text-muted-foreground">
+          {t("messages.description")}
+        </p>
       </div>
 
-      <MessageTemplateList
-        templates={result.templates || []}
-        eventId={eventId}
-        eventTitle={result.event.title}
-        locale={locale}
-        smsSenderId={result.event.smsSenderId}
-      />
-    </PageFadeIn>
+      <MessagesPageContent eventId={resolvedParams.eventId} locale={resolvedParams.locale} />
+    </div>
   );
 }

@@ -229,6 +229,70 @@ PowerShell script for Windows users to scan and report ownership checks.
 
 ---
 
+### sync-whatsapp-previews.js
+
+Syncs WhatsApp template previews from Twilio to the database and optionally to SMS templates.
+
+**Purpose:** After editing WhatsApp templates directly in Twilio, this script fetches the actual template content and updates preview texts in the database. Can also sync those previews to SMS templates for consistency.
+
+**Usage:**
+
+```bash
+# Update WhatsApp template previews only
+node scripts/sync-whatsapp-previews.js
+
+# Update WhatsApp previews AND sync to SMS templates
+node scripts/sync-whatsapp-previews.js --sync-sms
+```
+
+**What it does:**
+1. Fetches all approved WhatsApp templates with contentSid from database
+2. For each template, fetches actual content from Twilio Content API
+3. Extracts template body text and detects language (Hebrew/English)
+4. Updates preview text fields in database
+5. If `--sync-sms` flag is used, updates matching SMS templates with same content
+
+**Template Mapping:**
+- WhatsApp types map to SMS types (e.g., INTERACTIVE_INVITE → INVITE)
+- WhatsApp styles map to SMS styles:
+  - `formal` → `style1` (Normal)
+  - `friendly` → `style2` (Informative)
+  - `short` → `style3` (Transportation/Quick)
+
+**Requirements:**
+- Twilio credentials configured in admin panel (automatically fetched from database)
+- Database connection (uses `DATABASE_URL` from environment)
+
+**Note:** The script automatically fetches Twilio credentials from `messaging_provider_settings` table. Make sure your WhatsApp provider is configured in the admin messaging settings page before running this script.
+
+**Example Output:**
+```
+🚀 Starting WhatsApp template preview sync...
+
+📊 Found 12 approved WhatsApp templates with contentSid
+
+🔄 Processing: Standard Invite - Formal (INVITE - formal)
+   ContentSid: HXa1b2c3d4e5f6g7h8i9j0k1l2m3n4o5
+✅ Updated preview for Standard Invite - Formal (Hebrew)
+📋 Synced to 3 SMS template(s) (INVITE - style1)
+
+✨ Summary:
+   12/12 WhatsApp templates updated
+   36 SMS templates synced
+
+✅ Done!
+```
+
+**Use Cases:**
+- After bulk editing templates in Twilio's console
+- Keeping database previews in sync with actual template content
+- Maintaining consistency between WhatsApp and SMS templates
+- Initial setup when migrating existing templates
+
+**Note:** Only updates templates with `approvalStatus: 'APPROVED'` and valid `contentSid`.
+
+---
+
 ## Adding New Scripts
 
 When adding new scripts to this directory:

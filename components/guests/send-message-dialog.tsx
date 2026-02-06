@@ -40,6 +40,8 @@ import {
   SMS_MAX_LENGTH,
   type SmsTemplate,
 } from "@/config/sms-templates";
+import { getEventSmsTemplatesByType } from "@/actions/sms-templates";
+import { getSmsStyleDescription, type SmsTemplateType as EventSmsTemplateType } from "@/config/sms-template-presets";
 
 interface SendMessageDialogProps {
   open: boolean;
@@ -52,7 +54,7 @@ interface SendMessageDialogProps {
   invitationImageUrl?: string | null;
 }
 
-type MessageType = "INVITE" | "REMINDER" | "EVENT_DAY";
+type MessageType = "INVITE" | "REMINDER" | "EVENT_DAY" | "THANK_YOU";
 type MessageFormat = "STANDARD" | "INTERACTIVE";
 
 interface ChannelStatus {
@@ -120,7 +122,9 @@ export function SendMessageDialog({
 
   // SMS template state
   const [smsTemplates, setSmsTemplates] = useState<SmsTemplate[]>([]);
+  const [eventSmsTemplates, setEventSmsTemplates] = useState<any[]>([]);
   const [selectedSmsTemplateId, setSelectedSmsTemplateId] = useState<string | null>(null);
+  const [selectedEventSmsTemplateId, setSelectedEventSmsTemplateId] = useState<string | null>(null);
   const [isCustomSms, setIsCustomSms] = useState(false);
   const [customSmsMessage, setCustomSmsMessage] = useState("");
   const [smsTemplate, setSmsTemplate] = useState<string>("");
@@ -144,6 +148,9 @@ export function SendMessageDialog({
   const whatsappTemplateType: WhatsAppTemplateType = useMemo(() => {
     if (messageType === "EVENT_DAY") {
       return "EVENT_DAY";
+    }
+    if (messageType === "THANK_YOU") {
+      return "THANK_YOU" as WhatsAppTemplateType;
     }
     if (messageFormat === "INTERACTIVE") {
       return messageType === "INVITE" ? "INTERACTIVE_INVITE" : "INTERACTIVE_REMINDER";
@@ -230,15 +237,37 @@ export function SendMessageDialog({
         setLoadingChannels(false);
       });
 
-      // Load SMS templates
-      const smsTemplatesList = getSmsTemplates(messageType);
+      // Load SMS templates (config + event-specific)
+      // Note: THANK_YOU type doesn't have config templates, only event-specific ones
+      const smsTemplatesList = messageType === "THANK_YOU" ? [] : getSmsTemplates(messageType);
       setSmsTemplates(smsTemplatesList);
-      if (smsTemplatesList.length > 0) {
-        setSelectedSmsTemplateId(smsTemplatesList[0].id);
-        setSmsTemplate(isRTL ? smsTemplatesList[0].messageHe : smsTemplatesList[0].messageEn);
-      }
+
+      // Load event-specific SMS templates
+      const eventSmsType: EventSmsTemplateType =
+        messageType === "INVITE" ? "INVITE" :
+        messageType === "REMINDER" ? "REMINDER" :
+        messageType === "EVENT_DAY" ? "EVENT_DAY" : "THANK_YOU";
+
+      getEventSmsTemplatesByType(eventId, eventSmsType).then((result) => {
+        if (result.success && result.templates) {
+          setEventSmsTemplates(result.templates);
+          // Auto-select first event template if available
+          if (result.templates.length > 0) {
+            const firstTemplate = result.templates[0];
+            setSelectedEventSmsTemplateId(firstTemplate.id);
+            setSmsTemplate(isRTL ? firstTemplate.messageBodyHe : (firstTemplate.messageBodyEn || firstTemplate.messageBodyHe));
+            return;
+          }
+        }
+
+        // Fallback to config templates
+        if (smsTemplatesList.length > 0) {
+          setSelectedSmsTemplateId(smsTemplatesList[0].id);
+          setSmsTemplate(isRTL ? smsTemplatesList[0].messageHe : smsTemplatesList[0].messageEn);
+        }
+      });
     }
-  }, [open, hasInvitationImage, messageType, isRTL]);
+  }, [open, hasInvitationImage, messageType, isRTL, eventId]);
 
   // Fetch WhatsApp templates - only fetch once per template type (cached)
   useEffect(() => {
@@ -309,25 +338,44 @@ export function SendMessageDialog({
 
   // Update SMS templates when message type changes
   useEffect(() => {
-    if (channel === "SMS") {
-      const smsTemplatesList = getSmsTemplates(messageType);
+    if (channel === "SMS" && open) {
+      const smsTemplatesList = messageType === "THANK_YOU" ? [] : getSmsTemplates(messageType);
       setSmsTemplates(smsTemplatesList);
-      if (smsTemplatesList.length > 0 && !isCustomSms) {
-        setSelectedSmsTemplateId(smsTemplatesList[0].id);
-        setSmsTemplate(isRTL ? smsTemplatesList[0].messageHe : smsTemplatesList[0].messageEn);
-      }
+
+      // Load event-specific SMS templates
+      const eventSmsType: EventSmsTemplateType =
+        messageType === "INVITE" ? "INVITE" :
+        messageType === "REMINDER" ? "REMINDER" :
+        messageType === "EVENT_DAY" ? "EVENT_DAY" : "THANK_YOU";
+
+      getEventSmsTemplatesByType(eventId, eventSmsType).then((result) => {
+        if (result.success && result.templates && result.templates.length > 0 && !isCustomSms) {
+          setEventSmsTemplates(result.templates);
+          const firstTemplate = result.templates[0];
+          setSelectedEventSmsTemplateId(firstTemplate.id);
+          setSelectedSmsTemplateId(null);
+          setSmsTemplate(isRTL ? firstTemplate.messageBodyHe : (firstTemplate.messageBodyEn || firstTemplate.messageBodyHe));
+        } else {
+          setEventSmsTemplates([]);
+          if (smsTemplatesList.length > 0 && !isCustomSms) {
+            setSelectedSmsTemplateId(smsTemplatesList[0].id);
+            setSelectedEventSmsTemplateId(null);
+            setSmsTemplate(isRTL ? smsTemplatesList[0].messageHe : smsTemplatesList[0].messageEn);
+          }
+        }
+      });
     }
-  }, [channel, messageType, isRTL, isCustomSms]);
+  }, [channel, messageType, isRTL, isCustomSms, eventId, open]);
 
   // Auto-switch format when message type changes
   useEffect(() => {
     if (open && channel === "WHATSAPP") {
-      // EVENT_DAY doesn't have interactive mode, use STANDARD
+      // EVENT_DAY and THANK_YOU don't have interactive mode, use STANDARD
       // INVITE and REMINDER default to INTERACTIVE
-      if (messageType === "EVENT_DAY") {
+      if (messageType === "EVENT_DAY" || messageType === "THANK_YOU") {
         setMessageFormat("STANDARD");
       } else if (messageFormat === "STANDARD" && (messageType === "INVITE" || messageType === "REMINDER")) {
-        // If switching from EVENT_DAY back to INVITE/REMINDER, switch to INTERACTIVE
+        // If switching from EVENT_DAY/THANK_YOU back to INVITE/REMINDER, switch to INTERACTIVE
         setMessageFormat("INTERACTIVE");
       }
     }
@@ -379,6 +427,30 @@ export function SendMessageDialog({
       if (isCustomSms) {
         return renderSmsTemplate(customSmsMessage || "", previewContext);
       }
+
+      // Check event-specific templates first
+      if (selectedEventSmsTemplateId) {
+        const eventTemplate = eventSmsTemplates.find((t) => t.id === selectedEventSmsTemplateId);
+        if (eventTemplate) {
+          const msg = isRTL ? eventTemplate.messageBodyHe : (eventTemplate.messageBodyEn || eventTemplate.messageBodyHe);
+          // Use new 12-variable system for event templates
+          return msg
+            .replace(/\{\{1\}\}/g, previewContext.guestName)
+            .replace(/\{\{2\}\}/g, previewContext.eventTitle)
+            .replace(/\{\{3\}\}/g, previewContext.venueName)
+            .replace(/\{\{4\}\}/g, previewContext.venueAddress)
+            .replace(/\{\{5\}\}/g, previewContext.eventDate)
+            .replace(/\{\{6\}\}/g, previewContext.eventTime)
+            .replace(/\{\{7\}\}/g, previewContext.navigationUrl)
+            .replace(/\{\{8\}\}/g, previewContext.tableNumber)
+            .replace(/\{\{9\}\}/g, previewContext.transportationLink)
+            .replace(/\{\{10\}\}/g, isRTL ? "צד א" : "Side A")
+            .replace(/\{\{11\}\}/g, previewContext.rsvpLink)
+            .replace(/\{\{12\}\}/g, previewContext.giftLink);
+        }
+      }
+
+      // Fallback to config templates
       const template = smsTemplates.find((t) => t.id === selectedSmsTemplateId);
       if (template) {
         const msg = isRTL ? template.messageHe : template.messageEn;
@@ -695,10 +767,10 @@ export function SendMessageDialog({
                   </div>
                 </div>
 
-                {/* Message Type */}
+                {/* Message Type - 2x2 Grid */}
                 <div className="space-y-2">
                   <Label>{t("messageType")}</Label>
-                  <div className="flex flex-col gap-2">
+                  <div className="grid grid-cols-2 gap-2">
                     <button
                       onClick={() => setMessageType("INVITE")}
                       disabled={sending}
@@ -709,19 +781,19 @@ export function SendMessageDialog({
                           : "border-border hover:border-blue-500/50"
                       )}
                     >
-                      <div className="flex items-center gap-2">
-                        <Icons.mail className="h-4 w-4 text-blue-600" />
-                        <div className="flex-1">
+                      <div className="flex flex-col gap-2">
+                        <div className="flex items-center gap-2">
+                          <Icons.mail className="h-4 w-4 text-blue-600" />
                           <span className="font-medium text-sm">
                             {t("invitation")}
                           </span>
-                          <p className="text-xs text-muted-foreground">
-                            {isRTL ? "הזמנה ראשונית לאירוע" : "Initial event invitation"}
-                          </p>
+                          {messageType === "INVITE" && (
+                            <Icons.check className="h-4 w-4 text-blue-600 ms-auto" />
+                          )}
                         </div>
-                        {messageType === "INVITE" && (
-                          <Icons.check className="h-4 w-4 text-blue-600" />
-                        )}
+                        <p className="text-xs text-muted-foreground">
+                          {isRTL ? "הזמנה ראשונית" : "Initial invite"}
+                        </p>
                       </div>
                     </button>
                     <button
@@ -734,19 +806,19 @@ export function SendMessageDialog({
                           : "border-border hover:border-purple-500/50"
                       )}
                     >
-                      <div className="flex items-center gap-2">
-                        <Icons.bell className="h-4 w-4 text-purple-600" />
-                        <div className="flex-1">
+                      <div className="flex flex-col gap-2">
+                        <div className="flex items-center gap-2">
+                          <Icons.bell className="h-4 w-4 text-purple-600" />
                           <span className="font-medium text-sm">
                             {t("reminder")}
                           </span>
-                          <p className="text-xs text-muted-foreground">
-                            {isRTL ? "תזכורת לאישור הגעה" : "Reminder to RSVP"}
-                          </p>
+                          {messageType === "REMINDER" && (
+                            <Icons.check className="h-4 w-4 text-purple-600 ms-auto" />
+                          )}
                         </div>
-                        {messageType === "REMINDER" && (
-                          <Icons.check className="h-4 w-4 text-purple-600" />
-                        )}
+                        <p className="text-xs text-muted-foreground">
+                          {isRTL ? "תזכורת RSVP" : "RSVP reminder"}
+                        </p>
                       </div>
                     </button>
                     <button
@@ -759,26 +831,51 @@ export function SendMessageDialog({
                           : "border-border hover:border-amber-500/50"
                       )}
                     >
-                      <div className="flex items-center gap-2">
-                        <Icons.calendar className="h-4 w-4 text-amber-600" />
-                        <div className="flex-1">
+                      <div className="flex flex-col gap-2">
+                        <div className="flex items-center gap-2">
+                          <Icons.calendar className="h-4 w-4 text-amber-600" />
                           <span className="font-medium text-sm">
-                            {isRTL ? "תזכורת יום האירוע" : "Event Day Reminder"}
+                            {isRTL ? "יום האירוע" : "Event Day"}
                           </span>
-                          <p className="text-xs text-muted-foreground">
-                            {isRTL ? "שליחה ביום האירוע" : "Send on event day"}
-                          </p>
+                          {messageType === "EVENT_DAY" && (
+                            <Icons.check className="h-4 w-4 text-amber-600 ms-auto" />
+                          )}
                         </div>
-                        {messageType === "EVENT_DAY" && (
-                          <Icons.check className="h-4 w-4 text-amber-600" />
-                        )}
+                        <p className="text-xs text-muted-foreground">
+                          {isRTL ? "ביום האירוע" : "On event day"}
+                        </p>
+                      </div>
+                    </button>
+                    <button
+                      onClick={() => setMessageType("THANK_YOU")}
+                      disabled={sending}
+                      className={cn(
+                        "p-3 rounded-lg border-2 text-start transition-all",
+                        messageType === "THANK_YOU"
+                          ? "border-green-500 bg-green-50 dark:bg-green-900/20"
+                          : "border-border hover:border-green-500/50"
+                      )}
+                    >
+                      <div className="flex flex-col gap-2">
+                        <div className="flex items-center gap-2">
+                          <Icons.heart className="h-4 w-4 text-green-600" />
+                          <span className="font-medium text-sm">
+                            {isRTL ? "יום אחרי" : "Day After"}
+                          </span>
+                          {messageType === "THANK_YOU" && (
+                            <Icons.check className="h-4 w-4 text-green-600 ms-auto" />
+                          )}
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          {isRTL ? "תודה לאורחים" : "Thank guests"}
+                        </p>
                       </div>
                     </button>
                   </div>
                 </div>
 
-                {/* Message Format (WhatsApp only, not for EVENT_DAY) */}
-                {channel === "WHATSAPP" && messageType !== "EVENT_DAY" && (
+                {/* Message Format (WhatsApp only, not for EVENT_DAY or THANK_YOU) */}
+                {channel === "WHATSAPP" && messageType !== "EVENT_DAY" && messageType !== "THANK_YOU" && (
                   <div className="space-y-2">
                     <Label>{isRTL ? "פורמט הודעה" : "Message Format"}</Label>
                     <div className="grid grid-cols-2 gap-2">
@@ -948,13 +1045,25 @@ export function SendMessageDialog({
                           const isActive = !!activeTemplate;
                           const isSelected = selectedWhatsappStyle === definition.style;
 
+                          // Map WhatsApp style names to descriptions
+                          const getWhatsAppStyleDesc = (style: string) => {
+                            const styleMap: Record<string, { he: string; en: string; desc: string }> = {
+                              formal: { he: "רשמי", en: "Formal", desc: "Normal" },
+                              friendly: { he: "ידידותי", en: "Friendly", desc: "Informative" },
+                              short: { he: "קצר", en: "Short", desc: "Quick" },
+                            };
+                            return styleMap[style] || { he: style, en: style, desc: "" };
+                          };
+
+                          const styleDesc = getWhatsAppStyleDesc(definition.style);
+
                           return (
                             <button
                               key={definition.style}
                               onClick={() => activeTemplate && handleWhatsappTemplateSelect(activeTemplate)}
                               disabled={!isActive || sending}
                               className={cn(
-                                "p-2 sm:p-3 rounded-lg border-2 text-center transition-all",
+                                "p-2 sm:p-3 rounded-lg border-2 text-center transition-all flex flex-col gap-1",
                                 isSelected && isActive
                                   ? "border-green-500 bg-green-50 dark:bg-green-900/20"
                                   : isActive
@@ -962,16 +1071,21 @@ export function SendMessageDialog({
                                     : "border-border bg-muted/30 opacity-50 cursor-not-allowed"
                               )}
                             >
-                              <p className="font-medium text-xs sm:text-sm">
-                                {isRTL ? definition.nameHe : definition.nameEn}
+                              <p className="font-medium text-xs">
+                                {isRTL ? styleDesc.he : styleDesc.en}
                               </p>
+                              {isActive && styleDesc.desc && (
+                                <p className="text-[9px] sm:text-[10px] text-muted-foreground">
+                                  {styleDesc.desc}
+                                </p>
+                              )}
                               {!isActive && (
-                                <p className="text-[9px] sm:text-[10px] text-muted-foreground mt-0.5">
+                                <p className="text-[9px] sm:text-[10px] text-muted-foreground">
                                   {isRTL ? "לא מאושר" : "Not approved"}
                                 </p>
                               )}
                               {isSelected && isActive && (
-                                <Icons.check className="h-3 w-3 sm:h-4 sm:w-4 text-green-600 mx-auto mt-1" />
+                                <Icons.check className="h-3 w-3 text-green-600 mx-auto" />
                               )}
                             </button>
                           );
@@ -980,32 +1094,77 @@ export function SendMessageDialog({
                     )
                   ) : (
                     <div className="space-y-2 sm:space-y-3">
-                      {/* SMS Template Buttons */}
-                      <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
-                        {smsTemplates.map((template) => {
-                          const isSelected = selectedSmsTemplateId === template.id && !isCustomSms;
-                          const name = isRTL ? template.nameHe : template.nameEn;
+                      {/* Event-Specific SMS Templates (if any) */}
+                      {eventSmsTemplates.length > 0 && (
+                        <div className="space-y-2">
+                          <Label className="text-xs text-muted-foreground">
+                            {isRTL ? "תבניות האירוע שלך" : "Your Event Templates"}
+                          </Label>
+                          <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
+                            {eventSmsTemplates.map((template) => {
+                              const isSelected = selectedEventSmsTemplateId === template.id && !isCustomSms;
+                              const name = isRTL ? template.nameHe : template.nameEn;
+                              const styleDesc = getSmsStyleDescription(template.style);
 
-                          return (
-                            <button
-                              key={template.id}
-                              onClick={() => handleSmsTemplateSelect(template)}
-                              disabled={sending}
-                              className={cn(
-                                "p-2 sm:p-3 rounded-lg border-2 text-center transition-all",
-                                isSelected
-                                  ? "border-primary bg-primary/5"
-                                  : "border-border hover:border-primary/50"
-                              )}
-                            >
-                              <p className="font-medium text-xs sm:text-sm">{name}</p>
-                              {isSelected && (
-                                <Icons.check className="h-3 w-3 sm:h-4 sm:w-4 text-primary mx-auto mt-1" />
-                              )}
-                            </button>
-                          );
-                        })}
-                      </div>
+                              return (
+                                <button
+                                  key={template.id}
+                                  onClick={() => {
+                                    setSelectedEventSmsTemplateId(template.id);
+                                    setSelectedSmsTemplateId(null);
+                                    setIsCustomSms(false);
+                                    setSmsTemplate(isRTL ? template.messageBodyHe : (template.messageBodyEn || template.messageBodyHe));
+                                  }}
+                                  disabled={sending}
+                                  className={cn(
+                                    "p-2 sm:p-3 rounded-lg border-2 text-center transition-all flex flex-col gap-1",
+                                    isSelected
+                                      ? "border-primary bg-primary/5"
+                                      : "border-border hover:border-primary/50"
+                                  )}
+                                >
+                                  <p className="font-medium text-xs">{isRTL ? styleDesc.he : styleDesc.en}</p>
+                                  <p className="text-[9px] sm:text-[10px] text-muted-foreground truncate">
+                                    {styleDesc.description.split(' ').slice(0, 2).join(' ')}
+                                  </p>
+                                  {isSelected && (
+                                    <Icons.check className="h-3 w-3 text-primary mx-auto" />
+                                  )}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Config SMS Template Buttons (fallback) */}
+                      {smsTemplates.length > 0 && eventSmsTemplates.length === 0 && (
+                        <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
+                          {smsTemplates.map((template) => {
+                            const isSelected = selectedSmsTemplateId === template.id && !isCustomSms;
+                            const name = isRTL ? template.nameHe : template.nameEn;
+
+                            return (
+                              <button
+                                key={template.id}
+                                onClick={() => handleSmsTemplateSelect(template)}
+                                disabled={sending}
+                                className={cn(
+                                  "p-2 sm:p-3 rounded-lg border-2 text-center transition-all",
+                                  isSelected
+                                    ? "border-primary bg-primary/5"
+                                    : "border-border hover:border-primary/50"
+                                )}
+                              >
+                                <p className="font-medium text-xs sm:text-sm">{name}</p>
+                                {isSelected && (
+                                  <Icons.check className="h-3 w-3 sm:h-4 sm:w-4 text-primary mx-auto mt-1" />
+                                )}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
 
                       {/* Custom SMS Toggle */}
                       <button
