@@ -63,9 +63,36 @@ export default async function TransportationPage({ params }: TransportationPageP
           groupName: true,
         },
       },
+      pickupPlace: {
+        select: {
+          id: true,
+          name: true,
+          nameHe: true,
+          nameEn: true,
+          nameAr: true,
+          address: true,
+        },
+      },
     },
     orderBy: {
       registeredAt: "desc",
+    },
+  });
+
+  // Fetch all pickup places for this event
+  const pickupPlaces = await prisma.transportationPickupPlace.findMany({
+    where: {
+      weddingEventId: eventId,
+    },
+    include: {
+      _count: {
+        select: {
+          registrations: true,
+        },
+      },
+    },
+    orderBy: {
+      sortOrder: "asc",
     },
   });
 
@@ -82,6 +109,7 @@ export default async function TransportationPage({ params }: TransportationPageP
       events={events}
       locale={locale}
       transportationRegistrations={transportationRegistrations}
+      pickupPlaces={pickupPlaces}
     />
   );
 }

@@ -101,7 +101,8 @@ function getWhatsAppTemplateType(action: AutomationAction): WhatsAppTemplateType
     case "SEND_TABLE_ASSIGNMENT":
       return WhatsAppTemplateType.TABLE_ASSIGNMENT;
     case "SEND_WHATSAPP_GUEST_COUNT":
-      return WhatsAppTemplateType.GUEST_COUNT_LIST;
+      // Guest count uses free-form Twilio Content API (not a WhatsApp template)
+      return null;
     default:
       return null;
   }

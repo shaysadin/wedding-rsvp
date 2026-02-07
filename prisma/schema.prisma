@@ -250,6 +250,7 @@ model WeddingEvent {
   giftPayments            GiftPayment[]
   manualCallLogs          ManualCallLog[]
   transportationRegistrations TransportationRegistration[]
+  transportationPickupPlaces  TransportationPickupPlace[]
   smsTemplates            EventSmsTemplate[]
   // Collaboration relations
   collaborators           EventCollaborator[]
@@ -352,23 +353,49 @@ model GuestRsvp {
   @@map("guest_rsvps")
 }
 
-model TransportationRegistration {
-  id             String       @id @default(cuid())
-  weddingEventId String       @map("wedding_event_id")
-  guestId        String?      @unique @map("guest_id") // Optional - allows generic registrations
-  fullName       String       @map("full_name")
-  phoneNumber    String       @map("phone_number")
-  location       String // Pickup location/address
-  notes          String? // Optional notes from guest
-  registeredAt   DateTime     @default(now()) @map("registered_at")
-  createdAt      DateTime     @default(now()) @map("created_at")
-  updatedAt      DateTime     @default(now()) @updatedAt @map("updated_at")
+model TransportationPickupPlace {
+  id             String                      @id @default(cuid())
+  weddingEventId String                      @map("wedding_event_id")
+  name           String // Pickup place name (e.g., "Tel Aviv Central Station")
+  nameHe         String?                     @map("name_he") // Hebrew name
+  nameEn         String?                     @map("name_en") // English name
+  nameAr         String?                     @map("name_ar") // Arabic name
+  address        String? // Full address (optional)
+  notes          String? // Internal notes for event owner
+  sortOrder      Int                         @default(0) @map("sort_order") // Display order
+  isActive       Boolean                     @default(true) @map("is_active") // Can be disabled without deletion
+  createdAt      DateTime                    @default(now()) @map("created_at")
+  updatedAt      DateTime                    @default(now()) @updatedAt @map("updated_at")
 
-  weddingEvent WeddingEvent @relation(fields: [weddingEventId], references: [id], onDelete: Cascade)
-  guest        Guest?       @relation(fields: [guestId], references: [id], onDelete: Cascade)
+  weddingEvent   WeddingEvent                @relation(fields: [weddingEventId], references: [id], onDelete: Cascade)
+  registrations  TransportationRegistration[]
+
+  @@index([weddingEventId])
+  @@index([isActive])
+  @@map("transportation_pickup_places")
+}
+
+model TransportationRegistration {
+  id              String                      @id @default(cuid())
+  weddingEventId  String                      @map("wedding_event_id")
+  guestId         String?                     @unique @map("guest_id") // Optional - allows generic registrations
+  pickupPlaceId   String?                     @map("pickup_place_id") // Selected pickup place (if using predefined places)
+  fullName        String                      @map("full_name")
+  phoneNumber     String                      @map("phone_number")
+  location        String // Pickup location/address (used if pickupPlaceId is null, or for custom location)
+  language        String                      @default("he") // Registration language: "he", "en", "ar"
+  notes           String? // Optional notes from guest
+  registeredAt    DateTime                    @default(now()) @map("registered_at")
+  createdAt       DateTime                    @default(now()) @map("created_at")
+  updatedAt       DateTime                    @default(now()) @updatedAt @map("updated_at")
+
+  weddingEvent    WeddingEvent                @relation(fields: [weddingEventId], references: [id], onDelete: Cascade)
+  guest           Guest?                      @relation(fields: [guestId], references: [id], onDelete: Cascade)
+  pickupPlace     TransportationPickupPlace?  @relation(fields: [pickupPlaceId], references: [id], onDelete: SetNull)
 
   @@index([weddingEventId])
   @@index([guestId])
+  @@index([pickupPlaceId])
   @@map("transportation_registrations")
 }
 
@@ -841,7 +868,7 @@ enum WhatsAppTemplateType {
   EVENT_DAY // Event day reminder (morning of event)
   THANK_YOU // Thank you message (day after event)
   TABLE_ASSIGNMENT // Table assignment notification
-  GUEST_COUNT_LIST // Guest count selection list (interactive)
+  GUEST_COUNT_LIST // @deprecated - Guest count list picker (kept for backward compatibility)
 }
 
 model BulkMessageJob {

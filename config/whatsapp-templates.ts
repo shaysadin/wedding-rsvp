@@ -15,7 +15,6 @@
  * - EVENT_DAY: Event day reminder (morning of event with table, address, gift link)
  * - THANK_YOU: Thank you message (day after event)
  * - TABLE_ASSIGNMENT: Table assignment notification
- * - GUEST_COUNT_LIST: Guest count selection list (interactive)
  *
  * Each type has 3 styles:
  * - style1: Professional, respectful tone (DEFAULT - already approved)
@@ -34,7 +33,6 @@
  * - interactive_reminder_card (HXba2294e9683d133dfe92c62692e9d3f2) -> INTERACTIVE_REMINDER formal
  * - event_day_reminder (HX80e0ff2024fb29d65878e002df31afd3) -> EVENT_DAY formal
  * - thank_you_message (HX2e0cc26147f657e88a902b48349158b7) -> THANK_YOU formal
- * - guest_count_list (HX4322c2482da4bce43d001668b83234a6) -> GUEST_COUNT_LIST formal
  *
  * LEGACY SETTINGS FALLBACK (from MessagingProviderSettings):
  * - whatsappConfirmationContentSid -> CONFIRMATION (not yet configured)
@@ -51,8 +49,7 @@ export type WhatsAppTemplateType =
   | "CONFIRMATION"
   | "EVENT_DAY"
   | "THANK_YOU"
-  | "TABLE_ASSIGNMENT"
-  | "GUEST_COUNT_LIST";
+  | "TABLE_ASSIGNMENT";
 
 export type WhatsAppTemplateStyle = "style1" | "style2" | "style3";
 
@@ -707,55 +704,6 @@ See you there! 🎉`,
   },
 ];
 
-/**
- * Guest Count List Templates (interactive list for selecting guest count)
- * Placeholders: {{1}} = guestName, {{2}} = eventTitle
- * Note: Has interactive list buttons for guest count selection
- */
-export const WHATSAPP_GUEST_COUNT_LIST_TEMPLATES: WhatsAppTemplateDefinition[] = [
-  {
-    type: "GUEST_COUNT_LIST",
-    style: "style1",
-    nameHe: "סגנון 1",
-    nameEn: "Style 1",
-    twilioTemplateName: "wedinex_guest_count_formal",
-    existingContentSid: "HX4322c2482da4bce43d001668b83234a6",
-    templateTextHe: `שלום {{1}},
-
-נודה אם תעדכנו אותנו כמה אורחים יגיעו ל{{2}}.
-
-אנא בחרו מהרשימה למטה.`,
-    templateTextEn: `Dear {{1}},
-
-Please let us know how many guests will be attending {{2}}.
-
-Please select from the list below.`,
-  },
-  {
-    type: "GUEST_COUNT_LIST",
-    style: "style2",
-    nameHe: "סגנון 2",
-    nameEn: "Style 2",
-    twilioTemplateName: "wedinex_guest_count_friendly",
-    templateTextHe: `היי {{1}}! 👥
-
-כמה תהיו ב{{2}}?
-בחרו למטה 😊`,
-    templateTextEn: `Hey {{1}}! 👥
-
-How many of you are coming to {{2}}?
-Choose below 😊`,
-  },
-  {
-    type: "GUEST_COUNT_LIST",
-    style: "style3",
-    nameHe: "סגנון 3",
-    nameEn: "Style 3",
-    twilioTemplateName: "wedinex_guest_count_short",
-    templateTextHe: `{{1}}, כמה מגיעים ל{{2}}?`,
-    templateTextEn: `{{1}}, how many coming to {{2}}?`,
-  },
-];
 
 /**
  * Get all templates for a specific type
@@ -784,8 +732,6 @@ export function getWhatsAppTemplateDefinitions(
       return WHATSAPP_THANK_YOU_TEMPLATES;
     case "TABLE_ASSIGNMENT":
       return WHATSAPP_TABLE_ASSIGNMENT_TEMPLATES;
-    case "GUEST_COUNT_LIST":
-      return WHATSAPP_GUEST_COUNT_LIST_TEMPLATES;
     default:
       return [];
   }
@@ -816,5 +762,4 @@ export const ALL_WHATSAPP_TEMPLATE_DEFINITIONS: WhatsAppTemplateDefinition[] = [
   ...WHATSAPP_EVENT_DAY_TEMPLATES,
   ...WHATSAPP_THANK_YOU_TEMPLATES,
   ...WHATSAPP_TABLE_ASSIGNMENT_TEMPLATES,
-  ...WHATSAPP_GUEST_COUNT_LIST_TEMPLATES,
 ];
