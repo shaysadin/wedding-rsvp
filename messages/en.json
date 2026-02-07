@@ -85,6 +85,7 @@
     "admin": "Admin Panel",
     "users": "Users",
     "home": "Home",
+    "lobby": "Lobby",
     "messaging": "Messaging Settings",
     "billing": "Billing",
     "cronLogs": "Cron Logs",

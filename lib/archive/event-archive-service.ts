@@ -17,6 +17,13 @@ export interface EventArchiveSnapshot {
     invitationImageUrl: string | null;
     totalBudget: number | null;
     smsSenderId: string | null;
+    navigationCode: string | null;
+    rsvpConfirmedMessage: string | null;
+    rsvpDeclinedMessage: string | null;
+    rsvpMaybeMessage: string | null;
+    rsvpMaybeReminderDelay: number;
+    seatingCanvasWidth: number;
+    seatingCanvasHeight: number;
     isActive: boolean;
     createdAt: string;
     updatedAt: string;
@@ -133,6 +140,129 @@ export interface EventArchiveSnapshot {
     createdAt: string;
     completedAt: string | null;
   }>;
+  tasks: Array<{
+    id: string;
+    title: string;
+    description: string | null;
+    status: string;
+    position: number;
+    dueDate: string | null;
+    createdAt: string;
+    notes: Array<{
+      id: string;
+      content: string;
+      createdAt: string;
+    }>;
+  }>;
+  automationFlows: Array<{
+    id: string;
+    name: string;
+    trigger: string;
+    action: string;
+    status: string;
+    templateId: string | null;
+    customMessage: string | null;
+    delayHours: number | null;
+    templateStyle: string | null;
+    createdAt: string;
+    executions: Array<{
+      id: string;
+      guestId: string;
+      guestName: string;
+      status: string;
+      scheduledFor: string | null;
+      executedAt: string | null;
+      errorMessage: string | null;
+      retryCount: number;
+    }>;
+  }>;
+  generatedInvitations: Array<{
+    id: string;
+    templateId: string;
+    pngUrl: string | null;
+    pdfUrl: string | null;
+    fieldValues: Record<string, any>;
+    createdAt: string;
+  }>;
+  giftPaymentSettings: {
+    id: string;
+    isEnabled: boolean;
+    currency: string;
+    minAmount: number;
+    maxAmount: number;
+    suggestedAmounts: number[] | null;
+    allowCustomAmount: boolean;
+    thankYouMessage: string | null;
+    thankYouMessageHe: string | null;
+    useExternalProvider: boolean;
+    externalProviderUrl: string | null;
+  } | null;
+  giftPayments: Array<{
+    id: string;
+    guestId: string | null;
+    guestName: string;
+    guestEmail: string | null;
+    guestPhone: string | null;
+    amount: number;
+    serviceFee: number;
+    totalCharged: number;
+    currency: string;
+    status: string;
+    greetingMessage: string | null;
+    greetingImage: string | null;
+    isManual: boolean;
+    paidAt: string | null;
+    createdAt: string;
+  }>;
+  smsTemplates: Array<{
+    type: string;
+    style: string;
+    nameHe: string;
+    nameEn: string;
+    messageBodyHe: string;
+    messageBodyEn: string | null;
+    isDefault: boolean;
+    sortOrder: number;
+  }>;
+  transportationRegistrations: Array<{
+    id: string;
+    guestId: string | null;
+    fullName: string;
+    phoneNumber: string;
+    location: string;
+    notes: string | null;
+    registeredAt: string;
+    createdAt: string;
+  }>;
+  collaborators: Array<{
+    userId: string;
+    userEmail: string;
+    userName: string | null;
+    role: string;
+    addedAt: string;
+  }>;
+  costLogs: Array<{
+    service: string;
+    provider: string;
+    quantity: number;
+    unitCost: number;
+    totalCost: number;
+    metadata: Record<string, any> | null;
+    createdAt: string;
+  }>;
+  manualCallLogs: Array<{
+    guestId: string;
+    guestName: string;
+    phoneNumber: string;
+    status: string;
+    direction: string;
+    notes: string | null;
+    duration: number | null;
+    rsvpUpdated: boolean;
+    initiatedAt: string;
+    connectedAt: string | null;
+    endedAt: string | null;
+  }>;
   statistics: {
     totalGuests: number;
     acceptedCount: number;
@@ -141,6 +271,11 @@ export interface EventArchiveSnapshot {
     totalExpectedAttendees: number;
     totalSupplierCost: number;
     totalPaidAmount: number;
+    totalGiftPayments: number;
+    totalTasks: number;
+    completedTasks: number;
+    totalAutomations: number;
+    activeAutomations: number;
   };
   archiveMetadata: {
     archivedAt: string;
@@ -167,6 +302,8 @@ export async function collectEventSnapshot(
             include: { table: true },
           },
           vapiCallLogs: true,
+          giftPayments: true,
+          transportationRegistration: true,
         },
       },
       messageTemplates: true,
@@ -184,6 +321,57 @@ export async function collectEventSnapshot(
       },
       venueBlocks: true,
       bulkMessageJobs: true,
+      tasks: {
+        include: {
+          notes: {
+            orderBy: { createdAt: 'asc' },
+          },
+        },
+        orderBy: { createdAt: 'asc' },
+      },
+      automationFlows: {
+        include: {
+          executions: {
+            include: {
+              guest: {
+                select: { name: true },
+              },
+            },
+          },
+        },
+      },
+      generatedInvitations: {
+        orderBy: { createdAt: 'desc' },
+      },
+      giftPaymentSettings: true,
+      smsTemplates: {
+        where: { isActive: true },
+        orderBy: [{ type: 'asc' }, { sortOrder: 'asc' }],
+      },
+      transportationRegistrations: {
+        orderBy: { createdAt: 'desc' },
+      },
+      collaborators: {
+        include: {
+          user: {
+            select: {
+              email: true,
+              name: true,
+            },
+          },
+        },
+      },
+      costLogs: {
+        orderBy: { createdAt: 'desc' },
+      },
+      manualCallLogs: {
+        include: {
+          guest: {
+            select: { name: true },
+          },
+        },
+        orderBy: { initiatedAt: 'desc' },
+      },
     },
   });
 
@@ -229,6 +417,13 @@ export async function collectEventSnapshot(
       invitationImageUrl: event.invitationImageUrl,
       totalBudget: event.totalBudget ? Number(event.totalBudget) : null,
       smsSenderId: event.smsSenderId,
+      navigationCode: event.navigationCode,
+      rsvpConfirmedMessage: event.rsvpConfirmedMessage,
+      rsvpDeclinedMessage: event.rsvpDeclinedMessage,
+      rsvpMaybeMessage: event.rsvpMaybeMessage,
+      rsvpMaybeReminderDelay: event.rsvpMaybeReminderDelay,
+      seatingCanvasWidth: event.seatingCanvasWidth,
+      seatingCanvasHeight: event.seatingCanvasHeight,
       isActive: event.isActive,
       createdAt: event.createdAt.toISOString(),
       updatedAt: event.updatedAt.toISOString(),
@@ -359,6 +554,133 @@ export async function collectEventSnapshot(
       createdAt: job.createdAt.toISOString(),
       completedAt: job.completedAt?.toISOString() || null,
     })),
+    tasks: event.tasks.map((task) => ({
+      id: task.id,
+      title: task.title,
+      description: task.description,
+      status: task.status,
+      position: task.position,
+      dueDate: task.dueDate?.toISOString() || null,
+      createdAt: task.createdAt.toISOString(),
+      notes: task.notes.map((note) => ({
+        id: note.id,
+        content: note.content,
+        createdAt: note.createdAt.toISOString(),
+      })),
+    })),
+    automationFlows: event.automationFlows.map((flow) => ({
+      id: flow.id,
+      name: flow.name,
+      trigger: flow.trigger,
+      action: flow.action,
+      status: flow.status,
+      templateId: flow.templateId,
+      customMessage: flow.customMessage,
+      delayHours: flow.delayHours,
+      templateStyle: flow.templateStyle,
+      createdAt: flow.createdAt.toISOString(),
+      executions: flow.executions.map((exec) => ({
+        id: exec.id,
+        guestId: exec.guestId,
+        guestName: exec.guest.name,
+        status: exec.status,
+        scheduledFor: exec.scheduledFor?.toISOString() || null,
+        executedAt: exec.executedAt?.toISOString() || null,
+        errorMessage: exec.errorMessage,
+        retryCount: exec.retryCount,
+      })),
+    })),
+    generatedInvitations: event.generatedInvitations.map((inv) => ({
+      id: inv.id,
+      templateId: inv.templateId,
+      pngUrl: inv.pngUrl,
+      pdfUrl: inv.pdfUrl,
+      fieldValues: inv.fieldValues as Record<string, any>,
+      createdAt: inv.createdAt.toISOString(),
+    })),
+    giftPaymentSettings: event.giftPaymentSettings
+      ? {
+          id: event.giftPaymentSettings.id,
+          isEnabled: event.giftPaymentSettings.isEnabled,
+          currency: event.giftPaymentSettings.currency,
+          minAmount: Number(event.giftPaymentSettings.minAmount),
+          maxAmount: Number(event.giftPaymentSettings.maxAmount),
+          suggestedAmounts: event.giftPaymentSettings.suggestedAmounts as number[] | null,
+          allowCustomAmount: event.giftPaymentSettings.allowCustomAmount,
+          thankYouMessage: event.giftPaymentSettings.thankYouMessage,
+          thankYouMessageHe: event.giftPaymentSettings.thankYouMessageHe,
+          useExternalProvider: event.giftPaymentSettings.useExternalProvider,
+          externalProviderUrl: event.giftPaymentSettings.externalProviderUrl,
+        }
+      : null,
+    giftPayments: event.guests.flatMap((g) =>
+      (g.giftPayments || []).map((payment) => ({
+        id: payment.id,
+        guestId: payment.guestId,
+        guestName: payment.guestName,
+        guestEmail: payment.guestEmail,
+        guestPhone: payment.guestPhone,
+        amount: Number(payment.amount),
+        serviceFee: Number(payment.serviceFee),
+        totalCharged: Number(payment.totalCharged),
+        currency: payment.currency,
+        status: payment.status,
+        greetingMessage: payment.greetingMessage,
+        greetingImage: payment.greetingImage,
+        isManual: payment.isManual,
+        paidAt: payment.paidAt?.toISOString() || null,
+        createdAt: payment.createdAt.toISOString(),
+      }))
+    ),
+    smsTemplates: event.smsTemplates.map((template) => ({
+      type: template.type,
+      style: template.style,
+      nameHe: template.nameHe,
+      nameEn: template.nameEn,
+      messageBodyHe: template.messageBodyHe,
+      messageBodyEn: template.messageBodyEn,
+      isDefault: template.isDefault,
+      sortOrder: template.sortOrder,
+    })),
+    transportationRegistrations: event.transportationRegistrations.map((reg) => ({
+      id: reg.id,
+      guestId: reg.guestId,
+      fullName: reg.fullName,
+      phoneNumber: reg.phoneNumber,
+      location: reg.location,
+      notes: reg.notes,
+      registeredAt: reg.registeredAt.toISOString(),
+      createdAt: reg.createdAt.toISOString(),
+    })),
+    collaborators: event.collaborators.map((collab) => ({
+      userId: collab.userId,
+      userEmail: collab.user.email,
+      userName: collab.user.name,
+      role: collab.role,
+      addedAt: collab.createdAt.toISOString(),
+    })),
+    costLogs: event.costLogs.map((log) => ({
+      service: log.service,
+      provider: log.provider,
+      quantity: log.quantity,
+      unitCost: Number(log.unitCost),
+      totalCost: Number(log.totalCost),
+      metadata: log.metadata as Record<string, any> | null,
+      createdAt: log.createdAt.toISOString(),
+    })),
+    manualCallLogs: event.manualCallLogs.map((log) => ({
+      guestId: log.guestId,
+      guestName: log.guest.name,
+      phoneNumber: log.phoneNumber,
+      status: log.status,
+      direction: log.direction,
+      notes: log.notes,
+      duration: log.duration,
+      rsvpUpdated: log.rsvpUpdated,
+      initiatedAt: log.initiatedAt.toISOString(),
+      connectedAt: log.connectedAt?.toISOString() || null,
+      endedAt: log.endedAt?.toISOString() || null,
+    })),
     statistics: {
       totalGuests: event.guests.length,
       acceptedCount: acceptedGuests.length,
@@ -367,11 +689,19 @@ export async function collectEventSnapshot(
       totalExpectedAttendees,
       totalSupplierCost,
       totalPaidAmount,
+      totalGiftPayments: event.guests.reduce(
+        (sum, g) => sum + (g.giftPayments?.length || 0),
+        0
+      ),
+      totalTasks: event.tasks.length,
+      completedTasks: event.tasks.filter((t) => t.status === 'DONE').length,
+      totalAutomations: event.automationFlows.length,
+      activeAutomations: event.automationFlows.filter((f) => f.status === 'ACTIVE').length,
     },
     archiveMetadata: {
       archivedAt: new Date().toISOString(),
       archivedBy: userId,
-      version: "1.0",
+      version: "2.0", // Updated to include all event data: tasks, automations, invitations, gifts, SMS templates, collaborators, transportation, etc.
     },
   };
 

@@ -329,8 +329,8 @@ export async function getEventById(eventId: string) {
 }
 
 /**
- * Soft archive an event (without deleting)
- * Sets isArchived = true and archivedAt timestamp
+ * Archive an event
+ * Creates complete R2 archive snapshot and deletes the event from database
  */
 export async function softArchiveEvent(eventId: string) {
   try {
@@ -339,6 +339,13 @@ export async function softArchiveEvent(eventId: string) {
     const hasWeddingOwnerRole = user?.roles?.includes(UserRole.ROLE_WEDDING_OWNER);
     if (!user || !hasWeddingOwnerRole) {
       return { error: "Unauthorized" };
+    }
+
+    // Check if R2 is configured
+    if (!isR2Configured()) {
+      return {
+        error: "Archive storage is not configured. Please contact support to enable event archiving.",
+      };
     }
 
     // Fetch fresh roles from database (session might be stale)
@@ -360,18 +367,23 @@ export async function softArchiveEvent(eventId: string) {
       return { error: "Event not found" };
     }
 
-    await prisma.weddingEvent.update({
+    // Create complete R2 archive snapshot with all event data
+    try {
+      await archiveEvent(eventId, existingEvent.ownerId);
+    } catch (archiveError) {
+      console.error("Failed to create R2 archive:", archiveError);
+      return { error: "Failed to create archive snapshot. Please try again." };
+    }
+
+    // Delete the event from database (all related data will cascade delete)
+    await prisma.weddingEvent.delete({
       where: { id: eventId },
-      data: {
-        isArchived: true,
-        archivedAt: new Date(),
-      },
     });
 
     revalidatePath("/dashboard/events");
     revalidatePath("/dashboard/archives");
 
-    return { success: true };
+    return { success: true, archived: true };
   } catch (error) {
     console.error("Error archiving event:", error);
     return { error: "Failed to archive event" };

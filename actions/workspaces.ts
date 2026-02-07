@@ -105,7 +105,11 @@ export async function getWorkspaces() {
         where: { ownerId: user.id },
         include: {
           _count: {
-            select: { events: true },
+            select: {
+              events: {
+                where: { isArchived: false }
+              }
+            },
           },
         },
         orderBy: [
@@ -148,11 +152,16 @@ export async function getWorkspaceById(id: string) {
       },
       include: {
         events: {
+          where: { isArchived: false },
           orderBy: { dateTime: "desc" },
           take: 10,
         },
         _count: {
-          select: { events: true },
+          select: {
+            events: {
+              where: { isArchived: false }
+            }
+          },
         },
       },
     });
@@ -272,7 +281,11 @@ export async function deleteWorkspace(id: string) {
       },
       include: {
         _count: {
-          select: { events: true },
+          select: {
+            events: {
+              where: { isArchived: false }
+            }
+          },
         },
       },
     });

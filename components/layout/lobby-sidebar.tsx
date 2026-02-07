@@ -46,6 +46,7 @@ import { WorkspaceSelectorClient } from "@/components/workspaces/workspace-selec
 
 // Navigation items for the lobby sidebar
 const lobbyNavItems = [
+  { href: "/dashboard", icon: "home", titleKey: "navigation.lobby", title: "Lobby" },
   { href: "/dashboard/archives", icon: "archive", titleKey: "navigation.archives", title: "Archives" },
   { href: "/dashboard/settings", icon: "settings", titleKey: "navigation.settings", title: "Settings" },
   { href: "/dashboard/billing", icon: "creditCard", titleKey: "navigation.billing", title: "Billing" },

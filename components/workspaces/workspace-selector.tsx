@@ -96,73 +96,85 @@ export function WorkspaceSelector({
         <DropdownMenuTrigger asChild>
           <Button
             variant="outline"
-            className={cn(
-              "justify-between gap-2 min-w-[180px]",
-              isRTL && "flex-row-reverse"
-            )}
+            role="combobox"
+            aria-expanded={open}
+            className="justify-between gap-2 h-auto py-2 w-full"
             disabled={isPending}
           >
-            <div className={cn("flex items-center gap-2", isRTL && "flex-row-reverse")}>
-              {isPending ? (
-                <Loader2 className="size-4 animate-spin text-muted-foreground" />
-              ) : (
-                <Building2 className="size-4 text-muted-foreground" />
-              )}
-              <span className="truncate max-w-[120px]">
-                {currentWorkspace?.name || t("select")}
-              </span>
+            <div className="flex items-center gap-2 truncate">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-primary/10">
+                {isPending ? (
+                  <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                ) : (
+                  <Building2 className="h-4 w-4 text-primary" />
+                )}
+              </div>
+              <div className="flex flex-col items-start text-start truncate">
+                <span className="font-medium truncate text-sm">
+                  {currentWorkspace?.name || t("select")}
+                </span>
+                {currentWorkspace && (
+                  <span className="text-xs text-muted-foreground">
+                    {currentWorkspace._count?.events || 0} {t("events")}
+                  </span>
+                )}
+              </div>
             </div>
-            <ChevronsUpDown className="size-4 shrink-0 opacity-50" />
+            <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent
-          className={cn("w-[250px]", isRTL && "rtl")}
-          align={isRTL ? "end" : "start"}
+          align={isRTL ? "start" : "end"}
+          className="w-[280px] p-2"
         >
-          <DropdownMenuLabel>{t("yourWorkspaces")}</DropdownMenuLabel>
-          <DropdownMenuSeparator />
+          <div className="mb-2 px-2 py-1.5">
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+              {t("yourWorkspaces")}
+            </p>
+          </div>
           {workspaces.map((workspace) => (
             <DropdownMenuItem
               key={workspace.id}
               onClick={() => handleSelect(workspace.id)}
-              className={cn(
-                "flex items-center justify-between cursor-pointer",
-                currentWorkspace?.id === workspace.id && "bg-accent"
-              )}
+              className="flex items-center gap-3 p-3 cursor-pointer rounded-lg transition-colors"
             >
-              <div className={cn("flex items-center gap-2", isRTL && "flex-row-reverse")}>
-                <Check
-                  className={cn(
-                    "size-4 shrink-0",
-                    currentWorkspace?.id === workspace.id
-                      ? "opacity-100"
-                      : "opacity-0"
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-muted">
+                <Building2 className="h-5 w-5" />
+              </div>
+              <div className="flex-1 min-w-0 text-start">
+                <div className="flex items-center gap-2">
+                  <p className="font-medium truncate">{workspace.name}</p>
+                  {workspace.isDefault && (
+                    <Badge variant="secondary" className="text-xs shrink-0">
+                      {t("default")}
+                    </Badge>
                   )}
-                />
-                <span className="truncate">{workspace.name}</span>
-                {workspace.isDefault && (
-                  <Badge variant="secondary" className="text-xs shrink-0">
-                    {t("default")}
-                  </Badge>
+                </div>
+                {workspace._count !== undefined && (
+                  <p className="text-xs text-muted-foreground">
+                    {workspace._count.events} {t("events")}
+                  </p>
                 )}
               </div>
-              {workspace._count !== undefined && (
-                <span className="text-xs text-muted-foreground shrink-0">
-                  {workspace._count.events} {t("events")}
-                </span>
-              )}
+              <Check
+                className={cn(
+                  "size-4 shrink-0",
+                  currentWorkspace?.id === workspace.id
+                    ? "opacity-100"
+                    : "opacity-0"
+                )}
+              />
             </DropdownMenuItem>
           ))}
-          <DropdownMenuSeparator />
+          <DropdownMenuSeparator className="my-2" />
           <DropdownMenuItem
             onClick={handleCreateNew}
-            className={cn(
-              "cursor-pointer",
-              isRTL && "flex-row-reverse"
-            )}
+            className="flex items-center gap-3 p-3 cursor-pointer rounded-lg transition-colors"
           >
-            <Plus className="size-4 me-2" />
-            <span>{t("createNew")}</span>
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+              <Plus className="h-5 w-5 text-primary" />
+            </div>
+            <span className="font-medium">{t("createNew")}</span>
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
