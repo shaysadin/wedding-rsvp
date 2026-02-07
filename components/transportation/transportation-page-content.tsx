@@ -412,9 +412,9 @@ export function TransportationPageContent({
   };
 
   return (
-    <PageFadeIn>
+    <PageFadeIn className="md:h-full space-y-4">
       {/* Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between mb-6">
+      <div className="shrink-0 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between mb-6">
         <div className="space-y-1">
           <h1 className="text-2xl font-bold tracking-tight">
             {isRTL ? "הסעות" : "Transportation"}
@@ -432,7 +432,7 @@ export function TransportationPageContent({
       </div>
 
       {/* Statistics Cards */}
-      <div className="grid gap-4 md:grid-cols-3 mb-6">
+      <div className="shrink-0 grid gap-4 md:grid-cols-3 mb-6">
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -472,7 +472,7 @@ export function TransportationPageContent({
       </div>
 
       {/* Actions Bar */}
-      <div className="flex flex-col sm:flex-row gap-3 mb-6">
+      <div className="shrink-0 flex flex-col sm:flex-row gap-3 mb-6">
         <Button
           variant="outline"
           onClick={handleCopyGenericLink}
@@ -511,7 +511,7 @@ export function TransportationPageContent({
       </div>
 
       {/* Filters */}
-      <Card className="mb-6">
+      <Card className="shrink-0 mb-6">
         <CardHeader>
           <CardTitle className="text-base font-medium flex items-center gap-2">
             <Filter className="h-4 w-4" />
@@ -557,7 +557,7 @@ export function TransportationPageContent({
 
       {/* Pickup Places Management */}
       {pickupPlaces.length > 0 && (
-        <Card className="mb-6">
+        <Card className="shrink-0 mb-6">
           <CardHeader>
             <CardTitle className="text-base font-medium flex items-center gap-2">
               <Settings className="h-4 w-4" />
@@ -624,16 +624,17 @@ export function TransportationPageContent({
       )}
 
       {/* Registrations Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle>
-            {isRTL ? "רשימת נרשמים" : "Registration List"}
-          </CardTitle>
-          <CardDescription>
-            {isRTL ? `מציג ${filteredRegistrations.length} מתוך ${transportationRegistrations.length} נרשמים` : `Showing ${filteredRegistrations.length} of ${transportationRegistrations.length} registrations`}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
+      <div className="md:min-h-[500px] md:flex-1 min-h-0">
+        <Card className="h-full">
+          <CardHeader>
+            <CardTitle>
+              {isRTL ? "רשימת נרשמים" : "Registration List"}
+            </CardTitle>
+            <CardDescription>
+              {isRTL ? `מציג ${filteredRegistrations.length} מתוך ${transportationRegistrations.length} נרשמים` : `Showing ${filteredRegistrations.length} of ${transportationRegistrations.length} registrations`}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
           {filteredRegistrations.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-center">
               <Icons.bus className="h-12 w-12 text-muted-foreground/50 mb-4" />
@@ -781,7 +782,8 @@ export function TransportationPageContent({
             </div>
           )}
         </CardContent>
-      </Card>
+        </Card>
+      </div>
 
       {/* Pickup Place Dialog */}
       <Dialog open={showPickupPlaceDialog} onOpenChange={setShowPickupPlaceDialog}>
