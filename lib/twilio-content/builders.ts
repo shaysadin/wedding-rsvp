@@ -285,9 +285,6 @@ export function getDefaultVariables(
     case "THANK_YOU":
       return baseVars;
 
-    case "GUEST_COUNT_LIST":
-      return baseVars;
-
     default:
       return baseVars;
   }

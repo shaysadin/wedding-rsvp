@@ -61,7 +61,6 @@ const TEMPLATE_TYPES: { value: WhatsAppTemplateType; label: string }[] = [
   { value: "EVENT_DAY", label: "Event Day" },
   { value: "THANK_YOU", label: "Thank You" },
   { value: "TABLE_ASSIGNMENT", label: "Table Assignment" },
-  { value: "GUEST_COUNT_LIST", label: "Guest Count List" },
 ];
 
 export function AssignContentSidDialog({

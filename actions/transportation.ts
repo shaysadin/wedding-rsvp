@@ -65,6 +65,7 @@ export async function getGuestByTransportationSlug(slug: string) {
             phoneNumber: true,
             pickupPlaceId: true,
             location: true,
+            quantity: true,
             language: true,
             notes: true,
             registeredAt: true,
@@ -134,6 +135,7 @@ const transportationRegistrationSchema = z.object({
   phoneNumber: z.string().min(1, "Phone number is required"),
   pickupPlaceId: z.string().optional(),
   location: z.string().min(1, "Pickup location is required"),
+  quantity: z.number().int().min(1, "Quantity must be at least 1").max(20, "Quantity cannot exceed 20"),
   notes: z.string().optional(),
 });
 
@@ -167,6 +169,7 @@ export async function registerForTransportation(
           phoneNumber: validatedData.phoneNumber,
           pickupPlaceId: validatedData.pickupPlaceId || null,
           location: validatedData.location,
+          quantity: validatedData.quantity,
           notes: validatedData.notes || null,
         },
       });
@@ -183,6 +186,7 @@ export async function registerForTransportation(
         phoneNumber: validatedData.phoneNumber,
         pickupPlaceId: validatedData.pickupPlaceId || null,
         location: validatedData.location,
+        quantity: validatedData.quantity,
         notes: validatedData.notes || null,
       },
     });
@@ -206,6 +210,7 @@ const genericTransportationRegistrationSchema = z.object({
   phoneNumber: z.string().min(1, "Phone number is required"),
   pickupPlaceId: z.string().optional(),
   location: z.string().min(1, "Pickup location is required"),
+  quantity: z.number().int().min(1, "Quantity must be at least 1").max(20, "Quantity cannot exceed 20"),
   notes: z.string().optional(),
 });
 
@@ -237,6 +242,7 @@ export async function registerForTransportationGeneric(
         phoneNumber: validatedData.phoneNumber,
         pickupPlaceId: validatedData.pickupPlaceId || null,
         location: validatedData.location,
+        quantity: validatedData.quantity,
         notes: validatedData.notes || null,
       },
     });

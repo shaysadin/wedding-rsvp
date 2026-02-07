@@ -383,6 +383,7 @@ model TransportationRegistration {
   fullName        String                      @map("full_name")
   phoneNumber     String                      @map("phone_number")
   location        String // Pickup location/address (used if pickupPlaceId is null, or for custom location)
+  quantity        Int                         @default(1) // Number of people (including the guest)
   language        String                      @default("he") // Registration language: "he", "en", "ar"
   notes           String? // Optional notes from guest
   registeredAt    DateTime                    @default(now()) @map("registered_at")

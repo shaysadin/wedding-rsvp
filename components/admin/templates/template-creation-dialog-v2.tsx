@@ -41,7 +41,6 @@ const TEMPLATE_TYPES: { value: WhatsAppTemplateType; label: string; labelHe: str
   { value: "EVENT_DAY", label: "Event Day", labelHe: "יום האירוע" },
   { value: "THANK_YOU", label: "Thank You", labelHe: "תודה" },
   { value: "TABLE_ASSIGNMENT", label: "Table Assignment", labelHe: "שיבוץ שולחן" },
-  { value: "GUEST_COUNT_LIST", label: "Guest Count List", labelHe: "ספירת אורחים" },
 ];
 
 interface TemplateCreationDialogV2Props {
@@ -394,21 +393,6 @@ export function TemplateCreationDialogV2({
 
 נתראה שם! 🎉`,
           preview: "שיבוץ לשולחן"
-        };
-
-      case "GUEST_COUNT_LIST":
-        return {
-          body: `שלום {{1}} 👥
-
-כמה אנשים יגיעו איתך ל{{2}}?
-
-נשמח לקבל את המספר המדויק כדי שנוכל להכין את הכל בשבילכם 💙
-
-לפרטים נוספים:
-{{7}}
-
-תודה! 🙏`,
-          preview: "בקשת מספר אורחים"
         };
 
       default:

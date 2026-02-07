@@ -78,7 +78,6 @@ const TEMPLATE_TYPES: { value: WhatsAppTemplateType; label: string; labelHe: str
   { value: "EVENT_DAY", label: "Event Day", labelHe: "יום האירוע" },
   { value: "THANK_YOU", label: "Thank You", labelHe: "תודה" },
   { value: "TABLE_ASSIGNMENT", label: "Table Assignment", labelHe: "שיבוץ שולחן" },
-  { value: "GUEST_COUNT_LIST", label: "Guest Count List", labelHe: "ספירת אורחים" },
 ];
 
 // Template Selection Options (Type + Style combinations)

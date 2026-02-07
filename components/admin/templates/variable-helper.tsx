@@ -96,12 +96,6 @@ const VARIABLE_USAGE: Record<WhatsAppTemplateType, {
     style3: ["{{1}}", "{{2}}", "{{3}}", "{{4}}", "{{6}}", "{{7}}", "{{8}}"],
     description: "{{7}} = Navigation Link | {{8}} = Table Number"
   },
-  GUEST_COUNT_LIST: {
-    style1: ["{{1}}", "{{2}}", "{{7}}"],
-    style2: ["{{1}}", "{{2}}", "{{7}}"],
-    style3: ["{{1}}", "{{2}}", "{{7}}"],
-    description: "{{7}} = Guest Count Selection Link"
-  },
   // Legacy - deprecated (Style 3 transportation-focused)
   TRANSPORTATION_INVITE: {
     style1: ["{{1}}", "{{2}}", "{{11}}"],

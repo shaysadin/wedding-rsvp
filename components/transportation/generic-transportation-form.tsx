@@ -54,6 +54,7 @@ export function GenericTransportationForm({ event, locale }: GenericTransportati
         fullName: fullName.trim(),
         phoneNumber: phoneNumber.trim(),
         location: location.trim(),
+        quantity: 1, // Default to 1 for generic registration
         notes: notes.trim() || undefined,
       });
 

@@ -90,6 +90,7 @@ interface TransportationRegistration {
   fullName: string;
   phoneNumber: string;
   location: string;
+  quantity: number;
   notes: string | null;
   registeredAt: Date | string;
   pickupPlaceId: string | null;
@@ -657,6 +658,9 @@ export function TransportationPageContent({
                       {isRTL ? "טלפון" : "Phone"}
                     </TableHead>
                     <TableHead className={isRTL ? "text-right" : "text-left"}>
+                      {isRTL ? "כמות" : "Quantity"}
+                    </TableHead>
+                    <TableHead className={isRTL ? "text-right" : "text-left"}>
                       {isRTL ? "נקודת איסוף" : "Pickup Place"}
                     </TableHead>
                     <TableHead className={isRTL ? "text-right" : "text-left"}>
@@ -701,6 +705,9 @@ export function TransportationPageContent({
                           </div>
                         </TableCell>
                         <TableCell>{registration.phoneNumber}</TableCell>
+                        <TableCell className="text-center font-medium">
+                          {registration.quantity}
+                        </TableCell>
                         <TableCell>
                           {registration.pickupPlace ? (
                             <div>

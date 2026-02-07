@@ -37,6 +37,7 @@ interface TransportationFormProps {
     phoneNumber: string;
     pickupPlaceId: string | null;
     location: string;
+    quantity: number;
     notes: string | null;
     registeredAt: Date | string;
     pickupPlace?: {
@@ -75,6 +76,7 @@ export function TransportationForm({ guest, event, existingRegistration, locale 
   // Form state
   const [fullName, setFullName] = useState(existingRegistration?.fullName || guest.name || "");
   const [phoneNumber, setPhoneNumber] = useState(existingRegistration?.phoneNumber || guest.phoneNumber || "");
+  const [quantity, setQuantity] = useState(existingRegistration?.quantity || 1);
   const [pickupPlaceId, setPickupPlaceId] = useState<string>(existingRegistration?.pickupPlaceId || "");
   const [customLocation, setCustomLocation] = useState(existingRegistration?.location || "");
   const [notes, setNotes] = useState(existingRegistration?.notes || "");
@@ -96,6 +98,8 @@ export function TransportationForm({ guest, event, existingRegistration, locale 
         contactSoon: "נצור איתך קשר לגבי פרטי ההסעות בקרוב",
         fullName: "שם מלא",
         phoneNumber: "מספר טלפון",
+        quantity: "כמות אנשים",
+        quantityHelp: "כמה אנשים יגיעו איתך (כולל אותך)",
         pickupPlace: "נקודת איסוף",
         selectPickup: "בחר נקודת איסוף",
         customLocation: "מיקום מותאם אישית",
@@ -105,6 +109,7 @@ export function TransportationForm({ guest, event, existingRegistration, locale 
         submit: "שלח",
         updating: "מעדכן...",
         registering: "נרשם...",
+        people: "אנשים",
       },
       en: {
         registrationTitle: "Transportation Registration",
@@ -117,6 +122,8 @@ export function TransportationForm({ guest, event, existingRegistration, locale 
         contactSoon: "We will contact you soon regarding transportation details",
         fullName: "Full Name",
         phoneNumber: "Phone Number",
+        quantity: "Number of People",
+        quantityHelp: "How many people will come with you (including you)",
         pickupPlace: "Pickup Place",
         selectPickup: "Select pickup place",
         customLocation: "Custom Location",
@@ -126,6 +133,7 @@ export function TransportationForm({ guest, event, existingRegistration, locale 
         submit: "Submit",
         updating: "Updating...",
         registering: "Registering...",
+        people: "people",
       },
       ar: {
         registrationTitle: "التسجيل للنقل",
@@ -138,6 +146,8 @@ export function TransportationForm({ guest, event, existingRegistration, locale 
         contactSoon: "سنتواصل معك قريباً بخصوص تفاصيل النقل",
         fullName: "الاسم الكامل",
         phoneNumber: "رقم الهاتف",
+        quantity: "عدد الأشخاص",
+        quantityHelp: "كم عدد الأشخاص القادمين معك (بما فيك أنت)",
         pickupPlace: "نقطة الالتقاء",
         selectPickup: "اختر نقطة الالتقاء",
         customLocation: "موقع مخصص",
@@ -147,6 +157,7 @@ export function TransportationForm({ guest, event, existingRegistration, locale 
         submit: "إرسال",
         updating: "جاري التحديث...",
         registering: "جاري التسجيل...",
+        people: "أشخاص",
       },
     };
     return translations[selectedLanguage][key] || key;
@@ -175,6 +186,7 @@ export function TransportationForm({ guest, event, existingRegistration, locale 
         phoneNumber: phoneNumber.trim(),
         pickupPlaceId: pickupPlaceId || undefined,
         location: pickupPlaceId ? (pickupPlaces.find(p => p.id === pickupPlaceId)?.name || customLocation) : customLocation.trim(),
+        quantity: quantity,
         notes: notes.trim() || undefined,
       });
 
@@ -272,6 +284,10 @@ export function TransportationForm({ guest, event, existingRegistration, locale 
                 <div className="flex items-center gap-2 text-sm">
                   <Phone className="h-4 w-4 text-muted-foreground" />
                   <span>{existingRegistration.phoneNumber}</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm">
+                  <Bus className="h-4 w-4 text-muted-foreground" />
+                  <span>{existingRegistration.quantity} {t("people")}</span>
                 </div>
                 <div className="flex items-center gap-2 text-sm">
                   <MapPinned className="h-4 w-4 text-muted-foreground" />
@@ -373,6 +389,23 @@ export function TransportationForm({ guest, event, existingRegistration, locale 
                 className="min-h-[48px] text-base"
                 dir="ltr"
               />
+            </div>
+
+            {/* Quantity */}
+            <div className="space-y-2">
+              <Label htmlFor="quantity">{t("quantity")} *</Label>
+              <Input
+                id="quantity"
+                type="number"
+                min="1"
+                max="20"
+                value={quantity}
+                onChange={(e) => setQuantity(Math.max(1, Math.min(20, parseInt(e.target.value) || 1)))}
+                required
+                className="min-h-[48px] text-base"
+                dir="ltr"
+              />
+              <p className="text-xs text-muted-foreground">{t("quantityHelp")}</p>
             </div>
 
             {/* Pickup Place */}

@@ -63,7 +63,6 @@ const TEMPLATE_TYPES: { value: WhatsAppTemplateType; labelHe: string }[] = [
   { value: "EVENT_DAY", labelHe: "יום האירוע" },
   { value: "THANK_YOU", labelHe: "תודה" },
   { value: "TABLE_ASSIGNMENT", labelHe: "שיבוץ שולחן" },
-  { value: "GUEST_COUNT_LIST", labelHe: "ספירת אורחים" },
 ];
 
 export function AssignContentSidDialogV2({

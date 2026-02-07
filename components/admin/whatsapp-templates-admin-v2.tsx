@@ -86,7 +86,6 @@ const TYPE_LABELS: Partial<Record<WhatsAppTemplateType, { en: string; he: string
   EVENT_DAY: { en: "Event Day Reminder", he: "תזכורת יום האירוע" },
   THANK_YOU: { en: "Thank You", he: "הודעת תודה" },
   TABLE_ASSIGNMENT: { en: "Table Assignment", he: "שיבוץ לשולחן" },
-  GUEST_COUNT_LIST: { en: "Guest Count List", he: "רשימת מספר אורחים" },
 };
 
 function ApprovalStatusBadge({ status }: { status: WhatsAppTemplate["approvalStatus"] }) {
