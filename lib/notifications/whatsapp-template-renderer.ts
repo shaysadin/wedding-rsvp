@@ -77,18 +77,20 @@ export function buildWhatsAppTemplateVariables(
   const locale = options?.locale || "he";
   const dateFormatLocale = locale === "en" ? "en-US" : "he-IL";
 
-  // Format date and time
+  // Format date and time with Asia/Jerusalem timezone
   const eventDate = event.dateTime.toLocaleDateString(dateFormatLocale, {
     weekday: "long",
     year: "numeric",
     month: "long",
     day: "numeric",
+    timeZone: "Asia/Jerusalem",
   });
 
   const eventTime = event.dateTime.toLocaleTimeString(dateFormatLocale, {
     hour: "2-digit",
     minute: "2-digit",
     hour12: false,
+    timeZone: "Asia/Jerusalem",
   });
 
   // {{7}} - Navigation URL (ALWAYS - for ALL templates)
