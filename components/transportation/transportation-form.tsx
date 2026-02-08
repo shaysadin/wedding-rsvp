@@ -78,7 +78,6 @@ export function TransportationForm({ guest, event, existingRegistration, locale 
   const [phoneNumber, setPhoneNumber] = useState(existingRegistration?.phoneNumber || guest.phoneNumber || "");
   const [quantity, setQuantity] = useState(existingRegistration?.quantity || 1);
   const [pickupPlaceId, setPickupPlaceId] = useState<string>(existingRegistration?.pickupPlaceId || "");
-  const [customLocation, setCustomLocation] = useState(existingRegistration?.location || "");
   const [notes, setNotes] = useState(existingRegistration?.notes || "");
 
   const isRTL = selectedLanguage === "he" || selectedLanguage === "ar";
@@ -177,6 +176,21 @@ export function TransportationForm({ guest, event, existingRegistration, locale 
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Validate pickup place is selected
+    if (!pickupPlaceId) {
+      toast.error(selectedLanguage === "he" ? "יש לבחור נקודת איסוף" : selectedLanguage === "ar" ? "يرجى اختيار نقطة الاستلام" : "Please select a pickup place");
+      return;
+    }
+
+    // Find the selected pickup place and handle if it was deleted
+    const selectedPlace = pickupPlaces.find(p => p.id === pickupPlaceId);
+    if (!selectedPlace) {
+      toast.error(selectedLanguage === "he" ? "נקודת האיסוף שנבחרה אינה קיימת יותר, אנא בחר נקודה אחרת" : selectedLanguage === "ar" ? "نقطة الاستلام المحددة لم تعد موجودة، يرجى اختيار نقطة أخرى" : "Selected pickup place no longer exists, please select another");
+      setPickupPlaceId("");
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -184,8 +198,8 @@ export function TransportationForm({ guest, event, existingRegistration, locale 
         guestId: guest.id,
         fullName: fullName.trim(),
         phoneNumber: phoneNumber.trim(),
-        pickupPlaceId: pickupPlaceId || undefined,
-        location: pickupPlaceId ? (pickupPlaces.find(p => p.id === pickupPlaceId)?.name || customLocation) : customLocation.trim(),
+        pickupPlaceId: pickupPlaceId,
+        location: getPickupPlaceName(selectedPlace),
         quantity: quantity,
         notes: notes.trim() || undefined,
       });
@@ -209,6 +223,11 @@ export function TransportationForm({ guest, event, existingRegistration, locale 
     if (selectedLanguage === "ar" && place.nameAr) return place.nameAr;
     return place.name;
   };
+
+  // Check if existing registration's pickup place still exists
+  const existingPickupPlaceExists = existingRegistration?.pickupPlace
+    ? pickupPlaces.some(p => p.id === existingRegistration.pickupPlaceId)
+    : true;
 
   if (isRegistered && existingRegistration) {
     return (
@@ -235,6 +254,19 @@ export function TransportationForm({ guest, event, existingRegistration, locale 
             ))}
           </RadioGroup>
         </div>
+
+        {/* Warning if pickup place was deleted */}
+        {!existingPickupPlaceExists && (
+          <div className="p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg text-sm">
+            <p className="text-amber-800 dark:text-amber-200">
+              {selectedLanguage === "he"
+                ? "⚠️ נקודת האיסוף שנבחרה אינה זמינה יותר. יש ליצור קשר עם המארגנים."
+                : selectedLanguage === "ar"
+                ? "⚠️ نقطة الاستلام المحددة لم تعد متاحة. يرجى الاتصال بالمنظمين."
+                : "⚠️ The selected pickup place is no longer available. Please contact the organizers."}
+            </p>
+          </div>
+        )}
 
         <Card className="shadow-lg border-green-200" dir={isRTL ? "rtl" : "ltr"}>
           <CardHeader className="text-center space-y-3 pb-4">
@@ -409,10 +441,10 @@ export function TransportationForm({ guest, event, existingRegistration, locale 
             </div>
 
             {/* Pickup Place */}
-            {pickupPlaces.length > 0 && (
-              <div className="space-y-2">
-                <Label htmlFor="pickupPlace">{t("pickupPlace")}</Label>
-                <Select value={pickupPlaceId} onValueChange={setPickupPlaceId}>
+            <div className="space-y-2">
+              <Label htmlFor="pickupPlace">{t("pickupPlace")} *</Label>
+              {pickupPlaces.length > 0 ? (
+                <Select value={pickupPlaceId} onValueChange={setPickupPlaceId} required>
                   <SelectTrigger className="min-h-[48px] text-base">
                     <SelectValue placeholder={t("selectPickup")} />
                   </SelectTrigger>
@@ -423,28 +455,18 @@ export function TransportationForm({ guest, event, existingRegistration, locale 
                         {place.address && <span className="text-xs text-muted-foreground ms-2">({place.address})</span>}
                       </SelectItem>
                     ))}
-                    <SelectItem value="">
-                      {t("customLocation")}
-                    </SelectItem>
                   </SelectContent>
                 </Select>
-              </div>
-            )}
-
-            {/* Custom Location */}
-            {(!pickupPlaceId || pickupPlaces.length === 0) && (
-              <div className="space-y-2">
-                <Label htmlFor="customLocation">{t("location")} *</Label>
-                <Input
-                  id="customLocation"
-                  value={customLocation}
-                  onChange={(e) => setCustomLocation(e.target.value)}
-                  required={!pickupPlaceId}
-                  className="min-h-[48px] text-base"
-                  dir={isRTL ? "rtl" : "ltr"}
-                />
-              </div>
-            )}
+              ) : (
+                <div className="p-4 border border-dashed rounded-lg text-center text-muted-foreground text-sm">
+                  {selectedLanguage === "he"
+                    ? "אין נקודות איסוף זמינות כרגע"
+                    : selectedLanguage === "ar"
+                    ? "لا توجد نقاط استلام متاحة حالياً"
+                    : "No pickup places available at the moment"}
+                </div>
+              )}
+            </div>
 
             {/* Notes */}
             <div className="space-y-2">
