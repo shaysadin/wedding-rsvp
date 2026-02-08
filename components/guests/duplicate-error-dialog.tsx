@@ -33,6 +33,7 @@ export interface DuplicateInfo {
   phone: string;
   existingName?: string;
   existingGuestId?: string;
+  guestIndex?: number; // Index in parsedGuests array
 }
 
 interface DuplicateErrorDialogProps {
@@ -47,8 +48,10 @@ interface DuplicateErrorDialogProps {
   phoneNumber?: string;
   // Callback for editing an existing guest
   onEditGuest?: (guestId: string) => void;
-  // Callback to skip/remove a duplicate from the import list (by phone)
-  onSkipDuplicate?: (phone: string) => void;
+  // Callback to skip/remove a duplicate from the import list (by guest index or phone)
+  onSkipDuplicate?: (guestIndexOrPhone: number | string) => void;
+  // Callback to edit phone number (by guest index, new phone)
+  onEditPhone?: (guestIndex: number, newPhone: string) => void;
   // Callback to skip all duplicates at once
   onSkipAllDuplicates?: () => void;
   // Callback when an existing guest is deleted (for single add mode)
@@ -66,6 +69,7 @@ export function DuplicateErrorDialog({
   phoneNumber,
   onEditGuest,
   onSkipDuplicate,
+  onEditPhone,
   onSkipAllDuplicates,
   onExistingGuestDeleted,
 }: DuplicateErrorDialogProps) {
@@ -76,6 +80,8 @@ export function DuplicateErrorDialog({
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [guestToDelete, setGuestToDelete] = useState<{ id: string; name: string } | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const [editingPhone, setEditingPhone] = useState("");
 
   const isSingleMode = singleDuplicateNames.length > 0;
   const hasExistingDuplicates = duplicatesWithExisting.length > 0;
@@ -121,9 +127,9 @@ export function DuplicateErrorDialog({
   };
 
   // For bulk import - skip/remove from import list
-  const handleSkipFromImport = (phone: string) => {
+  const handleSkipFromImport = (guestIndexOrPhone: number | string) => {
     if (onSkipDuplicate) {
-      onSkipDuplicate(phone);
+      onSkipDuplicate(guestIndexOrPhone);
       toast.success(t("duplicates.skipped"));
     }
   };
@@ -142,6 +148,28 @@ export function DuplicateErrorDialog({
       onOpenChange(false);
       onEditGuest(guestId);
     }
+  };
+
+  // Start editing phone number
+  const handleStartEditPhone = (guestIndex: number, currentPhone: string) => {
+    setEditingIndex(guestIndex);
+    setEditingPhone(currentPhone);
+  };
+
+  // Save edited phone number
+  const handleSaveEditPhone = (guestIndex: number) => {
+    if (onEditPhone && editingPhone.trim()) {
+      onEditPhone(guestIndex, editingPhone.trim());
+      toast.success(t("duplicates.phoneUpdated"));
+      setEditingIndex(null);
+      setEditingPhone("");
+    }
+  };
+
+  // Cancel editing
+  const handleCancelEditPhone = () => {
+    setEditingIndex(null);
+    setEditingPhone("");
   };
 
   return (
@@ -225,38 +253,86 @@ export function DuplicateErrorDialog({
                     {t("duplicates.conflictWithExisting")}
                   </h4>
                   <div className="space-y-2">
-                    {duplicatesWithExisting.map((dup, idx) => (
-                      <div
-                        key={idx}
-                        className="rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2"
-                      >
-                        <div className="flex items-center justify-between gap-2">
-                          <div className="flex-1 min-w-0">
-                            <span className="font-medium">{dup.name}</span>
-                            <p className="text-xs text-muted-foreground">
-                              {t("duplicates.samePhoneAs")}: <span className="font-medium">{dup.existingName}</span>
-                            </p>
-                          </div>
-                          <div className="flex items-center gap-2 shrink-0">
-                            <Badge variant="outline" className="text-xs" dir="ltr">
-                              {dup.phone}
-                            </Badge>
-                            {onSkipDuplicate && (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-7 px-2 text-destructive hover:text-destructive"
-                                onClick={() => handleSkipFromImport(dup.phone)}
-                                title={t("duplicates.skipFromImport")}
-                              >
-                                <Icons.close className="me-1 h-3.5 w-3.5" />
-                                {t("duplicates.skip")}
-                              </Button>
+                    {duplicatesWithExisting.map((dup, idx) => {
+                      const isEditing = editingIndex === dup.guestIndex;
+                      return (
+                        <div
+                          key={idx}
+                          className="rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2"
+                        >
+                          <div className="flex flex-col gap-2">
+                            <div className="flex items-center justify-between gap-2">
+                              <div className="flex-1 min-w-0">
+                                <span className="font-medium">{dup.name}</span>
+                                <p className="text-xs text-muted-foreground">
+                                  {t("duplicates.samePhoneAs")}: <span className="font-medium">{dup.existingName}</span>
+                                </p>
+                              </div>
+                              {!isEditing && (
+                                <Badge variant="outline" className="text-xs" dir="ltr">
+                                  {dup.phone}
+                                </Badge>
+                              )}
+                            </div>
+                            {isEditing ? (
+                              <div className="flex items-center gap-2">
+                                <input
+                                  type="tel"
+                                  value={editingPhone}
+                                  onChange={(e) => setEditingPhone(e.target.value)}
+                                  className="flex-1 h-8 px-2 text-sm border rounded"
+                                  placeholder={t("phone")}
+                                  dir="ltr"
+                                  autoFocus
+                                />
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-7 px-2"
+                                  onClick={() => dup.guestIndex !== undefined && handleSaveEditPhone(dup.guestIndex)}
+                                >
+                                  <Icons.check className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-7 px-2"
+                                  onClick={handleCancelEditPhone}
+                                >
+                                  <Icons.close className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            ) : (
+                              <div className="flex items-center gap-2">
+                                {onEditPhone && dup.guestIndex !== undefined && (
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="h-7 px-2"
+                                    onClick={() => handleStartEditPhone(dup.guestIndex!, dup.phone)}
+                                  >
+                                    <Icons.edit className="me-1 h-3.5 w-3.5" />
+                                    {tc("edit")}
+                                  </Button>
+                                )}
+                                {onSkipDuplicate && dup.guestIndex !== undefined && (
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-7 px-2 text-destructive hover:text-destructive"
+                                    onClick={() => handleSkipFromImport(dup.guestIndex!)}
+                                    title={t("duplicates.skipFromImport")}
+                                  >
+                                    <Icons.close className="me-1 h-3.5 w-3.5" />
+                                    {t("duplicates.skip")}
+                                  </Button>
+                                )}
+                              </div>
                             )}
                           </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               )}
@@ -271,33 +347,81 @@ export function DuplicateErrorDialog({
                     {t("duplicates.removeDuplicatesFromFile")}
                   </p>
                   <div className="space-y-2">
-                    {duplicatesWithinBatch.map((dup, idx) => (
-                      <div
-                        key={idx}
-                        className="rounded-md border border-orange-500/30 bg-orange-500/5 px-3 py-2"
-                      >
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="font-medium">{dup.name}</span>
-                          <div className="flex items-center gap-2 shrink-0">
-                            <Badge variant="outline" className="text-xs" dir="ltr">
-                              {dup.phone}
-                            </Badge>
-                            {onSkipDuplicate && (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-7 px-2 text-orange-600 hover:text-orange-600"
-                                onClick={() => handleSkipFromImport(dup.phone)}
-                                title={t("duplicates.skipFromImport")}
-                              >
-                                <Icons.close className="me-1 h-3.5 w-3.5" />
-                                {t("duplicates.skip")}
-                              </Button>
+                    {duplicatesWithinBatch.map((dup, idx) => {
+                      const isEditing = editingIndex === dup.guestIndex;
+                      return (
+                        <div
+                          key={idx}
+                          className="rounded-md border border-orange-500/30 bg-orange-500/5 px-3 py-2"
+                        >
+                          <div className="flex flex-col gap-2">
+                            <div className="flex items-center justify-between gap-2">
+                              <span className="font-medium">{dup.name}</span>
+                              {!isEditing && (
+                                <Badge variant="outline" className="text-xs" dir="ltr">
+                                  {dup.phone}
+                                </Badge>
+                              )}
+                            </div>
+                            {isEditing ? (
+                              <div className="flex items-center gap-2">
+                                <input
+                                  type="tel"
+                                  value={editingPhone}
+                                  onChange={(e) => setEditingPhone(e.target.value)}
+                                  className="flex-1 h-8 px-2 text-sm border rounded"
+                                  placeholder={t("phone")}
+                                  dir="ltr"
+                                  autoFocus
+                                />
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-7 px-2"
+                                  onClick={() => dup.guestIndex !== undefined && handleSaveEditPhone(dup.guestIndex)}
+                                >
+                                  <Icons.check className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-7 px-2"
+                                  onClick={handleCancelEditPhone}
+                                >
+                                  <Icons.close className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            ) : (
+                              <div className="flex items-center gap-2">
+                                {onEditPhone && dup.guestIndex !== undefined && (
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="h-7 px-2"
+                                    onClick={() => handleStartEditPhone(dup.guestIndex!, dup.phone)}
+                                  >
+                                    <Icons.edit className="me-1 h-3.5 w-3.5" />
+                                    {tc("edit")}
+                                  </Button>
+                                )}
+                                {onSkipDuplicate && dup.guestIndex !== undefined && (
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-7 px-2 text-orange-600 hover:text-orange-600"
+                                    onClick={() => handleSkipFromImport(dup.guestIndex!)}
+                                    title={t("duplicates.skipFromImport")}
+                                  >
+                                    <Icons.close className="me-1 h-3.5 w-3.5" />
+                                    {t("duplicates.skip")}
+                                  </Button>
+                                )}
+                              </div>
                             )}
                           </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               )}

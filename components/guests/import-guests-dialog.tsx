@@ -27,6 +27,7 @@ interface DuplicateInfo {
   phone: string;
   existingName?: string;
   existingGuestId?: string;
+  guestIndex?: number; // Index in parsedGuests array
 }
 
 interface ImportGuestsDialogProps {
@@ -41,6 +42,7 @@ interface ParsedGuest {
   groupName?: string;
   expectedGuests?: number;
   notes?: string;
+  _index?: number; // Unique index for tracking
 }
 
 export function ImportGuestsDialog({ eventId }: ImportGuestsDialogProps) {
@@ -169,7 +171,10 @@ export function ImportGuestsDialog({ eventId }: ImportGuestsDialogProps) {
           };
         }).filter((g) => g.name); // Filter out empty rows
 
-        setParsedGuests(guests);
+        // Add unique index to each guest
+        const guestsWithIndex = guests.map((g, idx) => ({ ...g, _index: idx }));
+
+        setParsedGuests(guestsWithIndex);
         setFileName(file.name);
       } catch (error) {
         console.error("Error parsing file:", error);
@@ -209,8 +214,20 @@ export function ImportGuestsDialog({ eventId }: ImportGuestsDialogProps) {
             duplicatesWithExisting?: { name: string; phone: string; existingName: string; existingGuestId?: string }[];
             duplicatesWithinBatch?: { name: string; phone: string }[];
           };
-          setDuplicatesWithExisting(typedResult.duplicatesWithExisting || []);
-          setDuplicatesWithinBatch(typedResult.duplicatesWithinBatch || []);
+
+          // Map duplicates to include guest index
+          const withExisting = (typedResult.duplicatesWithExisting || []).map(dup => {
+            const guestIndex = parsedGuests.findIndex(g => g.name === dup.name && g.phoneNumber === dup.phone);
+            return { ...dup, guestIndex };
+          });
+
+          const withinBatch = (typedResult.duplicatesWithinBatch || []).map(dup => {
+            const guestIndex = parsedGuests.findIndex(g => g.name === dup.name && g.phoneNumber === dup.phone);
+            return { ...dup, guestIndex };
+          });
+
+          setDuplicatesWithExisting(withExisting);
+          setDuplicatesWithinBatch(withinBatch);
           setDuplicateDialogOpen(true);
         } else {
           toast.error(result.error);
@@ -362,12 +379,28 @@ export function ImportGuestsDialog({ eventId }: ImportGuestsDialogProps) {
         onOpenChange={setDuplicateDialogOpen}
         duplicatesWithExisting={duplicatesWithExisting}
         duplicatesWithinBatch={duplicatesWithinBatch}
-        onSkipDuplicate={(phone) => {
-          // Remove the duplicate from both lists by phone number
-          setDuplicatesWithExisting(prev => prev.filter(d => d.phone !== phone));
-          setDuplicatesWithinBatch(prev => prev.filter(d => d.phone !== phone));
+        onSkipDuplicate={(guestIndex) => {
+          if (guestIndex === undefined) return;
+
+          // Remove the specific duplicate from lists by guest index
+          setDuplicatesWithExisting(prev => prev.filter(d => d.guestIndex !== guestIndex));
+          setDuplicatesWithinBatch(prev => prev.filter(d => d.guestIndex !== guestIndex));
           // Also remove from parsed guests so it won't be imported
-          setParsedGuests(prev => prev.filter(g => g.phoneNumber !== phone));
+          setParsedGuests(prev => prev.filter(g => g._index !== guestIndex));
+        }}
+        onEditPhone={(guestIndex, newPhone) => {
+          if (guestIndex === undefined) return;
+
+          // Update phone number for the specific guest
+          setParsedGuests(prev => prev.map(g =>
+            g._index === guestIndex
+              ? { ...g, phoneNumber: newPhone }
+              : g
+          ));
+
+          // Remove this duplicate from the lists (it's been fixed)
+          setDuplicatesWithExisting(prev => prev.filter(d => d.guestIndex !== guestIndex));
+          setDuplicatesWithinBatch(prev => prev.filter(d => d.guestIndex !== guestIndex));
         }}
       />
     </>
