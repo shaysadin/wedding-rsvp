@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { Metadata } from "next";
 
-import { getEventForTransportation } from "@/actions/transportation";
+import { getEventForTransportation, getPickupPlaces } from "@/actions/transportation";
 import { GenericTransportationForm } from "@/components/transportation/generic-transportation-form";
 
 interface GenericTransportationPageProps {
@@ -36,6 +36,10 @@ export default async function GenericTransportationPage({ params, searchParams }
 
   const { event } = result;
 
+  // Fetch pickup places
+  const pickupPlacesResult = await getPickupPlaces(event.id);
+  const pickupPlaces = pickupPlacesResult.places || [];
+
   // Determine locale - default to Hebrew, can be overridden with ?lang=en query param
   const locale = resolvedSearchParams.lang || "he";
 
@@ -44,6 +48,7 @@ export default async function GenericTransportationPage({ params, searchParams }
       <GenericTransportationForm
         event={event}
         locale={locale}
+        pickupPlaces={pickupPlaces}
       />
     </div>
   );

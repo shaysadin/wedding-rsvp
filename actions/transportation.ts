@@ -211,6 +211,7 @@ const genericTransportationRegistrationSchema = z.object({
   pickupPlaceId: z.string().optional(),
   location: z.string().min(1, "Pickup location is required"),
   quantity: z.number().int().min(1, "Quantity must be at least 1").max(20, "Quantity cannot exceed 20"),
+  language: z.string().optional().default("he"),
   notes: z.string().optional(),
 });
 
@@ -243,6 +244,7 @@ export async function registerForTransportationGeneric(
         pickupPlaceId: validatedData.pickupPlaceId || null,
         location: validatedData.location,
         quantity: validatedData.quantity,
+        language: validatedData.language || "he",
         notes: validatedData.notes || null,
       },
     });

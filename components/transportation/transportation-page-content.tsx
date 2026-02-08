@@ -947,12 +947,12 @@ export function TransportationPageContent({
 
             <div className="space-y-2">
               <Label>{isRTL ? "נקודת איסוף" : "Pickup Place"}</Label>
-              <Select value={guestPickupPlaceId} onValueChange={setGuestPickupPlaceId}>
+              <Select value={guestPickupPlaceId || "none"} onValueChange={(val) => setGuestPickupPlaceId(val === "none" ? "" : val)}>
                 <SelectTrigger>
                   <SelectValue placeholder={isRTL ? "בחר נקודת איסוף" : "Select pickup place"} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">{isRTL ? "ללא" : "None"}</SelectItem>
+                  <SelectItem value="none">{isRTL ? "ללא" : "None"}</SelectItem>
                   {pickupPlaces.map((place) => (
                     <SelectItem key={place.id} value={place.id}>
                       {getPickupPlaceName(place)}

@@ -1,0 +1,151 @@
+
+> rsvp-manager@1.0.0 build
+> next build
+
+[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+   ▲ Next.js 16.0.7 (Turbopack)
+   - Environments: .env
+   - Experiments (use with caution):
+     · serverActions
+
+   Creating an optimized production build ...
+[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+ ✓ Compiled successfully in 41s
+   Running TypeScript ...
+   Collecting page data using 11 workers ...
+[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+ ⚠ Using edge runtime on a page currently disables static generation for that page
+   Generating static pages using 11 workers (0/109) ...
+[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+ ⚠ metadataBase property in metadata export is not set for resolving social open graph or twitter images, using "http://localhost:3000". See https://nextjs.org/docs/app/api-reference/functions/generate-metadata#metadatabase
+ ⚠ metadataBase property in metadata export is not set for resolving social open graph or twitter images, using "http://localhost:3000". See https://nextjs.org/docs/app/api-reference/functions/generate-metadata#metadatabase
+   Generating static pages using 11 workers (27/109) 
+   Generating static pages using 11 workers (54/109) 
+   Generating static pages using 11 workers (81/109) 
+ ✓ Generating static pages using 11 workers (109/109) in 2.5s
+   Finalizing page optimization ...
+
+Route (app)
+┌ ○ /_not-found
+├ ƒ /[locale]
+├ ƒ /[locale]/about
+├ ƒ /[locale]/accept-invite/[token]
+├ ƒ /[locale]/admin
+├ ƒ /[locale]/admin/cron-logs
+├ ƒ /[locale]/admin/invitation-templates
+├ ƒ /[locale]/admin/invitation-templates/[templateId]
+├ ƒ /[locale]/admin/invitation-templates/new
+├ ƒ /[locale]/admin/messaging
+├ ƒ /[locale]/admin/payments
+├ ƒ /[locale]/admin/settings
+├ ƒ /[locale]/admin/twilio-voice
+├ ƒ /[locale]/admin/usage-tracking
+├ ƒ /[locale]/admin/users
+├ ƒ /[locale]/admin/vapi
+├ ƒ /[locale]/blog
+├ ƒ /[locale]/blog/[slug]
+├ ƒ /[locale]/contact
+├ ƒ /[locale]/dashboard
+├ ƒ /[locale]/dashboard/archives
+├ ƒ /[locale]/dashboard/archives/[archiveId]
+├ ƒ /[locale]/dashboard/automations
+├ ƒ /[locale]/dashboard/billing
+├ ƒ /[locale]/dashboard/customize
+├ ƒ /[locale]/dashboard/events
+├ ƒ /[locale]/dashboard/events/[eventId]
+├ ƒ /[locale]/dashboard/gifts
+├ ƒ /[locale]/dashboard/invitations
+├ ƒ /[locale]/dashboard/messages
+├ ƒ /[locale]/dashboard/rsvp
+├ ƒ /[locale]/dashboard/seating
+├ ƒ /[locale]/dashboard/settings
+├ ƒ /[locale]/dashboard/suppliers
+├ ƒ /[locale]/dashboard/tasks
+├ ƒ /[locale]/dashboard/voice-agent
+├ ƒ /[locale]/dashboard/workspaces
+├ ƒ /[locale]/events/[eventId]
+├ ƒ /[locale]/events/[eventId]/automations
+├ ƒ /[locale]/events/[eventId]/call-center
+├ ƒ /[locale]/events/[eventId]/customize
+├ ƒ /[locale]/events/[eventId]/gifts
+├ ƒ /[locale]/events/[eventId]/guests
+├ ƒ /[locale]/events/[eventId]/invitations
+├ ƒ /[locale]/events/[eventId]/messages
+├ ƒ /[locale]/events/[eventId]/rsvp
+├ ƒ /[locale]/events/[eventId]/seating
+├ ƒ /[locale]/events/[eventId]/suppliers
+├ ƒ /[locale]/events/[eventId]/tasks
+├ ƒ /[locale]/events/[eventId]/transportation
+├ ƒ /[locale]/events/[eventId]/voice-agent
+├ ƒ /[locale]/forgot-password
+├ ƒ /[locale]/hostess/[eventId]
+├ ƒ /[locale]/login
+├ ƒ /[locale]/pricing
+├ ƒ /[locale]/register
+├ ƒ /[locale]/reset-password
+├ ƒ /[locale]/verify-email
+├ ƒ /api/admin/migrate-archives
+├ ƒ /api/admin/scan-template
+├ ƒ /api/admin/test-auth
+├ ƒ /api/admin/upload-template
+├ ƒ /api/auth/[...nextauth]
+├ ƒ /api/bulk-messages/[jobId]/cancel
+├ ƒ /api/bulk-messages/[jobId]/continue
+├ ƒ /api/bulk-messages/[jobId]/status
+├ ƒ /api/bulk-messages/start
+├ ƒ /api/cron/apply-pending-downgrades
+├ ƒ /api/cron/auto-close-events
+├ ƒ /api/cron/process-automation-flows
+├ ƒ /api/cron/process-bulk-jobs
+├ ƒ /api/hostess/[eventId]/stream
+├ ƒ /api/og
+├ ƒ /api/payments/gift/webhook/meshulam
+├ ƒ /api/stripe/cancel-scheduled-change
+├ ƒ /api/stripe/cancel-subscription
+├ ƒ /api/stripe/create-checkout-session
+├ ƒ /api/stripe/create-subscription
+├ ƒ /api/stripe/customer-portal
+├ ƒ /api/stripe/payment-method
+├ ƒ /api/stripe/preview-proration
+├ ƒ /api/stripe/upgrade-subscription
+├ ƒ /api/stripe/webhook
+├ ƒ /api/twilio-voice/status
+├ ƒ /api/twilio-voice/token
+├ ƒ /api/twilio-voice/twiml
+├ ƒ /api/twilio-voice/twiml-fallback
+├ ƒ /api/twilio/status
+├ ƒ /api/twilio/whatsapp
+├ ƒ /api/user
+├ ƒ /api/vapi/tools/get-wedding-info
+├ ƒ /api/vapi/tools/update-rsvp
+├ ƒ /api/vapi/webhook
+├ ƒ /gift/[guestSlug]
+├ ƒ /gift/cancel
+├ ƒ /gift/success
+├ ƒ /n/[eventId]
+├ ○ /opengraph-image.jpg
+├ ○ /robots.txt
+├ ƒ /rsvp/[slug]
+├ ƒ /transportation/[slug]
+└ ƒ /transportation/event/[eventId]
+
+
+ƒ Proxy (Middleware)
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+
