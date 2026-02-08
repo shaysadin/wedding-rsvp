@@ -22,11 +22,17 @@ export async function getEventForTransportation(eventId: string) {
         dateTime: true,
         location: true,
         venue: true,
+        transportationEnabled: true,
       },
     });
 
     if (!event) {
       return { error: "Event not found" };
+    }
+
+    // Check if transportation is enabled
+    if (!event.transportationEnabled) {
+      return { error: "Transportation registration is currently disabled for this event" };
     }
 
     return { event };
@@ -56,6 +62,7 @@ export async function getGuestByTransportationSlug(slug: string) {
             dateTime: true,
             location: true,
             venue: true,
+            transportationEnabled: true,
           },
         },
         transportationRegistration: {
@@ -86,6 +93,11 @@ export async function getGuestByTransportationSlug(slug: string) {
 
     if (!guest) {
       return { error: "Guest not found" };
+    }
+
+    // Check if transportation is enabled
+    if (!guest.weddingEvent.transportationEnabled) {
+      return { error: "Transportation registration is currently disabled for this event" };
     }
 
     return { guest };
@@ -540,5 +552,33 @@ export async function reorderPickupPlaces(eventId: string, orderedIds: string[])
   } catch (error) {
     console.error("[reorderPickupPlaces] Error:", error);
     return { error: "Failed to reorder pickup places" };
+  }
+}
+
+/**
+ * Toggle transportation enabled status
+ */
+export async function toggleTransportationEnabled(eventId: string, enabled: boolean) {
+  try {
+    const user = await getCurrentUser();
+    if (!user) {
+      return { error: "Unauthorized" };
+    }
+
+    const hasAccess = await canAccessEvent(eventId, user.id, "EDITOR");
+    if (!hasAccess) {
+      return { error: "You don't have permission to access this event" };
+    }
+
+    await prisma.weddingEvent.update({
+      where: { id: eventId },
+      data: { transportationEnabled: enabled },
+    });
+
+    revalidatePath(`/events/${eventId}/transportation`);
+    return { success: true };
+  } catch (error) {
+    console.error("[toggleTransportationEnabled] Error:", error);
+    return { error: "Failed to update transportation status" };
   }
 }

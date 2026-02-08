@@ -38,6 +38,7 @@ interface EventWithStats {
   rsvpMaybeReminderDelay: number;
   seatingCanvasWidth: number;
   seatingCanvasHeight: number;
+  transportationEnabled: boolean;
   stats: {
     total: number;
     pending: number;

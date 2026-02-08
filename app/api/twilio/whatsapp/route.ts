@@ -565,7 +565,12 @@ async function sendConfirmationMessage(
     // Get the guest and their event (with transportation registration check)
     const guest = await prisma.guest.findUnique({
       where: { id: guestId },
-      include: {
+      select: {
+        id: true,
+        name: true,
+        phoneNumber: true,
+        transportationSlug: true,
+        lastInvitationTemplateSid: true,
         weddingEvent: true,
         rsvp: true,
         transportationRegistration: true,
@@ -625,35 +630,32 @@ async function sendConfirmationMessage(
         .replace(/\{guestCount\}/g, String(guestCount));
     };
 
+    // Check if the guest received a TRANSPORTATION_INVITE template
+    let receivedTransportationTemplate = false;
+    if (guest.lastInvitationTemplateSid) {
+      const template = await prisma.whatsAppTemplate.findFirst({
+        where: { contentSid: guest.lastInvitationTemplateSid },
+        select: { type: true },
+      });
+      receivedTransportationTemplate = template?.type === "TRANSPORTATION_INVITE";
+    }
+
     let message: string;
     if (status === "ACCEPTED") {
-      // Check if guest has transportation available and hasn't registered yet
-      const hasTransportationSlug = !!guest.transportationSlug;
-      const hasRegistered = !!guest.transportationRegistration;
-      const shouldShowTransportationReminder = hasTransportationSlug && !hasRegistered;
-
       if (event.rsvpConfirmedMessage) {
         console.log("Using custom ACCEPTED message");
         message = replacePlaceholders(event.rsvpConfirmedMessage);
-
-        // Add transportation reminder if needed
-        if (shouldShowTransportationReminder) {
-          const transportationUrl = `${process.env.NEXT_PUBLIC_APP_URL}/transportation/${guest.transportationSlug}`;
-          const transportationReminder = `\n\n🚌 תזכורת: נשמח לארגן עבורכם הסעות לאירוע!\nלהרשמה להסעות לחצו כאן: ${transportationUrl}`;
-          message = message + transportationReminder;
-        }
       } else {
         console.log("Using default ACCEPTED message");
+        message = `תודה ${guest.name}! 🎉\n\nאישור ההגעה שלך ל${event.title} התקבל בהצלחה.\n\n📅 תאריך: ${eventDate}\n📍 מיקום: ${locationString}\n👥 מספר אורחים: ${guestCount}\n\nמחכים לראותכם! 💕`;
+      }
 
-        // Build transportation reminder section if needed
-        let transportationSection = "";
-        if (shouldShowTransportationReminder) {
-          const transportationUrl = `${process.env.NEXT_PUBLIC_APP_URL}/transportation/${guest.transportationSlug}`;
-          transportationSection = `\n🚌 נשמח לארגן עבורכם הסעות לאירוע!\nלהרשמה: ${transportationUrl}\n`;
-        }
-
-        // Insert transportation reminder ABOVE the date and event data
-        message = `תודה ${guest.name}! 🎉\n\nאישור ההגעה שלך ל${event.title} התקבל בהצלחה.${transportationSection}\n📅 תאריך: ${eventDate}\n📍 מיקום: ${locationString}\n👥 מספר אורחים: ${guestCount}\n\nמחכים לראותכם! 💕`;
+      // Add transportation reminder ONLY if they received a transportation template
+      // AND haven't registered yet AND have a transportation slug
+      if (receivedTransportationTemplate && guest.transportationSlug && !guest.transportationRegistration) {
+        const transportationUrl = `${process.env.NEXT_PUBLIC_APP_URL}/transportation/${guest.transportationSlug}`;
+        const transportationReminder = `\n\n🚌 תזכורת: נשמח לארגן עבורכם הסעות לאירוע!\nלהרשמה להסעות לחצו כאן: ${transportationUrl}`;
+        message = message + transportationReminder;
       }
     } else if (status === "DECLINED") {
       if (event.rsvpDeclinedMessage) {

@@ -116,6 +116,7 @@ interface SerializedEvent {
   rsvpMaybeReminderDelay: number;
   seatingCanvasWidth: number;
   seatingCanvasHeight: number;
+  transportationEnabled: boolean;
 }
 
 interface EventDashboardContentProps {

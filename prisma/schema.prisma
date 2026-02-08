@@ -231,6 +231,8 @@ model WeddingEvent {
   // Seating canvas dimensions
   seatingCanvasWidth      Int                   @default(1200) @map("seating_canvas_width")
   seatingCanvasHeight     Int                   @default(800) @map("seating_canvas_height")
+  // Transportation settings
+  transportationEnabled   Boolean               @default(true) @map("transportation_enabled") // Toggle transportation registration
   bulkMessageJobs         BulkMessageJob[]
   costLogs                CostLog[]
   guests                  Guest[]
@@ -308,6 +310,7 @@ model Guest {
   email                   String?
   slug                    String                    @unique
   transportationSlug      String?                   @unique @map("transportation_slug")
+  lastInvitationTemplateSid String?                 @map("last_invitation_template_sid") // Track which WhatsApp template was used for invitation
   side                    String?
   groupName               String?                   @map("group_name")
   notes                   String?

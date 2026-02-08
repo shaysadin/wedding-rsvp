@@ -38,7 +38,7 @@ export default async function TransportationPage({ params }: TransportationPageP
         },
       ],
     },
-    select: { id: true, title: true, dateTime: true, location: true },
+    select: { id: true, title: true, dateTime: true, location: true, transportationEnabled: true },
   });
 
   if (!event) {
@@ -101,6 +101,7 @@ export default async function TransportationPage({ params }: TransportationPageP
     title: event.title,
     dateTime: event.dateTime,
     location: event.location,
+    transportationEnabled: event.transportationEnabled,
   }];
 
   return (

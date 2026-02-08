@@ -485,7 +485,7 @@ export function TransportationForm({ guest, event, existingRegistration, locale 
             {/* Submit Button */}
             <Button
               type="submit"
-              disabled={isSubmitting}
+              disabled={isSubmitting || pickupPlaces.length === 0}
               className="w-full min-h-[48px] text-base"
             >
               {isSubmitting

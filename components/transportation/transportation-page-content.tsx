@@ -67,7 +67,8 @@ import {
   createPickupPlace,
   updatePickupPlace,
   deletePickupPlace,
-  togglePickupPlaceStatus
+  togglePickupPlaceStatus,
+  toggleTransportationEnabled
 } from "@/actions/transportation";
 
 interface PickupPlace {
@@ -114,9 +115,14 @@ interface TransportationRegistration {
   } | null;
 }
 
+// Extend EventOption to include transportationEnabled
+interface ExtendedEventOption extends EventOption {
+  transportationEnabled?: boolean;
+}
+
 interface TransportationPageContentProps {
   eventId: string;
-  events: EventOption[];
+  events: ExtendedEventOption[];
   locale: string;
   transportationRegistrations: TransportationRegistration[];
   pickupPlaces: PickupPlace[];
@@ -132,11 +138,15 @@ export function TransportationPageContent({
   const isRTL = locale === "he";
   const [isPending, startTransition] = useTransition();
 
+  // Get current event
+  const currentEvent = events.find((e) => e.id === eventId);
+
   // State
   const [copiedSlug, setCopiedSlug] = useState<string | null>(null);
   const [copiedGeneric, setCopiedGeneric] = useState(false);
   const [filterPickupPlace, setFilterPickupPlace] = useState<string>("all");
   const [filterType, setFilterType] = useState<string>("all");
+  const [transportationEnabled, setTransportationEnabled] = useState(currentEvent?.transportationEnabled ?? true);
 
   // Pickup place management
   const [pickupPlaces, setPickupPlaces] = useState(initialPickupPlaces);
@@ -241,6 +251,24 @@ export function TransportationPageContent({
     URL.revokeObjectURL(url);
 
     toast.success(isRTL ? "הקובץ ירד בהצלחה" : "File downloaded successfully");
+  };
+
+  const handleToggleTransportationEnabled = async (enabled: boolean) => {
+    startTransition(async () => {
+      const result = await toggleTransportationEnabled(eventId, enabled);
+
+      if (result.error) {
+        toast.error(result.error);
+        return;
+      }
+
+      setTransportationEnabled(enabled);
+      toast.success(
+        enabled
+          ? (isRTL ? "ההרשמה להסעות הופעלה" : "Transportation registration enabled")
+          : (isRTL ? "ההרשמה להסעות הושבתה" : "Transportation registration disabled")
+      );
+    });
   };
 
   const openCreateDialog = () => {
@@ -430,6 +458,30 @@ export function TransportationPageContent({
           basePath={`/${locale}/dashboard/events/${eventId}/transportation`}
         />
       </div>
+
+      {/* Transportation Toggle */}
+      <Card className="shrink-0 mb-6">
+        <CardContent className="pt-6">
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <Label htmlFor="transportation-toggle" className="text-base font-medium">
+                {isRTL ? "אפשר הרשמה להסעות" : "Enable Transportation Registration"}
+              </Label>
+              <p className="text-sm text-muted-foreground">
+                {isRTL
+                  ? "כאשר כבוי, אורחים לא יוכלו להירשם להסעות דרך הקישור"
+                  : "When disabled, guests cannot register for transportation via the link"}
+              </p>
+            </div>
+            <Switch
+              id="transportation-toggle"
+              checked={transportationEnabled}
+              onCheckedChange={handleToggleTransportationEnabled}
+              disabled={isPending}
+            />
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Statistics Cards */}
       <div className="shrink-0 grid gap-4 md:grid-cols-3 mb-6">
