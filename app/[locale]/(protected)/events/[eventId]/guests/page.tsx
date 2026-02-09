@@ -65,6 +65,16 @@ export default async function GuestsPage({ params, searchParams }: GuestsPagePro
   const validFilters = ["all", "pending", "accepted", "declined", "maybe"];
   const activeFilter = filter && validFilters.includes(filter) ? filter : "all";
 
+  // Extract unique custom group names (excluding standard groups)
+  const standardGroups = ["family", "friends", "work", "other"];
+  const existingCustomGroups = Array.from(
+    new Set(
+      event.guests
+        .map((g) => g.groupName)
+        .filter((g): g is string => !!g && !standardGroups.includes(g))
+    )
+  ).sort();
+
   return (
     <PageFadeIn className="md:h-full space-y-4">
       {/* Page Header */}
@@ -86,7 +96,7 @@ export default async function GuestsPage({ params, searchParams }: GuestsPagePro
           </div>
           {/* Action buttons */}
           <div className="grid grid-cols-4 gap-2">
-            <BulkAddGuestsDialog eventId={event.id} />
+            <BulkAddGuestsDialog eventId={event.id} existingCustomGroups={existingCustomGroups} />
             <ImportGuestsDialog eventId={event.id} />
             <ExportGuestsDialog eventId={event.id} guests={event.guests} />
             <AddGuestDialog eventId={event.id} />
@@ -101,7 +111,7 @@ export default async function GuestsPage({ params, searchParams }: GuestsPagePro
               <p className="text-sm text-muted-foreground truncate">{event.title}</p>
             </div>
             <div className="flex gap-2">
-              <BulkAddGuestsDialog eventId={event.id} />
+              <BulkAddGuestsDialog eventId={event.id} existingCustomGroups={existingCustomGroups} />
               <ImportGuestsDialog eventId={event.id} />
               <ExportGuestsDialog eventId={event.id} guests={event.guests} />
               <AddGuestDialog eventId={event.id} />

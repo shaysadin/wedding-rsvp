@@ -36,6 +36,7 @@ import { DuplicateErrorDialog } from "./duplicate-error-dialog";
 
 interface BulkAddGuestsDialogProps {
   eventId: string;
+  existingCustomGroups?: string[];
 }
 
 interface GuestRow {
@@ -60,7 +61,7 @@ const createEmptyRow = (): GuestRow => ({
   showCustomGroup: false,
 });
 
-export function BulkAddGuestsDialog({ eventId }: BulkAddGuestsDialogProps) {
+export function BulkAddGuestsDialog({ eventId, existingCustomGroups = [] }: BulkAddGuestsDialogProps) {
   const t = useTranslations("guests");
   const tc = useTranslations("common");
   const [open, setOpen] = useState(false);
@@ -291,6 +292,11 @@ export function BulkAddGuestsDialog({ eventId }: BulkAddGuestsDialogProps) {
                             <SelectItem value="friends">{t("groups.friends")}</SelectItem>
                             <SelectItem value="work">{t("groups.work")}</SelectItem>
                             <SelectItem value="other">{t("groups.other")}</SelectItem>
+                            {existingCustomGroups.map((group) => (
+                              <SelectItem key={group} value={group}>
+                                {group}
+                              </SelectItem>
+                            ))}
                             <SelectItem value="__custom__">{t("customGroup")}</SelectItem>
                           </SelectContent>
                         </Select>

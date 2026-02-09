@@ -344,12 +344,9 @@ export async function sendBulkMessages(options: BulkMessageOptions): Promise<Bul
       };
     }
 
-    // Verify event ownership
-    const event = await prisma.weddingEvent.findFirst({
-      where: { id: options.eventId, ownerId: user.id },
-    });
-
-    if (!event) {
+    // Verify event access (owner or EDITOR collaborator)
+    const hasAccess = await canAccessEvent(options.eventId, user.id, "EDITOR");
+    if (!hasAccess) {
       return {
         success: false,
         sent: 0,
@@ -360,6 +357,10 @@ export async function sendBulkMessages(options: BulkMessageOptions): Promise<Bul
         error: "Event not found",
       };
     }
+
+    const event = await prisma.weddingEvent.findUnique({
+      where: { id: options.eventId },
+    });
 
     // Get all requested guests with event data and table assignment (for EVENT_DAY)
     const guests = await prisma.guest.findMany({

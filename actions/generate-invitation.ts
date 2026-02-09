@@ -27,16 +27,18 @@ export async function generateInvitation(input: {
       return { error: "Unauthorized" };
     }
 
-    // Verify event ownership
-    const event = await prisma.weddingEvent.findFirst({
-      where: {
-        id: input.eventId,
-        ownerId: user.id,
-      },
+    // Verify event access (owner or EDITOR collaborator)
+    const hasAccess = await canAccessEvent(input.eventId, user.id, "EDITOR");
+    if (!hasAccess) {
+      return { error: "Event not found or unauthorized" };
+    }
+
+    const event = await prisma.weddingEvent.findUnique({
+      where: { id: input.eventId },
     });
 
     if (!event) {
-      return { error: "Event not found or unauthorized" };
+      return { error: "Event not found" };
     }
 
     // Get template with fields
@@ -249,15 +251,9 @@ export async function getEventInvitations(eventId: string) {
       return { error: "Unauthorized" };
     }
 
-    // Verify event ownership
-    const event = await prisma.weddingEvent.findFirst({
-      where: {
-        id: eventId,
-        ownerId: user.id,
-      },
-    });
-
-    if (!event) {
+    // Verify event access (owner or collaborator)
+    const hasAccess = await canAccessEvent(eventId, user.id);
+    if (!hasAccess) {
       return { error: "Event not found or unauthorized" };
     }
 
@@ -293,18 +289,23 @@ export async function deleteGeneratedInvitation(invitationId: string) {
       return { error: "Unauthorized" };
     }
 
-    // Verify ownership through event
+    // Verify access through event
     const invitation = await prisma.generatedInvitation.findFirst({
       where: { id: invitationId },
       include: {
         weddingEvent: {
-          select: { ownerId: true, id: true },
+          select: { id: true },
         },
       },
     });
 
-    if (!invitation || invitation.weddingEvent.ownerId !== user.id) {
-      return { error: "Invitation not found or unauthorized" };
+    if (!invitation) {
+      return { error: "Invitation not found" };
+    }
+
+    const hasAccess = await canAccessEvent(invitation.weddingEvent.id, user.id, "EDITOR");
+    if (!hasAccess) {
+      return { error: "Unauthorized" };
     }
 
     await prisma.generatedInvitation.delete({
@@ -333,11 +334,13 @@ export async function getInvitationImage(eventId: string) {
 
     console.log("[getInvitationImage] Fetching for eventId:", eventId, "userId:", user.id);
 
-    const event = await prisma.weddingEvent.findFirst({
-      where: {
-        id: eventId,
-        ownerId: user.id,
-      },
+    const hasAccess = await canAccessEvent(eventId, user.id);
+    if (!hasAccess) {
+      return { error: "Event not found or unauthorized" };
+    }
+
+    const event = await prisma.weddingEvent.findUnique({
+      where: { id: eventId },
       select: {
         invitationImageUrl: true,
       },
@@ -346,7 +349,7 @@ export async function getInvitationImage(eventId: string) {
     console.log("[getInvitationImage] Event found:", event);
 
     if (!event) {
-      return { error: "Event not found or unauthorized" };
+      return { error: "Event not found" };
     }
 
     return { imageUrl: event.invitationImageUrl };
@@ -367,14 +370,8 @@ export async function getGuestsForInvitations(eventId: string) {
       return { error: "Unauthorized" };
     }
 
-    const event = await prisma.weddingEvent.findFirst({
-      where: {
-        id: eventId,
-        ownerId: user.id,
-      },
-    });
-
-    if (!event) {
+    const hasAccess = await canAccessEvent(eventId, user.id);
+    if (!hasAccess) {
       return { error: "Event not found or unauthorized" };
     }
 
@@ -447,7 +444,6 @@ export async function sendImageInvitation(guestId: string) {
         weddingEvent: {
           select: {
             id: true,
-            ownerId: true,
             invitationImageUrl: true,
             title: true,
           },
@@ -455,8 +451,13 @@ export async function sendImageInvitation(guestId: string) {
       },
     });
 
-    if (!guest || guest.weddingEvent.ownerId !== user.id) {
-      return { error: "Guest not found or unauthorized" };
+    if (!guest) {
+      return { error: "Guest not found" };
+    }
+
+    const hasAccess = await canAccessEvent(guest.weddingEvent.id, user.id, "EDITOR");
+    if (!hasAccess) {
+      return { error: "Unauthorized" };
     }
 
     if (!guest.phoneNumber) {
@@ -514,14 +515,13 @@ export async function sendBulkImageInvitations(guestIds: string[]) {
       return { error: "No guests selected" };
     }
 
-    // Get all guests and verify ownership
+    // Get all guests
     const guests = await prisma.guest.findMany({
       where: { id: { in: guestIds } },
       include: {
         weddingEvent: {
           select: {
             id: true,
-            ownerId: true,
             invitationImageUrl: true,
             title: true,
           },
@@ -529,10 +529,21 @@ export async function sendBulkImageInvitations(guestIds: string[]) {
       },
     });
 
-    // Verify all guests belong to the user
-    const invalidGuests = guests.filter((g) => g.weddingEvent.ownerId !== user.id);
-    if (invalidGuests.length > 0) {
-      return { error: "Some guests not found or unauthorized" };
+    if (guests.length === 0) {
+      return { error: "No guests found" };
+    }
+
+    // Verify access to the event (all guests should be from same event)
+    const eventId = guests[0].weddingEvent.id;
+    const hasAccess = await canAccessEvent(eventId, user.id, "EDITOR");
+    if (!hasAccess) {
+      return { error: "Unauthorized" };
+    }
+
+    // Verify all guests are from the same event
+    const differentEvent = guests.find((g) => g.weddingEvent.id !== eventId);
+    if (differentEvent) {
+      return { error: "All guests must be from the same event" };
     }
 
     // Check for invitation image
@@ -605,10 +616,7 @@ export async function sendBulkImageInvitations(guestIds: string[]) {
       await new Promise((resolve) => setTimeout(resolve, 100));
     }
 
-    const eventId = guests[0]?.weddingEvent.id;
-    if (eventId) {
-      revalidatePath(`/[locale]/dashboard/events/${eventId}/invitations`);
-    }
+    revalidatePath(`/[locale]/dashboard/events/${eventId}/invitations`);
 
     return { success: true, sent, failed, total: guests.length };
   } catch (error) {
@@ -633,13 +641,18 @@ export async function setActiveInvitation(invitationId: string) {
       where: { id: invitationId },
       include: {
         weddingEvent: {
-          select: { id: true, ownerId: true },
+          select: { id: true },
         },
       },
     });
 
-    if (!invitation || invitation.weddingEvent.ownerId !== user.id) {
-      return { error: "Invitation not found or unauthorized" };
+    if (!invitation) {
+      return { error: "Invitation not found" };
+    }
+
+    const hasAccess = await canAccessEvent(invitation.weddingEvent.id, user.id, "EDITOR");
+    if (!hasAccess) {
+      return { error: "Unauthorized" };
     }
 
     if (!invitation.pngUrl) {

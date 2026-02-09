@@ -70,15 +70,18 @@ export async function createGuest(input: CreateGuestInput) {
 
     const event = await prisma.weddingEvent.findFirst({
       where: { id: validatedData.weddingEventId },
-      include: { _count: { select: { guests: true } } },
+      include: {
+        _count: { select: { guests: true } },
+        owner: { select: { plan: true } }, // Get event owner's plan
+      },
     });
 
     if (!event) {
       return { error: "Event not found" };
     }
 
-    // Check guest limit
-    const limit = PLAN_GUEST_LIMITS[user.plan];
+    // Check guest limit based on EVENT OWNER's plan (not collaborator's plan)
+    const limit = PLAN_GUEST_LIMITS[event.owner.plan];
     if (event._count.guests >= limit) {
       return {
         error: `You have reached the limit of ${limit} guests for your plan. Please upgrade to add more guests.`,

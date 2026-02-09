@@ -150,9 +150,14 @@ export async function updateRsvpPageSettings(input: RsvpPageSettingsInput) {
 
     const { eventId, ...settingsData } = input;
 
-    // Verify event ownership
-    const event = await prisma.weddingEvent.findFirst({
-      where: { id: eventId, ownerId: user.id },
+    // Verify access (owner or EDITOR collaborator)
+    const hasAccess = await canAccessEvent(eventId, user.id, "EDITOR");
+    if (!hasAccess) {
+      return { error: "Event not found" };
+    }
+
+    const event = await prisma.weddingEvent.findUnique({
+      where: { id: eventId },
       include: { rsvpPageSettings: true },
     });
 
@@ -206,11 +211,14 @@ export async function getRsvpPageSettings(eventId: string) {
       return { error: "Unauthorized" };
     }
 
-    // Verify event ownership (platform owners can access any event)
-    const event = await prisma.weddingEvent.findFirst({
-      where: hasPlatformOwnerRole
-        ? { id: eventId }
-        : { id: eventId, ownerId: user.id },
+    // Verify access (owner, collaborator, or platform owner)
+    const hasAccess = await canAccessEvent(eventId, user.id);
+    if (!hasAccess) {
+      return { error: "Event not found" };
+    }
+
+    const event = await prisma.weddingEvent.findUnique({
+      where: { id: eventId },
       include: { rsvpPageSettings: true },
     });
 
@@ -444,9 +452,14 @@ export async function applyTemplateToEvent(eventId: string, templateId: string) 
       return { error: "Unauthorized" };
     }
 
-    // Verify event ownership
-    const event = await prisma.weddingEvent.findFirst({
-      where: { id: eventId, ownerId: user.id },
+    // Verify access (owner or EDITOR collaborator)
+    const hasAccess = await canAccessEvent(eventId, user.id, "EDITOR");
+    if (!hasAccess) {
+      return { error: "Event not found" };
+    }
+
+    const event = await prisma.weddingEvent.findUnique({
+      where: { id: eventId },
       include: { rsvpPageSettings: true },
     });
 

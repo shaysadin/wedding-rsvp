@@ -68,6 +68,16 @@ export default async function EventPage({ params, searchParams }: EventPageProps
   const validFilters = ["all", "pending", "accepted", "declined", "maybe"];
   const activeFilter = filter && validFilters.includes(filter) ? filter : "all";
 
+  // Extract unique custom group names (excluding standard groups)
+  const standardGroups = ["family", "friends", "work", "other"];
+  const existingCustomGroups = Array.from(
+    new Set(
+      event.guests
+        .map((g) => g.groupName)
+        .filter((g): g is string => !!g && !standardGroups.includes(g))
+    )
+  ).sort();
+
   // Get the first guest's slug for RSVP preview
   const firstGuestSlug = event.guests[0]?.slug || null;
 
@@ -180,7 +190,7 @@ export default async function EventPage({ params, searchParams }: EventPageProps
             </div>
             {/* Action buttons */}
             <div className="grid grid-cols-3 gap-2">
-              <BulkAddGuestsDialog eventId={event.id} />
+              <BulkAddGuestsDialog eventId={event.id} existingCustomGroups={existingCustomGroups} />
               <ImportGuestsDialog eventId={event.id} />
               <AddGuestDialog eventId={event.id} />
             </div>
@@ -191,7 +201,7 @@ export default async function EventPage({ params, searchParams }: EventPageProps
             <div className="flex flex-col gap-2">
               <h2 className="text-xl font-semibold">{tGuests("title")}</h2>
               <div className="flex gap-2">
-                <BulkAddGuestsDialog eventId={event.id} />
+                <BulkAddGuestsDialog eventId={event.id} existingCustomGroups={existingCustomGroups} />
                 <ImportGuestsDialog eventId={event.id} />
                 <AddGuestDialog eventId={event.id} />
               </div>

@@ -5,6 +5,7 @@ import { UserRole, GiftPaymentStatus } from "@prisma/client";
 
 import { prisma } from "@/lib/db";
 import { getCurrentUser } from "@/lib/session";
+import { canAccessEvent } from "@/lib/permissions";
 import { getPaymentProvider, calculateTotalWithFee } from "@/lib/payments";
 
 // ============================================
@@ -245,9 +246,14 @@ export async function getGiftPaymentSettings(eventId: string) {
       return { error: "Unauthorized" };
     }
 
-    // Verify ownership
-    const event = await prisma.weddingEvent.findFirst({
-      where: { id: eventId, ownerId: user.id },
+    // Verify access (owner or collaborator)
+    const hasAccess = await canAccessEvent(eventId, user.id);
+    if (!hasAccess) {
+      return { error: "Event not found" };
+    }
+
+    const event = await prisma.weddingEvent.findUnique({
+      where: { id: eventId },
       include: {
         giftPaymentSettings: true,
       },
@@ -332,12 +338,9 @@ export async function getEventGifts(eventId: string) {
       return { error: "Unauthorized" };
     }
 
-    // Verify ownership
-    const event = await prisma.weddingEvent.findFirst({
-      where: { id: eventId, ownerId: user.id },
-    });
-
-    if (!event) {
+    // Verify access (owner or collaborator)
+    const hasAccess = await canAccessEvent(eventId, user.id);
+    if (!hasAccess) {
       return { error: "Event not found" };
     }
 

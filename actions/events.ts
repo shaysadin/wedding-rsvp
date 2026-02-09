@@ -5,6 +5,7 @@ import { UserRole } from "@prisma/client";
 
 import { prisma } from "@/lib/db";
 import { getCurrentUser } from "@/lib/session";
+import { canAccessEvent } from "@/lib/permissions";
 import {
   createEventSchema,
   updateEventSchema,
@@ -146,22 +147,9 @@ export async function updateEvent(input: UpdateEventInput) {
     const validatedData = updateEventSchema.parse(input);
     const { id, ...updateData } = validatedData;
 
-    // Fetch fresh roles from database (session might be stale)
-    const dbUser = await prisma.user.findUnique({
-      where: { id: user.id },
-      select: { roles: true },
-    });
-    const userRoles = dbUser?.roles || user.roles || [];
-
-    // Check if user is a platform owner
-    const isPlatformOwner = userRoles.includes(UserRole.ROLE_PLATFORM_OWNER);
-
-    // Verify ownership or platform owner access
-    const existingEvent = await prisma.weddingEvent.findFirst({
-      where: isPlatformOwner ? { id } : { id, ownerId: user.id },
-    });
-
-    if (!existingEvent) {
+    // Verify access (owner, EDITOR collaborator, or platform owner)
+    const hasAccess = await canAccessEvent(id, user.id, "EDITOR");
+    if (!hasAccess) {
       return { error: "Event not found" };
     }
 
@@ -249,40 +237,15 @@ export async function getEventById(eventId: string) {
       return { error: "Unauthorized" };
     }
 
-    // Fetch fresh roles from database (session might be stale)
-    const dbUser = await prisma.user.findUnique({
-      where: { id: user.id },
-      select: { roles: true },
-    });
-    const userRoles = dbUser?.roles || user.roles || [];
+    // Verify access (owner, collaborator, or platform owner)
+    const hasAccess = await canAccessEvent(eventId, user.id);
+    if (!hasAccess) {
+      return { error: "Event not found" };
+    }
 
-    // Check if user is a platform owner
-    const isPlatformOwner = userRoles.includes(UserRole.ROLE_PLATFORM_OWNER);
-
-    // Platform owners can access any event (including archived)
-    const whereClause = isPlatformOwner
-      ? {
-          id: eventId,
-        }
-      : {
-          id: eventId,
-          isArchived: false,
-          OR: [
-            { ownerId: user.id },
-            {
-              collaborators: {
-                some: {
-                  userId: user.id,
-                  acceptedAt: { not: null },
-                },
-              },
-            },
-          ],
-        };
-
-    // Allow owner, collaborator, or platform owner access
-    const event = await prisma.weddingEvent.findFirst({
-      where: whereClause,
+    // Fetch the event with all related data
+    const event = await prisma.weddingEvent.findUnique({
+      where: { id: eventId },
       include: {
         rsvpPageSettings: true,
         guests: {
@@ -693,9 +656,27 @@ export async function getEventsForSelector() {
     // Check if user is a platform owner
     const isPlatformOwner = userRoles.includes(UserRole.ROLE_PLATFORM_OWNER);
 
-    // Platform owners see all active events, regular users see only their own active events
+    // Platform owners see all active events
+    // Regular users see events they own OR events they collaborate on
+    const whereClause = isPlatformOwner
+      ? { isArchived: false }
+      : {
+          isArchived: false,
+          OR: [
+            { ownerId: user.id },
+            {
+              collaborators: {
+                some: {
+                  userId: user.id,
+                  acceptedAt: { not: null },
+                },
+              },
+            },
+          ],
+        };
+
     const events = await prisma.weddingEvent.findMany({
-      where: isPlatformOwner ? { isArchived: false } : { ownerId: user.id, isArchived: false },
+      where: whereClause,
       select: {
         id: true,
         title: true,
