@@ -171,7 +171,14 @@
     "passwordTooShort": "Password too short",
     "passwordTooShortDescription": "Password must be at least 6 characters long.",
     "passwordMismatch": "Passwords don't match",
-    "passwordMismatchDescription": "Please make sure both passwords match."
+    "passwordMismatchDescription": "Please make sure both passwords match.",
+    "illustration": {
+      "badge1": "Event Management",
+      "badge2": "Wedding RSVP",
+      "quote": "Wedinex completely transformed how we managed our wedding. Guest RSVPs, seating arrangements, and invitations — all handled effortlessly in one place.",
+      "name": "Maya & David",
+      "role": "Married couple, 500+ guests managed"
+    }
   },
   "dashboard": {
     "title": "Dashboard",
@@ -2101,6 +2108,7 @@
       "contact": "Contact",
       "blog": "Blog",
       "getStarted": "Get Started",
+      "login": "Login",
       "dashboard": "Dashboard"
     },
     "hero": {

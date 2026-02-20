@@ -81,7 +81,7 @@ const MobileNav = ({
       <Logo />
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="shadow-aceternity flex size-6 flex-col items-center justify-center rounded-md"
+        className="flex size-8 flex-col items-center justify-center rounded-md bg-gray-100 dark:bg-neutral-800"
         aria-label="Toggle menu"
       >
         <HamburgerIcon className="size-4 shrink-0 text-gray-600" />
@@ -130,14 +130,14 @@ const MobileNav = ({
                 </Link>
               ))}
               <div className="mt-4 p-4">
-                <GlowingButton
+                <NodusButton
                   onClick={() => setIsOpen(false)}
                   as={Link}
-                  href={isLoggedIn ? `/${locale}/dashboard` : `/${locale}/register`}
+                  href={isLoggedIn ? `/${locale}/dashboard` : `/${locale}/login`}
                   className="w-full"
                 >
-                  {isLoggedIn ? t("nav.dashboard") : t("nav.getStarted")}
-                </GlowingButton>
+                  {isLoggedIn ? t("nav.dashboard") : t("nav.login")}
+                </NodusButton>
               </div>
             </div>
           </motion.div>
@@ -174,8 +174,8 @@ const DesktopNav = ({
       </div>
       <div className="flex items-center gap-2">
         <ModeToggle />
-        <GlowingButton as={Link} href={isLoggedIn ? `/${locale}/dashboard` : `/${locale}/register`}>
-          {isLoggedIn ? t("nav.dashboard") : t("nav.getStarted")}
+        <GlowingButton as={Link} href={isLoggedIn ? `/${locale}/dashboard` : `/${locale}/login`}>
+          {isLoggedIn ? t("nav.dashboard") : t("nav.login")}
         </GlowingButton>
       </div>
     </div>
@@ -221,8 +221,8 @@ const FloatingNav = ({
       </div>
       <div className="flex items-center gap-2">
         <ModeToggle />
-        <GlowingButton as={Link} href={isLoggedIn ? `/${locale}/dashboard` : `/${locale}/register`}>
-          {isLoggedIn ? t("nav.dashboard") : t("nav.getStarted")}
+        <GlowingButton as={Link} href={isLoggedIn ? `/${locale}/dashboard` : `/${locale}/login`}>
+          {isLoggedIn ? t("nav.dashboard") : t("nav.login")}
         </GlowingButton>
       </div>
     </motion.div>

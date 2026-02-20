@@ -171,7 +171,14 @@
     "passwordTooShort": "הסיסמה קצרה מדי",
     "passwordTooShortDescription": "הסיסמה חייבת להכיל לפחות 6 תווים.",
     "passwordMismatch": "הסיסמאות לא תואמות",
-    "passwordMismatchDescription": "אנא ודא שהסיסמאות תואמות."
+    "passwordMismatchDescription": "אנא ודא שהסיסמאות תואמות.",
+    "illustration": {
+      "badge1": "ניהול אירועים",
+      "badge2": "אישורי הגעה לחתונה",
+      "quote": "Wedinex שינה לחלוטין את הדרך שבה ניהלנו את החתונה שלנו. אישורי הגעה, סידורי ישיבה והזמנות — הכל מנוהל בקלות במקום אחד.",
+      "name": "מאיה ודוד",
+      "role": "זוג נשוי, ניהול של מעל 500 אורחים"
+    }
   },
   "dashboard": {
     "title": "לוח בקרה",
@@ -2106,6 +2113,7 @@
       "contact": "צור קשר",
       "blog": "בלוג",
       "getStarted": "התחל בחינם",
+      "login": "כניסה",
       "dashboard": "לוח הבקרה"
     },
     "hero": {
