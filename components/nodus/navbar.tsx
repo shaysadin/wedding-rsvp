@@ -110,7 +110,7 @@ const MobileNav = ({
                 <CloseIcon className="size-4 shrink-0 text-gray-600" />
               </button>
             </div>
-            <div className="divide-divide border-divide mt-6 flex flex-col divide-y border-t">
+            <div className="divide-divide border-divide mt-6 flex flex-col divide-y border-t bg-background">
               {items.map((item, index) => (
                 <Link
                   href={item.href}
